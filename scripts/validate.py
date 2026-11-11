@@ -64,6 +64,11 @@ def main():
     assert "LOOP_MS = 14000" in motion and "requestAnimationFrame(draw)" in motion, "Dust particles 14 detik belum aktif"
     assert "prefers-reduced-motion" in motion, "Preferensi reduced motion harus dihormati"
     assert "localStorage" in html, "Preferensi tema tidak tersimpan"
+    assert ".scene{position:absolute;inset:0;z-index:0" in html, "Scene tidak boleh tersembunyi di belakang background site"
+    assert ".dust-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:6" in html, "Dust canvas harus berada di atas overlay scene"
+    assert "--bg:#e9e4d9" in html and "--header:rgba(241,237,226,.94)" in html, "Mode terang harus memakai palet background/header terang"
+    assert "body.light .action{background:rgba(245,241,231,.92);color:#22201b" in html, "Tombol mode terang harus memiliki kontras terang"
+    assert "theme===\'light\'?\'#eee9dd\':\'#08090b\'" in html, "Warna browser theme-color harus mengikuti tema"
     assert "@media(max-width:560px)" in html, "Layout mobile belum tersedia"
     assert "smoke" not in html.lower() and "smoke" not in motion.lower(), "Efek asap harus dihapus"
 
