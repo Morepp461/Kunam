@@ -1,20 +1,54 @@
 # Caleris Masters
 
-A lightweight, responsive landing page for Caleris Masters.
+Platform **Motorsport Roleplay** yang sedang dibangun ulang agar anggota tidak hanya melihat informasi, tetapi nantinya juga dapat melakukan aktivitas di dalam platform.
 
-## Current implementation
-- Static HTML, CSS, and vanilla JavaScript. No framework or runtime dependencies.
-- Responsive layout for desktop, tablet, and mobile.
-- Dark and light themes with the selected theme saved locally.
-- Motion-led motorsport hero background with reduced-motion support.
-- Three primary actions only: Rules, Login with Discord, and Join Our Community.
+## Status proyek
 
-## Before connecting services
-- Add the supplied original Caleris Masters logo at `assets/caleris-logo.png` (the page references `/assets/caleris-logo.png`; do not redraw or replace the logo).
-- Replace the Rules route with the final rules destination.
-- Connect Login with Discord after authentication and callback URLs are configured.
-- Replace the community Discord URL with the official invite.
-- Replace social profile links with official Caleris accounts.
+Saat ini repositori berisi fondasi **landing page** statis. Fitur interaktif anggota akan dikembangkan bertahap setelah fondasi dan kebutuhan teknisnya siap.
 
-## Infrastructure
-No Supabase or Vercel configuration has been added. This branch is the frontend-only landing page foundation.
+## Teknologi saat ini
+
+- HTML untuk struktur halaman.
+- CSS untuk tampilan responsif dan tema gelap/terang.
+- JavaScript murni untuk interaksi tema.
+- GitHub Actions untuk pemeriksaan otomatis.
+
+Tidak ada framework atau dependensi runtime yang perlu dipasang untuk menjalankan landing page ini.
+
+## Struktur folder
+
+- `index.html`: halaman utama.
+- `assets/`: tempat menyimpan logo dan aset visual proyek.
+- `scripts/validate.py`: pemeriksaan struktur landing page.
+- `.github/workflows/ci.yml`: konfigurasi pemeriksaan otomatis.
+
+## Menambahkan logo
+
+Unggah logo resmi Caleris Masters ke folder `assets/` dengan nama:
+
+`caleris-logo.png`
+
+Halaman utama sudah menyiapkan referensi ke `/assets/caleris-logo.png`. **File logo sengaja tidak disertakan** agar logo asli dapat diunggah langsung oleh pemilik proyek.
+
+## Menjalankan secara lokal
+
+Karena halaman ini masih statis, buka `index.html` melalui browser atau jalankan server statis lokal dari direktori proyek.
+
+## Pemeriksaan
+
+Jalankan perintah berikut dari direktori utama repositori:
+
+```bash
+python scripts/validate.py
+```
+
+GitHub Actions juga menjalankan pemeriksaan tersebut saat ada perubahan pada branch utama atau pull request menuju `main`.
+
+## Integrasi yang belum diaktifkan
+
+- Login Discord dan callback autentikasi.
+- Tautan undangan komunitas resmi.
+- Halaman aturan resmi.
+- Integrasi backend dan database.
+
+Integrasi tersebut tidak dianggap aktif sampai konfigurasi dan endpoint resminya tersedia.
