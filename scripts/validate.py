@@ -17,6 +17,7 @@ class LandingPageParser(HTMLParser):
         self.theme_controls = set()
         self.header_logo = False
         self.background_image = False
+        self.smoke_photo_motion = False
         self.smoke_canvas = False
         self.smoke_script = False
 
@@ -31,6 +32,8 @@ class LandingPageParser(HTMLParser):
             self.header_logo = True
         if tag == "img" and attrs.get("src") == "/assets/Background.png":
             self.background_image = True
+        if tag == "img" and "smoke-photo-motion" in attrs.get("class", "").split():
+            self.smoke_photo_motion = True
         if tag == "canvas" and "smoke-canvas" in attrs.get("class", "").split():
             self.smoke_canvas = True
         if tag == "script" and attrs.get("src") == "/smoke-motion.js":
@@ -52,15 +55,17 @@ def main():
     assert page.theme_controls == {"lightMode", "darkMode"}, "Kontrol tema tidak lengkap"
     assert page.header_logo, "Logo Caleris Masters harus tampil di header"
     assert page.background_image, "Background.png belum dipasang"
-    assert page.smoke_canvas and page.smoke_script, "Canvas atau script motion asap belum dimuat"
+    assert page.smoke_canvas and page.smoke_script and page.smoke_photo_motion, "Lapisan foto asap, canvas, atau script motion belum dimuat"
     assert "hero-scene.js" not in html and "car-stage" not in html, "Scene 3D lama masih dipanggil"
     assert "requestAnimationFrame(draw)" in smoke, "Animasi asap tidak berjalan"
     assert "createRadialGradient" in smoke, "Tekstur asap volumetrik tidak dibuat"
+    assert "feTurbulence" in html and "feDisplacementMap" in html, "Asap asli dari foto belum diberi displacement motion"
+    assert "smoke-photo-motion" in html and "mask-image" in html, "Lapisan gerak asap foto atau mask tidak ditemukan"
     assert "prefers-reduced-motion" in smoke, "Preferensi reduced motion harus dihormati"
     assert "localStorage" in html, "Preferensi tema tidak tersimpan"
     assert "@media(max-width:560px)" in html, "Layout mobile belum tersedia"
 
-    print("QA statis berhasil: Background.png, logo, 3 tombol, tema, canvas asap, animasi, dan layout responsif.")
+    print("QA statis berhasil: Background.png, logo, 3 tombol, tema, animasi asap foto SVG, canvas atmosferik, dan layout responsif.")
 
 
 if __name__ == "__main__":
