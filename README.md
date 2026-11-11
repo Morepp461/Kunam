@@ -28,7 +28,7 @@ Logo resmi Caleris Masters berada di:
 
 `assets/Add a heading_20260907_003952_0000.png`
 
-Logo tersebut digunakan langsung pada header. Jangan menggambar ulang atau mengganti bentuk logo. Aset logo Vreeo juga disimpan di folder `assets/` sebagai aset pendukung dan belum digunakan pada landing page.
+Logo tersebut digunakan langsung pada header dan footer. Jangan menggambar ulang atau mengganti bentuk logo. Aset logo Vreeo juga disimpan di folder `assets/` sebagai aset pendukung dan belum digunakan pada landing page.
 
 ## Model mobil 3D
 
