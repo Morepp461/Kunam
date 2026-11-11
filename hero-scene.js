@@ -177,7 +177,9 @@ for(const side of [-1,1]){
   const decal=mesh(new THREE.PlaneGeometry(.94,.38),decalMat,car,[-.28,.78,side*.775],[0,side===1?0:Math.PI,0]);
   decal.rotation.y=side===1?0:Math.PI;
 }
-const noseMark=mesh(new THREE.PlaneGeometry(.5,.13),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),car,[1.75,.88,0],[0,0,0]);\nbox(car,[3.55,.025,.055],goldBright,[.38,1.02,0]);\nbox(car,[.78,.025,.045],silver,[-1.52,1.57,0]);
+const noseMark=mesh(new THREE.PlaneGeometry(.5,.13),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),car,[1.75,.88,0],[0,0,0]);
+box(car,[3.55,.025,.055],goldBright,[.38,1.02,0]);
+box(car,[.78,.025,.045],silver,[-1.52,1.57,0]);
 
 // Two fictional team drivers, standing with folded arms like the supplied pose reference.
 function makeDriver(accent, sideIndex){
