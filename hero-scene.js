@@ -166,6 +166,9 @@ function sponsorTexture(){
   x.fillStyle="#b8bec7";x.font="bold 46px Arial";x.fillText("CALERIS",52,330);
   x.fillStyle="#c39b36";x.fillRect(52,365,780,9);
   x.fillStyle="#e1e4e8";x.font="bold 34px Arial";x.fillText("APEX  /  GRIDLINE  /  TORQUE",52,430);
+  const vreeoMark=new Image();
+  vreeoMark.onload=()=>{x.drawImage(vreeoMark,650,54,330,400);sponsorMap.needsUpdate=true;};
+  vreeoMark.src="/assets/Untitled%20design_20261103_142659_0000.png";
   return new THREE.CanvasTexture(c);
 }
 const sponsorMap=sponsorTexture();
