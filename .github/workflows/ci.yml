@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feat/caleris-landing-polish
+      - fix/hero-3d-rendering-and-qa
   pull_request:
     branches:
       - main
@@ -24,6 +24,14 @@ jobs:
     steps:
       - name: Ambil kode sumber
         uses: actions/checkout@v4
+
+      - name: Periksa Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Periksa sintaks JavaScript scene 3D
+        run: node --check hero-scene.js
 
       - name: Periksa versi Python
         run: python3 --version
