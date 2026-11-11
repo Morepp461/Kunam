@@ -95,9 +95,9 @@ mesh(hullGeo, silver, tub);
 box(car,[4.15,.12,1.72],carbon,[-.05,.34,0]);
 for(const side of [-1,1]){
   const pod=makePanel(car,[[1.0,.48],[.62,1.0],[-.95,1.02],[-1.35,.56],[-.92,.4],[.48,.4]],black,.55);
-  pod.position.z=side*.48; pod.rotation.y=side===1?0:Math.PI;
+  pod.position.z=side*.48; pod.scale.z=side;
   const accent=makePanel(car,[[.72,.72],[.42,.84],[-.72,.85],[-1.05,.61],[-.72,.56],[.4,.57]],gold,.018);
-  accent.position.z=side*.77; accent.rotation.y=side===1?0:Math.PI;
+  accent.position.z=side*.77; accent.scale.z=side;
   const sill=box(car,[1.5,.055,.045],silver,[-.18,.49,side*.79],[0,0,-.08]);
   // Inset cooling louvres.
   for(let i=0;i<5;i++) box(car,[.055,.018,.28],darkMetal,[-.55+i*.12,.96,side*.73],[0,0,-.12]);
@@ -177,7 +177,9 @@ for(const side of [-1,1]){
   const decal=mesh(new THREE.PlaneGeometry(.94,.38),decalMat,car,[-.28,.78,side*.775],[0,side===1?0:Math.PI,0]);
   decal.rotation.y=side===1?0:Math.PI;
 }
-const noseMark=mesh(new THREE.PlaneGeometry(.5,.13),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),car,[1.75,.88,0],[0,0,0]);\nbox(car,[3.55,.025,.055],goldBright,[.38,1.02,0]);\nbox(car,[.78,.025,.045],silver,[-1.52,1.57,0]);
+const noseMark=mesh(new THREE.PlaneGeometry(.5,.13),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),car,[1.75,.88,0],[0,0,0]);
+box(car,[3.55,.025,.055],goldBright,[.38,1.02,0]);
+box(car,[.78,.025,.045],silver,[-1.52,1.57,0]);
 
 // Two fictional team drivers, standing with folded arms like the supplied pose reference.
 function makeDriver(accent, sideIndex){
@@ -245,7 +247,8 @@ for(let i=0;i<3;i++){
   const dot=mesh(new THREE.SphereGeometry(.055,10,8),new THREE.MeshBasicMaterial({color:i===1?0xd8c17b:0xb6c0ce}),trackGroup);
   lightDots.push(dot);
 }
-const ground=mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x080a0d,roughness:1,metalness:0,transparent:true,opacity:.22}),scene,[0,-.045,0],[-Math.PI/2,0,0]);
+const groundMaterial=new THREE.MeshStandardMaterial({color:0x080a0d,roughness:1,metalness:0,transparent:true,opacity:.22});
+const ground=mesh(new THREE.PlaneGeometry(40,40),groundMaterial,scene,[0,-.045,0],[-Math.PI/2,0,0]);
 ground.receiveShadow=true;
 
 const clock=new THREE.Clock();
@@ -254,8 +257,8 @@ let raf=0;
 function resize(){
   const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);
   camera.aspect=w/h;
-  if(w<600){camera.fov=43;camera.position.set(3.9,4.25,12.7);camera.lookAt(-.35,1.15,0);}
-  else {camera.fov=34;camera.position.set(5.7,4.2,9.2);camera.lookAt(-.1,.9,0);}
+  if(w<600){camera.fov=43;camera.position.set(3.9,4.25,12.7);camera.lookAt(-.35,1.15,0);carRig.rotation.y=Math.PI/3;}
+  else {camera.fov=34;camera.position.set(5.7,4.2,9.2);camera.lookAt(-.1,.9,0);carRig.rotation.y=0;}
   camera.updateProjectionMatrix();renderer.setSize(w,h,false);
 }
 const observer=new ResizeObserver(resize); observer.observe(host); resize();
@@ -263,9 +266,12 @@ const observer=new ResizeObserver(resize); observer.observe(host); resize();
 function animate(){
   raf=requestAnimationFrame(animate);
   const delta=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
+  const isLight=document.body.classList.contains("light");
+  scene.fog.color.set(isLight?0xe9e8e4:0x08090b);
+  groundMaterial.color.set(isLight?0xd8d5cc:0x080a0d);
   if(!reduceMotion){
     carRig.position.y=.035*Math.sin(t*.78);
-    carRig.rotation.y=.052*Math.sin(t*.28);
+    carRig.rotation.y=(host.clientWidth<600?Math.PI/3:0)+.052*Math.sin(t*.28);
     car.rotation.y+=delta*Math.PI/60;
     driverA.position.y=.025*Math.sin(t*1.05);
     driverB.position.y=.025*Math.sin(t*1.05+1.8);
