@@ -16,7 +16,6 @@ class LandingPageParser(HTMLParser):
         self.primary_actions = 0
         self.theme_controls = set()
         self.header_logo = False
-        self.footer_logo = False
         self.scene_module = False
 
     def handle_starttag(self, tag, attrs):
@@ -31,17 +30,10 @@ class LandingPageParser(HTMLParser):
         if tag == "script" and attrs.get("src") == "/hero-scene.js":
             self.scene_module = True
 
-    def handle_endtag(self, tag):
-        if tag == "footer":
-            self.tags.add("footer")
-
 
 def main():
-    assert HTML_PATH.is_file(), "index.html tidak ditemukan"
-    assert SCENE_PATH.is_file(), "hero-scene.js tidak ditemukan"
-    assert ASSETS_DIR.is_dir(), "Folder assets/ tidak ditemukan"
-    assert LOGO_PATH.is_file(), "Logo Caleris Masters tidak ditemukan"
-    assert VREEO_PATH.is_file(), "Logo Vreeo tidak ditemukan"
+    for path in (HTML_PATH, SCENE_PATH, LOGO_PATH, VREEO_PATH):
+        assert path.is_file() and path.stat().st_size > 0, f"Aset/file tidak ada atau kosong: {path}"
 
     html = HTML_PATH.read_text(encoding="utf-8")
     scene = SCENE_PATH.read_text(encoding="utf-8")
@@ -55,15 +47,21 @@ def main():
     assert page.header_logo, "Logo Caleris Masters harus tampil di header"
     assert "footer-brand" not in html, "Logo Caleris Masters tidak boleh ditempatkan di footer"
     assert page.scene_module, "Scene Three.js belum dimuat"
-    assert "three.module.js" in scene, "Three.js belum diimpor"
-    assert "VREEO" in scene and "CALERIS" in scene, "Brand sponsor pada livery belum ada"
-    assert "makeDriver" in scene and "driverA" in scene and "driverB" in scene, "Dua pembalap 3D belum dibuat"
-    assert "prefers-reduced-motion" in html and "prefers-reduced-motion" in scene, "Reduced motion belum didukung"
-    assert "localStorage" in html, "Preferensi tema belum disimpan"
-    assert "body.light h1 span{color:#50545b}" in html, "Kontras teks mode terang belum diperbaiki"
-    assert "@media(max-width:560px)" in html, "Layout ponsel belum tersedia"
+    assert 'from "https://cdn.jsdelivr.net/npm/three@0.181.1/build/three.module.js"' in scene
+    assert "\\nbox(" not in scene, "Ditemukan escape newline mentah yang membuat JavaScript gagal diparse"
+    assert "new THREE.WebGLRenderer" in scene and "renderer.render(scene,camera)" in scene
+    assert "VREEO" in scene and "CALERIS" in scene and "APEX" in scene
+    assert "vreeoMark.src" in scene, "Logo Vreeo asli belum dimuat ke tekstur sponsor"
+    assert "makeDriver" in scene and "driverA" in scene and "driverB" in scene
+    assert "driverA.position.y" in scene and "driverB.position.y" in scene
+    assert "lightDots.forEach" in scene and "trackGroup.rotation.y" in scene
+    assert "prefers-reduced-motion" in html and "prefers-reduced-motion" in scene
+    assert "localStorage" in html
+    assert "body.light h1 span{color:#50545b}" in html
+    assert "@media(max-width:560px)" in html
+    assert "camera.lookAt(-.35,1.15,0)" in scene, "Framing kamera ponsel belum diterapkan"
 
-    print("QA landing page berhasil: logo header, tiga tombol, tema, scene 3D, dua pembalap, livery sponsor, dan responsivitas.")
+    print("QA statis berhasil: logo header, 3 tombol, tema, WebGL 3D, 2 driver, sponsor, animasi, dan layout responsif.")
 
 
 if __name__ == "__main__":
