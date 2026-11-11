@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090b"><meta name="description" content="Caleris Masters — Motorsport Roleplay Platform">
+<title>Caleris Masters</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
+:root{color-scheme:dark;--bg:#08090b;--panel:rgba(8,9,11,.78);--text:#f4f2ec;--muted:#a5a5a5;--gold:#c6a43a;--gold2:#f0d67a;--silver:#c7c9cc;--line:rgba(198,164,58,.35);--header:#101923;--shadow:0 18px 70px #0009}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif}body{height:100svh;overflow:hidden;background:var(--bg);color:var(--text);transition:background .35s,color .35s}
+body.light{color-scheme:light;--bg:#e9e8e4;--panel:rgba(245,244,239,.82);--text:#17191c;--muted:#62666c;--line:rgba(142,111,24,.38);--header:#17212b;--shadow:0 18px 70px #32302a24}
+.site{height:100svh;min-height:560px;display:grid;grid-template-rows:82px 1fr 66px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg)}
+.scene{position:absolute;inset:0;z-index:-2;overflow:hidden;background:radial-gradient(ellipse at 72% 40%,#9a5b38 0%,#282327 34%,#0a0b0e 76%)}
+.scene:before{content:"";position:absolute;inset:-5%;background-image:url('https://images.unsplash.com/photo-1773142181818-5842662aea51?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=2400');background-position:center 57%;background-size:cover;filter:brightness(.58) saturate(.72) contrast(1.08);transform:scale(1.06);animation:trackDrift 24s ease-in-out infinite alternate}
+.scene:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#050608 0%,#05060899 22%,transparent 52%,#05060845 78%,#050608 100%),linear-gradient(0deg,#050608 0%,transparent 26%,#05060855 100%),radial-gradient(ellipse at center,transparent 32%,#050608bb 100%)}
+body.light .scene:before{filter:brightness(.8) saturate(.58) contrast(.96)}body.light .scene:after{background:linear-gradient(90deg,#e9e8e4 0%,#e9e8e499 15%,transparent 52%,#e9e8e455 82%,#e9e8e4 100%),linear-gradient(0deg,#e9e8e4 0%,transparent 32%,#e9e8e455 100%),radial-gradient(ellipse at center,transparent 28%,#e9e8e4a8 100%)}
+.track-glow{position:absolute;z-index:-1;inset:auto -10% -32% -10%;height:48%;background:linear-gradient(90deg,transparent,#a52c27aa 30%,#d3a94b66 60%,transparent);filter:blur(85px);transform:rotate(-7deg);animation:glow 12s ease-in-out infinite alternate}
+header{height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(22px,5vw,76px);background:var(--panel);border-bottom:1px solid var(--line);backdrop-filter:blur(16px);z-index:3}
+.brand{display:flex;align-items:center;min-width:180px}.brand img{width:172px;height:auto;max-height:58px;object-fit:contain;object-position:left center}
+.header-right{display:flex;align-items:center;gap:20px}.edition{font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
+.theme-toggle{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:99px;padding:4px;background:#0004}
+.theme-toggle button{width:35px;height:32px;border:0;border-radius:99px;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;transition:.2s}
+.theme-toggle button[aria-pressed=true]{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#17130a;box-shadow:0 3px 12px #0004}
+main{position:relative;display:flex;align-items:center;justify-content:center;padding:26px 22px 40px;min-height:0}
+.hero{width:min(100%,1050px);display:flex;flex-direction:column;align-items:center;text-align:center;transform:translateY(-1%);animation:heroIn 1s cubic-bezier(.2,.7,.2,1) both}
+.eyebrow{display:flex;align-items:center;gap:15px;color:var(--gold2);font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.28em;text-transform:uppercase;margin-bottom:12px}
+.eyebrow:before,.eyebrow:after{content:"";width:clamp(26px,5vw,74px);height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
+.eyebrow:after{transform:rotate(180deg)}
+h1{margin:0;color:var(--text);font:900 clamp(52px,9vw,116px)/.82 'Barlow Condensed',Impact,sans-serif;letter-spacing:-.045em;text-transform:uppercase;text-shadow:0 7px 35px #0009}
+h1 span{display:block;color:var(--silver);font-size:.48em;letter-spacing:.34em;line-height:1.6;margin-left:.34em;text-shadow:0 4px 22px #000a}
+.tagline{margin:16px 0 0;color:var(--muted);font-size:clamp(9px,1.05vw,12px);font-weight:600;letter-spacing:.38em;text-transform:uppercase}
+.actions{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:clamp(30px,5vh,54px);width:100%}
+.action{min-height:58px;padding:0 clamp(20px,3vw,38px);display:inline-flex;align-items:center;justify-content:center;gap:12px;border:1px solid #f4f2ecaa;border-radius:7px;background:#090a0ccc;color:#f7f5ef;text-decoration:none;text-transform:uppercase;font:700 15px 'Barlow Condensed',sans-serif;letter-spacing:.08em;white-space:nowrap;backdrop-filter:blur(10px);transition:transform .25s,border-color .25s,background .25s,box-shadow .25s}
+.action svg{width:19px;height:19px;flex:none}.action:hover{transform:translateY(-4px);border-color:var(--gold2);box-shadow:0 12px 28px #0006}
+.action.primary{min-width:260px;color:#17130a;border-color:#e0bd4e;background:linear-gradient(135deg,#f1d77e,#b98e21);box-shadow:0 9px 28px #0005}
+.action.primary:hover{background:linear-gradient(135deg,#ffe79a,#c79c2c)}
+body.light .action:not(.primary){background:#17212be8;border-color:#17212b;color:#fff}
+footer{height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(22px,5vw,76px);border-top:1px solid var(--line);background:var(--panel);backdrop-filter:blur(16px);z-index:3}
+.footer-brand{display:flex;align-items:center;gap:18px;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.25em;text-transform:uppercase}
+.footer-brand strong{color:var(--gold2)}.footer-divider{height:20px;width:1px;background:var(--line)}
+.socials{display:flex;align-items:center;gap:19px}.socials a{color:var(--muted);display:grid;place-items:center;transition:color .2s,transform .2s}.socials a:hover{color:var(--gold2);transform:translateY(-2px)}.socials svg{width:18px;height:18px}
+@keyframes trackDrift{from{transform:scale(1.06) translate3d(-1%,0,0)}to{transform:scale(1.13) translate3d(1.2%,-1%,0)}}@keyframes glow{from{opacity:.45;transform:rotate(-7deg) translateX(-3%)}to{opacity:.8;transform:rotate(-4deg) translateX(3%)}}@keyframes heroIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(-1%)}}
+@media(max-width:760px){.site{grid-template-rows:68px 1fr 58px;min-height:520px}header{height:68px;padding:0 18px}.brand img{width:140px}.edition{display:none}.header-right{gap:0}main{padding:20px 18px 26px}.hero{transform:translateY(-3%)}.eyebrow{font-size:10px;letter-spacing:.18em}h1{font-size:clamp(48px,14vw,86px)}h1 span{font-size:.43em;letter-spacing:.27em}.tagline{max-width:300px;line-height:1.7;letter-spacing:.23em}.actions{flex-direction:column;gap:10px;margin-top:28px}.action,.action.primary{width:min(100%,330px);min-height:52px}.action{font-size:14px}footer{height:58px;padding:0 18px}.footer-brand{font-size:9px;gap:10px}.socials{gap:12px}.socials svg{width:16px;height:16px}.scene:before{background-position:57% center}body.light .scene:after{background:linear-gradient(90deg,#e9e8e4 0%,#e9e8e455 16%,transparent 60%,#e9e8e499 100%),linear-gradient(0deg,#e9e8e4 0%,transparent 30%,#e9e8e455 100%),radial-gradient(ellipse at center,transparent 18%,#e9e8e4aa 100%)}}
+@media(max-height:650px) and (min-width:761px){.site{grid-template-rows:64px 1fr 52px}header{height:64px}.brand img{width:145px}.actions{margin-top:22px}.action{min-height:50px}footer{height:52px}.hero{transform:translateY(0)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="site">
+<div class="scene" aria-hidden="true"></div><div class="track-glow" aria-hidden="true"></div>
+<header>
+<a class="brand" href="#" aria-label="Caleris Masters home"><img src="/assets/caleris-logo.png" alt="Caleris Masters"></a>
+<div class="header-right"><span class="edition">Motorsport Roleplay Platform</span><div class="theme-toggle" role="group" aria-label="Pilih tema"><button id="lightMode" aria-label="Mode terang" aria-pressed="false">☼</button><button id="darkMode" aria-label="Mode gelap" aria-pressed="true">☾</button></div></div>
+</header>
+<main><section class="hero" aria-labelledby="title">
+<div class="eyebrow">The race begins here</div>
+<h1 id="title">Caleris<span>Masters</span></h1>
+<p class="tagline">A Motorsport Roleplay Experience</p>
+<nav class="actions" aria-label="Aksi utama">
+<a class="action" href="/rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v18H7.5A3.5 3.5 0 0 0 4 23z"/><path d="M4 5.5v17A3.5 3.5 0 0 1 7.5 19H20"/></svg>Rules</a>
+<a class="action primary" href="/auth/discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.7 5.2a18 18 0 0 0-4.4-1.4l-.5 1a16.6 16.6 0 0 0-5.6 0l-.5-1a18 18 0 0 0-4.4 1.4C1.5 9.3.7 13.3 1.1 17.2a18 18 0 0 0 5.4 2.7l1.2-2a11 11 0 0 1-1.9-.9l.5-.4a12.8 12.8 0 0 0 11.4 0l.5.4a11 11 0 0 1-1.9.9l1.2 2a18 18 0 0 0 5.4-2.7c.5-4.5-.8-8.4-3.2-12zM8.5 14.8c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm7 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>Login with Discord</a>
+<a class="action" href="https://discord.com/" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M8 10h.01M16 10h.01M8 15c2.4 2 5.6 2 8 0"/></svg>Join Our Community</a>
+</nav></section></main>
+<footer><div class="footer-brand"><span>Caleris Masters</span><span class="footer-divider"></span><span>Outlaws for <strong>Life.</strong></span></div><div class="socials">
+<a href="https://discord.com/" aria-label="Discord" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.7 5.2a18 18 0 0 0-4.4-1.4l-.5 1a16.6 16.6 0 0 0-5.6 0l-.5-1a18 18 0 0 0-4.4 1.4C1.5 9.3.7 13.3 1.1 17.2a18 18 0 0 0 5.4 2.7l1.2-2a11 11 0 0 1-1.9-.9l.5-.4a12.8 12.8 0 0 0 11.4 0l.5.4a11 11 0 0 1-1.9.9l1.2 2a18 18 0 0 0 5.4-2.7c.5-4.5-.8-8.4-3.2-12z"/></svg></a>
+<a href="https://instagram.com/" aria-label="Instagram" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg></a>
+<a href="https://youtube.com/" aria-label="YouTube" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.1a3 3 0 0 0-2.1-2.1C19 4.5 12 4.5 12 4.5s-7 0-8.9.5A3 3 0 0 0 1 7.1 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.9 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.9 31 31 0 0 0-.5-4.9ZM9.5 15.5v-7l6 3.5z"/></svg></a>
+<a href="https://x.com/" aria-label="X" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.6 22H2.4l7.3-8.4L1.9 2h6.5l4.5 6.8L18.9 2Zm-1.1 18h1.7L7.3 3.9H5.5z"/></svg></a>
+</div></footer></div>
+<script>
+const light=document.getElementById('lightMode'),dark=document.getElementById('darkMode');
+function setTheme(theme){document.body.classList.toggle('light',theme==='light');light.setAttribute('aria-pressed',String(theme==='light'));dark.setAttribute('aria-pressed',String(theme==='dark'));try{localStorage.setItem('caleris-theme',theme)}catch{}}
+let saved='dark';try{saved=localStorage.getItem('caleris-theme')||'dark'}catch{}setTheme(saved);
+light.addEventListener('click',()=>setTheme('light'));dark.addEventListener('click',()=>setTheme('dark'));
+</script>
+</body></html>
