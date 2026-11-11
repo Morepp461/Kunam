@@ -4,12 +4,12 @@
 
 ## Status saat ini
 
-Landing page publik dirancang satu layar agar ringkas dan responsif pada komputer, tablet, serta ponsel. Hero menggunakan assets/Background.png sebagai visual utama, dengan lapisan asap procedural berbasis Canvas 2D. Tidak ada model 3D atau dependensi rendering 3D pada landing page.
+Landing page publik dirancang satu layar agar ringkas dan responsif pada komputer, tablet, serta ponsel. Hero menggunakan assets/Background 2.png sebagai visual utama, dengan motion cinematic berbasis CSS dan Canvas 2D. Tidak ada model 3D atau dependensi rendering 3D pada landing page.
 
 ## Teknologi
 
 - HTML, CSS, dan JavaScript.
-- Canvas 2D untuk motion asap ringan.
+- Canvas 2D untuk floating dust particles yang loop 14 detik.
 - Google Fonts untuk tipografi.
 - GitHub Actions untuk pemeriksaan otomatis.
 - Vercel untuk hosting statis.
@@ -19,7 +19,7 @@ Belum ada integrasi Supabase pada tahap landing page ini.
 ## Struktur proyek
 
 - index.html: landing page, gambar latar, kontrol tema, dan navigasi utama.
-- smoke-motion.js: partikel asap lembut dengan animasi Canvas 2D.
+- cinematic-motion.js: dust particles halus dengan pergerakan periodik 14 detik.
 - assets/Background.png: gambar utama hero.
 - assets/: logo Caleris Masters dan aset identitas visual.
 - scripts/validate.py: pemeriksaan struktur dan kebutuhan utama halaman.
@@ -32,7 +32,7 @@ Belum ada integrasi Supabase pada tahap landing page ini.
 - Tekstur asap dibuat dari beberapa radial gradient yang lembut, bukan bentuk lingkaran keras.
 - Canvas menyesuaikan ukuran layar dan device pixel ratio hingga 2x.
 - Animasi berhenti saat tab tidak aktif dan menghormati prefers-reduced-motion.
-- Gambar latar tetap statis; hanya lapisan asap yang dianimasikan.
+- Foto asli tetap menjadi layer utama dan tidak diubah kontennya; motion hanya berupa transformasi kamera serta overlay cahaya.
 
 ## Deployment Vercel
 
@@ -42,7 +42,7 @@ Repositori menggunakan vercel.json dengan Framework Preset Other, tanpa framewor
 
 ```bash
 python3 scripts/validate.py
-node --check smoke-motion.js
+node --check cinematic-motion.js
 ```
 
 ## Tombol landing page
