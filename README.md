@@ -19,7 +19,7 @@ Belum ada integrasi Supabase pada tahap landing page ini.
 ## Struktur proyek
 
 - index.html: landing page, gambar latar, kontrol tema, dan navigasi utama.
-- smoke-motion.js: partikel asap lembut dengan animasi Canvas 2D.
+- smoke-motion.js: partikel atmosferik Canvas 2D; lapisan asap asli foto dianimasikan terpisah melalui SVG turbulence dan displacement pada index.html.
 - assets/Background.png: gambar utama hero.
 - assets/: logo Caleris Masters dan aset identitas visual.
 - scripts/validate.py: pemeriksaan struktur dan kebutuhan utama halaman.
@@ -32,7 +32,7 @@ Belum ada integrasi Supabase pada tahap landing page ini.
 - Tekstur asap dibuat dari beberapa radial gradient yang lembut, bukan bentuk lingkaran keras.
 - Canvas menyesuaikan ukuran layar dan device pixel ratio hingga 2x.
 - Animasi berhenti saat tab tidak aktif dan menghormati prefers-reduced-motion.
-- Gambar latar tetap statis; hanya lapisan asap yang dianimasikan.
+- Foto dasar tetap utuh; hanya area asap terpilih pada lapisan duplikat yang dianimasikan.
 
 ## Deployment Vercel
 
