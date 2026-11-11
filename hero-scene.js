@@ -86,7 +86,7 @@ for (let i=0;i<hullPoints.length;i++) {
 }
 for(let i=0;i<hullPoints.length-1;i++) for(let j=0;j<sides;j++){
   const a=i*sides+j,b=i*sides+(j+1)%sides,c=(i+1)*sides+(j+1)%sides,d=(i+1)*sides+j;
-  indices.push(a,b,d,b,c,d);
+  indices.push(a,d,b,b,d,c);
 }
 hullGeo.setAttribute("position",new THREE.Float32BufferAttribute(verts,3)); hullGeo.setIndex(indices); hullGeo.computeVertexNormals();
 mesh(hullGeo, silver, tub);
@@ -167,7 +167,7 @@ function sponsorTexture(){
   x.fillStyle="#c39b36";x.fillRect(52,365,780,9);
   x.fillStyle="#e1e4e8";x.font="bold 34px Arial";x.fillText("APEX  /  GRIDLINE  /  TORQUE",52,430);
   const vreeoMark=new Image();
-  vreeoMark.onload=()=>{x.drawImage(vreeoMark,650,54,330,400);sponsorMap.needsUpdate=true;};
+  vreeoMark.onload=()=>{x.drawImage(vreeoMark,670,72,300,300);sponsorMap.needsUpdate=true;};
   vreeoMark.src="/assets/Untitled%20design_20261103_142659_0000.png";
   return new THREE.CanvasTexture(c);
 }
