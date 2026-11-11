@@ -247,7 +247,8 @@ for(let i=0;i<3;i++){
   const dot=mesh(new THREE.SphereGeometry(.055,10,8),new THREE.MeshBasicMaterial({color:i===1?0xd8c17b:0xb6c0ce}),trackGroup);
   lightDots.push(dot);
 }
-const groundMaterial=new THREE.MeshStandardMaterial({color:0x080a0d,roughness:1,metalness:0,transparent:true,opacity:.22});\nconst ground=mesh(new THREE.PlaneGeometry(40,40),groundMaterial,scene,[0,-.045,0],[-Math.PI/2,0,0]);
+const groundMaterial=new THREE.MeshStandardMaterial({color:0x080a0d,roughness:1,metalness:0,transparent:true,opacity:.22});
+const ground=mesh(new THREE.PlaneGeometry(40,40),groundMaterial,scene,[0,-.045,0],[-Math.PI/2,0,0]);
 ground.receiveShadow=true;
 
 const clock=new THREE.Clock();
