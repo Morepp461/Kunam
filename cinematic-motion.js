@@ -37,7 +37,7 @@
     ctx.clearRect(0, 0, width, height);
     for (const p of particles) {
       const x = (p.x + Math.sin(angle + p.phase) * p.drift * 2.5) * width;
-      const y = (p.y - phase * p.drift * 5 + Math.sin(angle + p.phase) * .004 + 1) % 1 * height;
+      const y = (p.y + Math.sin(angle + p.phase * 1.31) * .012 + 1) % 1 * height;
       const twinkle = .65 + .35 * Math.sin(angle + p.phase * 1.7);
       ctx.beginPath();
       ctx.fillStyle = `rgba(255,239,205,${p.alpha * twinkle})`;
