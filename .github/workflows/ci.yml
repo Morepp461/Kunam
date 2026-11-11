@@ -19,7 +19,7 @@ concurrency:
 jobs:
   pemeriksaan:
     name: Validasi landing page
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Ambil kode sumber
@@ -30,7 +30,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Periksa sintaks JavaScript scene 3D
+      - name: Periksa sintaks JavaScript animasi asap
         run: node --check smoke-motion.js
 
       - name: Periksa versi Python
