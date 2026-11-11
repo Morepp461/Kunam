@@ -174,7 +174,7 @@ for(const side of [-1,1]){
   const decal=mesh(new THREE.PlaneGeometry(.94,.38),decalMat,car,[-.28,.78,side*.775],[0,side===1?0:Math.PI,0]);
   decal.rotation.y=side===1?0:Math.PI;
 }
-const noseMark=mesh(new THREE.PlaneGeometry(.5,.13),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),car,[1.75,.88,0],[0,0,0]);
+const noseMark=mesh(new THREE.PlaneGeometry(.5,.13),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),car,[1.75,.88,0],[0,0,0]);\nbox(car,[3.55,.025,.055],goldBright,[.38,1.02,0]);\nbox(car,[.78,.025,.045],silver,[-1.52,1.57,0]);
 
 // Two fictional team drivers, standing with folded arms like the supplied pose reference.
 function makeDriver(accent, sideIndex){
@@ -217,7 +217,7 @@ function makeDriver(accent, sideIndex){
 }
 const drivers=new THREE.Group(); scene.add(drivers);
 const driverA=makeDriver(0xc49c3d,0), driverB=makeDriver(0xc6cbd0,1);
-driverA.position.set(-3.35,0,-.82); driverB.position.set(-3.65,0,.85);
+driverA.position.set(-2.62,0,-.82); driverB.position.set(-2.82,0,.85);
 driverA.scale.setScalar(.83); driverB.scale.setScalar(.83);
 driverA.rotation.y=.16; driverB.rotation.y=-.14;
 drivers.add(driverA,driverB);
@@ -251,7 +251,7 @@ let raf=0;
 function resize(){
   const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);
   camera.aspect=w/h;
-  if(w<600){camera.fov=37;camera.position.set(4.6,4.05,10.6);camera.lookAt(-.55,1.05,0);}
+  if(w<600){camera.fov=43;camera.position.set(3.9,4.25,12.7);camera.lookAt(-.35,1.15,0);}
   else {camera.fov=34;camera.position.set(5.7,4.2,9.2);camera.lookAt(-.1,.9,0);}
   camera.updateProjectionMatrix();renderer.setSize(w,h,false);
 }
