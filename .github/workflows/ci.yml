@@ -1,18 +1,24 @@
-name: Landing page QA
+name: Pemeriksaan Landing Page
 
 on:
   push:
-    branches: [main, feat/caleris-landing-page]
+    branches:
+      - main
+      - feat/caleris-landing-page
   pull_request:
-    branches: [main]
+    branches:
+      - main
+
+permissions:
+  contents: read
 
 jobs:
-  static-checks:
+  pemeriksaan:
+    name: Validasi struktur halaman
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.x"
-      - name: Validate landing page structure
-        run: python scripts/validate.py
+      - name: Ambil kode sumber
+        uses: actions/checkout@v4
+
+      - name: Periksa struktur landing page
+        run: python3 scripts/validate.py
