@@ -13,7 +13,7 @@ Repositori ini sedang mengerjakan fondasi landing page publik. Halaman utama dir
 - Komponen `model-viewer` untuk menampilkan model mobil formula 3D.
 - GitHub Actions untuk pemeriksaan otomatis.
 
-Belum ada integrasi Supabase maupun konfigurasi deployment Vercel pada tahap ini.
+Belum ada integrasi Supabase. Konfigurasi Vercel disiapkan sebagai hosting statis melalui `vercel.json`, tanpa framework maupun proses build.
 
 ## Struktur proyek
 
@@ -41,6 +41,10 @@ Landing page menggunakan model mobil formula generik dari 3DAssets.dev:
 - Berkas model: https://cdn.3dassets.dev/assets/15179/v1/model.glb
 
 Model dimuat melalui komponen `model-viewer` dan diputar perlahan. Gerakan otomatis dinonaktifkan bila perangkat pengguna mengaktifkan preferensi pengurangan animasi.
+
+## Deployment Vercel
+
+Repositori menggunakan `vercel.json` dengan Framework Preset **Other**, tanpa perintah build atau instalasi dependensi. Output deployment diambil langsung dari direktori utama sehingga `index.html` dan folder `assets/` disajikan sebagai berkas statis.
 
 ## Menjalankan secara lokal
 
