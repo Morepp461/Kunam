@@ -1,0 +1,20 @@
+name: Diagnostik Ketersediaan Runner
+
+on:
+  push:
+    branches:
+      - feat/caleris-landing-polish
+
+jobs:
+  runner-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Tes runner
+        run: echo "Runner tersedia pada ${{ matrix.os }}"
