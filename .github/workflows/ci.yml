@@ -19,14 +19,14 @@ concurrency:
 jobs:
   pemeriksaan:
     name: Validasi landing page
-    runs-on: ubuntu-24.04
+    runs-on: windows-latest
     timeout-minutes: 5
     steps:
       - name: Ambil kode sumber
         uses: actions/checkout@v4
 
       - name: Periksa versi Python
-        run: python3 --version
+        run: python --version
 
       - name: Jalankan pemeriksaan landing page
-        run: python3 -B scripts/validate.py
+        run: python -B scripts/validate.py
