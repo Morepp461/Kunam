@@ -1,16 +1,32 @@
-name: Diagnostik Runner
+name: Pemeriksaan Landing Page
 
 on:
   push:
     branches:
+      - main
       - feat/caleris-landing-polish
   pull_request:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: landing-page-qa-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  runner-test:
-    runs-on: ubuntu-latest
+  pemeriksaan:
+    name: Validasi landing page
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
-      - name: Tes runner
-        run: echo "Runner tersedia."
+      - name: Ambil kode sumber
+        uses: actions/checkout@v4
+
+      - name: Periksa versi Python
+        run: python3 --version
+
+      - name: Jalankan pemeriksaan landing page
+        run: python3 -B scripts/validate.py
