@@ -95,9 +95,9 @@ mesh(hullGeo, silver, tub);
 box(car,[4.15,.12,1.72],carbon,[-.05,.34,0]);
 for(const side of [-1,1]){
   const pod=makePanel(car,[[1.0,.48],[.62,1.0],[-.95,1.02],[-1.35,.56],[-.92,.4],[.48,.4]],black,.55);
-  pod.position.z=side*.48; pod.rotation.y=side===1?0:Math.PI;
+  pod.position.z=side*.48; pod.scale.z=side;
   const accent=makePanel(car,[[.72,.72],[.42,.84],[-.72,.85],[-1.05,.61],[-.72,.56],[.4,.57]],gold,.018);
-  accent.position.z=side*.77; accent.rotation.y=side===1?0:Math.PI;
+  accent.position.z=side*.77; accent.scale.z=side;
   const sill=box(car,[1.5,.055,.045],silver,[-.18,.49,side*.79],[0,0,-.08]);
   // Inset cooling louvres.
   for(let i=0;i<5;i++) box(car,[.055,.018,.28],darkMetal,[-.55+i*.12,.96,side*.73],[0,0,-.12]);
@@ -247,7 +247,7 @@ for(let i=0;i<3;i++){
   const dot=mesh(new THREE.SphereGeometry(.055,10,8),new THREE.MeshBasicMaterial({color:i===1?0xd8c17b:0xb6c0ce}),trackGroup);
   lightDots.push(dot);
 }
-const ground=mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x080a0d,roughness:1,metalness:0,transparent:true,opacity:.22}),scene,[0,-.045,0],[-Math.PI/2,0,0]);
+const groundMaterial=new THREE.MeshStandardMaterial({color:0x080a0d,roughness:1,metalness:0,transparent:true,opacity:.22});\nconst ground=mesh(new THREE.PlaneGeometry(40,40),groundMaterial,scene,[0,-.045,0],[-Math.PI/2,0,0]);
 ground.receiveShadow=true;
 
 const clock=new THREE.Clock();
