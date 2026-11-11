@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "node --check smoke-motion.js && python3 -B scripts/validate.py",
+  "buildCommand": "node --check cinematic-motion.js && python3 -B scripts/validate.py",
   "installCommand": "",
   "outputDirectory": "."
 }
