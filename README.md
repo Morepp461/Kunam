@@ -1,54 +1,47 @@
 # Caleris Masters
 
-**Caleris Masters** adalah platform Motorsport Roleplay yang sedang dibangun ulang dari situs informasi menjadi platform interaktif. Anggota nantinya dapat mengembangkan karier dan tim, mengajukan transaksi, serta menjalankan aktivitas lain sesuai peran masing-masing.
+**Caleris Masters** adalah platform Motorsport Roleplay yang sedang dibangun menjadi platform interaktif. Anggota nantinya dapat mengembangkan karier dan tim, mengajukan transaksi, serta menjalankan aktivitas sesuai peran masing-masing.
 
 ## Status saat ini
 
-Repositori ini sedang mengerjakan fondasi landing page publik. Halaman utama dirancang satu layar agar ringkas, responsif, dan dapat digunakan melalui komputer, tablet, maupun ponsel.
+Landing page publik dirancang satu layar agar ringkas dan responsif pada komputer, tablet, serta ponsel.
 
 ## Teknologi
 
-- HTML, CSS, dan JavaScript murni.
+- HTML, CSS, dan JavaScript.
+- Three.js untuk rendering mobil dan pembalap 3D.
 - Google Fonts untuk tipografi.
-- Komponen `model-viewer` untuk menampilkan model mobil formula 3D.
 - GitHub Actions untuk pemeriksaan otomatis.
+- Vercel untuk hosting statis.
 
-Belum ada integrasi Supabase. Konfigurasi Vercel disiapkan sebagai hosting statis melalui `vercel.json`, tanpa framework maupun proses build.
+Belum ada integrasi Supabase pada tahap ini.
 
 ## Struktur proyek
 
-- `index.html`: landing page.
-- `assets/`: logo resmi dan aset visual.
+- `index.html`: landing page dan pengaturan tema.
+- `hero-scene.js`: scene Three.js, mobil, dua pembalap, livery, serta animasi.
+- `assets/`: logo resmi Caleris Masters dan Vreeo.
 - `scripts/validate.py`: pemeriksaan struktur dan kebutuhan utama halaman.
 - `.github/workflows/ci.yml`: alur pemeriksaan otomatis.
+- `vercel.json`: konfigurasi hosting statis.
 
-## Aset logo
+## Identitas visual dan aset
 
-Logo resmi Caleris Masters berada di:
-
-`assets/Add a heading_20260907_003952_0000.png`
-
-Logo tersebut digunakan langsung pada header dan footer. Jangan menggambar ulang atau mengganti bentuk logo. Aset logo Vreeo juga disimpan di folder `assets/` sebagai aset pendukung dan belum digunakan pada landing page.
-
-## Model mobil 3D
-
-Landing page menggunakan model mobil formula generik dari 3DAssets.dev:
-
-- Model: Current ground-effect racer.
-- Format: GLB.
-- Lisensi: CC0 1.0 Universal.
-- Sumber: https://3dassets.dev/assets/grand-prix-circuit-and-open-wheel-ground-effect-racer-02c3b491
-- Berkas model: https://cdn.3dassets.dev/assets/15179/v1/model.glb
-
-Model dimuat melalui komponen `model-viewer` dan diputar perlahan. Gerakan otomatis dinonaktifkan bila perangkat pengguna mengaktifkan preferensi pengurangan animasi.
+- Logo Caleris Masters asli digunakan pada header. File logo tidak digambar ulang.
+- Logo Vreeo digunakan sebagai sponsor pada livery mobil dan patch seragam pembalap.
+- Livery menggunakan hitam, emas, dan perak, dengan nama sponsor fiktif tambahan.
+- Nama sponsor fiktif pada livery dan seragam dibuat konsisten.
+- Model mobil dibuat sebagai geometri 3D orisinal yang terinspirasi proporsi regulasi sasis Formula 1 2026 pada gambar referensi. Model ini bukan CAD resmi pabrikan atau replika tim nyata.
+- Dua pembalap 3D fiktif ditampilkan dengan pose berdiri dan tangan terlipat. Keduanya memakai seragam dengan livery yang sama.
+- Animasi mobil, pembalap, garis sirkuit, dan cahaya latar berjalan halus. Preferensi `prefers-reduced-motion` tetap dihormati.
 
 ## Deployment Vercel
 
-Repositori menggunakan `vercel.json` dengan Framework Preset **Other**, tanpa perintah build atau instalasi dependensi. Output deployment diambil langsung dari direktori utama sehingga `index.html` dan folder `assets/` disajikan sebagai berkas statis.
+Repositori menggunakan `vercel.json` dengan Framework Preset **Other**, tanpa framework build atau instalasi dependensi. Output deployment diambil langsung dari direktori utama.
 
 ## Menjalankan secara lokal
 
-Landing page merupakan situs statis. Buka `index.html` melalui server statis lokal atau gunakan ekstensi server lokal pada editor.
+Buka `index.html` melalui server statis lokal. Scene 3D memerlukan koneksi internet untuk memuat modul Three.js dari CDN.
 
 ## Menjalankan pemeriksaan
 
@@ -56,16 +49,15 @@ Dari direktori utama repositori:
 
 ```bash
 python3 scripts/validate.py
+node --check hero-scene.js
 ```
 
-Pemeriksaan ini memastikan struktur halaman, logo, model 3D, tiga tombol utama, tema terang/gelap, dan dukungan pengurangan animasi tersedia.
+Pemeriksaan memverifikasi struktur halaman, logo, scene 3D, tiga tombol utama, tema terang/gelap, dan dukungan pengurangan animasi.
 
-## Batas integrasi saat ini
-
-Tiga tombol utama sudah disiapkan pada landing page:
+## Tombol landing page
 
 - **Rules** mengarah ke `/rules`.
 - **Login with Discord** mengarah ke `/auth/discord`.
-- **Join Our Community** saat ini mengarah ke halaman Discord umum.
+- **Join Our Community** masih menggunakan URL Discord umum dan perlu diganti dengan undangan komunitas resmi.
 
-Autentikasi Discord, tautan undangan komunitas resmi, dan halaman Rules masih memerlukan endpoint/URL final. Jangan menganggap integrasi tersebut sudah aktif sebelum konfigurasi resminya tersedia.
+Autentikasi Discord dan halaman Rules memerlukan endpoint final sebelum dapat diaktifkan.

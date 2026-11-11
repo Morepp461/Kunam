@@ -8,30 +8,28 @@
 <title>Caleris Masters</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://cdn.3dassets.dev">
 <link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Inter:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
-<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 <style>
-:root{color-scheme:dark;--bg:#08090b;--surface:rgba(9,11,14,.82);--text:#f4f3ef;--muted:#a5a8ad;--gold:#c6a33a;--gold-hi:#f1d77e;--silver:#c9cbd0;--line:rgba(198,163,58,.34);--header:#14202b;--button:#111820;--shade:#030405}
+:root{color-scheme:dark;--bg:#08090b;--surface:rgba(9,11,14,.82);--text:#f4f3ef;--muted:#a5a8ad;--gold:#c6a33a;--gold-hi:#f1d77e;--silver:#c9cbd0;--line:rgba(198,163,58,.34);--header:#14202b;--shade:#030405}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;font-family:Inter,Arial,sans-serif}
 body{height:100svh;min-height:500px;overflow:hidden;background:var(--bg);color:var(--text);transition:background .35s,color .35s}
-body.light{color-scheme:light;--bg:#e9e8e4;--surface:rgba(242,241,236,.88);--text:#191b1e;--muted:#5e636b;--line:rgba(153,119,32,.42);--header:#182633;--button:#17232e;--shade:#e9e8e4}
+body.light{color-scheme:light;--bg:#e9e8e4;--surface:rgba(242,241,236,.88);--text:#191b1e;--muted:#565c64;--line:rgba(153,119,32,.42);--header:#182633;--shade:#e9e8e4}
 .site{height:100svh;min-height:500px;display:grid;grid-template-rows:82px minmax(0,1fr) 58px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg)}
 header,footer{z-index:5;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,5vw,76px);background:var(--surface);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
-header{background:color-mix(in srgb,var(--header) 92%,transparent);border-bottom:1px solid var(--line)}
-.brand{display:flex;align-items:center;min-width:0;width:220px;height:58px;overflow:hidden;flex:none}
-.brand img{display:block;width:220px;height:220px;max-height:none;object-fit:contain;object-position:center;transform:translateY(-67px)}
+header{background:color-mix(in srgb,var(--header) 94%,transparent);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;width:176px;height:60px;overflow:hidden;flex:none}
+.brand img{display:block;width:176px;height:176px;max-width:none;object-fit:contain;transform:translateY(-56px)}
 .header-tools{display:flex;align-items:center;gap:20px}
-.platform-label{font:600 11px 'Barlow Condensed',sans-serif;letter-spacing:.25em;text-transform:uppercase;color:var(--muted)}
+.platform-label{font:600 11px 'Barlow Condensed',sans-serif;letter-spacing:.25em;text-transform:uppercase;color:#c3c7cc}
 .theme-switch{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);border-radius:99px;background:#0005}
 .theme-switch button{width:34px;height:32px;border:0;border-radius:50%;background:transparent;color:#b9bdc3;font-size:17px;cursor:pointer}
 .theme-switch button[aria-pressed=true]{background:linear-gradient(135deg,var(--gold-hi),var(--gold));color:#17130a}
 .scene{position:absolute;inset:82px 0 58px;z-index:-2;overflow:hidden;background:radial-gradient(ellipse at 70% 48%,#3a3530 0%,#151619 43%,#07080a 82%)}
 body.light .scene{background:radial-gradient(ellipse at 70% 48%,#c8c5bc 0%,#a8a8a3 42%,#e9e8e4 85%)}
-.track-art{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+.track-art{position:absolute;inset:0;width:100%;height:100%;opacity:.55;animation:trackDrift 28s ease-in-out infinite alternate}
 .track-art path{fill:none;stroke:#aeb4ba;stroke-opacity:.24;stroke-width:2.2;vector-effect:non-scaling-stroke}
-.track-art .kerb{stroke:var(--gold);stroke-opacity:.44;stroke-width:5}
+.track-art .kerb{stroke:var(--gold);stroke-opacity:.44;stroke-width:5;stroke-dasharray:30 18;animation:kerbFlow 18s linear infinite}
 .track-art .thin{stroke-width:1;stroke-opacity:.18}
 body.light .track-art path{stroke:#303b45;stroke-opacity:.25}
 body.light .track-art .kerb{stroke:#9b7925;stroke-opacity:.5}
@@ -43,7 +41,10 @@ main{position:relative;display:grid;grid-template-columns:minmax(310px,.8fr) min
 .kicker:before{content:"";width:34px;height:1px;background:var(--gold)}
 h1{margin:0;color:var(--text);font:400 clamp(28px,3.2vw,46px)/1.18 Audiowide,sans-serif;letter-spacing:-.045em;text-transform:uppercase;text-shadow:0 6px 28px #0008}
 h1 span{display:block;color:var(--silver);font-size:.55em;letter-spacing:.17em;margin-top:10px}
-body.light h1{ text-shadow:0 5px 22px #fff8}
+body.light h1{text-shadow:0 5px 22px #fff8}
+body.light h1 span{color:#50545b}
+body.light .kicker{color:#80620e}
+body.light .kicker:before{background:#9b7925}
 .description{max-width:390px;margin:19px 0 0;color:var(--muted);font-size:clamp(11px,1vw,13px);line-height:1.85;letter-spacing:.035em}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
 .action{min-height:50px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #d2d4d7a6;border-radius:4px;background:rgba(9,12,15,.8);color:#f5f3ed;text-decoration:none;text-transform:uppercase;font:700 13px 'Barlow Condensed',sans-serif;letter-spacing:.1em;white-space:nowrap;backdrop-filter:blur(10px);transition:transform .22s,border-color .22s,background .22s,box-shadow .22s}
@@ -52,22 +53,19 @@ body.light h1{ text-shadow:0 5px 22px #fff8}
 .action.primary{color:#17130a;border-color:#e1c05b;background:linear-gradient(135deg,#f0d77f,#b48a25);box-shadow:0 8px 24px #0005}
 .action.primary:hover{background:linear-gradient(135deg,#ffe9a0,#c39a36)}
 body.light .action:not(.primary){background:#17232e;color:#fff;border-color:#263847}
-.car-stage{position:absolute;inset:0 0 0 31%;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none}
-.car-stage model-viewer{width:100%;height:100%;background:transparent;--poster-color:transparent;outline:none;transform:translateY(2%) scale(1.04);filter:drop-shadow(0 28px 34px #0009);animation:carFloat 8s ease-in-out infinite}
-.car-stage:after{content:"";position:absolute;left:7%;right:2%;bottom:12%;height:8%;border-radius:50%;background:#0009;filter:blur(32px);z-index:-1}
-.car-fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font:600 11px 'Barlow Condensed',sans-serif;letter-spacing:.2em;text-transform:uppercase;opacity:0;pointer-events:none}
-footer{border-top:1px solid var(--line);gap:18px}
-.footer-brand{display:block;width:150px;height:40px;overflow:hidden;flex:none}
-.footer-brand img{display:block;width:150px;height:150px;max-width:none;transform:translateY(-46px)}
+.car-stage{position:absolute;inset:0 0 0 27%;z-index:1;pointer-events:none;overflow:hidden}
+.hero-canvas{display:block;width:100%;height:100%;outline:none}
+footer{border-top:1px solid var(--line);gap:18px;justify-content:flex-end}
 .footer-note{font:600 10px 'Barlow Condensed',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:right}
-@keyframes carFloat{0%,100%{transform:translateY(2%) scale(1.04)}50%{transform:translateY(-1%) scale(1.06)}}
 @keyframes trackLight{from{opacity:.35;transform:rotate(-5deg) translateX(-3%)}to{opacity:.8;transform:rotate(-2deg) translateX(3%)}}
+@keyframes trackDrift{from{transform:translate3d(-1.5%,.5%,0) scale(1)}to{transform:translate3d(1.5%,-.5%,0) scale(1.035)}}
+@keyframes kerbFlow{to{stroke-dashoffset:-420}}
 @keyframes copyIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:900px){.site{grid-template-rows:72px minmax(0,1fr) 54px}.scene{inset:72px 0 54px}header{padding:0 22px}.brand img{width:154px}.platform-label{display:none}main{grid-template-columns:1fr;padding:0 24px}.copy{align-self:end;padding:0 0 clamp(34px,8vh,70px);max-width:540px}.car-stage{inset:0 0 18% 12%;align-items:center}.car-stage model-viewer{transform:translateY(-7%) scale(1.08)}h1{font-size:clamp(29px,5vw,42px)}.description{max-width:360px}.actions{max-width:510px}.action{min-height:48px}.footer-mark{font-size:9px}}
-@media(max-width:560px){.site{grid-template-rows:64px minmax(0,1fr) 48px;min-height:480px}.scene{inset:64px 0 48px}header{padding:0 16px}.brand{width:190px;height:52px}.brand img{width:190px;height:190px;transform:translateY(-58px)}.header-tools{gap:0}.theme-switch button{width:31px;height:29px;font-size:15px}main{padding:0 18px}.car-stage{inset:0 -18% 26% -3%;align-items:flex-start;padding-top:3%}.car-stage model-viewer{height:74%;transform:translateY(0) scale(1.14)}.car-stage:after{bottom:32%;left:13%;right:4%}.copy{padding-bottom:clamp(22px,5vh,42px)}.kicker{font-size:10px;margin-bottom:12px;letter-spacing:.24em}h1{font-size:clamp(24px,7vw,34px)}h1 span{font-size:.5em;margin-top:7px}.description{font-size:10px;line-height:1.65;margin-top:12px;max-width:300px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}.action{min-height:45px;padding:0 9px;font-size:11px;gap:7px}.action.primary{grid-column:1/-1;grid-row:1}.action svg{width:15px;height:15px}footer{padding:0 16px}.footer-brand{width:120px;height:34px}.footer-brand img{width:120px;height:120px;transform:translateY(-37px)}.footer-note{font-size:8px;letter-spacing:.12em}}
-@media(max-height:620px) and (min-width:561px){.site{grid-template-rows:62px minmax(0,1fr) 44px}.scene{inset:62px 0 44px}.copy{padding:8px 0}.actions{margin-top:18px}.action{min-height:42px}.brand img{width:142px}}
-@media(max-height:560px){.site{min-height:0;grid-template-rows:56px minmax(0,1fr) 40px}.scene{inset:56px 0 40px}header{padding:0 18px}.brand{height:48px}.brand img{transform:translateY(-72px)}main{padding:0 24px}.copy{padding:8px 0}.kicker{margin-bottom:8px}.description{margin-top:8px;line-height:1.5}.actions{margin-top:14px}.action{min-height:38px}.car-stage{inset:0 0 0 30%}.car-stage model-viewer{height:100%}footer{padding:0 18px}}
-@media(max-height:560px) and (max-width:560px){.site{grid-template-rows:54px minmax(0,1fr) 36px}.scene{inset:54px 0 36px}header{padding:0 12px}.brand{width:160px;height:46px}.brand img{width:160px;height:160px;transform:translateY(-49px)}main{padding:0 14px}.car-stage{inset:0 -12% 24% -4%}.car-stage model-viewer{height:78%}.copy{padding-bottom:10px}.description{max-width:270px}.actions{margin-top:12px}.action{min-height:36px;font-size:10px}footer{padding:0 12px}.footer-brand{width:104px;height:30px}.footer-brand img{width:104px;height:104px;transform:translateY(-32px)}}
+@media(max-width:900px){.site{grid-template-rows:72px minmax(0,1fr) 54px}.scene{inset:72px 0 54px}header{padding:0 22px}.brand{width:158px;height:56px}.brand img{width:158px;height:158px;transform:translateY(-50px)}.platform-label{display:none}main{grid-template-columns:1fr;padding:0 24px}.copy{align-self:end;padding:0 0 clamp(34px,8vh,70px);max-width:540px}.car-stage{inset:0 0 24% 0}h1{font-size:clamp(29px,5vw,42px)}.description{max-width:360px}.actions{max-width:510px}.action{min-height:48px}}
+@media(max-width:560px){.site{grid-template-rows:64px minmax(0,1fr) 48px;min-height:480px}.scene{inset:64px 0 48px}header{padding:0 16px}.brand{width:150px;height:54px}.brand img{width:150px;height:150px;transform:translateY(-48px)}.header-tools{gap:0}.theme-switch button{width:31px;height:29px;font-size:15px}main{padding:0 18px}.car-stage{inset:0 0 29% 0}.copy{padding-bottom:clamp(22px,5vh,42px)}.kicker{font-size:10px;margin-bottom:12px;letter-spacing:.24em}h1{font-size:clamp(24px,7vw,34px)}h1 span{font-size:.5em;margin-top:7px}.description{font-size:10px;line-height:1.65;margin-top:12px;max-width:300px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}.action{min-height:45px;padding:0 9px;font-size:11px;gap:7px}.action.primary{grid-column:1/-1;grid-row:1}.action svg{width:15px;height:15px}footer{padding:0 16px}.footer-note{font-size:8px;letter-spacing:.12em}}
+@media(max-height:620px) and (min-width:561px){.site{grid-template-rows:62px minmax(0,1fr) 44px}.scene{inset:62px 0 44px}.copy{padding:8px 0}.actions{margin-top:18px}.action{min-height:42px}}
+@media(max-height:560px){.site{min-height:0;grid-template-rows:56px minmax(0,1fr) 40px}.scene{inset:56px 0 40px}header{padding:0 18px}.brand{height:48px}main{padding:0 24px}.copy{padding:8px 0}.kicker{margin-bottom:8px}.description{margin-top:8px;line-height:1.5}.actions{margin-top:14px}.action{min-height:38px}.car-stage{inset:0 0 0 24%}footer{padding:0 18px}}
+@media(max-height:560px) and (max-width:560px){.site{grid-template-rows:54px minmax(0,1fr) 36px}.scene{inset:54px 0 36px}header{padding:0 12px}.brand{width:138px;height:46px}.brand img{width:138px;height:138px;transform:translateY(-45px)}main{padding:0 14px}.car-stage{inset:0 0 28% 0}.copy{padding-bottom:10px}.description{max-width:270px}.actions{margin-top:12px}.action{min-height:36px;font-size:10px}footer{padding:0 12px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -97,18 +95,16 @@ footer{border-top:1px solid var(--line);gap:18px}
 <a class="action" href="https://discord.com/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M8 10h.01M16 10h.01M8 15c2.4 2 5.6 2 8 0"/></svg>Join Our Community</a>
 </nav>
 </div>
-<div class="car-stage" aria-label="Model mobil balap formula tiga dimensi">
-<model-viewer id="raceCar" src="https://cdn.3dassets.dev/assets/15179/v1/model.glb" alt="Mobil balap formula modern tiga dimensi" loading="eager" reveal="auto" camera-controls disable-zoom auto-rotate rotation-per-second="3deg" autoplay environment-image="neutral" exposure="1.12" shadow-intensity=".75" camera-orbit="32deg 72deg 8.5m" camera-target="0m 0.48m 0m" interaction-prompt="none"></model-viewer>
-</div>
+<div class="car-stage" aria-label="Mobil balap Caleris Masters dan dua pembalap 3D"></div>
 </main>
-<footer><a class="footer-brand" href="/" aria-label="Beranda Caleris Masters"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"></a><div class="footer-note">A Motorsport Roleplay Experience</div></footer>
+<footer><div class="footer-note">A Motorsport Roleplay Experience</div></footer>
 </div>
 <script>
-const light=document.getElementById('lightMode'),dark=document.getElementById('darkMode'),car=document.getElementById('raceCar');
+const light=document.getElementById('lightMode'),dark=document.getElementById('darkMode');
 function setTheme(theme){document.body.classList.toggle('light',theme==='light');light.setAttribute('aria-pressed',String(theme==='light'));dark.setAttribute('aria-pressed',String(theme==='dark'));try{localStorage.setItem('caleris-theme',theme)}catch{}}
 let saved='dark';try{saved=localStorage.getItem('caleris-theme')||'dark'}catch{}setTheme(saved);
 light.addEventListener('click',()=>setTheme('light'));dark.addEventListener('click',()=>setTheme('dark'));
-if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){car.removeAttribute('auto-rotate');car.removeAttribute('autoplay')}
 </script>
+<script type="module" src="/hero-scene.js"></script>
 </body>
 </html>
