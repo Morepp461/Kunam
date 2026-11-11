@@ -212,7 +212,7 @@ function makeDriver(accent, sideIndex){
   // Gold/silver sleeve stripes and chest badge.
   beam(body,[-.27,.57,.245],[-.08,.47,.33],.018,panel);
   beam(body,[.27,.57,.245],[.08,.47,.33],.018,silver);
-  const badge=mesh(new THREE.PlaneGeometry(.22,.12),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),body,[0,.66,.205]);
+  const badge=mesh(new THREE.PlaneGeometry(.22,.12),new THREE.MeshBasicMaterial({map:sponsorMap,side:THREE.DoubleSide}),body,[0,.66,.355]);
   badge.rotation.x=0;
   group.userData.body=body;
   group.userData.phase=sideIndex*1.8;
@@ -262,7 +262,7 @@ const observer=new ResizeObserver(resize); observer.observe(host); resize();
 
 function animate(){
   raf=requestAnimationFrame(animate);
-  const t=clock.getElapsedTime(),delta=Math.min(clock.getDelta(),.04);
+  const delta=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
   if(!reduceMotion){
     carRig.position.y=.035*Math.sin(t*.78);
     carRig.rotation.y=.052*Math.sin(t*.28);
