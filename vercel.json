@@ -1,7 +1,1 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "buildCommand": "node --check cinematic-motion.js && python3 -B scripts/validate.py",
-  "installCommand": "",
-  "outputDirectory": "."
-}
+{"$schema":"https://openapi.vercel.sh/vercel.json","framework":"vite","installCommand":"npm install","buildCommand":"npm run build","outputDirectory":"dist"}

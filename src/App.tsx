@@ -3,7 +3,7 @@ import type {ReactNode} from "react";
 import {Link,NavLink,Route,Routes,useLocation,useNavigate} from "react-router-dom";
 import {BookOpen,Check,ChevronLeft,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Sun,Users,X} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
-import {isSupabaseConfigured,missingSupabaseMessage,supabase} from "./lib/supabase";
+import {missingSupabaseMessage,supabase} from "./lib/supabase";
 
 type Kind="success"|"error"|"warning"|"info"; type Notice={id:number;kind:Kind;title:string;message?:string};
 const UI=createContext<{toast:(kind:Kind,title:string,message?:string)=>void;loading:(v:boolean)=>void}|null>(null);
