@@ -30,8 +30,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Periksa sintaks JavaScript scene 3D
-        run: node --check smoke-motion.js
+      - name: Periksa sintaks JavaScript motion cinematic
+        run: node --check cinematic-motion.js
 
       - name: Periksa versi Python
         run: python3 --version
