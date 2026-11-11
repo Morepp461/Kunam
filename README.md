@@ -4,51 +4,51 @@
 
 ## Status saat ini
 
-Landing page publik dirancang satu layar agar ringkas dan responsif pada komputer, tablet, serta ponsel. Hero menggunakan assets/Background.png sebagai visual utama, dengan lapisan asap procedural berbasis Canvas 2D. Tidak ada model 3D atau dependensi rendering 3D pada landing page.
+Landing page publik dirancang satu layar dan responsif pada komputer, tablet, serta ponsel. Hero menggunakan `assets/Background 2.png` dengan motion cinematic CSS dan Canvas 2D.
 
 ## Teknologi
 
-- HTML, CSS, dan JavaScript.
-- Canvas 2D untuk motion asap ringan.
-- Google Fonts untuk tipografi.
-- GitHub Actions untuk pemeriksaan otomatis.
-- Vercel untuk hosting statis.
-
-Belum ada integrasi Supabase pada tahap landing page ini.
+- HTML, CSS, dan JavaScript tanpa framework tambahan.
+- Canvas 2D untuk floating dust particles dalam loop 14 detik.
+- CSS keyframes untuk slow zoom 2,5%, spotlight, dan refleksi cahaya.
+- Vercel untuk hosting statis dan pemeriksaan build.
 
 ## Struktur proyek
 
-- index.html: landing page, gambar latar, kontrol tema, dan navigasi utama.
-- smoke-motion.js: partikel asap lembut dengan animasi Canvas 2D.
-- assets/Background.png: gambar utama hero.
-- assets/: logo Caleris Masters dan aset identitas visual.
-- scripts/validate.py: pemeriksaan struktur dan kebutuhan utama halaman.
-- .github/workflows/ci.yml: alur pemeriksaan otomatis.
-- vercel.json: konfigurasi hosting statis.
+- `index.html`: landing page, gambar latar, kontrol tema, dan navigasi utama.
+- `cinematic-motion.js`: dust particles halus dengan pergerakan periodik 14 detik.
+- `assets/Background 2.png`: gambar utama hero.
+- `assets/`: logo Caleris Masters dan aset identitas visual.
+- `scripts/validate.py`: pemeriksaan struktur halaman, aset, dan motion.
+- `vercel.json`: konfigurasi hosting statis serta perintah validasi build.
 
 ## Motion dan aksesibilitas
 
-- Asap bergerak perlahan naik dan menyebar di area bawah gambar.
-- Tekstur asap dibuat dari beberapa radial gradient yang lembut, bukan bentuk lingkaran keras.
+- Slow zoom 2,5% dengan loop 14 detik.
+- Floating dust particles halus dengan gerakan periodik.
+- Spotlight bergerak perlahan dari kiri atas.
+- Refleksi cahaya mobil dan lantai berubah secara subtle.
+- Foto asli tetap utuh; tidak ada asap, neon, atau distorsi objek.
 - Canvas menyesuaikan ukuran layar dan device pixel ratio hingga 2x.
-- Animasi berhenti saat tab tidak aktif dan menghormati prefers-reduced-motion.
-- Gambar latar tetap statis; hanya lapisan asap yang dianimasikan.
+- Animasi dust berhenti saat tab tidak aktif dan menghormati `prefers-reduced-motion`.
 
-## Deployment Vercel
+## Validasi dan deployment
 
-Repositori menggunakan vercel.json dengan Framework Preset Other, tanpa framework build atau instalasi dependensi. Output deployment diambil langsung dari direktori utama.
+Vercel menjalankan `node --check cinematic-motion.js` dan `python3 -B scripts/validate.py` sebagai build command sebelum deployment. Build dianggap valid hanya jika kedua pemeriksaan berhasil.
 
-## Menjalankan pemeriksaan
+GitHub Actions saat ini tidak dipakai karena runner repository berakhir sebelum job memperoleh runner ID atau menjalankan langkah apa pun. Pemeriksaan build dan QA dipusatkan pada pipeline Vercel agar deployment tidak tertahan oleh runner GitHub yang tidak tersedia.
+
+## Menjalankan pemeriksaan lokal
 
 ```bash
-python3 scripts/validate.py
-node --check smoke-motion.js
+node --check cinematic-motion.js
+python3 -B scripts/validate.py
 ```
 
 ## Tombol landing page
 
-- Rules mengarah ke /rules.
-- Login with Discord mengarah ke /auth/discord.
+- Rules mengarah ke `/rules`.
+- Login with Discord mengarah ke `/auth/discord`.
 - Join Our Community masih menggunakan URL Discord umum dan perlu diganti dengan undangan komunitas resmi.
 
 Autentikasi Discord dan halaman Rules memerlukan endpoint final sebelum dapat diaktifkan.

@@ -3,9 +3,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 HTML_PATH = ROOT / "index.html"
-SMOKE_PATH = ROOT / "smoke-motion.js"
+MOTION_PATH = ROOT / "cinematic-motion.js"
 ASSETS_DIR = ROOT / "assets"
-BACKGROUND_PATH = ASSETS_DIR / "Background.png"
+BACKGROUND_PATH = ASSETS_DIR / "Background 2.png"
 LOGO_PATH = ASSETS_DIR / "Add a heading_20260907_003952_0000.png"
 
 
@@ -17,32 +17,37 @@ class LandingPageParser(HTMLParser):
         self.theme_controls = set()
         self.header_logo = False
         self.background_image = False
-        self.smoke_canvas = False
-        self.smoke_script = False
+        self.dust_canvas = False
+        self.motion_script = False
+        self.scene_layers = set()
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
         self.tags.add(tag)
-        if tag == "a" and "action" in attrs.get("class", "").split():
+        classes = attrs.get("class", "").split()
+        if tag == "a" and "action" in classes:
             self.primary_actions += 1
         if tag == "button" and attrs.get("id") in {"lightMode", "darkMode"}:
             self.theme_controls.add(attrs["id"])
         if tag == "img" and attrs.get("src") == "/assets/Add%20a%20heading_20260907_003952_0000.png":
             self.header_logo = True
-        if tag == "img" and attrs.get("src") == "/assets/Background.png":
+        if tag == "img" and attrs.get("src") == "/assets/Background%202.png":
             self.background_image = True
-        if tag == "canvas" and "smoke-canvas" in attrs.get("class", "").split():
-            self.smoke_canvas = True
-        if tag == "script" and attrs.get("src") == "/smoke-motion.js":
-            self.smoke_script = True
+        if tag == "canvas" and "dust-canvas" in classes:
+            self.dust_canvas = True
+        if tag == "script" and attrs.get("src") == "/cinematic-motion.js":
+            self.motion_script = True
+        for layer in ("scene-light", "scene-reflection"):
+            if layer in classes:
+                self.scene_layers.add(layer)
 
 
 def main():
-    for path in (HTML_PATH, SMOKE_PATH, BACKGROUND_PATH, LOGO_PATH):
+    for path in (HTML_PATH, MOTION_PATH, BACKGROUND_PATH, LOGO_PATH):
         assert path.is_file() and path.stat().st_size > 0, f"File/aset tidak ada atau kosong: {path}"
 
     html = HTML_PATH.read_text(encoding="utf-8")
-    smoke = SMOKE_PATH.read_text(encoding="utf-8")
+    motion = MOTION_PATH.read_text(encoding="utf-8")
     page = LandingPageParser()
     page.feed(html)
     page.close()
@@ -51,16 +56,18 @@ def main():
     assert page.primary_actions == 3, f"Harus tepat 3 tombol utama, ditemukan {page.primary_actions}"
     assert page.theme_controls == {"lightMode", "darkMode"}, "Kontrol tema tidak lengkap"
     assert page.header_logo, "Logo Caleris Masters harus tampil di header"
-    assert page.background_image, "Background.png belum dipasang"
-    assert page.smoke_canvas and page.smoke_script, "Canvas atau script motion asap belum dimuat"
-    assert "hero-scene.js" not in html and "car-stage" not in html, "Scene 3D lama masih dipanggil"
-    assert "requestAnimationFrame(draw)" in smoke, "Animasi asap tidak berjalan"
-    assert "createRadialGradient" in smoke, "Tekstur asap volumetrik tidak dibuat"
-    assert "prefers-reduced-motion" in smoke, "Preferensi reduced motion harus dihormati"
+    assert page.background_image, "Background 2.png belum dipasang"
+    assert page.dust_canvas and page.motion_script, "Canvas dust atau script cinematic belum dimuat"
+    assert page.scene_layers == {"scene-light", "scene-reflection"}, "Lapisan spotlight/refleksi belum lengkap"
+    assert "cinematicZoom" in html and "14s" in html and "scale(1.025)" in html, "Slow zoom 2.5% / loop 14 detik belum tersedia"
+    assert "spotlightDrift" in html and "reflectionShift" in html, "Animasi spotlight/refleksi belum tersedia"
+    assert "LOOP_MS = 14000" in motion and "requestAnimationFrame(draw)" in motion, "Dust particles 14 detik belum aktif"
+    assert "prefers-reduced-motion" in motion, "Preferensi reduced motion harus dihormati"
     assert "localStorage" in html, "Preferensi tema tidak tersimpan"
     assert "@media(max-width:560px)" in html, "Layout mobile belum tersedia"
+    assert "smoke" not in html.lower() and "smoke" not in motion.lower(), "Efek asap harus dihapus"
 
-    print("QA statis berhasil: Background.png, logo, 3 tombol, tema, canvas asap, animasi, dan layout responsif.")
+    print("QA statis berhasil: Background 2.png, zoom cinematic, dust, spotlight, refleksi, tema, tombol, dan layout responsif.")
 
 
 if __name__ == "__main__":
