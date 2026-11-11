@@ -62,6 +62,7 @@ def main():
     assert "cinematicZoom" in html and "14s" in html and "scale(1.025)" in html, "Slow zoom 2.5% / loop 14 detik belum tersedia"
     assert "spotlightDrift" in html and "reflectionShift" in html, "Animasi spotlight/refleksi belum tersedia"
     assert "LOOP_MS = 14000" in motion and "requestAnimationFrame(draw)" in motion, "Dust particles 14 detik belum aktif"
+    assert "length: 44" in motion and "alpha: 0.12" in motion, "Dust particles harus terlihat pada ukuran layar normal"
     assert "prefers-reduced-motion" in motion, "Preferensi reduced motion harus dihormati"
     assert "localStorage" in html, "Preferensi tema tidak tersimpan"
     assert ".scene{position:absolute;inset:0;z-index:0" in html, "Scene tidak boleh tersembunyi di belakang background site"
