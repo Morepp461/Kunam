@@ -7,13 +7,13 @@
 
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const LOOP_MS = 14000;
-  const particles = Array.from({ length: 30 }, (_, i) => ({
+  const particles = Array.from({ length: 44 }, (_, i) => ({
     x: ((i * 0.61803398875) % 1),
     y: ((i * 0.41421356237 + 0.17) % 1),
-    radius: 0.55 + ((i * 7) % 10) / 10,
+    radius: 0.7 + ((i * 7) % 10) / 10,
     phase: i * 2.3999632297,
-    drift: 0.002 + ((i * 3) % 7) * 0.00045,
-    alpha: 0.08 + ((i * 5) % 8) * 0.012
+    drift: 0.003 + ((i * 3) % 7) * 0.00055,
+    alpha: 0.12 + ((i * 5) % 8) * 0.018
   }));
 
   let width = 1, height = 1, ratio = 1, raf = 0, startAt = 0;
@@ -37,7 +37,7 @@
     ctx.clearRect(0, 0, width, height);
     for (const p of particles) {
       const x = (p.x + Math.sin(angle + p.phase) * p.drift * 2.5) * width;
-      const y = (p.y + Math.sin(angle + p.phase * 1.31) * .012 + 1) % 1 * height;
+      const y = (p.y + Math.sin(angle + p.phase * 1.31) * .018 + 1) % 1 * height;
       const twinkle = .65 + .35 * Math.sin(angle + p.phase * 1.7);
       ctx.beginPath();
       ctx.fillStyle = `rgba(255,239,205,${p.alpha * twinkle})`;
