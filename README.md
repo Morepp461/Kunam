@@ -1,54 +1,67 @@
 # Caleris Masters
 
-Platform **Motorsport Roleplay** yang sedang dibangun ulang agar anggota tidak hanya melihat informasi, tetapi nantinya juga dapat melakukan aktivitas di dalam platform.
+**Caleris Masters** adalah platform Motorsport Roleplay yang sedang dibangun ulang dari situs informasi menjadi platform interaktif. Anggota nantinya dapat mengembangkan karier dan tim, mengajukan transaksi, serta menjalankan aktivitas lain sesuai peran masing-masing.
 
-## Status proyek
+## Status saat ini
 
-Saat ini repositori berisi fondasi **landing page** statis. Fitur interaktif anggota akan dikembangkan bertahap setelah fondasi dan kebutuhan teknisnya siap.
+Repositori ini sedang mengerjakan fondasi landing page publik. Halaman utama dirancang satu layar agar ringkas, responsif, dan dapat digunakan melalui komputer, tablet, maupun ponsel.
 
-## Teknologi saat ini
+## Teknologi
 
-- HTML untuk struktur halaman.
-- CSS untuk tampilan responsif dan tema gelap/terang.
-- JavaScript murni untuk interaksi tema.
+- HTML, CSS, dan JavaScript murni.
+- Google Fonts untuk tipografi.
+- Komponen `model-viewer` untuk menampilkan model mobil formula 3D.
 - GitHub Actions untuk pemeriksaan otomatis.
 
-Tidak ada framework atau dependensi runtime yang perlu dipasang untuk menjalankan landing page ini.
+Belum ada integrasi Supabase maupun konfigurasi deployment Vercel pada tahap ini.
 
-## Struktur folder
+## Struktur proyek
 
-- `index.html`: halaman utama.
-- `assets/`: tempat menyimpan logo dan aset visual proyek.
-- `scripts/validate.py`: pemeriksaan struktur landing page.
-- `.github/workflows/ci.yml`: konfigurasi pemeriksaan otomatis.
+- `index.html`: landing page.
+- `assets/`: logo resmi dan aset visual.
+- `scripts/validate.py`: pemeriksaan struktur dan kebutuhan utama halaman.
+- `.github/workflows/ci.yml`: alur pemeriksaan otomatis.
 
-## Menambahkan logo
+## Aset logo
 
-Unggah logo resmi Caleris Masters ke folder `assets/` dengan nama:
+Logo resmi Caleris Masters berada di:
 
-`caleris-logo.png`
+`assets/Add a heading_20260907_003952_0000.png`
 
-Halaman utama sudah menyiapkan referensi ke `/assets/caleris-logo.png`. **File logo sengaja tidak disertakan** agar logo asli dapat diunggah langsung oleh pemilik proyek.
+Logo tersebut digunakan langsung pada header. Jangan menggambar ulang atau mengganti bentuk logo. Aset logo Vreeo juga disimpan di folder `assets/` sebagai aset pendukung dan belum digunakan pada landing page.
+
+## Model mobil 3D
+
+Landing page menggunakan model mobil formula generik dari 3DAssets.dev:
+
+- Model: Current ground-effect racer.
+- Format: GLB.
+- Lisensi: CC0 1.0 Universal.
+- Sumber: https://3dassets.dev/assets/grand-prix-circuit-and-open-wheel-ground-effect-racer-02c3b491
+- Berkas model: https://cdn.3dassets.dev/assets/15179/v1/model.glb
+
+Model dimuat melalui komponen `model-viewer` dan diputar perlahan. Gerakan otomatis dinonaktifkan bila perangkat pengguna mengaktifkan preferensi pengurangan animasi.
 
 ## Menjalankan secara lokal
 
-Karena halaman ini masih statis, buka `index.html` melalui browser atau jalankan server statis lokal dari direktori proyek.
+Landing page merupakan situs statis. Buka `index.html` melalui server statis lokal atau gunakan ekstensi server lokal pada editor.
 
-## Pemeriksaan
+## Menjalankan pemeriksaan
 
-Jalankan perintah berikut dari direktori utama repositori:
+Dari direktori utama repositori:
 
 ```bash
-python scripts/validate.py
+python3 scripts/validate.py
 ```
 
-GitHub Actions juga menjalankan pemeriksaan tersebut saat ada perubahan pada branch utama atau pull request menuju `main`.
+Pemeriksaan ini memastikan struktur halaman, logo, model 3D, tiga tombol utama, tema terang/gelap, dan dukungan pengurangan animasi tersedia.
 
-## Integrasi yang belum diaktifkan
+## Batas integrasi saat ini
 
-- Login Discord dan callback autentikasi.
-- Tautan undangan komunitas resmi.
-- Halaman aturan resmi.
-- Integrasi backend dan database.
+Tiga tombol utama sudah disiapkan pada landing page:
 
-Integrasi tersebut tidak dianggap aktif sampai konfigurasi dan endpoint resminya tersedia.
+- **Rules** mengarah ke `/rules`.
+- **Login with Discord** mengarah ke `/auth/discord`.
+- **Join Our Community** saat ini mengarah ke halaman Discord umum.
+
+Autentikasi Discord, tautan undangan komunitas resmi, dan halaman Rules masih memerlukan endpoint/URL final. Jangan menganggap integrasi tersebut sudah aktif sebelum konfigurasi resminya tersedia.
