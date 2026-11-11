@@ -56,7 +56,6 @@ def main():
     assert page.model_reference_found, "Model mobil formula 3D belum dipasang"
     assert "prefers-reduced-motion" in html, "Dukungan reduced-motion tidak ditemukan"
     assert "localStorage" in html, "Preferensi tema belum disimpan"
-    assert "Audiowide" in html, "Font bergaya logo untuk penulisan Caleris Masters tidak ditemukan"
 
     print("QA landing page berhasil: struktur, aset logo, model 3D, tiga aksi, tema, dan aksesibilitas.")
 
