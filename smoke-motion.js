@@ -5,125 +5,79 @@
 
   const context = canvas.getContext("2d", { alpha: true, desynchronized: true });
   if (!context) return;
-
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const sprite = document.createElement("canvas");
-  sprite.width = sprite.height = 320;
-  const spriteContext = sprite.getContext("2d");
-  const puffs = [
-    [-.16, -.04, .48], [.12, -.1, .42], [-.02, .13, .58],
-    [.2, .14, .38], [-.22, .18, .4], [.02, .34, .5],
-    [.28, -.02, .3], [-.3, -.12, .28]
+  sprite.width = sprite.height = 420;
+  const paint = sprite.getContext("2d");
+  const clouds = [
+    [-.22, -.04, .43, .16], [.08, -.12, .48, .18], [.28, .04, .42, .14],
+    [-.08, .2, .55, .13], [.2, .27, .46, .15], [-.3, .28, .38, .12],
+    [.02, -.32, .36, .12], [.34, -.24, .34, .1]
   ];
-
-  puffs.forEach(([x, y, radius], index) => {
-    const gradient = spriteContext.createRadialGradient(
-      160 + x * 320, 160 + y * 320, 4,
-      160 + x * 320, 160 + y * 320, radius * 160
-    );
-    gradient.addColorStop(0, index % 3 === 0 ? "rgba(225,228,232,.18)" : "rgba(196,202,208,.14)");
-    gradient.addColorStop(.42, "rgba(174,181,189,.075)");
-    gradient.addColorStop(1, "rgba(150,158,168,0)");
-    spriteContext.fillStyle = gradient;
-    spriteContext.fillRect(0, 0, 320, 320);
+  clouds.forEach(([x, y, radius, alpha], index) => {
+    const cx = 210 + x * 300, cy = 210 + y * 300;
+    const gradient = paint.createRadialGradient(cx, cy, 5, cx, cy, radius * 210);
+    gradient.addColorStop(0, `rgba(224,229,234,${alpha})`);
+    gradient.addColorStop(.28, `rgba(204,211,219,${alpha * .72})`);
+    gradient.addColorStop(.62, `rgba(177,187,198,${alpha * .28})`);
+    gradient.addColorStop(1, "rgba(150,160,172,0)");
+    paint.fillStyle = gradient;
+    paint.fillRect(0, 0, 420, 420);
   });
 
-  let width = 1;
-  let height = 1;
-  let pixelRatio = 1;
-  let frame = 0;
-  let lastTime = 0;
+  let width = 1, height = 1, ratio = 1, raf = 0, previous = 0;
   let particles = [];
   const random = (min, max) => min + Math.random() * (max - min);
-
-  function createParticle(fromBottom = false) {
+  function makeParticle(initial = false) {
     return {
-      x: random(-.08, 1.08),
-      y: fromBottom ? random(.78, 1.08) : random(.56, 1.08),
-      size: random(.16, .34),
-      speed: random(.008, .021),
-      drift: random(-.012, .012),
-      phase: random(0, Math.PI * 2),
-      sway: random(.006, .022),
-      opacity: random(.38, .85),
-      rotation: random(-.5, .5),
-      rotationSpeed: random(-.035, .035)
+      x: random(-.08, 1.08), y: initial ? random(.57, 1.08) : random(.88, 1.12),
+      size: random(.22, .43), rise: random(.006, .014), drift: random(-.008, .008),
+      phase: random(0, Math.PI * 2), sway: random(.012, .03),
+      alpha: random(.2, .42), rotation: random(-.4, .4), spin: random(-.018, .018)
     };
   }
-
   function resize() {
-    const bounds = host.getBoundingClientRect();
-    width = Math.max(1, bounds.width);
-    height = Math.max(1, bounds.height);
-    pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(width * pixelRatio);
-    canvas.height = Math.round(height * pixelRatio);
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
-    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    particles = Array.from({ length: Math.max(18, Math.min(34, Math.round(width / 30))) }, () => createParticle());
+    const box = host.getBoundingClientRect();
+    width = Math.max(1, box.width); height = Math.max(1, box.height);
+    ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * ratio); canvas.height = Math.round(height * ratio);
+    canvas.style.width = width + "px"; canvas.style.height = height + "px";
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    particles = Array.from({length: Math.max(22, Math.min(42, Math.round(width / 24)))}, () => makeParticle(true));
   }
-
   function draw(time) {
-    frame = requestAnimationFrame(draw);
+    raf = requestAnimationFrame(draw);
     if (document.hidden) return;
-
-    const delta = Math.min((time - (lastTime || time)) / 1000, .04);
-    lastTime = time;
+    const dt = Math.min((time - (previous || time)) / 1000, .04);
+    previous = time;
     context.clearRect(0, 0, width, height);
     context.save();
     context.globalCompositeOperation = "screen";
-
-    const scaleBase = Math.min(width, height);
-    for (const particle of particles) {
-      particle.y -= particle.speed * delta;
-      particle.x += particle.drift * delta + Math.sin(time * .00013 + particle.phase) * particle.sway * delta;
-      particle.rotation += particle.rotationSpeed * delta;
-
-      if (particle.y < .48 || particle.x < -.28 || particle.x > 1.28) {
-        Object.assign(particle, createParticle(true));
-      }
-
-      const size = scaleBase * particle.size;
-      const x = particle.x * width + Math.sin(time * .00018 + particle.phase) * size * .12;
-      const y = particle.y * height;
-      context.globalAlpha = particle.opacity * (.72 + Math.sin(time * .0002 + particle.phase) * .12);
-      context.translate(x, y);
-      context.rotate(particle.rotation);
-      context.drawImage(sprite, -size * .5, -size * .34, size, size * .68);
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    const unit = Math.min(width, height);
+    for (const p of particles) {
+      p.y -= p.rise * dt;
+      p.x += (p.drift + Math.sin(time * .00016 + p.phase) * p.sway) * dt;
+      p.rotation += p.spin * dt;
+      if (p.y < .43 || p.x < -.3 || p.x > 1.3) Object.assign(p, makeParticle());
+      const size = unit * p.size;
+      const x = p.x * width + Math.sin(time * .0002 + p.phase) * size * .16;
+      const y = p.y * height;
+      context.globalAlpha = p.alpha * (.72 + Math.sin(time * .00024 + p.phase) * .2);
+      context.translate(x, y); context.rotate(p.rotation);
+      context.drawImage(sprite, -size * .5, -size * .36, size, size * .72);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
-
     context.restore();
   }
-
-  function stop() {
-    if (frame) cancelAnimationFrame(frame);
-    frame = 0;
-    lastTime = 0;
-  }
-
+  function stop() { if (raf) cancelAnimationFrame(raf); raf = 0; previous = 0; }
   function start() {
     stop();
-    if (reducedMotion.matches) {
-      context.clearRect(0, 0, width, height);
-      return;
-    }
-    frame = requestAnimationFrame(draw);
+    if (reducedMotion.matches) { context.clearRect(0, 0, width, height); return; }
+    raf = requestAnimationFrame(draw);
   }
-
   const observer = new ResizeObserver(resize);
-  observer.observe(host);
-  resize();
-  start();
-
+  observer.observe(host); resize(); start();
   reducedMotion.addEventListener?.("change", start);
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) stop();
-    else start();
-  });
-  window.addEventListener("pagehide", () => {
-    stop();
-    observer.disconnect();
-  }, { once: true });
+  document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
+  window.addEventListener("pagehide", () => { stop(); observer.disconnect(); }, {once:true});
 })();
