@@ -1,76 +1,112 @@
 <!doctype html>
 <html lang="id">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#08090b"><meta name="description" content="Caleris Masters — Motorsport Roleplay Platform">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08090b">
+<meta name="description" content="Caleris Masters — Motorsport Roleplay Platform">
 <title>Caleris Masters</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdn.3dassets.dev">
+<link href="https://fonts.googleapis.com/css2?family=Audiowide&family=Inter:wght@400;500;600;700;800&family=Barlow+Condensed:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=Inter:wght@400;500;600;700;800&display=swap');
-:root{color-scheme:dark;--bg:#08090b;--panel:rgba(8,9,11,.78);--text:#f4f2ec;--muted:#a5a5a5;--gold:#c6a43a;--gold2:#f0d67a;--silver:#c7c9cc;--line:rgba(198,164,58,.35);--header:#101923;--shadow:0 18px 70px #0009}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,Arial,sans-serif}body{height:100svh;overflow:hidden;background:var(--bg);color:var(--text);transition:background .35s,color .35s}
-body.light{color-scheme:light;--bg:#e9e8e4;--panel:rgba(245,244,239,.82);--text:#17191c;--muted:#62666c;--line:rgba(142,111,24,.38);--header:#17212b;--shadow:0 18px 70px #32302a24}
-.site{height:100svh;min-height:560px;display:grid;grid-template-rows:82px 1fr 66px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg)}
-.scene{position:absolute;inset:0;z-index:-2;overflow:hidden;background:radial-gradient(ellipse at 72% 40%,#9a5b38 0%,#282327 34%,#0a0b0e 76%)}
-.scene:before{content:"";position:absolute;inset:-5%;background-image:url('https://images.unsplash.com/photo-1773142181818-5842662aea51?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=85&w=2400');background-position:center 57%;background-size:cover;filter:brightness(.58) saturate(.72) contrast(1.08);transform:scale(1.06);animation:trackDrift 24s ease-in-out infinite alternate}
-.scene:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#050608 0%,#05060899 22%,transparent 52%,#05060845 78%,#050608 100%),linear-gradient(0deg,#050608 0%,transparent 26%,#05060855 100%),radial-gradient(ellipse at center,transparent 32%,#050608bb 100%)}
-body.light .scene:before{filter:brightness(.8) saturate(.58) contrast(.96)}body.light .scene:after{background:linear-gradient(90deg,#e9e8e4 0%,#e9e8e499 15%,transparent 52%,#e9e8e455 82%,#e9e8e4 100%),linear-gradient(0deg,#e9e8e4 0%,transparent 32%,#e9e8e455 100%),radial-gradient(ellipse at center,transparent 28%,#e9e8e4a8 100%)}
-.track-glow{position:absolute;z-index:-1;inset:auto -10% -32% -10%;height:48%;background:linear-gradient(90deg,transparent,#a52c27aa 30%,#d3a94b66 60%,transparent);filter:blur(85px);transform:rotate(-7deg);animation:glow 12s ease-in-out infinite alternate}
-header{height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(22px,5vw,76px);background:var(--panel);border-bottom:1px solid var(--line);backdrop-filter:blur(16px);z-index:3}
-.brand{display:flex;align-items:center;min-width:180px}.brand img{width:172px;height:auto;max-height:58px;object-fit:contain;object-position:left center}
-.header-right{display:flex;align-items:center;gap:20px}.edition{font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.22em;color:var(--muted);text-transform:uppercase}
-.theme-toggle{display:flex;align-items:center;gap:4px;border:1px solid var(--line);border-radius:99px;padding:4px;background:#0004}
-.theme-toggle button{width:35px;height:32px;border:0;border-radius:99px;background:transparent;color:var(--muted);font-size:16px;cursor:pointer;transition:.2s}
-.theme-toggle button[aria-pressed=true]{background:linear-gradient(135deg,var(--gold2),var(--gold));color:#17130a;box-shadow:0 3px 12px #0004}
-main{position:relative;display:flex;align-items:center;justify-content:center;padding:26px 22px 40px;min-height:0}
-.hero{width:min(100%,1050px);display:flex;flex-direction:column;align-items:center;text-align:center;transform:translateY(-1%);animation:heroIn 1s cubic-bezier(.2,.7,.2,1) both}
-.eyebrow{display:flex;align-items:center;gap:15px;color:var(--gold2);font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.28em;text-transform:uppercase;margin-bottom:12px}
-.eyebrow:before,.eyebrow:after{content:"";width:clamp(26px,5vw,74px);height:1px;background:linear-gradient(90deg,transparent,var(--gold))}
-.eyebrow:after{transform:rotate(180deg)}
-h1{margin:0;color:var(--text);font:900 clamp(52px,9vw,116px)/.82 'Barlow Condensed',Impact,sans-serif;letter-spacing:-.045em;text-transform:uppercase;text-shadow:0 7px 35px #0009}
-h1 span{display:block;color:var(--silver);font-size:.48em;letter-spacing:.34em;line-height:1.6;margin-left:.34em;text-shadow:0 4px 22px #000a}
-.tagline{margin:16px 0 0;color:var(--muted);font-size:clamp(9px,1.05vw,12px);font-weight:600;letter-spacing:.38em;text-transform:uppercase}
-.actions{display:flex;justify-content:center;align-items:center;gap:14px;margin-top:clamp(30px,5vh,54px);width:100%}
-.action{min-height:58px;padding:0 clamp(20px,3vw,38px);display:inline-flex;align-items:center;justify-content:center;gap:12px;border:1px solid #f4f2ecaa;border-radius:7px;background:#090a0ccc;color:#f7f5ef;text-decoration:none;text-transform:uppercase;font:700 15px 'Barlow Condensed',sans-serif;letter-spacing:.08em;white-space:nowrap;backdrop-filter:blur(10px);transition:transform .25s,border-color .25s,background .25s,box-shadow .25s}
-.action svg{width:19px;height:19px;flex:none}.action:hover{transform:translateY(-4px);border-color:var(--gold2);box-shadow:0 12px 28px #0006}
-.action.primary{min-width:260px;color:#17130a;border-color:#e0bd4e;background:linear-gradient(135deg,#f1d77e,#b98e21);box-shadow:0 9px 28px #0005}
-.action.primary:hover{background:linear-gradient(135deg,#ffe79a,#c79c2c)}
-body.light .action:not(.primary){background:#17212be8;border-color:#17212b;color:#fff}
-footer{height:66px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(22px,5vw,76px);border-top:1px solid var(--line);background:var(--panel);backdrop-filter:blur(16px);z-index:3}
-.footer-brand{display:flex;align-items:center;gap:18px;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.25em;text-transform:uppercase}
-.footer-brand strong{color:var(--gold2)}.footer-divider{height:20px;width:1px;background:var(--line)}
-.socials{display:flex;align-items:center;gap:19px}.socials a{color:var(--muted);display:grid;place-items:center;transition:color .2s,transform .2s}.socials a:hover{color:var(--gold2);transform:translateY(-2px)}.socials svg{width:18px;height:18px}
-@keyframes trackDrift{from{transform:scale(1.06) translate3d(-1%,0,0)}to{transform:scale(1.13) translate3d(1.2%,-1%,0)}}@keyframes glow{from{opacity:.45;transform:rotate(-7deg) translateX(-3%)}to{opacity:.8;transform:rotate(-4deg) translateX(3%)}}@keyframes heroIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(-1%)}}
-@media(max-width:760px){.site{grid-template-rows:68px 1fr 58px;min-height:520px}header{height:68px;padding:0 18px}.brand img{width:140px}.edition{display:none}.header-right{gap:0}main{padding:20px 18px 26px}.hero{transform:translateY(-3%)}.eyebrow{font-size:10px;letter-spacing:.18em}h1{font-size:clamp(48px,14vw,86px)}h1 span{font-size:.43em;letter-spacing:.27em}.tagline{max-width:300px;line-height:1.7;letter-spacing:.23em}.actions{flex-direction:column;gap:10px;margin-top:28px}.action,.action.primary{width:min(100%,330px);min-height:52px}.action{font-size:14px}footer{height:58px;padding:0 18px}.footer-brand{font-size:9px;gap:10px}.socials{gap:12px}.socials svg{width:16px;height:16px}.scene:before{background-position:57% center}body.light .scene:after{background:linear-gradient(90deg,#e9e8e4 0%,#e9e8e455 16%,transparent 60%,#e9e8e499 100%),linear-gradient(0deg,#e9e8e4 0%,transparent 30%,#e9e8e455 100%),radial-gradient(ellipse at center,transparent 18%,#e9e8e4aa 100%)}}
-@media(max-height:650px) and (min-width:761px){.site{grid-template-rows:64px 1fr 52px}header{height:64px}.brand img{width:145px}.actions{margin-top:22px}.action{min-height:50px}footer{height:52px}.hero{transform:translateY(0)}}
+:root{color-scheme:dark;--bg:#08090b;--surface:rgba(9,11,14,.82);--text:#f4f3ef;--muted:#a5a8ad;--gold:#c6a33a;--gold-hi:#f1d77e;--silver:#c9cbd0;--line:rgba(198,163,58,.34);--header:#14202b;--button:#111820;--shade:#030405}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;font-family:Inter,Arial,sans-serif}
+body{height:100svh;min-height:500px;overflow:hidden;background:var(--bg);color:var(--text);transition:background .35s,color .35s}
+body.light{color-scheme:light;--bg:#e9e8e4;--surface:rgba(242,241,236,.88);--text:#191b1e;--muted:#5e636b;--line:rgba(153,119,32,.42);--header:#182633;--button:#17232e;--shade:#e9e8e4}
+.site{height:100svh;min-height:500px;display:grid;grid-template-rows:82px minmax(0,1fr) 58px;position:relative;isolation:isolate;overflow:hidden;background:var(--bg)}
+header,footer{z-index:5;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,5vw,76px);background:var(--surface);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+header{border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;min-width:0}
+.brand img{display:block;width:178px;max-height:61px;height:auto;object-fit:contain;object-position:left center}
+.header-tools{display:flex;align-items:center;gap:20px}
+.platform-label{font:600 11px 'Barlow Condensed',sans-serif;letter-spacing:.25em;text-transform:uppercase;color:var(--muted)}
+.theme-switch{display:flex;align-items:center;gap:4px;padding:4px;border:1px solid var(--line);border-radius:99px;background:#0005}
+.theme-switch button{width:34px;height:32px;border:0;border-radius:50%;background:transparent;color:#b9bdc3;font-size:17px;cursor:pointer}
+.theme-switch button[aria-pressed=true]{background:linear-gradient(135deg,var(--gold-hi),var(--gold));color:#17130a}
+.scene{position:absolute;inset:82px 0 58px;z-index:-2;overflow:hidden;background:radial-gradient(ellipse at 70% 48%,#3a3530 0%,#151619 43%,#07080a 82%)}
+body.light .scene{background:radial-gradient(ellipse at 70% 48%,#c8c5bc 0%,#a8a8a3 42%,#e9e8e4 85%)}
+.track-art{position:absolute;inset:0;width:100%;height:100%;opacity:.55}
+.track-art path{fill:none;stroke:#aeb4ba;stroke-opacity:.24;stroke-width:2.2;vector-effect:non-scaling-stroke}
+.track-art .kerb{stroke:var(--gold);stroke-opacity:.44;stroke-width:5}
+.track-art .thin{stroke-width:1;stroke-opacity:.18}
+body.light .track-art path{stroke:#303b45;stroke-opacity:.25}
+body.light .track-art .kerb{stroke:#9b7925;stroke-opacity:.5}
+.scene:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--shade) 0%,color-mix(in srgb,var(--shade) 70%,transparent) 18%,transparent 52%,color-mix(in srgb,var(--shade) 25%,transparent) 78%,var(--shade) 100%),linear-gradient(0deg,var(--shade) 0%,transparent 26%,color-mix(in srgb,var(--shade) 45%,transparent) 100%),radial-gradient(ellipse at center,transparent 35%,var(--shade) 100%);z-index:2;pointer-events:none}
+.scene:after{content:"";position:absolute;inset:auto -10% -20%;height:42%;background:linear-gradient(90deg,transparent,#a77f2d33,#9c302b44,transparent);filter:blur(70px);transform:rotate(-5deg);animation:trackLight 13s ease-in-out infinite alternate}
+main{position:relative;display:grid;grid-template-columns:minmax(310px,.8fr) minmax(0,1.4fr);align-items:center;min-height:0;padding:0 clamp(18px,5vw,76px)}
+.copy{position:relative;z-index:3;max-width:570px;padding:26px 0 34px;animation:copyIn .9s ease both}
+.kicker{display:flex;align-items:center;gap:12px;margin:0 0 20px;color:var(--gold-hi);font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.32em;text-transform:uppercase}
+.kicker:before{content:"";width:34px;height:1px;background:var(--gold)}
+h1{margin:0;color:var(--text);font:400 clamp(28px,3.2vw,46px)/1.18 Audiowide,sans-serif;letter-spacing:-.045em;text-transform:uppercase;text-shadow:0 6px 28px #0008}
+h1 span{display:block;color:var(--silver);font-size:.55em;letter-spacing:.17em;margin-top:10px}
+body.light h1{ text-shadow:0 5px 22px #fff8}
+.description{max-width:390px;margin:19px 0 0;color:var(--muted);font-size:clamp(11px,1vw,13px);line-height:1.85;letter-spacing:.035em}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:34px}
+.action{min-height:50px;padding:0 20px;display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid #d2d4d7a6;border-radius:4px;background:rgba(9,12,15,.8);color:#f5f3ed;text-decoration:none;text-transform:uppercase;font:700 13px 'Barlow Condensed',sans-serif;letter-spacing:.1em;white-space:nowrap;backdrop-filter:blur(10px);transition:transform .22s,border-color .22s,background .22s,box-shadow .22s}
+.action svg{width:17px;height:17px;flex:none}
+.action:hover{transform:translateY(-3px);border-color:var(--gold-hi);box-shadow:0 12px 26px #0005}
+.action.primary{color:#17130a;border-color:#e1c05b;background:linear-gradient(135deg,#f0d77f,#b48a25);box-shadow:0 8px 24px #0005}
+.action.primary:hover{background:linear-gradient(135deg,#ffe9a0,#c39a36)}
+body.light .action:not(.primary){background:#17232e;color:#fff;border-color:#263847}
+.car-stage{position:absolute;inset:0 0 0 31%;display:flex;align-items:center;justify-content:center;z-index:1;pointer-events:none}
+.car-stage model-viewer{width:100%;height:100%;background:transparent;--poster-color:transparent;outline:none;transform:translateY(2%) scale(1.04);filter:drop-shadow(0 28px 34px #0009);animation:carFloat 8s ease-in-out infinite}
+.car-stage:after{content:"";position:absolute;left:7%;right:2%;bottom:12%;height:8%;border-radius:50%;background:#0009;filter:blur(32px);z-index:-1}
+.car-fallback{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font:600 11px 'Barlow Condensed',sans-serif;letter-spacing:.2em;text-transform:uppercase;opacity:0;pointer-events:none}
+footer{border-top:1px solid var(--line);gap:18px}
+.footer-mark{font:400 10px Audiowide,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:var(--silver)}
+.footer-mark span{color:var(--gold-hi)}
+.footer-note{font:600 10px 'Barlow Condensed',sans-serif;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);text-align:right}
+@keyframes carFloat{0%,100%{transform:translateY(2%) scale(1.04)}50%{transform:translateY(-1%) scale(1.06)}}
+@keyframes trackLight{from{opacity:.35;transform:rotate(-5deg) translateX(-3%)}to{opacity:.8;transform:rotate(-2deg) translateX(3%)}}
+@keyframes copyIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:900px){.site{grid-template-rows:72px minmax(0,1fr) 54px}.scene{inset:72px 0 54px}header{padding:0 22px}.brand img{width:154px}.platform-label{display:none}main{grid-template-columns:1fr;padding:0 24px}.copy{align-self:end;padding:0 0 clamp(34px,8vh,70px);max-width:540px}.car-stage{inset:0 0 18% 12%;align-items:center}.car-stage model-viewer{transform:translateY(-7%) scale(1.08)}h1{font-size:clamp(29px,5vw,42px)}.description{max-width:360px}.actions{max-width:510px}.action{min-height:48px}.footer-mark{font-size:9px}}
+@media(max-width:560px){.site{grid-template-rows:64px minmax(0,1fr) 48px;min-height:480px}.scene{inset:64px 0 48px}header{padding:0 16px}.brand img{width:136px;max-height:48px}.header-tools{gap:0}.theme-switch button{width:31px;height:29px;font-size:15px}main{padding:0 18px}.car-stage{inset:0 -18% 26% -3%;align-items:flex-start;padding-top:3%}.car-stage model-viewer{height:74%;transform:translateY(0) scale(1.14)}.car-stage:after{bottom:32%;left:13%;right:4%}.copy{padding-bottom:clamp(22px,5vh,42px)}.kicker{font-size:10px;margin-bottom:12px;letter-spacing:.24em}h1{font-size:clamp(24px,7vw,34px)}h1 span{font-size:.5em;margin-top:7px}.description{font-size:10px;line-height:1.65;margin-top:12px;max-width:300px}.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}.action{min-height:45px;padding:0 9px;font-size:11px;gap:7px}.action.primary{grid-column:1/-1;grid-row:1}.action svg{width:15px;height:15px}footer{padding:0 16px}.footer-mark{font-size:8px}.footer-note{font-size:8px;letter-spacing:.12em}}
+@media(max-height:620px) and (min-width:561px){.site{grid-template-rows:62px minmax(0,1fr) 44px}.scene{inset:62px 0 44px}.copy{padding:8px 0}.actions{margin-top:18px}.action{min-height:42px}.brand img{width:142px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
 <div class="site">
-<div class="scene" aria-hidden="true"></div><div class="track-glow" aria-hidden="true"></div>
 <header>
-<a class="brand" href="#" aria-label="Caleris Masters home"><img src="/assets/caleris-logo.png" alt="Caleris Masters"></a>
-<div class="header-right"><span class="edition">Motorsport Roleplay Platform</span><div class="theme-toggle" role="group" aria-label="Pilih tema"><button id="lightMode" aria-label="Mode terang" aria-pressed="false">☼</button><button id="darkMode" aria-label="Mode gelap" aria-pressed="true">☾</button></div></div>
+<a class="brand" href="/" aria-label="Beranda Caleris Masters"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"></a>
+<div class="header-tools"><span class="platform-label">Motorsport Roleplay Platform</span><div class="theme-switch" role="group" aria-label="Pilih tema"><button id="lightMode" type="button" aria-label="Mode terang" aria-pressed="false">☼</button><button id="darkMode" type="button" aria-label="Mode gelap" aria-pressed="true">☾</button></div></div>
 </header>
-<main><section class="hero" aria-labelledby="title">
-<div class="eyebrow">The race begins here</div>
-<h1 id="title">Caleris<span>Masters</span></h1>
-<p class="tagline">A Motorsport Roleplay Experience</p>
+<div class="scene" aria-hidden="true">
+<svg class="track-art" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+<path d="M-90 690 C180 660 185 360 430 330 S690 570 870 470 980 150 1220 160 1440 340 1700 220"/>
+<path class="kerb" d="M-90 715 C180 685 185 385 430 355 S690 595 870 495 980 175 1220 185 1440 365 1700 245"/>
+<path d="M-90 760 C150 735 230 430 430 405 S670 650 900 540 1020 225 1215 225 1450 410 1700 300"/>
+<path class="thin" d="M-90 560 C180 535 135 275 430 260 S720 490 850 405 960 90 1240 105 1470 270 1700 160"/>
+<path class="thin" d="M0 830 C250 800 310 570 500 550 S720 740 950 650 1100 330 1280 330 1500 510 1700 420"/>
+</svg>
+</div>
+<main>
+<div class="copy">
+<p class="kicker">The race begins here</p>
+<h1>Build your legacy<span>On and off the track</span></h1>
+<p class="description">A world where every decision shapes your career. Join the grid, develop your team, and write your own motorsport story.</p>
 <nav class="actions" aria-label="Aksi utama">
 <a class="action" href="/rules"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 5.5A3.5 3.5 0 0 1 7.5 2H20v18H7.5A3.5 3.5 0 0 0 4 23z"/><path d="M4 5.5v17A3.5 3.5 0 0 1 7.5 19H20"/></svg>Rules</a>
 <a class="action primary" href="/auth/discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.7 5.2a18 18 0 0 0-4.4-1.4l-.5 1a16.6 16.6 0 0 0-5.6 0l-.5-1a18 18 0 0 0-4.4 1.4C1.5 9.3.7 13.3 1.1 17.2a18 18 0 0 0 5.4 2.7l1.2-2a11 11 0 0 1-1.9-.9l.5-.4a12.8 12.8 0 0 0 11.4 0l.5.4a11 11 0 0 1-1.9.9l1.2 2a18 18 0 0 0 5.4-2.7c.5-4.5-.8-8.4-3.2-12zM8.5 14.8c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2zm7 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2z"/></svg>Login with Discord</a>
-<a class="action" href="https://discord.com/" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M8 10h.01M16 10h.01M8 15c2.4 2 5.6 2 8 0"/></svg>Join Our Community</a>
-</nav></section></main>
-<footer><div class="footer-brand"><span>Caleris Masters</span><span class="footer-divider"></span><span>Outlaws for <strong>Life.</strong></span></div><div class="socials">
-<a href="https://discord.com/" aria-label="Discord" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.7 5.2a18 18 0 0 0-4.4-1.4l-.5 1a16.6 16.6 0 0 0-5.6 0l-.5-1a18 18 0 0 0-4.4 1.4C1.5 9.3.7 13.3 1.1 17.2a18 18 0 0 0 5.4 2.7l1.2-2a11 11 0 0 1-1.9-.9l.5-.4a12.8 12.8 0 0 0 11.4 0l.5.4a11 11 0 0 1-1.9.9l1.2 2a18 18 0 0 0 5.4-2.7c.5-4.5-.8-8.4-3.2-12z"/></svg></a>
-<a href="https://instagram.com/" aria-label="Instagram" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg></a>
-<a href="https://youtube.com/" aria-label="YouTube" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23 7.1a3 3 0 0 0-2.1-2.1C19 4.5 12 4.5 12 4.5s-7 0-8.9.5A3 3 0 0 0 1 7.1 31 31 0 0 0 .5 12a31 31 0 0 0 .5 4.9 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .5-4.9 31 31 0 0 0-.5-4.9ZM9.5 15.5v-7l6 3.5z"/></svg></a>
-<a href="https://x.com/" aria-label="X" target="_blank" rel="noreferrer"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.6 22H2.4l7.3-8.4L1.9 2h6.5l4.5 6.8L18.9 2Zm-1.1 18h1.7L7.3 3.9H5.5z"/></svg></a>
-</div></footer></div>
+<a class="action" href="https://discord.com/" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 12a9 9 0 1 0 18 0 9 9 0 0 0-18 0Z"/><path d="M8 10h.01M16 10h.01M8 15c2.4 2 5.6 2 8 0"/></svg>Join Our Community</a>
+</nav>
+</div>
+<div class="car-stage" aria-label="Model mobil balap formula tiga dimensi">
+<model-viewer id="raceCar" src="https://cdn.3dassets.dev/assets/15179/v1/model.glb" alt="Mobil balap formula modern tiga dimensi" loading="eager" reveal="auto" camera-controls disable-zoom auto-rotate rotation-per-second="3deg" autoplay environment-image="neutral" exposure="1.12" shadow-intensity=".75" camera-orbit="32deg 72deg 8.5m" camera-target="0m 0.48m 0m" interaction-prompt="none"></model-viewer>
+</div>
+</main>
+<footer><div class="footer-mark">Caleris <span>Masters</span></div><div class="footer-note">A Motorsport Roleplay Experience</div></footer>
+</div>
 <script>
-const light=document.getElementById('lightMode'),dark=document.getElementById('darkMode');
+const light=document.getElementById('lightMode'),dark=document.getElementById('darkMode'),car=document.getElementById('raceCar');
 function setTheme(theme){document.body.classList.toggle('light',theme==='light');light.setAttribute('aria-pressed',String(theme==='light'));dark.setAttribute('aria-pressed',String(theme==='dark'));try{localStorage.setItem('caleris-theme',theme)}catch{}}
 let saved='dark';try{saved=localStorage.getItem('caleris-theme')||'dark'}catch{}setTheme(saved);
 light.addEventListener('click',()=>setTheme('light'));dark.addEventListener('click',()=>setTheme('dark'));
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){car.removeAttribute('auto-rotate');car.removeAttribute('autoplay')}
 </script>
-</body></html>
+</body>
+</html>
