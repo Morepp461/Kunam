@@ -266,6 +266,9 @@ const observer=new ResizeObserver(resize); observer.observe(host); resize();
 function animate(){
   raf=requestAnimationFrame(animate);
   const delta=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
+  const isLight=document.body.classList.contains("light");
+  scene.fog.color.set(isLight?0xe9e8e4:0x08090b);
+  groundMaterial.color.set(isLight?0xd8d5cc:0x080a0d);
   if(!reduceMotion){
     carRig.position.y=.035*Math.sin(t*.78);
     carRig.rotation.y=(host.clientWidth<600?Math.PI/3:0)+.052*Math.sin(t*.28);
