@@ -256,8 +256,8 @@ let raf=0;
 function resize(){
   const w=Math.max(1,host.clientWidth),h=Math.max(1,host.clientHeight);
   camera.aspect=w/h;
-  if(w<600){camera.fov=43;camera.position.set(3.9,4.25,12.7);camera.lookAt(-.35,1.15,0);}
-  else {camera.fov=34;camera.position.set(5.7,4.2,9.2);camera.lookAt(-.1,.9,0);}
+  if(w<600){camera.fov=43;camera.position.set(3.9,4.25,12.7);camera.lookAt(-.35,1.15,0);carRig.rotation.y=Math.PI/3;}
+  else {camera.fov=34;camera.position.set(5.7,4.2,9.2);camera.lookAt(-.1,.9,0);carRig.rotation.y=0;}
   camera.updateProjectionMatrix();renderer.setSize(w,h,false);
 }
 const observer=new ResizeObserver(resize); observer.observe(host); resize();
@@ -267,7 +267,7 @@ function animate(){
   const delta=Math.min(clock.getDelta(),.04),t=clock.elapsedTime;
   if(!reduceMotion){
     carRig.position.y=.035*Math.sin(t*.78);
-    carRig.rotation.y=.052*Math.sin(t*.28);
+    carRig.rotation.y=(host.clientWidth<600?Math.PI/3:0)+.052*Math.sin(t*.28);
     car.rotation.y+=delta*Math.PI/60;
     driverA.position.y=.025*Math.sin(t*1.05);
     driverB.position.y=.025*Math.sin(t*1.05+1.8);
