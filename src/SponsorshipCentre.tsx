@@ -5,6 +5,7 @@ import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
 type Member={id:string;role:string|null;team_id:string|null;character_name:string|null};
+type Sponsor={id:string;name:string};
 type Offer={id:string;sponsor_id:string;target_kind:string;target_member_id:string|null;target_team_id:string|null;season_id:string;proposed_amount:number;terms:Record<string,unknown>;status:string;expires_at:string|null};
 type Revision={id:string;offer_id:string;actor_kind:string;amount:number;terms:Record<string,unknown>;response:string;created_at:string};
 type Contract={id:string;sponsor_id:string;target_kind:string;season_id:string;contract_amount:number;terms:Record<string,unknown>;status:string;started_at:string};
@@ -13,25 +14,26 @@ type Story={id:string;contract_id:string;event_type:string;headline:string;body:
 type Payout={id:string;contract_id:string;target_id:string|null;amount:number;description:string;paid_at:string};
 const cash=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 export default function SponsorshipCentre({session}:{session:Session}){
- const [member,setMember]=useState<Member|null>(null),[offers,setOffers]=useState<Offer[]>([]),[revisions,setRevisions]=useState<Revision[]>([]);
+ const [member,setMember]=useState<Member|null>(null),[offers,setOffers]=useState<Offer[]>([]),[revisions,setRevisions]=useState<Revision[]>([]),[sponsors,setSponsors]=useState<Sponsor[]>([]);
  const [contracts,setContracts]=useState<Contract[]>([]),[targets,setTargets]=useState<Target[]>([]),[stories,setStories]=useState<Story[]>([]),[payouts,setPayouts]=useState<Payout[]>([]);
  const [counterId,setCounterId]=useState<string|null>(null),[counterAmount,setCounterAmount]=useState(""),[counterTerms,setCounterTerms]=useState("");
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe||!p?.member_id){setMember(null);setLoading(false);setNotice(pe?.message||"Akun belum terhubung ke member.");return}
-  const [m,o,r,c,t,s,pa]=await Promise.all([
+  const [m,o,r,c,t,s,pa,sp]=await Promise.all([
    supabase.from("members").select("id,role,team_id,character_name").eq("id",p.member_id).maybeSingle(),
    supabase.from("caleris_sponsorship_offers").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_sponsorship_offer_revisions").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_sponsorship_contracts").select("*").order("started_at",{ascending:false}),
    supabase.from("caleris_sponsorship_targets").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_sponsorship_story_events").select("*").order("created_at",{ascending:false}),
-   supabase.from("caleris_sponsorship_payouts").select("*").order("paid_at",{ascending:false})
+   supabase.from("caleris_sponsorship_payouts").select("*").order("paid_at",{ascending:false}),
+   supabase.from("caleris_sponsors").select("id,name")
   ]);
-  const err=[m.error,o.error,r.error,c.error,t.error,s.error,pa.error].find(Boolean);if(err)setNotice(err.message);
+  const err=[m.error,o.error,r.error,c.error,t.error,s.error,pa.error,sp.error].find(Boolean);if(err)setNotice(err.message);
   setMember(m.data as Member|null);setOffers((o.data||[]) as Offer[]);setRevisions((r.data||[]) as Revision[]);
-  setContracts((c.data||[]) as Contract[]);setTargets((t.data||[]) as Target[]);setStories((s.data||[]) as Story[]);setPayouts((pa.data||[]) as Payout[]);
+  setContracts((c.data||[]) as Contract[]);setTargets((t.data||[]) as Target[]);setStories((s.data||[]) as Story[]);setPayouts((pa.data||[]) as Payout[]);setSponsors((sp.data||[]) as Sponsor[]);
   setLoading(false);
  },[session.user.id]);
  useEffect(()=>{void refresh()},[refresh]);
@@ -44,7 +46,7 @@ export default function SponsorshipCentre({session}:{session:Session}){
   setNotice(action==="accept"?"Offer diterima. Kontrak sponsorship aktif.":action==="reject"?"Offer ditolak.":"Counter-offer dikirim kepada sponsor untuk ditinjau Admin.");
   setCounterId(null);setCounterAmount("");setCounterTerms("");await refresh();
  };
- const sponsorName=(id:string)=>offers.find(o=>o.sponsor_id===id)?.sponsor_id||id;
+ const sponsorName=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
  return <section className="workspace sponsorship-centre">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
   <header className="page-heading"><span className="section-eyebrow">MEMBER WORKSPACE · SPONSORSHIP</span><h1 className="page-title">Sponsorship</h1><p className="page-description">Lihat sponsor offer, negosiasi kontrak, target, bonus, payout, dan storyline yang terkait dengan karakter atau tim kamu.</p></header>
