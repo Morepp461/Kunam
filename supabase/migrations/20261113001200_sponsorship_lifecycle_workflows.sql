@@ -34,6 +34,14 @@ on public.caleris_sponsorship_offer_revisions for select to authenticated using 
  or exists(select 1 from public.caleris_sponsorship_offers o join public.profiles p on p.user_id=(select auth.uid()) and p.member_id=o.target_member_id where o.id=offer_id)
  or exists(select 1 from public.caleris_sponsorship_offers o join public.profiles p on p.user_id=(select auth.uid()) join public.members m on m.id=p.member_id and m.team_id=o.target_team_id where o.id=offer_id)
 );
+drop policy if exists "Sponsors visible to authenticated" on public.caleris_sponsors;
+create policy "Sponsors visible to active members and historical participants"
+on public.caleris_sponsors for select to authenticated using (
+ is_active or public.is_caleris_fia_or_admin()
+ or exists(select 1 from public.caleris_sponsorship_offers o join public.profiles p on p.user_id=(select auth.uid()) and p.member_id=o.target_member_id where o.sponsor_id=caleris_sponsors.id)
+ or exists(select 1 from public.caleris_sponsorship_offers o join public.profiles p on p.user_id=(select auth.uid()) join public.members m on m.id=p.member_id and m.team_id=o.target_team_id where o.sponsor_id=caleris_sponsors.id)
+);
+
 create policy "Sponsorship payouts visible to participants and Admin"
 on public.caleris_sponsorship_payouts for select to authenticated using (
  public.is_caleris_fia_or_admin()
