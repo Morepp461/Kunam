@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {ArrowLeft,ArrowUpRight,RefreshCw,Send,Handshake,Clock3} from "lucide-react";
+import {ArrowLeft,RefreshCw,Send,Clock3} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -35,7 +35,6 @@ export default function DriverTransferMarket({session}:{session:Session}){
  const drivers=useMemo(()=>members.filter(m=>m.role==="Driver"&&m.team_id&&m.team_id!==ownTeamId),[members,ownTeamId]);
  const driverName=(id:string)=>members.find(m=>m.id===id)?.character_name||"Driver";
  const teamName=(id:string)=>teams.find(t=>t.id===id)?.name||"Team";
- const offerById=(id:string)=>offers.find(o=>o.id===id);
  const lastOffer=(id:string)=>offers.filter(o=>o.negotiation_id===id).sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime())[0];
  const start=async()=>{
   if(!supabase||!driverId)return;const amount=Number(offerAmount);
