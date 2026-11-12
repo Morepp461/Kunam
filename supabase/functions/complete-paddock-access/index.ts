@@ -1,12 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const requestOrigin = (req: Request) => req.headers.get("Origin") ?? "";
+const isAllowedOrigin = (origin: string) => origin === "http://localhost:5173" || origin === "https://calerismastersnewgen-mu.vercel.app" || /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+const corsHeadersFor = (origin: string) => ({
+  "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? origin : "https://calerismastersnewgen-mu.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
-};
+  "Vary": "Origin",
+});
 
 const json = (status: number, body: Record<string, unknown>) =>
   new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -25,6 +28,8 @@ function ageOnToday(dateOfBirth: string): number | null {
 }
 
 Deno.serve(async (req: Request) => {
+  const corsHeaders = corsHeadersFor(requestOrigin(req));
+  if (!isAllowedOrigin(requestOrigin(req))) return json(403, { error: "Origin not allowed." });
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "Method not allowed" });
 
@@ -91,8 +96,12 @@ Deno.serve(async (req: Request) => {
     });
     if (!verifyResponse.ok) return json(502, { error: "Cloudflare verification service is unavailable." });
     const verification = await verifyResponse.json();
-    if (verification.success !== true) {
+    if (verification.success !== true || (verification.action && verification.action !== "paddock_access")) {
       return json(403, { error: "Cloudflare verification failed. Please try again." });
+    }
+    const allowedHostnames = (Deno.env.get("TURNSTILE_ALLOWED_HOSTNAMES") ?? "calerismastersnewgen-mu.vercel.app,localhost").split(",").map((host) => host.trim()).filter(Boolean);
+    if (verification.hostname && !allowedHostnames.includes(verification.hostname)) {
+      return json(403, { error: "Cloudflare verification hostname is not allowed." });
     }
 
     const adminClient = createClient(supabaseUrl, adminKey, {
