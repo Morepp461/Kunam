@@ -116,7 +116,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
  const {toast,loading}=useUI();const navigate=useNavigate();
  const [avatarFile,setAvatarFile]=useState<File|null>(null),[avatarPreview,setAvatarPreview]=useState(""),[avatarEditing,setAvatarEditing]=useState(false),[cropX,setCropX]=useState(50),[cropY,setCropY]=useState(50);
  const originalAvatarFileRef=useRef<File|null>(null);
- const [firstName,setFirstName]=useState(""),[lastName,setLastName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState("");
+ const [firstName,setFirstName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState("");
  const [privacyAccepted,setPrivacyAccepted]=useState(false),[turnstileToken,setTurnstileToken]=useState(""),[saving,setSaving]=useState(false);
  const [errors,setErrors]=useState<Record<string,string>>({});
  const widgetContainer=useRef<HTMLDivElement|null>(null),widgetId=useRef<string|null>(null),avatarStageRef=useRef<HTMLDivElement|null>(null),avatarImageRef=useRef<HTMLImageElement|null>(null),avatarDragRef=useRef<{x:number;y:number;cropX:number;cropY:number}|null>(null);
@@ -158,7 +158,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
    const path=`${session.user.id}/paddock-${crypto.randomUUID()}.${ext}`;
    const {error:uploadError}=await supabase.storage.from("profile-avatars").upload(path,croppedAvatar,{upsert:false,contentType:croppedAvatar.type});
    if(uploadError)throw new Error(uploadError.message);
-   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{turnstileToken,avatarPath:path,firstName,lastName,dateOfBirth,nickname,preferredRole,privacyAccepted}});
+   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{turnstileToken,avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,privacyAccepted}});
    if(error)throw new Error(error.message);
    if(!data?.success)throw new Error(data?.error||"Paddock Access gagal disimpan.");
    await onComplete();toast("success","Paddock Access disetujui","Profil akun berhasil dibuat.");navigate("/dashboard",{replace:true});
