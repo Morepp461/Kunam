@@ -30,7 +30,7 @@ begin
   end if;
 
   if tg_op='UPDATE' and old.source_type='wdc' then
-    if v_context not in ('finalize','config_sync') then
+    if v_context is distinct from 'finalize' and v_context is distinct from 'config_sync' then
       raise exception 'Catatan WDC hanya dapat diperbarui oleh finalisasi juara atau sinkronisasi konfigurasi Admin.';
     end if;
 
