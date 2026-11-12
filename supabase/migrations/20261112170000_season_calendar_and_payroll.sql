@@ -473,3 +473,86 @@ revoke all on function public.admin_process_pending_economy_payroll(uuid) from p
 grant execute on function public.admin_process_pending_economy_payroll(uuid) to service_role;
 revoke all on function public.process_license_round(uuid) from public,anon,service_role;
 grant execute on function public.process_license_round(uuid) to authenticated;
+
+create unique index season_calendar_order_unique on public.season_calendar_periods(season_id,sort_order);
+
+create or replace function private.validate_period_round_count()
+returns trigger language plpgsql set search_path=''
+as $$
+declare v_period_id uuid;v_division_id uuid;v_count integer;v_type text;
+begin
+  v_period_id:=case when tg_op='DELETE' then old.period_id else new.period_id end;
+  v_division_id:=case when tg_op='DELETE' then old.season_division_id else new.season_division_id end;
+  select period_type into v_type from public.season_calendar_periods where id=v_period_id;
+  if v_type='race_period' then
+    select count(*) into v_count from public.season_period_rounds
+    where period_id=v_period_id and season_division_id=v_division_id;
+    if v_count not between 3 and 5 then
+      raise exception 'Setiap Race Period harus berisi 3 sampai 5 round untuk divisi terkait.';
+    end if;
+  end if;
+  return null;
+end;
+$$;
+create constraint trigger season_period_round_count_check
+after insert or update or delete on public.season_period_rounds
+deferrable initially deferred
+for each row execute function private.validate_period_round_count();
+
+-- Keep the existing lifetime-WDC validation intact; only widen its operator permission to FIA/Admin.
+do $$
+declare v_definition text;
+begin
+  v_definition:=pg_get_functiondef('public.finalize_license_division(uuid)'::regprocedure);
+  v_definition:=replace(v_definition,
+    'if not exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())) then',
+    'if not public.is_caleris_fia_or_admin() then');
+  if v_definition=pg_get_functiondef('public.finalize_license_division(uuid)'::regprocedure) then
+    raise exception 'Could not update FIA authorization for WDC finalization.';
+  end if;
+  execute v_definition;
+end;
+$$;
+
+alter table public.economy_payroll_claims drop constraint economy_payroll_claims_status_check;
+alter table public.economy_payroll_claims add constraint economy_payroll_claims_status_check
+check(status in ('pending','paid','reversed'));
+create or replace function private.guard_economy_payroll_claim()
+returns trigger language plpgsql set search_path=''
+as $$
+begin
+  if tg_op='DELETE' then raise exception 'Payroll claims cannot be deleted.'; end if;
+  if new.id is distinct from old.id or new.season_id is distinct from old.season_id
+    or new.period_id is distinct from old.period_id or new.team_id is distinct from old.team_id
+    or new.member_id is distinct from old.member_id or new.annual_salary is distinct from old.annual_salary
+    or new.period_count is distinct from old.period_count or new.amount is distinct from old.amount
+    or new.created_at is distinct from old.created_at then
+    raise exception 'Payroll claim identity and amount are immutable.';
+  end if;
+  if not ((old.status='pending' and new.status='paid') or (old.status='paid' and new.status='reversed')) then
+    raise exception 'Invalid payroll claim status transition.';
+  end if;
+  return new;
+end;
+$$;
+create trigger economy_payroll_claim_guard
+before update or delete on public.economy_payroll_claims
+for each row execute function private.guard_economy_payroll_claim();
+
+-- Mark payroll claims reversed when their immutable ledger transaction is reversed.
+do $$
+declare v_definition text;
+begin
+  v_definition:=pg_get_functiondef('public.admin_reverse_economy_transaction(uuid,uuid)'::regprocedure);
+  v_definition:=replace(v_definition,
+    'update public.economy_reward_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid'';',
+    'update public.economy_reward_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid''; update public.economy_payroll_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid'';');
+  if v_definition=pg_get_functiondef('public.admin_reverse_economy_transaction(uuid,uuid)'::regprocedure) then
+    raise exception 'Could not extend reversal handler for payroll claims.';
+  end if;
+  execute v_definition;
+end;
+$$;
+
+revoke all on function private.validate_period_round_count() from public,anon,authenticated,service_role;
+revoke all on function private.guard_economy_payroll_claim() from public,anon,authenticated,service_role;
