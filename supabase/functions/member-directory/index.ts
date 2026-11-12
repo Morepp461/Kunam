@@ -130,7 +130,31 @@ Deno.serve(async (req: Request) => {
         ].join(","))
         .limit(10);
       if (error) return respond(500, { error: "Pencarian member gagal." });
-      const members = await Promise.all((profiles ?? []).map((p) => withAvatar(p as ProfileRow)));
+
+      const [memberMatches, teamMatches] = await Promise.all([
+        admin.from("members").select("id").or([`character_name.ilike.${pattern}`, `member_code.ilike.${pattern}`, `role.ilike.${pattern}`].join(",")).limit(30),
+        admin.from("teams").select("id").ilike("name", pattern).limit(20),
+      ]);
+      const matchedMemberIds = new Set<string>((memberMatches.data ?? []).map((row) => row.id));
+      const matchedTeamIds = (teamMatches.data ?? []).map((row) => row.id);
+      if (matchedTeamIds.length) {
+        const { data: teamMembers } = await admin.from("members").select("id").in("team_id", matchedTeamIds).limit(30);
+        (teamMembers ?? []).forEach((row) => matchedMemberIds.add(row.id));
+      }
+      const existingProfileIds = new Set<string>((profiles ?? []).map((row) => row.public_member_id));
+      const linkedMemberIds = (profiles ?? []).map((row) => row.member_id).filter(Boolean);
+      const searchMemberIds = [...matchedMemberIds].filter((id) => !linkedMemberIds.includes(id));
+      let linkedProfiles: ProfileRow[] = [];
+      if (searchMemberIds.length) {
+        const { data: matches } = await admin.from("profiles")
+          .select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
+          .in("member_id", searchMemberIds);
+        linkedProfiles = (matches ?? []) as ProfileRow[];
+      }
+      const mergedProfiles = [...(profiles ?? []), ...linkedProfiles]
+        .filter((row, index, rows) => rows.findIndex((item) => item.public_member_id === row.public_member_id) === index)
+        .slice(0, 10);
+      const members = await Promise.all(mergedProfiles.map((p) => withAvatar(p as ProfileRow)));
 
       let contentQuery = admin.from("site_content").select("slug,content,published");
       if (!isAdmin) contentQuery = contentQuery.eq("published", true);
