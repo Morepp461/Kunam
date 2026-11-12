@@ -1,4 +1,4 @@
-import {createContext,useCallback,useContext,useEffect,useMemo,useState} from "react";
+import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from "react";
 import type {ChangeEvent,ReactNode} from "react";
 import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate} from "react-router-dom";
 import {Activity,ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText} from "lucide-react";
@@ -8,7 +8,9 @@ import "./workspace.css";
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
-type AccountProfile={user_id:string;member_id:string|null;avatar_url:string|null;web_nickname:string|null;driver_nickname:string|null};
+type AccountProfile={user_id:string;member_id:string|null;avatar_url:string|null;web_nickname:string|null;driver_nickname:string|null;first_name:string|null;last_name:string|null;date_of_birth:string|null;preferred_role:string|null;onboarding_completed:boolean;privacy_accepted_at:string|null};
+type TurnstileApi={render:(container:HTMLElement,options:{sitekey:string;theme:"dark";size:"normal";action:string;callback:(token:string)=>void;"expired-callback":()=>void;"error-callback":()=>void;})=>string;remove:(id:string)=>void;reset:(id:string)=>void;};
+declare global { interface Window { turnstile?:TurnstileApi } }
 type MemberRecord={id:string;member_code:string|null;character_name:string|null;role:string|null;license:string|null;team_id:string|null;balance:number|null};
 type TeamRecord={id:string;name:string};
 type ContractRecord={id:string;duration_label:string|null;starts_on:string|null;ends_on:string|null;salary:number|null;target:unknown;release_clause:number|null;status:string};
@@ -24,36 +26,39 @@ function GlobalUI({children}:{children:ReactNode}){
 export default function App(){return <GlobalUI><Application/></GlobalUI>}
 function Application(){
  const [session,setSession]=useState<Session|null>(null),[authReady,setAuthReady]=useState(false),[theme,setTheme]=useState<"dark"|"light">(()=>{try{return localStorage.getItem("caleris-theme")==="light"?"light":"dark"}catch{return "dark"}});
- const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false);
+ const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false),[isAdmin,setIsAdmin]=useState(false);
  const location=useLocation();const {toast,loading}=useUI();
  const refreshProfile=useCallback(async()=>{
-  if(!supabase||!session){setProfile(null);setProfileReady(true);return;}
+  if(!supabase||!session){setProfile(null);setIsAdmin(false);setProfileReady(true);return;}
   setProfileReady(false);
-  const {data,error}=await supabase.from("profiles").select("user_id,member_id,avatar_url,web_nickname,driver_nickname").eq("user_id",session.user.id).maybeSingle();
-  if(error){toast("error","Profil gagal dimuat",error.message);setProfileReady(true);return;}
-  if(data){setProfile(data as AccountProfile);}
-  else {
-   const {data:created,error:createError}=await supabase.from("profiles").insert({user_id:session.user.id}).select("user_id,member_id,avatar_url,web_nickname,driver_nickname").single();
-   if(createError){toast("error","Profil belum dapat dibuat",createError.message);}
-   else setProfile(created as AccountProfile);
-  }
+  const [profileResult,adminResult]=await Promise.all([
+   supabase.from("profiles").select("user_id,member_id,avatar_url,web_nickname,driver_nickname,first_name,last_name,date_of_birth,preferred_role,onboarding_completed,privacy_accepted_at").eq("user_id",session.user.id).maybeSingle(),
+   supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle()
+  ]);
+  if(profileResult.error)toast("error","Profil gagal dimuat",profileResult.error.message);
+  if(adminResult.error)toast("error","Akses akun gagal diperiksa",adminResult.error.message);
+  setProfile(profileResult.data as AccountProfile|null);
+  setIsAdmin(Boolean(adminResult.data?.user_id));
   setProfileReady(true);
  },[session,toast]);
  useEffect(()=>{if(document.querySelector("script[data-cinematic-motion]"))return;const script=document.createElement("script");script.src="/cinematic-motion.js";script.dataset.cinematicMotion="true";script.async=true;document.body.append(script)},[]);
  useEffect(()=>{document.body.classList.toggle("light",theme==="light");try{localStorage.setItem("caleris-theme",theme)}catch{}},[theme]);
- useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data,error})=>{if(error)toast("error","Session gagal dimuat",error.message);setSession(data.session);setAuthReady(true)});const {data}=supabase.auth.onAuthStateChange((_e,s)=>{setSession(s);setAuthReady(true)});return()=>data.subscription.unsubscribe()},[toast]);
+ useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data,error})=>{if(error)toast("error","Session gagal dimuat",error.message);setSession(data.session);setAuthReady(true)});const {data}=supabase.auth.onAuthStateChange((_e,s)=>{setSession(s);setProfileReady(false);setAuthReady(true)});return()=>data.subscription.unsubscribe()},[toast]);
  useEffect(()=>{if(authReady)void refreshProfile()},[authReady,refreshProfile]);
  useEffect(()=>{window.scrollTo(0,0);loading(true);const frame=requestAnimationFrame(()=>loading(false));return()=>cancelAnimationFrame(frame)},[location.pathname,loading]);
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
+ if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
+ const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
  return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile}><Routes>
-  <Route path="/" element={session?<Navigate to="/dashboard" replace/>:<Home/>}/>
-  <Route path="/dashboard" element={session?<Dashboard session={session} profile={profile} profileReady={profileReady}/>:<Navigate to="/" replace/>}/>
-  <Route path="/admin-workflow" element={session?<AdminWorkflow session={session}/>:<Navigate to="/" replace/>}/>
-  <Route path="/profile" element={session?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to="/" replace/>}/>
-  <Route path="/account/settings" element={session?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile}/>:<Navigate to="/" replace/>}/>
+  <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
+  <Route path="/paddock-access" element={session?(needsPaddockAccess?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to="/dashboard" replace/>):<Navigate to="/" replace/>}/>
+  <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
+  <Route path="/admin-workflow" element={session&&!needsPaddockAccess?<AdminWorkflow session={session}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
-  <Route path="/admin" element={session?<Admin session={session}/>:<Navigate to="/" replace/>}/>
+  <Route path="/admin" element={session&&!needsPaddockAccess?<Admin session={session}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
  </Routes></Shell>;
 }
@@ -77,6 +82,65 @@ function Home(){
 }
 function PageHeading({eyebrow,title,description}:{eyebrow:string;title:string;description:string}){return <div className="page-heading"><p className="kicker">{eyebrow}</p><h1 className="page-title">{title}</h1><p className="page-description">{description}</p></div>}
 function EmptyPanel({icon,title,body}:{icon:ReactNode;title:string;body:string}){return <div className="empty-panel">{icon}<strong>{title}</strong><p>{body}</p></div>}
+function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Promise<void>}){
+ const {toast,loading}=useUI();const navigate=useNavigate();
+ const [avatarFile,setAvatarFile]=useState<File|null>(null),[avatarPreview,setAvatarPreview]=useState("");
+ const [firstName,setFirstName]=useState(""),[lastName,setLastName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState("");
+ const [privacyAccepted,setPrivacyAccepted]=useState(false),[turnstileToken,setTurnstileToken]=useState(""),[saving,setSaving]=useState(false);
+ const [errors,setErrors]=useState<Record<string,string>>({});
+ const widgetContainer=useRef<HTMLDivElement|null>(null),widgetId=useRef<string|null>(null);
+ const sitekey=import.meta.env.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY as string|undefined;
+ const today=new Date();const maxDob=new Date(today.getFullYear()-13,today.getMonth(),today.getDate()).toISOString().slice(0,10);
+ useEffect(()=>{
+  if(!privacyAccepted||!sitekey||!widgetContainer.current)return;
+  let cancelled=false;
+  const render=()=>{if(cancelled||!window.turnstile||!widgetContainer.current||widgetId.current)return;widgetId.current=window.turnstile.render(widgetContainer.current,{sitekey,theme:"dark",size:"normal",action:"paddock_access",callback:(token)=>setTurnstileToken(token),"expired-callback":()=>setTurnstileToken(""),"error-callback":()=>{setTurnstileToken("");toast("error","Verifikasi Cloudflare gagal","Muat ulang widget lalu coba lagi.")}})};
+  const existing=document.getElementById("caleris-turnstile-script") as HTMLScriptElement|null;
+  if(window.turnstile)render();
+  else if(existing){existing.addEventListener("load",render);existing.addEventListener("error",()=>toast("error","Cloudflare tidak dapat dimuat")); }
+  else {const script=document.createElement("script");script.id="caleris-turnstile-script";script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";script.async=true;script.defer=true;script.onload=render;script.onerror=()=>toast("error","Cloudflare tidak dapat dimuat","Periksa koneksi atau hostname widget.");document.head.appendChild(script);}
+  return()=>{cancelled=true;if(widgetId.current&&window.turnstile){window.turnstile.remove(widgetId.current);widgetId.current=null;}setTurnstileToken("");};
+ },[privacyAccepted,sitekey,toast]);
+ const chooseAvatar=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)||file.size>3*1024*1024){setErrors(v=>({...v,avatar:"Gunakan JPG, PNG, WEBP, atau GIF maksimal 3 MB."}));e.target.value="";return;}setAvatarFile(file);setAvatarPreview(URL.createObjectURL(file));setErrors(v=>({...v,avatar:""}));};
+ const submit=async(e:React.FormEvent<HTMLFormElement>)=>{
+  e.preventDefault();const next:Record<string,string>={};
+  if(!avatarFile)next.avatar="Foto profil harus dipilih.";
+  if(!dateOfBirth)next.dateOfBirth="Tanggal lahir harus diisi.";
+  else if(dateOfBirth>maxDob)next.dateOfBirth="Paddock Access hanya tersedia mulai usia 13 tahun.";
+  if(!nickname.trim())next.nickname="Nickname harus diisi.";
+  if(nickname.trim().length>32)next.nickname="Nickname maksimal 32 karakter.";
+  if(!preferredRole)next.preferredRole="Pilih preferensi role.";
+  if(!privacyAccepted)next.privacy="Persetujuan privasi diperlukan.";
+  if(privacyAccepted&&!turnstileToken)next.turnstile="Selesaikan verifikasi Cloudflare.";
+  if(!sitekey)next.turnstile="Site Key Cloudflare belum dikonfigurasi.";
+  setErrors(next);if(Object.keys(next).length)return;
+  if(!supabase){toast("error","Supabase belum tersedia",missingSupabaseMessage());return;}
+  setSaving(true);loading(true);
+  try{
+   const ext=avatarFile!.name.split(".").pop()?.toLowerCase()||"jpg";
+   const path=`${session.user.id}/paddock-${crypto.randomUUID()}.${ext}`;
+   const {error:uploadError}=await supabase.storage.from("profile-avatars").upload(path,avatarFile!,{upsert:false,contentType:avatarFile!.type});
+   if(uploadError)throw new Error(uploadError.message);
+   const {data:publicData}=supabase.storage.from("profile-avatars").getPublicUrl(path);
+   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{turnstileToken,avatarUrl:publicData.publicUrl,firstName,lastName,dateOfBirth,nickname,preferredRole,privacyAccepted}});
+   if(error)throw new Error(error.message);
+   if(!data?.success)throw new Error(data?.error||"Paddock Access gagal disimpan.");
+   await onComplete();toast("success","Paddock Access disetujui","Profil akun berhasil dibuat.");navigate("/dashboard",{replace:true});
+  }catch(error){const message=error instanceof Error?error.message:"Terjadi kesalahan.";toast("error","Pendaftaran gagal",message);if(widgetId.current&&window.turnstile)window.turnstile.reset(widgetId.current);setTurnstileToken("");}
+  finally{loading(false);setSaving(false);}
+ };
+ return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Paddock Access</h1><p className="page-description">Lengkapi identitas untuk membuka akses ke paddock Caleris Masters.</p></div><form className="paddock-access-form" onSubmit={submit} noValidate>
+  <div className="paddock-avatar-field"><div className="paddock-avatar-preview">{avatarPreview?<img src={avatarPreview} alt="Preview foto profil"/>:<Camera size={28}/>}</div><div className="paddock-avatar-copy"><strong>Foto profil</strong><small>JPG, PNG, WEBP, GIF · Maksimal 3 MB</small><label className="action upload-button">Pilih foto<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={chooseAvatar} /></label>{errors.avatar&&<small className="field-error">{errors.avatar}</small>}</div></div>
+  <div className="paddock-fields-grid"><label className="settings-field">Nama depan<input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} autoComplete="given-name" placeholder="Nama depan"/></label><label className="settings-field">Nama belakang<input value={lastName} onChange={e=>setLastName(e.target.value)} maxLength={80} autoComplete="family-name" placeholder="Nama belakang"/></label></div>
+  <label className="settings-field">Tanggal lahir<input type="date" value={dateOfBirth} max={maxDob} onChange={e=>setDateOfBirth(e.target.value)} autoComplete="bday"/>{errors.dateOfBirth&&<small className="field-error">{errors.dateOfBirth}</small>}</label>
+  <label className="settings-field">Nickname<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} autoComplete="nickname" placeholder="Nickname yang ingin ditampilkan"/>{errors.nickname&&<small className="field-error">{errors.nickname}</small>}</label>
+  <label className="settings-field">Preferensi role<select value={preferredRole} onChange={e=>setPreferredRole(e.target.value)}><option value="">Pilih role</option><option value="FIA">FIA</option><option value="Team Owner">Team Owner</option><option value="Driver">Driver</option></select>{errors.preferredRole&&<small className="field-error">{errors.preferredRole}</small>}</label>
+  <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setTurnstileToken("");setErrors(v=>({...v,privacy:"",turnstile:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
+  {errors.privacy&&<small className="field-error">{errors.privacy}</small>}
+  {privacyAccepted&&<div className="turnstile-section"><span className="section-eyebrow">SECURITY VERIFICATION</span>{sitekey?<><div ref={widgetContainer} className="turnstile-widget"/>{turnstileToken&&<span className="turnstile-success"><Check size={14}/> Verifikasi berhasil</span>}</>:<p className="field-error">Cloudflare Site Key belum diatur. Tambahkan VITE_CLOUDFLARE_TURNSTILE_SITE_KEY di Vercel.</p>}{errors.turnstile&&<small className="field-error">{errors.turnstile}</small>}</div>}
+  <button className="action primary paddock-submit" type="submit" disabled={saving||!turnstileToken}>{saving?"Memproses akses...":"Submit Paddock Access"}</button>
+ </form></div></section>;
+}
 function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
  const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);
  useEffect(()=>{let active=true;async function check(){if(!supabase)return;const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Role gagal diperiksa",error.message);setIsAdmin(Boolean(data?.user_id))}void check();return()=>{active=false}},[session.user.id,toast]);
