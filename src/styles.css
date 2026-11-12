@@ -58,14 +58,14 @@ body.light .site-footer .footer-note{color:#514a3d}
 .nav-toggle:hover{border-color:var(--gold-hi);color:var(--gold-hi)}
 .brand{margin-left:8px}
 .header-tools{flex:1;min-width:0;margin-left:auto;justify-content:flex-end;gap:14px}
-.global-search{position:relative;display:flex;align-items:center;gap:9px;width:min(390px,48vw);min-width:170px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:5px;background:rgba(4,7,10,.72);color:var(--gold-hi);z-index:36}
+.global-search{position:relative;display:flex;align-items:center;gap:9px;width:min(390px,48vw);min-width:170px;height:40px;padding:0 12px;border:1px solid var(--line);border-radius:5px;background:rgba(4,7,10,.72);color:var(--gold-hi);z-index:41}
 .global-search:focus-within{border-color:var(--gold-hi);box-shadow:0 0 0 2px rgba(198,163,58,.12)}
 .global-search>svg{flex:none}
 .global-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#f4f3ef;font:500 12px Inter,Arial,sans-serif}
 .global-search input::placeholder{color:#aeb1b4}
 .global-search>button:not(.search-dismiss){display:grid;place-items:center;flex:none;width:24px;height:24px;border:0;background:transparent;color:#b9bdc3}
 .search-dismiss{position:fixed;inset:0;z-index:1;border:0;background:transparent}
-.search-results{position:absolute;top:calc(100% + 9px);right:0;z-index:2;width:min(420px,calc(100vw - 28px));max-height:min(65vh,520px);overflow:auto;padding:8px;border:1px solid rgba(198,163,58,.4);border-radius:8px;background:rgba(9,12,16,.98);box-shadow:0 18px 45px #000b;backdrop-filter:blur(18px)}
+.search-results{position:absolute;top:calc(100% + 9px);right:0;z-index:42;width:min(420px,calc(100vw - 28px));max-height:min(65vh,520px);overflow:auto;padding:8px;border:1px solid rgba(198,163,58,.4);border-radius:8px;background:rgba(9,12,16,.98);box-shadow:0 18px 45px #000b;backdrop-filter:blur(18px)}
 .search-group-title{display:block;padding:9px 10px 6px;color:#d6b85e;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.2em}
 .search-result{display:flex;align-items:center;gap:10px;width:100%;padding:9px;border:0;border-radius:5px;background:transparent;color:#eeeae0;text-align:left}
 .search-result:hover{background:rgba(198,163,58,.1)}
