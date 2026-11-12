@@ -8,25 +8,27 @@ type Member={id:string;character_name:string|null;role:string|null;team_id:strin
 type Team={id:string;name:string};
 type Fine={id:string;target_kind:string;target_member_id:string|null;target_team_id:string|null;amount:number;reason:string;regulation_reference:string|null;issued_at:string};
 type Move={id:string;driver_member_id:string;buyer_team_id:string;seller_team_id:string;move_type:string;agreed_amount:number|null;status:string};
+type Takeover={id:string;target_team_id:string;buyer_member_id:string;seller_member_id:string;agreed_amount:number|null;status:string};
 export default function FIAOperations(){
- const [rounds,setRounds]=useState<Round[]>([]),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]),[fines,setFines]=useState<Fine[]>([]),[moves,setMoves]=useState<Move[]>([]);
+ const [rounds,setRounds]=useState<Round[]>([]),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]),[fines,setFines]=useState<Fine[]>([]),[moves,setMoves]=useState<Move[]>([]),[takeovers,setTakeovers]=useState<Takeover[]>([]);
  const [roundId,setRoundId]=useState(""),[winnerId,setWinnerId]=useState(""),[poleId,setPoleId]=useState("");
  const [targetKind,setTargetKind]=useState<"member"|"team">("member"),[targetId,setTargetId]=useState(""),[amount,setAmount]=useState(""),[reason,setReason]=useState(""),[regulation,setRegulation]=useState("");
  const [saving,setSaving]=useState(false),[loading,setLoading]=useState(false),[notice,setNotice]=useState("");
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);
-  const [r,m,t,f,mv]=await Promise.all([
+  const [r,m,t,f,mv,tv]=await Promise.all([
    supabase.from("license_rounds").select("id,round_number,title,season_division_id,status,license_season_divisions(division_name,license_seasons(title))").eq("status","closed").order("round_number",{ascending:false}),
    supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
    supabase.from("teams").select("id,name").order("name"),
    supabase.from("caleris_fines").select("*").order("issued_at",{ascending:false}).limit(100),
-   supabase.from("caleris_driver_move_negotiations").select("id,driver_member_id,buyer_team_id,seller_team_id,move_type,agreed_amount,status").eq("status","pending_fia").order("created_at")
+   supabase.from("caleris_driver_move_negotiations").select("id,driver_member_id,buyer_team_id,seller_team_id,move_type,agreed_amount,status").eq("status","pending_fia").order("created_at"),
+   supabase.from("caleris_team_takeovers").select("id,target_team_id,buyer_member_id,seller_member_id,agreed_amount,status").eq("status","pending_fia").order("created_at")
   ]);
-  const error=[r.error,m.error,t.error,f.error,mv.error].find(Boolean);if(error)setNotice(error.message);
+  const error=[r.error,m.error,t.error,f.error,mv.error,tv.error].find(Boolean);if(error)setNotice(error.message);
   const existing=(await supabase.from("caleris_race_results").select("round_id")).data||[];
   const used=new Set(existing.map(x=>x.round_id));
   setRounds((r.data||[]).filter(x=>!used.has(x.id)).map((x:any)=>({...x,season_division:x.license_season_divisions})) as Round[]);
-  setMembers((m.data||[]) as Member[]);setTeams((t.data||[]) as Team[]);setFines((f.data||[]) as Fine[]);setMoves((mv.data||[]) as Move[]);
+  setMembers((m.data||[]) as Member[]);setTeams((t.data||[]) as Team[]);setFines((f.data||[]) as Fine[]);setMoves((mv.data||[]) as Move[]);setTakeovers((tv.data||[]) as Takeover[]);
   setLoading(false);
  },[]);
  useEffect(()=>{void refresh()},[refresh]);
@@ -50,6 +52,7 @@ export default function FIAOperations(){
  };
  const targetName=(f:Fine)=>f.target_kind==="member"?members.find(m=>m.id===f.target_member_id)?.character_name||"Member":teams.find(t=>t.id===f.target_team_id)?.name||"Team";
  const reviewMove=async(id:string,approve:boolean)=>{if(!supabase)return;setSaving(true);setNotice("");const {error}=await supabase.rpc("fia_review_driver_move",{p_negotiation_id:id,p_approve:approve});setSaving(false);setNotice(error?.message||(approve?"Transfer disetujui.":"Transfer ditolak."));await refresh()};
+ const reviewTakeover=async(id:string,approve:boolean)=>{if(!supabase)return;setSaving(true);setNotice("");const {error}=await supabase.rpc("fia_review_team_takeover",{p_takeover_id:id,p_approve:approve});setSaving(false);setNotice(error?.message||(approve?"Take Over disetujui.":"Take Over ditolak."));await refresh()};
  return <section className="workspace fia-operations">
   <header className="page-heading"><span className="section-eyebrow">FIA PANEL · RACE CONTROL</span><h1 className="page-title">Race & Punishment Operations</h1><p className="page-description">Input hasil resmi race, kelola penghargaan development, dan catat denda FIA melalui ledger ekonomi.</p></header>
   <div className="ops-grid">
@@ -75,6 +78,7 @@ export default function FIAOperations(){
    </section>
   </div>
   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TRANSFER REVIEW</span><h2>Driver transfer approvals</h2></div><Handshake size={19}/></div>{moves.length===0?<p className="economy-empty">Tidak ada transfer yang menunggu FIA.</p>:<div className="ops-record-list">{moves.map(m=><article key={m.id}><div><strong>{members.find(x=>x.id===m.driver_member_id)?.character_name||"Driver"} · {money(m.agreed_amount||0)}</strong><small>{teams.find(x=>x.id===m.buyer_team_id)?.name||"Buyer"} ← {teams.find(x=>x.id===m.seller_team_id)?.name||"Seller"} · {m.move_type.toUpperCase()}</small></div><div className="ops-record-actions"><button onClick={()=>void reviewMove(m.id,true)} disabled={saving}>Approve</button><button onClick={()=>void reviewMove(m.id,false)} disabled={saving}>Reject</button></div></article>)}</div>}</section>
+  <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TEAM ACQUISITION REVIEW</span><h2>Take Over approvals</h2></div></div>{takeovers.length===0?<p className="economy-empty">Tidak ada Take Over yang menunggu FIA.</p>:<div className="ops-record-list">{takeovers.map(t=><article key={t.id}><div><strong>{teams.find(x=>x.id===t.target_team_id)?.name||"Team"} · {money(t.agreed_amount||0)}</strong><small>Buyer: {members.find(x=>x.id===t.buyer_member_id)?.character_name||"Member"} · Seller: {members.find(x=>x.id===t.seller_member_id)?.character_name||"Member"}</small></div><div className="ops-record-actions"><button onClick={()=>void reviewTakeover(t.id,true)} disabled={saving}>Approve</button><button onClick={()=>void reviewTakeover(t.id,false)} disabled={saving}>Reject</button></div></article>)}</div>}<p className="economy-form-hint">Persetujuan FIA belum memindahkan kepemilikan. Eksekusi menunggu ketentuan Take Over window serta perlakuan aset dan liabilitas.</p></section>
   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">DISCIPLINARY RECORD</span><h2>Fine history</h2></div><button className="economy-secondary-button" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>
    {fines.length===0?<p className="economy-empty">Belum ada denda FIA.</p>:<div className="ops-record-list">{fines.map(f=><article key={f.id}><div><strong>{targetName(f)} · {money(f.amount)}</strong><small>{f.reason}{f.regulation_reference?" · "+f.regulation_reference:""} · {new Date(f.issued_at).toLocaleString("id-ID")}</small></div><span className="empty-tag">{f.target_kind.toUpperCase()}</span></article>)}</div>}
   </section>
