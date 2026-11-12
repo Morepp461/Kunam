@@ -40,7 +40,7 @@ begin
  end if;
 
  select * into v_config from public.caleris_configurations
- where category='economy' and config_key='race-checkin-reward' and is_active;
+ where category='economy' and config_key='daily-checkin-reward' and is_active;
  v_amount:=coalesce(nullif(v_config.payload->>'amount','')::numeric,0);
  if v_amount>0 then
   select id into v_bank from public.economy_wallet_accounts where account_kind='vreeo_bank' and is_active;
@@ -74,7 +74,7 @@ returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_item public.caleris_member_race_checkins%rowtype;v_member public.members%rowtype;
  v_wallet uuid;v_bank uuid;v_result jsonb;v_paid integer:=0;v_pending integer:=0;
 begin
- if p_actor_id is null or not exists(select 1 from public.site_admins where user_id=p_actor_id) then raise exception 'Hanya Admin yang dapat memproses reward check-in tertunda.'; end if;
+ if p_actor_id is distinct from (select auth.uid()) or not exists(select 1 from public.site_admins where user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat memproses reward check-in tertunda.'; end if;
  select id into v_bank from public.economy_wallet_accounts where account_kind='vreeo_bank' and is_active;
  for v_item in select * from public.caleris_member_race_checkins where reward_status='pending' order by checkin_at,id for update skip locked loop
   select * into v_member from public.members where id=v_item.member_id;
