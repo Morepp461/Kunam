@@ -5,7 +5,7 @@ import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
 
 type Member={id:string;character_name:string|null;role:string|null};
-type Round={id:string;round_number:number;title:string;checkin_opens_at:string;checkin_closes_at:string;status:string;division?:{division_name:string;season?:{title:string}}};
+type Round={id:string;round_number:number;title:string;season_division_id:string;checkin_opens_at:string;checkin_closes_at:string;status:string;division?:{division_name:string;season?:{title:string}}};
 type Checkin={id:string;round_id:string;reward_amount:number;reward_status:string;checkin_at:string};
 const time=(v:string)=>new Date(v).toLocaleTimeString("id-ID",{timeZone:"Asia/Jakarta",hour:"2-digit",minute:"2-digit"});
 export default function MemberRaceCheckIn({session}:{session:Session}){
@@ -20,9 +20,10 @@ export default function MemberRaceCheckIn({session}:{session:Session}){
   if(mError||!m){setMember(null);setRounds([]);setCheckins([]);setNotice(mError?.message||"Data member tidak ditemukan.");setLoading(false);return}
   setMember(m as Member);
   const now=new Date().toISOString();
-  const {data:r,error:rError}=await supabase.from("license_rounds").select("id,round_number,title,checkin_opens_at,checkin_closes_at,status,license_season_divisions(division_name,license_seasons(title,status))").neq("status","closed").lte("checkin_opens_at",now).gte("checkin_closes_at",now).order("checkin_opens_at");
+  const {data:r,error:rError}=await supabase.from("license_rounds").select("id,round_number,title,season_division_id,checkin_opens_at,checkin_closes_at,status,license_season_divisions(division_name,license_seasons(title,status))").neq("status","closed").lte("checkin_opens_at",now).gte("checkin_closes_at",now).order("checkin_opens_at");
   if(rError){setNotice(rError.message);setLoading(false);return}
-  const current=(r||[]).filter((x:any)=>x.license_season_divisions?.license_seasons?.status==="active").map((x:any)=>({...x,division:{...x.license_season_divisions,season:x.license_season_divisions.license_seasons}})) as Round[];
+  let current=(r||[]).filter((x:any)=>x.license_season_divisions?.license_seasons?.status==="active").map((x:any)=>({...x,division:{...x.license_season_divisions,season:x.license_season_divisions.license_seasons}})) as Round[];
+  if(m.role==="Driver"){const {data:registrations}=await supabase.from("license_season_members").select("season_division_id,license_seasons(status)").eq("member_id",m.id).eq("is_hiatus",false);const activeDivisions=new Set((registrations||[]).filter((x:any)=>x.license_seasons?.status==="active").map((x:any)=>x.season_division_id));current=current.filter(x=>activeDivisions.has(x.season_division_id));}
   setRounds(current);
   if(current.length){const {data:existing,error:e}=await supabase.from("caleris_member_race_checkins").select("id,round_id,reward_amount,reward_status,checkin_at").eq("member_id",m.id).in("round_id",current.map(x=>x.id));if(e)setNotice(e.message);setCheckins((existing||[]) as Checkin[])}else setCheckins([]);
   setLoading(false);
