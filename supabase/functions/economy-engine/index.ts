@@ -146,6 +146,17 @@ Deno.serve(async (req: Request) => {
       return respond(200, { success: true, result: data });
     }
 
+    if (action === "process_payroll_pending") {
+      const { data, error } = await serviceClient.rpc("admin_process_pending_economy_payroll", {
+        p_actor_id: userId,
+      });
+      if (error) {
+        console.error("Pending payroll processing failed:", error.message);
+        return respond(422, { error: error.message });
+      }
+      return respond(200, { success: true, result: data });
+    }
+
     return respond(400, { error: "Unknown Economy Engine action." });
   } catch (error) {
     console.error("Economy Engine gateway error:", error);
