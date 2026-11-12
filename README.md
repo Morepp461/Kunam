@@ -193,7 +193,7 @@ License scoring is processed by Supabase triggers and immutable score-ledger tra
 - Seasonal points are scoped by season. WDC ledger points are permanent. Hiatus preserves the last-license snapshot and excludes the driver from inactivity and final classification.
 - Final standings are locked after WDC finalization. Official results are entered by Admin because the current project has no external race-results feed.
 
-Supabase migrations: `20261112150000_license_scoring_engine.sql`, `20261112151000_license_wdc_finalization_validation.sql`, and `20261112152000_license_driver_read_policies_and_milestone_validation.sql`, `20261112153000_license_round_processing_order.sql`, and `20261112154000_license_offseason_hiatus_guard.sql`.
+Supabase migrations aligned to the production Supabase history: `20261112123648_license_scoring_engine.sql`, `20261112123731_license_wdc_finalization_validation.sql`, `20261112123814_license_driver_read_policies_and_milestone_validation.sql`, `20261112124122_license_round_processing_order.sql`, `20261112124242_license_offseason_hiatus_guard.sql`, `20261112125157_race_day_checkin_and_lifetime_wdc.sql`, and `20261112130133_wdc_highest_division_dynamic_points.sql`.
 
 ### Race-day attendance and lifetime WDC correction
 
@@ -203,7 +203,7 @@ Supabase migrations: `20261112150000_license_scoring_engine.sql`, `2026111215100
 - The WDC score remains linked to the highest division achieved and automatically synchronizes when Admin changes that division's WDC points configuration. For example, changing Premio's configured value from 35 to 40 updates existing Premio WDC awards from 35 to 40, including awards from earlier seasons.
 - Each member has one WDC ledger row across all seasons. Its award identity and original provenance remain protected; only the score value and highest-achievement metadata can be revised by the validated championship or configuration-sync database workflows. Seasonal scoring and inactivity calculations continue to exclude WDC points.
 - Premio and Zwei tier priorities are stored in their WDC configuration payloads, not hardcoded into the scoring engine.
-- Migration: `20261112160000_wdc_highest_division_dynamic_points.sql`.
+- Migration: `20261112130133_wdc_highest_division_dynamic_points.sql`.
 
 
 ## Economy Engine · Stage 4
@@ -237,4 +237,21 @@ Wallet creation is trigger-driven and idempotent. Existing members.balance is re
 - Profile balances now read from wallet accounts instead of the legacy members.balance field.
 
 ### Important boundary
-This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The wallet, service-gateway, and query-hardening migrations are applied to Supabase production. The repository migration filenames are aligned to the recorded Supabase versions. The query-hardening migration appears twice in the remote migration history because it was applied twice; both idempotent records are preserved as matching migration files so local and remote histories stay aligned. The economy-engine Edge Function is deployed ACTIVE with JWT verification enabled. Economy mutation RPCs are executable only by service_role; the Edge Function validates the caller and Admin allow-list before forwarding requests. Production Vercel deployment is READY and the application entry page returns HTTP 200.
+This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. Annual Driver salary and Race Period payroll rules are defined in the Season Calendar and Team Driver Contracts implementation. The wallet, service-gateway, and query-hardening migrations are applied to Supabase production. The repository migration filenames are aligned to the recorded Supabase versions. The query-hardening migration appears twice in the remote migration history because it was applied twice; both idempotent records are preserved as matching migration files so local and remote histories stay aligned. The economy-engine Edge Function is deployed ACTIVE with JWT verification enabled. Economy mutation RPCs are executable only by service_role; the Edge Function validates the caller and Admin allow-list before forwarding requests. Production Vercel deployment is READY and the application entry page returns HTTP 200.
+
+
+## Season Calendar & Team Payroll
+
+- FIA Panel exposes Season Calendar and License Scoring Engine. FIA can configure season operations, process rounds, and finalize WDC. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
+- FIA Panel → Season Calendar builds the complete season timeline in one form: exactly one Off Season, one Pre Season, one End Season, one or more Race Periods, and zero or more Break Race Periods.
+- Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
+- Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
+- Reschedule updates a period's dates and records an immutable calendar revision.
+- Team Panel → Driver Contracts allows the Team Owner to set each Driver's annual salary for a season. The contract is team- and season-specific; no default salary is assumed.
+- Payroll is calculated as annual salary divided by the actual number of Race Periods configured for that season. Two-decimal rounding differences are reconciled in the final Race Period so total season salary equals the contract amount.
+- Payroll runs automatically after FIA/Admin processes the final round of a Race Period. Funds move directly from the matching Team Wallet to the Driver Wallet through the immutable double-entry ledger.
+- Payroll cannot create a negative Team Wallet. If funds are insufficient, the payroll claim remains pending and Admin can process pending payroll after the Team Wallet is funded.
+- A salary amount and team assignment are locked once payroll claims exist for that Driver in the season. Contract status can still be changed subject to the payroll lifecycle.
+- Payroll transactions use the existing idempotency, wallet locking, ledger immutability, and reversal model. Reversing a payroll transaction marks its claim reversed; it is not silently paid again.
+
+Migration: `20261112160305_season_calendar_and_payroll.sql`.

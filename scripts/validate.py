@@ -19,6 +19,21 @@ def main():
     assert package["scripts"]["build"] == "tsc -b && vite build"
     vite_config = (ROOT / "vite.config.ts").read_text(encoding="utf-8")
     assert "copy-caleris-static-assets" in vite_config and "cpSync(source, destination" in vite_config
+    history_aligned_migrations = [
+        "20261112092221_split_public_content_rls_admin_lookup.sql",
+        "20261112093246_grant_search_service_role_select.sql",
+        "20261112123648_license_scoring_engine.sql",
+        "20261112123731_license_wdc_finalization_validation.sql",
+        "20261112123814_license_driver_read_policies_and_milestone_validation.sql",
+        "20261112124122_license_round_processing_order.sql",
+        "20261112124242_license_offseason_hiatus_guard.sql",
+        "20261112125157_race_day_checkin_and_lifetime_wdc.sql",
+        "20261112130133_wdc_highest_division_dynamic_points.sql",
+    ]
+    for migration in history_aligned_migrations:
+        assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
+    for obsolete in ["20261112110000_split_public_content_rls_admin_lookup.sql", "20261112123000_grant_search_service_role_select.sql", "20261112150000_license_scoring_engine.sql", "20261112151000_license_wdc_finalization_validation.sql", "20261112152000_license_driver_read_policies_and_milestone_validation.sql", "20261112153000_license_round_processing_order.sql", "20261112154000_license_offseason_hiatus_guard.sql", "20261112155000_race_day_checkin_and_lifetime_wdc.sql", "20261112160000_wdc_highest_division_dynamic_points.sql", "20261112170000_season_calendar_and_payroll.sql"]:
+        assert not (ROOT / "supabase/migrations" / obsolete).exists(), f"Obsolete migration version remains: {obsolete}"
     economy_gateway_migration = ROOT / "supabase/migrations/20261112140121_economy_edge_gateway.sql"
     economy_edge_function = ROOT / "supabase/functions/economy-engine/index.ts"
     assert economy_gateway_migration.is_file() and economy_edge_function.is_file(), "Missing Economy Engine gateway hardening"
@@ -72,7 +87,7 @@ def main():
     assert 'import {createPortal} from "react-dom"' in app
     assert "searchRootRef" in app and "document.body" in app
     assert "dropdownStyle.maxHeight" in app
-    rls_fix = ROOT / "supabase/migrations/20261112110000_split_public_content_rls_admin_lookup.sql"
+    rls_fix = ROOT / "supabase/migrations/20261112092221_split_public_content_rls_admin_lookup.sql"
     assert rls_fix.is_file(), "Missing public RLS split migration"
     rls_source = rls_fix.read_text(encoding="utf-8")
     assert "TO anon, authenticated" in rls_source
@@ -82,7 +97,7 @@ def main():
     assert '"Public can read published content"' in rls_source
     assert '"Admins read all site content"' in rls_source
     assert "},100);return()=>{active=false;window.clearTimeout(timer)}" in app
-    permissions_migration = ROOT / "supabase/migrations/20261112123000_grant_search_service_role_select.sql"
+    permissions_migration = ROOT / "supabase/migrations/20261112093246_grant_search_service_role_select.sql"
     assert permissions_migration.is_file(), "Missing search service-role grants migration"
     permissions_sql = permissions_migration.read_text(encoding="utf-8").lower()
     assert "grant select on table" in permissions_sql
@@ -144,6 +159,24 @@ def main():
     assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
     assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in app
     assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in app
+    calendar_migration = ROOT / "supabase/migrations/20261112160305_season_calendar_and_payroll.sql"
+    calendar_component = ROOT / "src/AdminSeasonCalendar.tsx"
+    contracts_component = ROOT / "src/TeamDriverContracts.tsx"
+    assert calendar_migration.is_file() and calendar_component.is_file() and contracts_component.is_file(), "Missing season calendar/payroll implementation"
+    calendar_sql = calendar_migration.read_text(encoding="utf-8")
+    calendar_source = calendar_component.read_text(encoding="utf-8")
+    contracts_source = contracts_component.read_text(encoding="utf-8")
+    for fragment in ["season_calendar_periods", "season_period_rounds", "economy_driver_contracts", "economy_payroll_claims", "fia_create_season_calendar", "payroll_for_period_round", "admin_process_pending_economy_payroll", "is_caleris_fia_or_admin"]:
+        assert fragment in calendar_sql, f"Season calendar/payroll migration missing: {fragment}"
+    for fragment in ["Off Season", "Pre Season", "Race Period", "Break Race Period", "End Season", "Reschedule", "3–5 round", "fia_create_season_calendar"]:
+        assert fragment in calendar_source, f"Season calendar UI missing: {fragment}"
+    assert "annual_salary" in contracts_source and "economy_driver_contracts" in contracts_source
+    assert "payroll" in edge_source and "process_payroll_pending" in edge_source
+    assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
+    assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
+    license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
+    assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
+    assert '(isAdmin||panelAccess.fia_panel)' in app
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
