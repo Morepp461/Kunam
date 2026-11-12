@@ -19,6 +19,20 @@ def main():
     assert package["scripts"]["build"] == "tsc -b && vite build"
     vite_config = (ROOT / "vite.config.ts").read_text(encoding="utf-8")
     assert "copy-caleris-static-assets" in vite_config and "cpSync(source, destination" in vite_config
+    economy_gateway_migration = ROOT / "supabase/migrations/20261112171000_economy_edge_gateway.sql"
+    economy_edge_function = ROOT / "supabase/functions/economy-engine/index.ts"
+    assert economy_gateway_migration.is_file() and economy_edge_function.is_file(), "Missing Economy Engine gateway hardening"
+    gateway_sql = economy_gateway_migration.read_text(encoding="utf-8")
+    assert "to service_role" in gateway_sql and "from public,anon,authenticated,service_role" in gateway_sql
+    edge_source = economy_edge_function.read_text(encoding="utf-8")
+    assert "auth.getUser(jwt)" in edge_source and 'from("site_admins")' in edge_source
+    assert 'serviceClient.rpc("admin_post_economy_transaction"' in edge_source
+    assert 'serviceClient.rpc("admin_reverse_economy_transaction"' in edge_source
+    assert 'serviceClient.rpc("admin_process_pending_economy_rewards"' in edge_source
+    assert 'supabase.functions.invoke("economy-engine"' in economy_source
+    assert 'supabase.rpc("admin_post_economy_transaction"' not in economy_source
+    assert 'supabase.rpc("admin_reverse_economy_transaction"' not in economy_source
+    assert 'supabase.rpc("admin_process_pending_economy_rewards"' not in economy_source
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
