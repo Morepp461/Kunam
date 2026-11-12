@@ -237,4 +237,21 @@ Wallet creation is trigger-driven and idempotent. Existing members.balance is re
 - Profile balances now read from wallet accounts instead of the legacy members.balance field.
 
 ### Important boundary
-This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The wallet, service-gateway, and query-hardening migrations are applied to Supabase production. The repository migration filenames are aligned to the recorded Supabase versions. The query-hardening migration appears twice in the remote migration history because it was applied twice; both idempotent records are preserved as matching migration files so local and remote histories stay aligned. The economy-engine Edge Function is deployed ACTIVE with JWT verification enabled. Economy mutation RPCs are executable only by service_role; the Edge Function validates the caller and Admin allow-list before forwarding requests. Production Vercel deployment is READY and the application entry page returns HTTP 200.
+This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. Annual Driver salary and Race Period payroll rules are defined in the Season Calendar and Team Driver Contracts implementation. The wallet, service-gateway, and query-hardening migrations are applied to Supabase production. The repository migration filenames are aligned to the recorded Supabase versions. The query-hardening migration appears twice in the remote migration history because it was applied twice; both idempotent records are preserved as matching migration files so local and remote histories stay aligned. The economy-engine Edge Function is deployed ACTIVE with JWT verification enabled. Economy mutation RPCs are executable only by service_role; the Edge Function validates the caller and Admin allow-list before forwarding requests. Production Vercel deployment is READY and the application entry page returns HTTP 200.
+
+
+## Season Calendar & Team Payroll
+
+- FIA and Admin can manage season operations. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
+- FIA Panel → Season Calendar builds the complete season timeline in one form: exactly one Off Season, one Pre Season, one End Season, one or more Race Periods, and zero or more Break Race Periods.
+- Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
+- Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
+- Reschedule updates a period's dates and records an immutable calendar revision.
+- Team Panel → Driver Contracts allows the Team Owner to set each Driver's annual salary for a season. The contract is team- and season-specific; no default salary is assumed.
+- Payroll is calculated as annual salary divided by the actual number of Race Periods configured for that season. Two-decimal rounding differences are reconciled in the final Race Period so total season salary equals the contract amount.
+- Payroll runs automatically after FIA/Admin processes the final round of a Race Period. Funds move directly from the matching Team Wallet to the Driver Wallet through the immutable double-entry ledger.
+- Payroll cannot create a negative Team Wallet. If funds are insufficient, the payroll claim remains pending and Admin can process pending payroll after the Team Wallet is funded.
+- A salary amount and team assignment are locked once payroll claims exist for that Driver in the season. Contract status can still be changed subject to the payroll lifecycle.
+- Payroll transactions use the existing idempotency, wallet locking, ledger immutability, and reversal model. Reversing a payroll transaction marks its claim reversed; it is not silently paid again.
+
+Migration: `20261112170000_season_calendar_and_payroll.sql`.
