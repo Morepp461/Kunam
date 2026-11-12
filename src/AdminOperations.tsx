@@ -17,7 +17,7 @@ const money=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFract
 const number=(v:string)=>v.trim()===""?0:Number(v);
 export default function AdminOperations({session}:{session:Session}){
  const [tab,setTab]=useState<Tab>("tax"),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
- const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[prizes,setPrizes]=useState<PrizeRule[]>([]);
+ const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[taxMethod,setTaxMethod]=useState<""|"flat"|"progressive">(""),[divisions,setDivisions]=useState<Division[]>([]),[prizes,setPrizes]=useState<PrizeRule[]>([]);
  const [sponsors,setSponsors]=useState<Sponsor[]>([]),[teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]),[seasons,setSeasons]=useState<Season[]>([]);
  const [taxType,setTaxType]=useState<"wealth"|"driver_transfer">("wealth"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null);
  const [divisionId,setDivisionId]=useState(""),[driverWin,setDriverWin]=useState(""),[teamWin,setTeamWin]=useState(""),[driverPole,setDriverPole]=useState(""),[teamPole,setTeamPole]=useState(""),[prizeActive,setPrizeActive]=useState(false);
@@ -26,18 +26,20 @@ export default function AdminOperations({session}:{session:Session}){
 
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setNotice("");
-  const [tax,division,prize,sponsor,team,valuation,season]=await Promise.all([
+  const [tax,division,prize,sponsor,team,valuation,season,taxConfig]=await Promise.all([
    supabase.from("caleris_tax_rules").select("*").order("tax_type").order("minimum_base",{ascending:true}),
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,license_seasons(title)").order("created_at",{ascending:false}),
    supabase.from("caleris_race_reward_rules").select("*"),
    supabase.from("caleris_sponsors").select("*").order("name"),
    supabase.from("teams").select("id,name,division_key").order("name"),
    supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100),
-   supabase.from("license_seasons").select("id,title,status").order("starts_on",{ascending:false})
+   supabase.from("license_seasons").select("id,title,status").order("starts_on",{ascending:false}),
+   supabase.from("caleris_configurations").select("payload,is_active").eq("category","economy").eq("config_key","wealth-tax-calculation").maybeSingle()
   ]);
-  const err=[tax.error,division.error,prize.error,sponsor.error,team.error,valuation.error,season.error].find(Boolean);
+  const err=[tax.error,division.error,prize.error,sponsor.error,team.error,valuation.error,season.error,taxConfig.error].find(Boolean);
   if(err)setNotice(err.message);
   setTaxRules((tax.data||[]) as TaxRule[]);
+  const method=taxConfig.data?.is_active?taxConfig.data.payload?.method:"";setTaxMethod(method==="flat"||method==="progressive"?method:"");
   setDivisions((division.data||[]).map((x:any)=>({...x,season:x.license_seasons})) as Division[]);
   setPrizes((prize.data||[]) as PrizeRule[]);
   setSponsors((sponsor.data||[]) as Sponsor[]);
@@ -58,6 +60,7 @@ export default function AdminOperations({session}:{session:Session}){
   setNotice("Aturan pajak tersimpan. Perhitungan otomatis belum dijalankan.");resetTax();await refresh();
  };
  const resetTax=()=>{setEditingTax(null);setTaxLabel("");setTaxMinimum("");setTaxRate("");setTaxActive(true)};
+ const saveTaxMethod=async()=>{if(!supabase||!taxMethod)return;setSaving(true);const {error}=await supabase.from("caleris_configurations").upsert({category:"economy",config_key:"wealth-tax-calculation",title:"Wealth Tax Calculation Method",payload:{method:taxMethod},is_active:true,updated_by:session.user.id,created_by:session.user.id,updated_at:new Date().toISOString()},{onConflict:"category,config_key"});setSaving(false);setNotice(error?.message||"Metode perhitungan Wealth Tax tersimpan.");await refresh()};
  const editTax=(r:TaxRule)=>{setEditingTax(r.id);setTaxType(r.tax_type);setTaxLabel(r.label);setTaxMinimum(String(r.minimum_base));setTaxRate(String(r.rate_percent));setTaxActive(r.is_active)};
  const deleteTax=async(id:string)=>{if(!supabase||!window.confirm("Hapus aturan pajak ini?"))return;const {error}=await supabase.from("caleris_tax_rules").delete().eq("id",id);setNotice(error?.message||"Aturan dihapus.");await refresh()};
  const runWealthTax=async(action:"admin_generate_wealth_tax_assessments"|"admin_collect_wealth_tax")=>{if(!supabase||!taxSeasonId)return;setSaving(true);setNotice("");const {data,error}=await supabase.rpc(action,{p_season_id:taxSeasonId});setSaving(false);setNotice(error?.message||JSON.stringify(data));await refresh()};
@@ -112,7 +115,7 @@ export default function AdminOperations({session}:{session:Session}){
      <label>Ambang minimum (¢p)<input type="number" min="0" step="0.01" value={taxMinimum} onChange={e=>setTaxMinimum(e.target.value)} required/></label>
      <label>Tarif flat (%)<input type="number" min="0" max="100" step="0.0001" value={taxRate} onChange={e=>setTaxRate(e.target.value)} required/></label>
      <label className="economy-toggle"><input type="checkbox" checked={taxActive} onChange={e=>setTaxActive(e.target.checked)}/> Aktif</label>
-     <p className="economy-form-hint">Wealth Tax memakai saldo wallet saja. Tarif yang memenuhi ambang diterapkan ke seluruh saldo, bukan dihitung progresif. Semua nilai diatur Admin; modul tidak mengisi angka contoh.</p>
+     <div className="economy-form"><label>Metode perhitungan Wealth Tax<select value={taxMethod} onChange={e=>setTaxMethod(e.target.value as ""|"flat"|"progressive")}><option value="">Belum dikonfigurasi</option><option value="flat">Flat · tarif tertinggi untuk seluruh saldo</option><option value="progressive">Progressive · tarif per lapisan saldo</option></select></label><button type="button" className="economy-secondary-button" onClick={()=>void saveTaxMethod()} disabled={saving||!taxMethod}>Simpan metode Wealth Tax</button><p className="economy-form-hint">Basis Wealth Tax hanya saldo wallet Driver dan Owner. Flat menerapkan satu tarif tertinggi ke seluruh saldo. Progressive menerapkan setiap tarif hanya pada bagian saldo di atas ambangnya hingga ambang berikutnya. Ambang bersifat ketat: saldo harus lebih besar dari nilai ambang. Semua ambang dan tarif diatur Admin.</p></div>
      <div className="ops-actions"><button className="economy-primary-button" disabled={saving}><Save size={15}/> Simpan aturan</button>{editingTax&&<button type="button" className="economy-secondary-button" onClick={resetTax}>Batal</button>}</div>
     </form>
    </section>
