@@ -23,6 +23,7 @@ create table if not exists public.caleris_sponsorship_payouts (
  paid_at timestamptz not null default now()
 );
 create index if not exists caleris_sponsor_payout_contract_idx on public.caleris_sponsorship_payouts(contract_id,paid_at desc);
+create unique index if not exists caleris_sponsor_payout_target_unique on public.caleris_sponsorship_payouts(target_id) where target_id is not null;
 alter table public.caleris_sponsorship_offer_revisions enable row level security;
 alter table public.caleris_sponsorship_payouts enable row level security;
 revoke all on public.caleris_sponsorship_offer_revisions,public.caleris_sponsorship_payouts from public,anon,authenticated,service_role;
@@ -212,6 +213,7 @@ grant execute on function public.admin_create_sponsorship_story_event(uuid,text,
 create or replace function public.admin_pay_sponsorship_contract(p_contract_id uuid,p_amount numeric,p_description text,p_target_id uuid default null)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_contract public.caleris_sponsorship_contracts%rowtype;v_sponsor public.caleris_sponsors%rowtype;
+ v_target public.caleris_sponsorship_targets%rowtype;v_base_paid numeric:=0;
  v_source uuid;v_destination uuid;v_result jsonb;v_payout_id uuid;
 begin
  if not exists(select 1 from public.site_admins where user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat membayar sponsorship.'; end if;
@@ -220,7 +222,15 @@ begin
  if not found then raise exception 'Kontrak sponsorship tidak aktif.'; end if;
  select * into v_sponsor from public.caleris_sponsors where id=v_contract.sponsor_id for update;
  if v_sponsor.available_budget is null or v_sponsor.available_budget<p_amount then raise exception 'Budget sponsor tidak mencukupi atau belum diatur.'; end if;
- if p_target_id is not null and not exists(select 1 from public.caleris_sponsorship_targets where id=p_target_id and contract_id=v_contract.id and status='achieved') then raise exception 'Bonus hanya dapat dibayar untuk target yang sudah tercapai.'; end if;
+ if p_target_id is not null then
+  select * into v_target from public.caleris_sponsorship_targets where id=p_target_id and contract_id=v_contract.id and status='achieved' for update;
+  if not found then raise exception 'Bonus hanya dapat dibayar untuk target yang sudah tercapai.'; end if;
+  if exists(select 1 from public.caleris_sponsorship_payouts where target_id=p_target_id) then raise exception 'Bonus target ini sudah pernah dibayarkan.'; end if;
+  if p_amount<>v_target.bonus_amount then raise exception 'Nominal payout harus sama dengan bonus target yang dikonfigurasi.';
+ else
+  select coalesce(sum(amount),0) into v_base_paid from public.caleris_sponsorship_payouts where contract_id=v_contract.id and target_id is null;
+  if v_base_paid+p_amount>v_contract.contract_amount then raise exception 'Total pembayaran kontrak melebihi nilai kontrak.';
+ end if;
  if v_contract.target_kind='driver' then
   select id into v_destination from public.economy_wallet_accounts where account_kind='driver' and member_id=v_contract.target_member_id and is_active;
  else
