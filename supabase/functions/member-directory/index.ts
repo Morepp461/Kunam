@@ -63,10 +63,11 @@ Deno.serve(async (req: Request) => {
       ...(isSecretApiKey ? {
         global: {
           fetch: (input: RequestInfo | URL, init?: RequestInit) => {
-            const requestHeaders = new Headers(init?.headers);
+            const request = new Request(input, init);
+            const requestHeaders = new Headers(request.headers);
             requestHeaders.delete("Authorization");
             requestHeaders.set("apikey", serviceKey);
-            return fetch(input, { ...init, headers: requestHeaders });
+            return fetch(new Request(request, { headers: requestHeaders }));
           },
         },
       } : {}),
