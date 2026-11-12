@@ -119,7 +119,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
         eventType,
         description: description.trim(),
         idempotencyKey: crypto.randomUUID(),
-        metadata: { interface: "admin-economy-engine" }
+        metadata: { interface: "admin-economy-engine", actor_id: session.user.id }
       }
     });
     setSaving(false);
