@@ -32,6 +32,10 @@ def main():
     assert 'CALERIS MASTERS · POWERED BY VREEO' in app
     assert 'A Motorsport Roleplay Experience' not in app
     assert 'footer-main' in styles and 'footer-support nav' in styles
+    assert 'DIRECTOR OF VREEO.ID' in app
+    for director in ["Muhammad Ovella", "Agung Pradana", "Muhammad Alfarel", "Liam Amir", "Suhanda Arbawi"]:
+        assert director in app
+    assert 'footer-directors nav' in styles
     assert 'legal-blank-page' in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
     assert "if(term.length<1)" in app
