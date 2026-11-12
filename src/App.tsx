@@ -15,6 +15,7 @@ import FIAOperations from "./FIAOperations";
 import MemberRaceCheckIn from "./MemberRaceCheckIn";
 import TeamAffiliate from "./TeamAffiliate";
 import DriverTransferMarket from "./DriverTransferMarket";
+import TeamTakeoverMarket from "./TeamTakeoverMarket";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import TeamDriverContracts from "./TeamDriverContracts";
 
@@ -27,6 +28,7 @@ import "./fia-operations.css";
 import "./member-race-checkin.css";
 import "./team-affiliate.css";
 import "./driver-transfer-market.css";
+import "./team-takeover-market.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 
@@ -116,6 +118,7 @@ function Application(){
   <Route path="/member/:memberId" element={<PublicMemberProfile/>}/>
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
+  <Route path="/main-event/take-over" element={session&&!needsPaddockAccess&&panelAccess.main_event?<TeamTakeoverMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/transfer-market" element={session&&!needsPaddockAccess&&panelAccess.main_event?<DriverTransferMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/*" element={session&&!needsPaddockAccess&&panelAccess.main_event?<PanelPage/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/*" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<PanelPage/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
