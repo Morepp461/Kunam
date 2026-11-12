@@ -254,4 +254,4 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 - A salary amount and team assignment are locked once payroll claims exist for that Driver in the season. Contract status can still be changed subject to the payroll lifecycle.
 - Payroll transactions use the existing idempotency, wallet locking, ledger immutability, and reversal model. Reversing a payroll transaction marks its claim reversed; it is not silently paid again.
 
-Migration: `20261112170000_season_calendar_and_payroll.sql`.
+Migration: `20261112160305_season_calendar_and_payroll.sql`.
