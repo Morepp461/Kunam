@@ -226,7 +226,7 @@ Wallet creation is trigger-driven and idempotent. Existing members.balance is re
 - Idempotency keys prevent duplicate posting; reusing a key with different transaction data is rejected.
 - Transactions and ledger entries cannot be edited or deleted. Corrections use a linked reversal transaction.
 - Tax and fine debits may take the payer wallet below zero. Other outgoing payments require sufficient source balance.
-- Check-in rewards and prizes must be paid by VreeoBank. Sponsor payouts and Bank funding use Sponsor Source. Tax and fines must be credited to VreeoBank.
+- Check-in rewards, prizes, and generic Bank rewards must be paid by VreeoBank. Sponsor payouts and Bank funding use Sponsor Source. Tax and fines must be credited to VreeoBank.
 - If VreeoBank cannot fund an enabled check-in reward, the check-in remains valid and its reward claim stays pending until Admin processes it after funds become available.
 
 ### Configuration and administration
