@@ -26,6 +26,13 @@ def main():
     assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/>' in app
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
+    assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app
+    assert 'COMMUNITY &amp; SUPPORT' in app and 'Dukung Vreeo · Socialbuzz' in app
+    assert 'Gabung Discord' in app and 'Official Partners' not in app
+    assert 'CALERIS MASTERS · POWERED BY VREEO' in app
+    assert 'A Motorsport Roleplay Experience' not in app
+    assert 'footer-main' in styles and 'footer-support nav' in styles
+    assert 'legal-blank-page' in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
     assert "if(term.length<1)" in app
     assert "query.trim().length>=1" in app
