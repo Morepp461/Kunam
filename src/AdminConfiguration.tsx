@@ -6,6 +6,9 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
 
 type Category = "license" | "economy" | "roles" | "regulations";
+type FieldType = "text" | "number" | "boolean" | "long_text";
+type FieldValue = string | boolean;
+type DetailField = { id: string; label: string; type: FieldType; value: FieldValue };
 type Configuration = {
   id: string;
   category: Category;
@@ -34,8 +37,37 @@ const categories: { id: Category; label: string; description: string }[] = [
   { id: "regulations", label: "Regulations", description: "Dokumen aturan, ketentuan, dan konfigurasi kompetisi." }
 ];
 
-const emptyPayload = "{\n  \n}";
 const prettyDate = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+const slugify = (value: string) => value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+const humanize = (value: string) => value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+const makeField = (): DetailField => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: "", type: "text", value: "" });
+
+function fieldsFromPayload(payload: Record<string, unknown>): DetailField[] {
+  return Object.entries(payload ?? {}).map(([label, value], index) => {
+    if (typeof value === "boolean") return { id: `saved-${index}`, label: humanize(label), type: "boolean", value };
+    if (typeof value === "number") return { id: `saved-${index}`, label: humanize(label), type: "number", value: String(value) };
+    return { id: `saved-${index}`, label: humanize(label), type: "text", value: typeof value === "string" ? value : value == null ? "" : String(value) };
+  });
+}
+
+function payloadFromFields(fields: DetailField[]): Record<string, unknown> {
+  return fields.reduce<Record<string, unknown>>((payload, field) => {
+    const key = slugify(field.label);
+    if (field.type === "boolean") payload[key] = Boolean(field.value);
+    else if (field.type === "number") payload[key] = Number(field.value);
+    else payload[key] = String(field.value);
+    return payload;
+  }, {});
+}
+
+function DetailList({ payload, empty = "Belum ada detail tambahan." }: { payload: Record<string, unknown>; empty?: string }) {
+  const entries = Object.entries(payload ?? {});
+  if (!entries.length) return <p className="config-no-details">{empty}</p>;
+  return <dl className="config-detail-list">{entries.map(([key, value]) => <div key={key}>
+    <dt>{humanize(key)}</dt>
+    <dd>{typeof value === "boolean" ? (value ? "Ya" : "Tidak") : String(value ?? "—")}</dd>
+  </div>)}</dl>;
+}
 
 export default function AdminConfiguration({ session }: { session: Session }) {
   const [category, setCategory] = useState<Category>("license");
@@ -43,8 +75,7 @@ export default function AdminConfiguration({ session }: { session: Session }) {
   const [revisions, setRevisions] = useState<Revision[]>([]);
   const [selected, setSelected] = useState<Configuration | null>(null);
   const [title, setTitle] = useState("");
-  const [key, setKey] = useState("");
-  const [payloadText, setPayloadText] = useState(emptyPayload);
+  const [fields, setFields] = useState<DetailField[]>([]);
   const [active, setActive] = useState(true);
   const [sortOrder, setSortOrder] = useState("0");
   const [editing, setEditing] = useState(false);
@@ -74,36 +105,31 @@ export default function AdminConfiguration({ session }: { session: Session }) {
   useEffect(() => { if (showHistory) void loadRevisions(); }, [showHistory, loadRevisions]);
 
   const resetEditor = () => {
-    setSelected(null); setTitle(""); setKey(""); setPayloadText(emptyPayload);
+    setSelected(null); setTitle(""); setFields([]);
     setActive(true); setSortOrder("0"); setEditing(false); setShowHistory(false); setRevisions([]);
   };
   const beginCreate = () => { resetEditor(); setEditing(true); setMessage(null); };
   const beginEdit = (row: Configuration) => {
-    setSelected(row); setTitle(row.title); setKey(row.config_key);
-    setPayloadText(JSON.stringify(row.payload ?? {}, null, 2));
+    setSelected(row); setTitle(row.title); setFields(fieldsFromPayload(row.payload ?? {}));
     setActive(row.is_active); setSortOrder(String(row.sort_order)); setEditing(true); setShowHistory(false); setMessage(null);
   };
+  const updateField = (id: string, patch: Partial<DetailField>) => setFields((current) => current.map((field) => field.id === id ? { ...field, ...patch } : field));
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!supabase) return;
-    if (!title.trim() || !/^[a-z0-9][a-z0-9_-]{0,99}$/.test(key.trim())) {
-      setMessage({ kind: "error", text: "Judul wajib diisi. Key gunakan huruf kecil, angka, tanda hubung, atau garis bawah." });
-      return;
-    }
-    let payload: Record<string, unknown>;
-    try {
-      const parsed: unknown = JSON.parse(payloadText);
-      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Isi konfigurasi harus berupa objek JSON.");
-      payload = parsed as Record<string, unknown>;
-    } catch (error) {
-      setMessage({ kind: "error", text: error instanceof Error ? error.message : "Format JSON tidak valid." });
-      return;
+    if (!title.trim()) { setMessage({ kind: "error", text: "Nama konfigurasi wajib diisi." }); return; }
+    const invalidField = fields.find((field) => !field.label.trim() || (field.type === "number" && String(field.value).trim() !== "" && !Number.isFinite(Number(field.value))));
+    if (invalidField) { setMessage({ kind: "error", text: invalidField.type === "number" ? "Periksa kembali angka pada detail konfigurasi." : "Setiap detail harus memiliki nama." }); return; }
+    const keys = fields.map((field) => slugify(field.label));
+    if (keys.some((key) => !key) || new Set(keys).size !== keys.length) {
+      setMessage({ kind: "error", text: "Nama detail tidak boleh kosong atau duplikat." }); return;
     }
     const order = Number(sortOrder);
     if (!Number.isInteger(order)) { setMessage({ kind: "error", text: "Urutan harus berupa bilangan bulat." }); return; }
     setSaving(true); setMessage(null);
-    const values = { category, config_key: key.trim(), title: title.trim(), payload, is_active: active, sort_order: order, updated_by: session.user.id, updated_at: new Date().toISOString() };
+    const configKey = selected?.config_key ?? `${slugify(title) || "configuration"}-${Date.now().toString(36)}`;
+    const values = { category, config_key: configKey, title: title.trim(), payload: payloadFromFields(fields), is_active: active, sort_order: order, updated_by: session.user.id, updated_at: new Date().toISOString() };
     const result = selected
       ? await supabase.from("caleris_configurations").update(values).eq("id", selected.id).select("*").single()
       : await supabase.from("caleris_configurations").insert({ ...values, created_by: session.user.id }).select("*").single();
@@ -120,7 +146,7 @@ export default function AdminConfiguration({ session }: { session: Session }) {
     else { setMessage({ kind: "success", text: "Konfigurasi dihapus. Snapshot tetap tersedia di riwayat." }); if (selected?.id === row.id) resetEditor(); await loadRows(); }
   };
 
-  const counts = useMemo(() => categories.reduce((acc, item) => ({ ...acc, [item.id]: rows.length && item.id === category ? rows.length : 0 }), {} as Record<Category, number>), [category, rows]);
+  const counts = useMemo(() => categories.reduce((acc, item) => ({ ...acc, [item.id]: item.id === category ? rows.length : 0 }), {} as Record<Category, number>), [category, rows]);
   const current = selected && !editing ? selected : null;
 
   return <section className="workspace config-workspace">
@@ -141,7 +167,7 @@ export default function AdminConfiguration({ session }: { session: Session }) {
         {loading ? <div className="config-empty">Memuat konfigurasi...</div> : rows.length === 0 ? <div className="config-empty"><FilePlus2 size={27}/><strong>Belum ada konfigurasi</strong><span>Buat item pertama. Tidak ada nominal atau aturan lama yang dimasukkan otomatis.</span></div> :
           <div className="config-items">{rows.map((row) => <article key={row.id} className={selected?.id === row.id ? "config-item selected" : "config-item"}>
             <button type="button" className="config-item-main" onClick={() => { setSelected(row); setEditing(false); setShowHistory(false); setMessage(null); }}>
-              <span className="config-item-title">{row.title}</span><code>{row.config_key}</code><small>{row.is_active ? "Aktif" : "Nonaktif"} · Urutan {row.sort_order}</small>
+              <span className="config-item-title">{row.title}</span><small>{row.is_active ? "Aktif" : "Nonaktif"} · Urutan {row.sort_order}</small>
             </button>
             <div className="config-item-actions"><button type="button" aria-label={`Edit ${row.title}`} onClick={() => beginEdit(row)}><Pencil size={15}/></button><button type="button" aria-label={`Hapus ${row.title}`} onClick={() => void remove(row)}><Trash2 size={15}/></button></div>
           </article>)}</div>}
@@ -149,18 +175,28 @@ export default function AdminConfiguration({ session }: { session: Session }) {
       <section className="config-editor-panel">
         {editing ? <form onSubmit={save}>
           <div className="config-panel-heading"><div><span className="config-eyebrow">{selected ? "EDIT ITEM" : "NEW ITEM"}</span><h2>{selected ? "Ubah konfigurasi" : "Buat konfigurasi"}</h2></div><button type="button" className="config-icon-button" onClick={resetEditor} aria-label="Tutup editor"><X size={17}/></button></div>
-          <label className="config-field">Nama konfigurasi<input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} required placeholder="Nama konfigurasi"/></label>
-          <label className="config-field">Configuration key<input value={key} onChange={(e) => setKey(e.target.value.toLowerCase().replace(/\s+/g, "-"))} maxLength={100} required placeholder="contoh: license-tier-name"/></label>
-          <label className="config-field">Detail konfigurasi <span>JSON object</span><textarea value={payloadText} onChange={(e) => setPayloadText(e.target.value)} rows={13} spellCheck={false}/></label>
+          <label className="config-field">Nama konfigurasi<input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} required placeholder="Contoh: Gold License"/></label>
+          <div className="config-fields-heading"><div><strong>Detail konfigurasi</strong><span>Tambahkan informasi yang ingin diatur. Pilih tipe data yang sesuai.</span></div><button type="button" className="config-add-field" onClick={() => setFields((current) => [...current, makeField()])}><Plus size={15}/> Tambah detail</button></div>
+          {fields.length === 0 ? <div className="config-fields-empty">Belum ada detail. Tekan <strong>Tambah detail</strong> untuk mulai mengisi.</div> :
+            <div className="config-fields-list">{fields.map((field, index) => <div className="config-field-card" key={field.id}>
+              <div className="config-field-card-head"><span>DETAIL {index + 1}</span><button type="button" aria-label={`Hapus detail ${index + 1}`} onClick={() => setFields((current) => current.filter((item) => item.id !== field.id))}><Trash2 size={15}/></button></div>
+              <label className="config-field">Nama detail<input value={field.label} onChange={(e) => updateField(field.id, { label: e.target.value })} maxLength={100} placeholder="Contoh: Gaji minimum (¢p)"/></label>
+              <label className="config-field">Jenis input<select value={field.type} onChange={(e) => { const type = e.target.value as FieldType; updateField(field.id, { type, value: type === "boolean" ? false : String(field.value === true ? "Ya" : field.value === false ? "Tidak" : field.value) }); }}>
+                <option value="text">Teks singkat</option><option value="number">Angka</option><option value="boolean">Ya / Tidak</option><option value="long_text">Teks panjang</option>
+              </select></label>
+              {field.type === "boolean" ? <label className="config-boolean-input"><input type="checkbox" checked={Boolean(field.value)} onChange={(e) => updateField(field.id, { value: e.target.checked })}/><span>{field.value ? "Ya" : "Tidak"}</span></label> :
+                field.type === "long_text" ? <label className="config-field">Isi detail<textarea value={String(field.value)} onChange={(e) => updateField(field.id, { value: e.target.value })} rows={4} placeholder="Tulis keterangan lengkap..."/></label> :
+                <label className="config-field">Isi detail<input type={field.type === "number" ? "number" : "text"} step={field.type === "number" ? "any" : undefined} value={String(field.value)} onChange={(e) => updateField(field.id, { value: e.target.value })} placeholder={field.type === "number" ? "Masukkan angka" : "Tulis nilai..."}/></label>}
+            </div>)}</div>}
           <div className="config-field-row"><label className="config-field">Urutan<input type="number" step="1" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}/></label><label className="config-toggle"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)}/> Aktif</label></div>
-          <p className="config-hint">Semua detail disimpan sebagai data yang dapat diubah Admin. Gunakan JSON untuk menambahkan persyaratan atau properti baru tanpa mengubah struktur aplikasi.</p>
+          <p className="config-hint">Semua detail dapat ditambah, diubah, atau dihapus kapan saja. Pengaturan tersimpan otomatis ke database saat tombol Simpan ditekan.</p>
           <div className="config-form-actions"><button type="submit" className="config-primary-button" disabled={saving}><Save size={16}/>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button><button type="button" className="config-secondary-button" onClick={resetEditor}>Batal</button></div>
         </form> : current ? <div>
           <div className="config-panel-heading"><div><span className="config-eyebrow">CONFIGURATION DETAIL</span><h2>{current.title}</h2></div><button type="button" className="config-icon-button" onClick={() => beginEdit(current)} aria-label="Edit konfigurasi"><Pencil size={16}/></button></div>
-          <div className="config-detail-meta"><code>{current.config_key}</code><span>{current.is_active ? "Aktif" : "Nonaktif"}</span><small>Diperbarui {prettyDate(current.updated_at)}</small></div>
-          <pre className="config-json-preview">{JSON.stringify(current.payload, null, 2)}</pre>
+          <div className="config-detail-meta"><span>{current.is_active ? "Aktif" : "Nonaktif"}</span><small>Diperbarui {prettyDate(current.updated_at)}</small></div>
+          <DetailList payload={current.payload}/>
           <button type="button" className="config-history-button" onClick={() => setShowHistory((value) => !value)}><History size={16}/>{showHistory ? "Tutup riwayat" : "Lihat riwayat perubahan"}</button>
-          {showHistory && <div className="config-history-list">{revisions.length ? revisions.map((revision) => <article key={revision.id}><span>{revision.action}</span><strong>{revision.title}</strong><small><Clock3 size={13}/>{prettyDate(revision.changed_at)}</small><pre>{JSON.stringify(revision.payload, null, 2)}</pre></article>) : <p>Belum ada riwayat yang dapat ditampilkan.</p>}</div>}
+          {showHistory && <div className="config-history-list">{revisions.length ? revisions.map((revision) => <article key={revision.id}><span>{revision.action === "INSERT" ? "DIBUAT" : revision.action === "UPDATE" ? "DIPERBARUI" : "DIHAPUS"}</span><strong>{revision.title}</strong><small><Clock3 size={13}/>{prettyDate(revision.changed_at)}</small><DetailList payload={revision.payload} empty="Tidak ada detail pada versi ini."/></article>) : <p>Belum ada riwayat yang dapat ditampilkan.</p>}</div>}
         </div> : <div className="config-empty config-editor-empty"><Check size={26}/><strong>Pilih konfigurasi</strong><span>Pilih item di sebelah kiri atau buat konfigurasi baru untuk mulai mengatur CALERIS.</span></div>}
       </section>
     </div>

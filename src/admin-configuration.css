@@ -1,6 +1,6 @@
 .config-workspace{max-width:1440px;margin:0 auto;padding:34px clamp(18px,4vw,58px) 70px;color:#f1f0ed}
 .config-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin:18px 0 28px}
-.config-heading h1{font-family:Anton,Impact,sans-serif;font-size:clamp(34px,5vw,58px);font-weight:400;letter-spacing:.015em;margin:6px 0 8px;text-transform:uppercase}
+.config-heading h1{font-family:Audiowide,sans-serif;font-size:clamp(25px,4vw,40px);font-weight:400;line-height:1.18;letter-spacing:-.045em;margin:0 0 10px;text-transform:uppercase;text-shadow:0 6px 28px #000b}
 .config-heading p:not(.config-eyebrow){color:#aeb1b4;max-width:700px;margin:0;line-height:1.65}
 .config-eyebrow{font-size:10px;letter-spacing:.2em;font-weight:800;color:#c7a66a}
 .config-admin-mark{display:inline-flex;align-items:center;gap:8px;border:1px solid #78623f;background:#211b13;color:#dfc18b;padding:9px 12px;border-radius:3px;font-size:10px;font-weight:800;letter-spacing:.12em;white-space:nowrap}
@@ -19,13 +19,12 @@
 .config-primary-button{background:#b28a50;color:#111;border:1px solid #d0ad76}
 .config-primary-button:disabled{opacity:.6;cursor:wait}
 .config-secondary-button{background:transparent;color:#ddd;border:1px solid #484b4e}
-.config-icon-button,.config-item-actions button{display:grid;place-items:center;width:34px;height:34px;border:1px solid #45484b;background:#17191b;color:#d7d9da;border-radius:3px;cursor:pointer}
+.config-icon-button,.config-item-actions button,.config-field-card-head button{display:grid;place-items:center;width:34px;height:34px;border:1px solid #45484b;background:#17191b;color:#d7d9da;border-radius:3px;cursor:pointer}
 .config-items{display:grid;gap:8px}
 .config-item{display:flex;align-items:center;gap:8px;border:1px solid #303437;background:#17191b;border-radius:3px;padding:10px}
 .config-item.selected{border-color:#b28a50}
 .config-item-main{display:flex;flex:1;min-width:0;flex-direction:column;align-items:flex-start;gap:4px;background:none;border:0;color:inherit;text-align:left;cursor:pointer}
 .config-item-title{font-size:13px;font-weight:750}
-.config-item-main code,.config-detail-meta code{font-size:10px;color:#c7a66a}
 .config-item-main small{font-size:10px;color:#969ba0}
 .config-item-actions{display:flex;gap:5px}
 .config-item-actions button{width:30px;height:30px}
@@ -33,27 +32,44 @@
 .config-empty svg{color:#c5a36c}
 .config-empty strong{color:#f0eee9;font-size:14px}
 .config-editor-empty{min-height:370px}
-.config-field{display:flex;flex-direction:column;gap:7px;margin-top:17px;font-size:11px;font-weight:750;color:#d6d6d3}
-.config-field>span{font-weight:500;color:#a6a9aa}
-.config-field input,.config-field textarea{width:100%;background:#090b0d;color:#f2f0ec;border:1px solid #3a3e41;border-radius:3px;padding:11px 12px;font:inherit;font-weight:450;outline:none}
-.config-field input:focus,.config-field textarea:focus{border-color:#b28a50}
-.config-field textarea,.config-json-preview{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:11px;line-height:1.6;resize:vertical;tab-size:2}
+.config-field{display:flex;flex-direction:column;gap:7px;margin-top:15px;font-size:11px;font-weight:750;color:#d6d6d3}
+.config-field input,.config-field select,.config-field textarea{width:100%;background:#090b0d;color:#f2f0ec;border:1px solid #3a3e41;border-radius:3px;padding:11px 12px;font:inherit;font-weight:450;outline:none;min-width:0}
+.config-field select{color-scheme:dark}
+.config-field textarea{resize:vertical;line-height:1.55}
+.config-field input:focus,.config-field select:focus,.config-field textarea:focus{border-color:#b28a50}
+.config-fields-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;padding-bottom:12px;border-bottom:1px solid #343638}
+.config-fields-heading>div{display:flex;flex-direction:column;gap:5px}
+.config-fields-heading strong{font-size:13px;color:#f0eee9}
+.config-fields-heading span{font-size:10px;line-height:1.5;color:#9da1a5}
+.config-add-field{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;padding:9px 10px;border:1px solid #806943;border-radius:3px;background:#211b13;color:#e1c48f;font-size:10px;font-weight:800;cursor:pointer}
+.config-fields-empty{margin-top:12px;padding:18px;border:1px dashed #46494b;border-radius:3px;color:#a1a5a8;text-align:center;font-size:11px;line-height:1.6}
+.config-fields-empty strong{color:#d9bd8b}
+.config-fields-list{display:grid;gap:10px;margin-top:12px}
+.config-field-card{padding:12px;border:1px solid #383c3f;border-radius:3px;background:#111416}
+.config-field-card-head{display:flex;align-items:center;justify-content:space-between}
+.config-field-card-head>span{font-size:9px;font-weight:800;letter-spacing:.16em;color:#c7a66a}
+.config-field-card-head button{width:29px;height:29px}
+.config-boolean-input{display:flex;align-items:center;gap:9px;margin-top:15px;padding:11px 12px;border:1px solid #3a3e41;border-radius:3px;background:#090b0d;color:#ddd;font-size:12px}
+.config-boolean-input input,.config-toggle input{width:17px;height:17px;accent-color:#b28a50}
 .config-field-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:end}
 .config-toggle{display:flex;align-items:center;gap:9px;padding:12px 0;color:#d8d7d2;font-size:12px}
-.config-toggle input{accent-color:#b28a50}
 .config-hint{font-size:10px;line-height:1.55;color:#999fa3;margin:12px 0}
 .config-form-actions{display:flex;gap:8px;margin-top:16px}
 .config-detail-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:17px 0;color:#b9b9b4;font-size:10px}
-.config-detail-meta span{padding:4px 7px;border:1px solid #68573a;color:#d6b77f;border-radius:2px}
+.config-detail-meta>span{padding:4px 7px;border:1px solid #68573a;color:#d6b77f;border-radius:2px}
 .config-detail-meta small{color:#858b8f}
-.config-json-preview{background:#090b0d;border:1px solid #303437;color:#d7d0c2;border-radius:3px;padding:15px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto}
+.config-detail-list{display:grid;gap:0;margin:16px 0}
+.config-detail-list>div{display:grid;grid-template-columns:minmax(120px,.8fr) minmax(0,1.2fr);gap:12px;padding:11px 0;border-bottom:1px solid #303437}
+.config-detail-list dt{font-size:11px;color:#a6aaad}
+.config-detail-list dd{margin:0;font-size:12px;color:#f0eee9;overflow-wrap:anywhere;white-space:pre-wrap}
+.config-no-details{font-size:11px;color:#9da1a5;padding:12px 0}
 .config-history-button{background:transparent;border:1px solid #555;color:#d6c4a5;margin-top:8px}
 .config-history-list{display:grid;gap:9px;margin-top:12px}
 .config-history-list article{border:1px solid #35393b;padding:12px;border-radius:3px}
 .config-history-list article>span{font-size:9px;color:#d2b17a;letter-spacing:.1em}
 .config-history-list article strong{display:block;font-size:12px;margin:5px 0}
 .config-history-list article small{display:flex;align-items:center;gap:5px;color:#999;font-size:10px}
-.config-history-list pre{font:10px/1.5 ui-monospace,monospace;color:#bbb;white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto}
+.config-history-list article .config-detail-list{margin:8px 0 0}
 .config-history-list>p{font-size:11px;color:#9da1a5}
 .config-message{margin-top:14px;padding:12px 14px;border:1px solid;border-radius:3px;font-size:12px}
 .config-message.success{border-color:#476a50;color:#b7d4b9;background:#122016}
@@ -62,4 +78,4 @@
 .config-security-note p{font-size:10px;line-height:1.6;margin:0;color:#b4b0a7}
 .config-security-note code{color:#e1c48f}
 @media(max-width:900px){.config-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.config-main-grid{grid-template-columns:1fr}.config-list-panel,.config-editor-panel{min-height:0}}
-@media(max-width:560px){.config-heading{flex-direction:column}.config-admin-mark{align-self:flex-start}.config-category-grid{gap:8px}.config-category{min-height:140px;padding:13px}.config-list-panel,.config-editor-panel{padding:15px}.config-field-row{grid-template-columns:1fr auto}}
+@media(max-width:560px){.config-heading{flex-direction:column}.config-heading h1{font-size:clamp(24px,7vw,32px)}.config-admin-mark{align-self:flex-start}.config-category-grid{gap:8px}.config-category{min-height:140px;padding:13px}.config-list-panel,.config-editor-panel{padding:15px}.config-field-row{grid-template-columns:1fr auto}.config-fields-heading{align-items:flex-start;flex-direction:column}.config-add-field{align-self:flex-start}.config-detail-list>div{grid-template-columns:1fr;gap:5px}}
