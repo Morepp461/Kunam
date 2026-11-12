@@ -178,3 +178,19 @@ Configuration details are entered through ordinary form controls. Admin can add 
 - Both tables have RLS enabled. Only authenticated users listed in `site_admins` can read or modify current configurations; revision snapshots are Admin-readable and append-only. Anonymous, PUBLIC, and service-role table privileges are revoked. Authenticated users receive only the exact CRUD privileges needed by the Admin interface and revision trigger; RLS still restricts all rows to Admin.
 - The legacy `Journalist` member role was removed from the role constraint. Existing role names retained: Driver, Principal, Owner, Agent, and FIA.
 - Migrations: `20261112120938_caleris_configuration_foundation.sql` `20261112121143_caleris_configuration_fk_indexes.sql`, `20261112121349_restrict_caleris_configuration_table_grants.sql`, and `20261112121435_tighten_caleris_configuration_privileges.sql`.
+
+## License Scoring Engine
+
+License scoring is processed by Supabase triggers and immutable score-ledger transactions. All numeric scoring rules are stored in the License category of Configuration Center and remain editable.
+
+- Daily check-in points and inactivity penalty settings are seeded from the supplied rules.
+- Standings milestone records are independent, configurable entries. The engine reads all active scoring-milestone-* records; it does not contain threshold values in application logic.
+- Premio and Zwei WDC settings are seeded inactive with zero points. Admin must set and activate each division's WDC value before finalization.
+- Driver Panel → Daily Check-in is the only attendance source. One check-in is allowed per Jakarta calendar day.
+- The five-race inactivity rule is processed from configured round check-in windows. A round with any daily check-in breaks the absence streak; every configured streak interval applies the configured penalty, floored at the driver's remaining seasonal score.
+- Admin Control → License Scoring Engine manages seasons, divisions, driver registrations, round windows, cumulative standings, final standings, hiatus flags, round processing, and WDC finalization.
+- WDC finalization requires an active season, every configured round closed, a complete final classification for all non-hiatus registered drivers, exactly one first-place entry, a unique highest final-points total, an active registered Driver champion, and an active positive WDC setting for that division. A unique database constraint prevents more than one WDC award per division-season.
+- Seasonal points are scoped by season. WDC ledger points are permanent. Hiatus preserves the last-license snapshot and excludes the driver from inactivity and final classification.
+- Final standings are locked after WDC finalization. Official results are entered by Admin because the current project has no external race-results feed.
+
+Supabase migrations: `20261112150000_license_scoring_engine.sql`, `20261112151000_license_wdc_finalization_validation.sql`, and `20261112152000_license_driver_read_policies_and_milestone_validation.sql`, `20261112153000_license_round_processing_order.sql`, and `20261112154000_license_offseason_hiatus_guard.sql`.
