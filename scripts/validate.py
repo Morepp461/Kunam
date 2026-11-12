@@ -144,6 +144,22 @@ def main():
     assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
     assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in app
     assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in app
+    calendar_migration = ROOT / "supabase/migrations/20261112170000_season_calendar_and_payroll.sql"
+    calendar_component = ROOT / "src/AdminSeasonCalendar.tsx"
+    contracts_component = ROOT / "src/TeamDriverContracts.tsx"
+    assert calendar_migration.is_file() and calendar_component.is_file() and contracts_component.is_file(), "Missing season calendar/payroll implementation"
+    calendar_sql = calendar_migration.read_text(encoding="utf-8")
+    calendar_source = calendar_component.read_text(encoding="utf-8")
+    contracts_source = contracts_component.read_text(encoding="utf-8")
+    for fragment in ["season_calendar_periods", "season_period_rounds", "economy_driver_contracts", "economy_payroll_claims", "fia_create_season_calendar", "payroll_for_period_round", "admin_process_pending_economy_payroll", "is_caleris_fia_or_admin"]:
+        assert fragment in calendar_sql, f"Season calendar/payroll migration missing: {fragment}"
+    for fragment in ["Off Season", "Pre Season", "Race Period", "Break Race Period", "End Season", "Reschedule", "3–5 round", "fia_create_season_calendar"]:
+        assert fragment in calendar_source, f"Season calendar UI missing: {fragment}"
+    assert "annual_salary" in contracts_source and "economy_driver_contracts" in contracts_source
+    assert "payroll" in edge_source and "process_payroll_pending" in edge_source
+    assert 'path="/fia-panel/season-calendar"' in app and 'path="/team-panel/driver-contracts"' in app
+    assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
+    assert '(isAdmin||panelAccess.fia_panel)' in app
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
