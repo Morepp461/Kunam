@@ -20,8 +20,8 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe||!p?.member_id){setMember(null);setLoading(false);setNotice(pe?.message||"Akun belum terhubung ke member.");return}
   const [m,t,n,o]=await Promise.all([
-   supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
-   supabase.from("teams").select("id,name,division_key,takeover_listed").order("name"),
+   supabase.from("caleris_member_directory").select("id,character_name,role,team_id").order("character_name"),
+   supabase.from("caleris_team_directory").select("id,name,division_key,takeover_listed").order("name"),
    supabase.from("caleris_team_takeovers").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_team_takeover_offers").select("*").order("created_at",{ascending:true})
   ]);
