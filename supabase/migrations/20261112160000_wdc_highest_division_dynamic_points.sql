@@ -53,6 +53,12 @@ begin
     end if;
   end if;
 
+  if tg_op='UPDATE' and new.source_type='wdc' and old.source_type<>'wdc' then
+    if v_context is distinct from 'finalize' or new.points_delta<=0 then
+      raise exception 'Transaksi hanya dapat menjadi award WDC melalui finalisasi juara yang tervalidasi.';
+    end if;
+  end if;
+
   if tg_op='DELETE' then return old; end if;
   return new;
 end;
