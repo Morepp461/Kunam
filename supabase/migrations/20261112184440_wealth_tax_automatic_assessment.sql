@@ -1,0 +1,2 @@
+-- Wealth Tax assessment is intentionally deferred until Admin confirms the taxable-wealth basis.
+-- Tax rules remain configurable, but no annual assessment or automatic collection is scheduled.
