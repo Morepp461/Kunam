@@ -178,6 +178,7 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261112185541_team_takeover_market_valuation.sql` — exposes the latest valuation only for teams that have opened a Take Over listing.
 - `20261112185752_sponsorship_story_visibility_hardening.sql` — enforces Admin-only, participant-only, and public storyline visibility boundaries.
 - `20261112190047_member_directory_public_ids.sql` — adds public Member ID lookup to the safe directory for the profile-level Recruit action.
+- `20261112190320_takeover_listing_valuation_guard.sql` — prevents opening a Take Over listing without an Admin valuation snapshot.
 
 ### Operational workflows added in this phase
 
