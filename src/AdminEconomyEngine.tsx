@@ -8,9 +8,9 @@ import { supabase } from "./lib/supabase";
 type WalletAccount = { id: string; account_kind: string; profile_user_id: string | null; member_id: string | null; team_id: string | null; balance: number; is_active: boolean; display_name: string };
 type Transaction = { id: string; event_type: string; amount: number; description: string; created_at: string; source_account_id: string; destination_account_id: string; source_name: string; destination_name: string; is_reversed: boolean };
 type RewardClaim = { id: string; amount: number; status: string; created_at: string; member_id: string };
-type EventType = "checkin_reward" | "prize" | "sponsor_payout" | "bank_funding" | "tax" | "fine" | "transfer" | "admin_adjustment";
+type EventType = "checkin_reward" | "prize" | "bank_reward" | "sponsor_payout" | "bank_funding" | "tax" | "fine" | "transfer" | "admin_adjustment";
 type ConfigRow = { id: string; payload: Record<string, unknown>; is_active: boolean };
-const eventLabels: Record<string, string> = { checkin_reward: "Check-in Reward", prize: "Prize", sponsor_payout: "Sponsor Payout", bank_funding: "Bank Funding", tax: "Pajak", fine: "Denda", transfer: "Transfer", admin_adjustment: "Penyesuaian Admin", reversal: "Pembatalan" };
+const eventLabels: Record<string, string> = { checkin_reward: "Check-in Reward", prize: "Prize", bank_reward: "Bank Reward", sponsor_payout: "Sponsor Payout", bank_funding: "Bank Funding", tax: "Pajak", fine: "Denda", transfer: "Transfer", admin_adjustment: "Penyesuaian Admin", reversal: "Pembatalan" };
 const money = (value: number) => "¢p " + Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const date = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
@@ -103,7 +103,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     event.preventDefault();
     if (!supabase) return;
     const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0 || Math.round(numericAmount * 100) !== numericAmount * 100) {
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 999999999999999999.99 || Math.round(numericAmount * 100) !== numericAmount * 100) {
       setNotice({ kind: "error", text: "Nominal harus lebih besar dari nol dan maksimal dua angka desimal." }); return;
     }
     if (!sourceId || !destinationId || sourceId === destinationId || !description.trim()) {
@@ -124,7 +124,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     event.preventDefault();
     if (!supabase || !config) return;
     const numericAmount = Number(rewardAmount);
-    if (!Number.isFinite(numericAmount) || numericAmount < 0 || Math.round(numericAmount * 100) !== numericAmount * 100) {
+    if (!Number.isFinite(numericAmount) || numericAmount < 0 || numericAmount > 999999999999999999.99 || Math.round(numericAmount * 100) !== numericAmount * 100) {
       setNotice({ kind: "error", text: "Reward harus berupa angka nol atau lebih dengan maksimal dua angka desimal." }); return;
     }
     setSaving(true); setNotice(null);
@@ -180,7 +180,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
         <div className="economy-panel-heading"><div><span className="section-eyebrow">TRANSACTION CONTROL</span><h2>Catat transaksi</h2></div><ArrowUpRight size={19}/></div>
         <form className="economy-form" onSubmit={submitTransaction}>
           <label>Jenis transaksi<select value={eventType} onChange={(event) => onEventTypeChange(event.target.value as EventType)}>
-            <option value="prize">Prize · VreeoBank</option><option value="checkin_reward">Check-in reward · VreeoBank</option>
+            <option value="prize">Prize · VreeoBank</option><option value="bank_reward">Bank reward · VreeoBank</option><option value="checkin_reward">Check-in reward · VreeoBank</option>
             <option value="sponsor_payout">Sponsor payout · Sponsor</option><option value="bank_funding">Bank funding · Sponsor → VreeoBank</option>
             <option value="tax">Pajak · menuju VreeoBank</option><option value="fine">Denda · menuju VreeoBank</option>
             <option value="transfer">Transfer antar wallet</option><option value="admin_adjustment">Penyesuaian Admin</option>
@@ -189,7 +189,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
             <label>Sumber<select value={sourceId} onChange={(event) => setSourceId(event.target.value)} required>{sourceOptions.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}</select></label>
             <label>Tujuan<select value={destinationId} onChange={(event) => setDestinationId(event.target.value)} required>{destinationOptions.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}</select></label>
           </div>
-          <label>Nominal (¢p)<input type="number" min="0.01" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Masukkan nominal" required/></label>
+          <label>Nominal (¢p)<input type="number" min="0.01" max="999999999999999999.99" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Masukkan nominal" required/></label>
           <label>Deskripsi<input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={240} placeholder="Contoh: Prize Round 1 · Caleris Premio" required/></label>
           <p className="economy-form-hint">Pajak dan denda otomatis diarahkan ke VreeoBank serta boleh membuat saldo pembayar negatif. Transaksi keluar lainnya wajib memiliki saldo cukup.</p>
           <button className="economy-primary-button" type="submit" disabled={saving || loading || !sourceOptions.length || !destinationOptions.length}><Coins size={16}/>{saving ? "Memproses..." : "Posting transaksi"}</button>
@@ -200,7 +200,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
         <div className="economy-panel-heading"><div><span className="section-eyebrow">AUTOMATED REWARD</span><h2>Daily Check-in Reward</h2></div><CheckCircle2 size={19}/></div>
         {config ? <form className="economy-form" onSubmit={saveRewardConfig}>
           <div className="economy-source-route"><span>VreeoBank</span><ArrowUpRight size={16}/><strong>Driver Wallet</strong></div>
-          <label>Reward per check-in (¢p)<input type="number" min="0" step="0.01" value={rewardAmount} onChange={(event) => setRewardAmount(event.target.value)}/></label>
+          <label>Reward per check-in (¢p)<input type="number" min="0" max="999999999999999999.99" step="0.01" value={rewardAmount} onChange={(event) => setRewardAmount(event.target.value)}/></label>
           <label className="economy-toggle"><input type="checkbox" checked={rewardActive} onChange={(event) => setRewardActive(event.target.checked)}/> Aktifkan reward otomatis</label>
           <p className="economy-form-hint">Nilai awal nol dan nonaktif. Jika saldo Bank belum cukup, check-in tetap tersimpan dan reward masuk antrean pending. Tidak ada reward yang hilang diam-diam.</p>
           <button className="economy-primary-button" type="submit" disabled={saving}><ShieldCheck size={16}/> Simpan aturan reward</button>
@@ -226,7 +226,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
         <div className="economy-ledger-list">{transactions.map((transaction) => <article className="economy-ledger-row" key={transaction.id}>
           <div className="economy-ledger-icon">{transaction.event_type === "reversal" ? <XCircle size={17}/> : transaction.event_type === "tax" || transaction.event_type === "fine" ? <ArrowDownLeft size={17}/> : <ArrowUpRight size={17}/>}</div>
           <div className="economy-ledger-copy"><strong>{transaction.description}</strong><span>{eventLabels[transaction.event_type] || transaction.event_type} · {transaction.source_name} → {transaction.destination_name}</span><small>{date(transaction.created_at)}</small></div>
-          <div className="economy-ledger-value"><strong>{money(transaction.amount)}</strong>{transaction.is_reversed ? <em>REVERSED</em> : <button type="button" onClick={() => void reverseTransaction(transaction)} disabled={saving}>Reverse</button>}</div>
+          <div className="economy-ledger-value"><strong>{money(transaction.amount)}</strong>{transaction.is_reversed || transaction.event_type === "reversal" ? <em>{transaction.event_type === "reversal" ? "REVERSAL" : "REVERSED"}</em> : <button type="button" onClick={() => void reverseTransaction(transaction)} disabled={saving}>Reverse</button>}</div>
         </article>)}</div>}
     </section>
 
