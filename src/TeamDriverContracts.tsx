@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
 import {Banknote,FileSignature,ShieldCheck} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -17,11 +18,11 @@ export default function TeamDriverContracts({session,isAdmin}:{session:Session;i
   setMember((current.data||null) as Member|null);setTeams((teamRows.data||[]) as Team[]);setSeasons((seasonRows.data||[]) as Season[]);setDrivers((driverRows.data||[]) as Member[]);
   const own=current.data?.team_id||"";const chosen=teamId||(isAdmin?teamRows.data?.[0]?.id||"":own);if(!teamId&&chosen)setTeamId(chosen);
   if(chosen){const [c,p]=await Promise.all([supabase.from("economy_driver_contracts").select("*,members(character_name)").eq("team_id",chosen).order("created_at",{ascending:false}),supabase.from("economy_payroll_claims").select("id,period_id,member_id,amount,status,paid_at,season_id").eq("team_id",chosen).order("created_at",{ascending:false})]);if(c.error||p.error)setNotice(c.error?.message||p.error?.message||"Gagal memuat kontrak.");setContracts((c.data||[]) as Contract[]);setClaims((p.data||[]) as Claim[])}else{setContracts([]);setClaims([])}
- },[isAdmin,teamId]);
+ },[isAdmin,teamId,session.user.id]);
  useEffect(()=>{void load()},[load]);
  const owner=member?.role==="Owner"&&Boolean(member.team_id);const canManage=isAdmin||owner;
  const availableDrivers=useMemo(()=>drivers.filter(d=>d.team_id===teamId),[drivers,teamId]);
- const create=async(e:React.FormEvent)=>{e.preventDefault();if(!supabase||!canManage||!teamId||!seasonId||!driverId)return;const amount=Number(salary);if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){setNotice("Gaji tahunan harus lebih besar dari nol dan maksimal dua desimal.");return}
+ const create=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!canManage||!teamId||!seasonId||!driverId)return;const amount=Number(salary);if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100){setNotice("Gaji tahunan harus lebih besar dari nol dan maksimal dua desimal.");return}
   setBusy(true);const {error}=await supabase.from("economy_driver_contracts").upsert({season_id:seasonId,team_id:teamId,member_id:driverId,annual_salary:amount,status:"active",created_by:session.user.id,updated_by:session.user.id},{onConflict:"season_id,member_id"});setBusy(false);if(error)setNotice(error.message);else{setNotice("Kontrak gaji berhasil disimpan.");setSalary("");setDriverId("");await load()}
  };
  const updateStatus=async(c:Contract,status:string)=>{if(!supabase||!canManage)return;setBusy(true);const {error}=await supabase.from("economy_driver_contracts").update({status}).eq("id",c.id);setBusy(false);if(error)setNotice(error.message);else{setNotice("Status kontrak diperbarui.");await load()}};
