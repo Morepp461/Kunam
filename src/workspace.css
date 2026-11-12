@@ -340,3 +340,18 @@ body.light .avatar-edit-button{color:#725719;border-color:rgba(143,108,30,.45)}
 @media(max-width:620px){
  .paddock-calendar-anchored{max-height:68dvh}
 }
+
+
+/* Optional names, display preference and public member profile */
+.settings-fields-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.optional-label{margin-left:5px;color:#9fa4a8;font-size:10px;text-transform:uppercase;letter-spacing:.12em}
+.theme-preference{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:22px 0;padding:15px;border:1px solid rgba(198,163,58,.22);border-radius:6px;background:rgba(198,163,58,.055)}
+.theme-preference>div:first-child{display:flex;flex-direction:column;gap:5px}
+.theme-preference strong{color:#eeeae0;font-size:13px}
+.theme-preference small{color:#aeb1b4;font-size:10px}
+.public-profile-sections>.workspace-card:last-child{grid-column:auto}
+@media(max-width:620px){
+ .settings-fields-grid{grid-template-columns:1fr;gap:0}
+ .theme-preference{align-items:flex-start;flex-direction:column}
+ .public-profile-sections{grid-template-columns:1fr}
+}
