@@ -32,7 +32,7 @@ def main():
     ]
     for migration in history_aligned_migrations:
         assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
-    for obsolete in ["20261112110000_split_public_content_rls_admin_lookup.sql", "20261112123000_grant_search_service_role_select.sql", "20261112150000_license_scoring_engine.sql", "20261112151000_license_wdc_finalization_validation.sql", "20261112152000_license_driver_read_policies_and_milestone_validation.sql", "20261112153000_license_round_processing_order.sql", "20261112154000_license_offseason_hiatus_guard.sql", "20261112155000_race_day_checkin_and_lifetime_wdc.sql", "20261112160000_wdc_highest_division_dynamic_points.sql"]:
+    for obsolete in ["20261112110000_split_public_content_rls_admin_lookup.sql", "20261112123000_grant_search_service_role_select.sql", "20261112150000_license_scoring_engine.sql", "20261112151000_license_wdc_finalization_validation.sql", "20261112152000_license_driver_read_policies_and_milestone_validation.sql", "20261112153000_license_round_processing_order.sql", "20261112154000_license_offseason_hiatus_guard.sql", "20261112155000_race_day_checkin_and_lifetime_wdc.sql", "20261112160000_wdc_highest_division_dynamic_points.sql", "20261112170000_season_calendar_and_payroll.sql"]:
         assert not (ROOT / "supabase/migrations" / obsolete).exists(), f"Obsolete migration version remains: {obsolete}"
     economy_gateway_migration = ROOT / "supabase/migrations/20261112140121_economy_edge_gateway.sql"
     economy_edge_function = ROOT / "supabase/functions/economy-engine/index.ts"
