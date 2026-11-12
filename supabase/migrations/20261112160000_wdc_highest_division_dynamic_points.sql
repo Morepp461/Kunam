@@ -126,6 +126,7 @@ declare
   v_points numeric;
   v_tier_priority integer;
   v_existing_priority integer;
+  v_has_existing boolean:=false;
   v_round_count integer;
   v_open_round_count integer;
   v_final_count integer;
@@ -205,10 +206,11 @@ begin
   select * into v_existing from public.license_score_ledger
   where member_id=v_champion.member_id and source_type='wdc'
   for update;
+  v_has_existing := found;
 
   perform set_config('caleris.wdc_award_context','finalize',true);
 
-  if not found then
+  if not v_has_existing then
     insert into public.license_score_ledger(
       member_id,season_id,season_division_id,source_type,points_delta,
       idempotency_key,description,metadata
