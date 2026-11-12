@@ -31,7 +31,12 @@ def main():
     assert "cinematicCamera" in styles and "spotlightSweep" in styles
     assert "enable row level security" in sql.lower()
     assert "create policy" in sql.lower()
-    assert \"Paddock Access\" in app and \"complete-paddock-access\" in app\n    assert \"VITE_CLOUDFLARE_TURNSTILE_SITE_KEY\" in (ROOT / \"src/App.tsx\").read_text(encoding=\"utf-8\")\n    assert \"onboarding_completed\" in app and \"preferredRole\" in app\n    edge = ROOT / \"supabase/functions/complete-paddock-access/index.ts\"\n    assert edge.is_file() and \"siteverify\" in edge.read_text(encoding=\"utf-8\")\n    print("Caleris QA static checks passed.")
+    assert "Paddock Access" in app and "complete-paddock-access" in app
+    assert "VITE_CLOUDFLARE_TURNSTILE_SITE_KEY" in (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    assert "onboarding_completed" in app and "preferredRole" in app
+    edge = ROOT / "supabase/functions/complete-paddock-access/index.ts"
+    assert edge.is_file() and "siteverify" in edge.read_text(encoding="utf-8")
+    print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
     main()
