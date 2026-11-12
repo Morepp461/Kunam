@@ -36,16 +36,30 @@ function Application(){
  const refreshProfile=useCallback(async()=>{
   if(!supabase||!session){setProfile(null);setIsAdmin(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
   setProfileReady(false);
-  const [profileResult,accessResult]=await Promise.all([
+  const [profileResult,adminResult]=await Promise.all([
    supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",session.user.id).maybeSingle(),
-   supabase.rpc("get_my_panel_access")
+   supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle()
   ]);
   if(profileResult.error)toast("error","Profil gagal dimuat",profileResult.error.message);
-  if(accessResult.error)toast("error","Akses role gagal diperiksa",accessResult.error.message);
-  const access=(accessResult.data||NO_PANEL_ACCESS) as PanelAccess;
-  setPanelAccess(accessResult.error?NO_PANEL_ACCESS:access);
-  setIsAdmin(Boolean(!accessResult.error&&access.is_admin));
+  if(adminResult.error)toast("error","Akses akun gagal diperiksa",adminResult.error.message);
   let account=profileResult.data as AccountProfile|null;
+  const admin=Boolean(adminResult.data?.user_id);
+  let memberRole:string|null=null;
+  if(account?.member_id){
+   const {data:member,error:memberError}=await supabase.from("members").select("role").eq("id",account.member_id).maybeSingle();
+   if(memberError)toast("error","Role member gagal dimuat",memberError.message);
+   memberRole=typeof member?.role==="string"?member.role:null;
+  }
+  const access:PanelAccess={
+   is_admin:admin,
+   member_role:memberRole,
+   main_event:admin||account?.onboarding_completed===true,
+   driver_panel:admin||memberRole==="Driver",
+   team_panel:admin||memberRole==="Owner"||memberRole==="Principal",
+   fia_panel:admin||memberRole==="FIA"
+  };
+  setPanelAccess(access);
+  setIsAdmin(admin);
   if(account?.avatar_path){const {data:signed,error:signedError}=await supabase.storage.from("profile-avatars").createSignedUrl(account.avatar_path,3600);if(signedError)toast("error","Foto profil gagal dimuat",signedError.message);account={...account,avatar_url:signed?.signedUrl??null};}
   setProfile(account);
   setIsAdmin(Boolean(adminResult.data?.user_id));
