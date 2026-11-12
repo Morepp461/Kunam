@@ -60,7 +60,7 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const token = typeof body.turnstileToken === "string" ? body.turnstileToken : "";
-    const avatarUrl = typeof body.avatarUrl === "string" ? body.avatarUrl : "";
+    const avatarPath = typeof body.avatarPath === "string" ? body.avatarPath : "";
     const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
     const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
     const dateOfBirth = typeof body.dateOfBirth === "string" ? body.dateOfBirth : "";
@@ -69,7 +69,7 @@ Deno.serve(async (req: Request) => {
     const privacyAccepted = body.privacyAccepted === true;
 
     if (!token || token.length > 2048) return respond(400, { error: "Complete Cloudflare verification first." });
-    if (!avatarUrl || !nickname || nickname.length > 32 || !dateOfBirth) {
+    if (!avatarPath || !nickname || nickname.length > 32 || !dateOfBirth) {
       return respond(400, { error: "Complete all required Paddock Access fields." });
     }
     if (firstName.length > 80 || lastName.length > 80) return respond(400, { error: "Name is too long." });
@@ -81,10 +81,9 @@ Deno.serve(async (req: Request) => {
     if (age === null) return respond(400, { error: "Enter a valid date of birth." });
     if (age < 13) return respond(403, { error: "Paddock Access is unavailable for users under 13." });
 
-    const avatar = new URL(avatarUrl);
-    const expectedAvatarPrefix = `/storage/v1/object/public/profile-avatars/${user.id}/`;
-    if (avatar.origin !== new URL(supabaseUrl).origin || !avatar.pathname.startsWith(expectedAvatarPrefix)) {
-      return respond(400, { error: "Profile photo URL is not valid for this account." });
+    const expectedAvatarPrefix = `${user.id}/`;
+    if (!avatarPath.startsWith(expectedAvatarPrefix) || avatarPath.includes("..") || avatarPath.split("/").length !== 2) {
+      return respond(400, { error: "Profile photo path is not valid for this account." });
     }
 
     const verifyResponse = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
@@ -107,7 +106,8 @@ Deno.serve(async (req: Request) => {
     });
     const { error: saveError } = await adminClient.from("profiles").upsert({
       user_id: user.id,
-      avatar_url: avatarUrl,
+      avatar_url: null,
+      avatar_path: avatarPath,
       first_name: firstName || null,
       last_name: lastName || null,
       date_of_birth: dateOfBirth,
