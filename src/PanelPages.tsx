@@ -45,6 +45,7 @@ export const panelGroups: PanelGroup[] = [
   { path: "fia-panel", label: "FIA PANEL", tabs: [
     { path: "rules-input", label: "Rules Input", description: "Pengelolaan regulasi global dan divisi." },
     { path: "season-calendar", label: "Season Calendar", description: "Jadwal Off Season, Pre Season, Race Period, Break, dan End Season." },
+    { path: "license-engine", label: "License Scoring Engine", description: "Registrasi driver, round, standings, dan finalisasi WDC." },
     { path: "announcement-input", label: "Announcement Input", description: "Penyusunan dan publikasi pengumuman FIA." },
     { path: "punishment-input", label: "Punishment Input", description: "Pencatatan sanksi driver dan tim." },
     { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." }
