@@ -102,7 +102,7 @@ begin
  if not found then raise exception 'Member profile is not linked.'; end if;
  select * into v_offer from public.caleris_sponsorship_offers where id=p_offer_id for update;
  if not found or v_offer.status not in ('offered','negotiating') then raise exception 'Sponsorship offer is not open.'; end if;
- if v_offer.expires_at is not null and now()>v_offer.expires_at then update public.caleris_sponsorship_offers set status='expired' where id=v_offer.id;raise exception 'Sponsorship offer expired.';end if;
+ if v_offer.expires_at is not null and now()>v_offer.expires_at then update public.caleris_sponsorship_offers set status='expired' where id=v_offer.id;return jsonb_build_object('status','expired');end if;
  if not ((v_offer.target_kind='driver' and v_offer.target_member_id=v_member.id)
    or (v_offer.target_kind='team' and v_offer.target_team_id=v_member.team_id and v_member.role in ('Owner','Principal'))) then
   raise exception 'Akun ini bukan pihak penerima sponsorship offer.';
