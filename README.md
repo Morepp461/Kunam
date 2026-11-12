@@ -172,8 +172,8 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261112184453_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
 - `20261112184457_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
 - `20261112184502_operations_negotiation_configuration.sql` — editable negotiation limits and takeover valuation bounds seeded from the explicitly agreed rules.
-- `20261113001100_team_takeover_workflows.sql` — team listing, valuation-bounded negotiation, counter offers, and FIA review.
-- `20261113001200_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
+- `20261112185030_team_takeover_workflows.sql` — team listing, valuation-bounded negotiation, counter offers, and FIA review.
+- `20261112185035_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
 
 ### Operational workflows added in this phase
 
