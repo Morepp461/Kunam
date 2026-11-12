@@ -193,4 +193,4 @@ License scoring is processed by Supabase triggers and immutable score-ledger tra
 - Seasonal points are scoped by season. WDC ledger points are permanent. Hiatus preserves the last-license snapshot and excludes the driver from inactivity and final classification.
 - Final standings are locked after WDC finalization. Official results are entered by Admin because the current project has no external race-results feed.
 
-Supabase migrations: `20261112150000_license_scoring_engine.sql`, `20261112151000_license_wdc_finalization_validation.sql`, and `20261112152000_license_driver_read_policies_and_milestone_validation.sql`, and `20261112153000_license_round_processing_order.sql`.
+Supabase migrations: `20261112150000_license_scoring_engine.sql`, `20261112151000_license_wdc_finalization_validation.sql`, and `20261112152000_license_driver_read_policies_and_milestone_validation.sql`, `20261112153000_license_round_processing_order.sql`, and `20261112154000_license_offseason_hiatus_guard.sql`.
