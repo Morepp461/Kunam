@@ -12,6 +12,7 @@ begin
  if v_target.id is null or v_target.id=v_own.id then raise exception 'Tim tujuan tidak valid.'; end if;
  if v_own.division_key is null or v_target.division_key is null then raise exception 'Admin harus menetapkan tier kedua tim sebelum afiliasi dibuat.'; end if;
  if v_own.division_key=v_target.division_key then raise exception 'Affiliate Team wajib berasal dari tier yang berbeda.'; end if;
+ perform 1 from public.teams where id in (v_own.id,v_target.id) order by id for update;
  if exists(select 1 from public.caleris_team_affiliations where status in ('pending','accepted') and (team_a_id in (v_own.id,v_target.id) or team_b_id in (v_own.id,v_target.id))) then
   raise exception 'Salah satu tim sudah memiliki affiliate atau permintaan yang masih berjalan.';
  end if;
