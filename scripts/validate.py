@@ -34,6 +34,17 @@ def main():
     assert "Paddock Access" in app and "complete-paddock-access" in app
     assert "VITE_CLOUDFLARE_TURNSTILE_SITE_KEY" in (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     assert "onboarding_completed" in app and "preferredRole" in app
+    search = ROOT / "supabase/functions/member-directory/index.ts"
+    assert search.is_file(), "Missing member directory search function"
+    search_source = search.read_text(encoding="utf-8")
+    assert 'action === "search"' in search_source
+    assert '.in("account_status", ["public", "active", "admin"])' in search_source
+    assert 'admin.from("teams").select("id,name").ilike("name", pattern)' in search_source
+    assert 'return respond(200, { members, teams, pages })' in search_source
+    assert 'requestHeaders.delete("Authorization")' in search_source
+    assert 'requestHeaders.set("apikey", serviceKey)' in search_source
+    for card_title in ["Current Event", "Statistik", "Informasi akun", "Informasi karakter", "Detail kontrak"]:
+        assert card_title in app, f"Global search card header missing: {card_title}"
     edge = ROOT / "supabase/functions/complete-paddock-access/index.ts"
     assert edge.is_file() and "siteverify" in edge.read_text(encoding="utf-8")
     print("Caleris QA static checks passed.")
