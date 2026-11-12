@@ -13,6 +13,7 @@ import AdminEconomyEngine from "./AdminEconomyEngine";
 import AdminOperations from "./AdminOperations";
 import FIAOperations from "./FIAOperations";
 import MemberRaceCheckIn from "./MemberRaceCheckIn";
+import TeamAffiliate from "./TeamAffiliate";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import TeamDriverContracts from "./TeamDriverContracts";
 
@@ -23,6 +24,7 @@ import "./economy-engine.css";
 import "./admin-operations.css";
 import "./fia-operations.css";
 import "./member-race-checkin.css";
+import "./team-affiliate.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 
@@ -107,6 +109,7 @@ function Application(){
   <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<FIAOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/driver-contracts" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<TeamDriverContracts session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/team-panel/affiliate-team" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<TeamAffiliate session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/member/:memberId" element={<PublicMemberProfile/>}/>
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
