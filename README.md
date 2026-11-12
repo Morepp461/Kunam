@@ -153,7 +153,7 @@ The current schema does not allow authenticated users to update `profiles.member
 
 The Admin Control → Operations Suite workspace is introduced at `/admin/operations`. It provides editable records for:
 
-- **Tax Rules:** Admin-configurable Wealth Tax thresholds, rates, and calculation method (flat or progressive), based only on Driver/Owner wallet balances, plus Driver Transfer Tax rules. Flat applies the highest eligible rate to the full wallet balance; progressive applies each rate only to the balance slice above its threshold. No tax thresholds or rates are preloaded.
+- **Tax Rules:** Admin-configurable Wealth Tax thresholds and rates using flat calculation only, plus Driver Transfer Tax rules. The highest eligible threshold selects one rate applied to the full taxable base. No tax thresholds or rates are preloaded. Wealth Tax assessment and collection remain disabled until the taxable-wealth basis is confirmed.
 - **Race Development Rewards:** per-season-division settings for winner and pole-sitter DDP awards and their respective teams' TDP awards. DDP/TDP use separate immutable development-token ledgers and never affect ¢p wallets. Values start at zero and inactive.
 - **Sponsor Pool:** Admin-managed sponsor records and optional budgets. Sponsor names and commercial terms are not invented or preloaded.
 - **Team Valuation:** Admin-entered component snapshots for assets, development parts, history, achievements, and financial health. Total valuation is the sum of those entered component values; no hidden weights are applied.
@@ -164,10 +164,10 @@ The database foundation also introduces operational records for sponsorship offe
 
 - `20261113000100_caleris_operations_suite_foundation.sql` — operations tables, token ledgers, sponsor pool, tax rules, wealth assessments, transfer/takeover records, affiliations, valuation snapshots, fines, and member race check-ins.
 - `20261113000200_caleris_operations_admin_policies.sql` — Admin-only write policies for editable tax rules, race reward settings, sponsor pool, and valuation snapshots.
-- `20261113000300_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, annual wallet-only Wealth Tax assessment/collection, and FIA fine posting workflows.
+- `20261113000300_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, Wealth Tax assessment/collection guardrails (disabled pending taxable-base decision), and FIA fine posting workflows.
 - `20261113000400_all_role_race_checkin.sql` — shared all-role race attendance, Driver-only license score integration, configurable reward payout, and pending reward processing.
-- `20261113000500_wealth_tax_automatic_assessment.sql` — deferred end-of-season assessment after all rounds close and payroll claims settle.
-- `20261113000600_wealth_tax_offseason_scheduler.sql` — pg_cron scheduler for automatic Wealth Tax collection during configured Off Season.
+- `20261113000500_wealth_tax_automatic_assessment.sql` — reserved migration; annual assessment is deferred until taxable-wealth basis is confirmed.
+- `20261113000600_wealth_tax_offseason_scheduler.sql` — reserved migration; no cron job is installed while Wealth Tax basis remains undecided.
 - `20261113000700_team_affiliation_workflows.sql` — cross-tier one-affiliate request, accept/reject, and termination RPCs.
 - `20261113000800_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
 - `20261113000900_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
@@ -179,7 +179,7 @@ The database foundation also introduces operational records for sponsorship offe
 
 - **All-role race check-in:** Dashboard and Driver Panel check-in routes now use one shared race check-in workflow for every member role. The existing Driver license trigger remains the only source of race attendance license points. Reward amount comes from the editable Economy configuration key `daily-checkin-reward`; pending all-role rewards can be processed from Admin → Economy Engine.
 - **DDP / TDP:** FIA can enter the official winner and pole sitter after a round closes. The active season-division reward rule issues DDP to the relevant Driver only and TDP to each relevant Driver's team. The two token assets have independent immutable ledgers and wallet views in Driver Development and Team Development.
-- **Wealth Tax:** assessment snapshots are generated after every round in the season is closed and payroll claims have settled. The Admin-selected method controls the annual wallet-only assessment: flat applies the highest eligible rate to the full balance, while progressive applies rates marginally across the configured balance bands. Thresholds are strict (balance must exceed the threshold). A `pg_cron` job checks each minute and posts the assessed tax when the corresponding Off Season period begins. The Admin page also exposes manual assessment and collection controls.
+- **Wealth Tax:** flat calculation only. The highest active threshold exceeded selects one rate for the entire taxable base. Thresholds are strict (the base must exceed the threshold). The taxable-wealth basis has not yet been confirmed, so assessment, collection, and scheduling are intentionally disabled.
 - **FIA fines:** FIA/Admin can issue a fine against a member or team. The workflow posts the debit and VreeoBank credit atomically through the existing immutable economy ledger.
 - **Driver Transfer:** Team Owner/Principal can submit Transfer or Loan proposals, counter-offer, accept, or reject. The negotiation limits are editable in Configuration Center under **Driver Move Negotiation Limits**. Permanent transfers require FIA approval, the configured Driver Transfer Tax rule, sufficient buyer Team Wallet funds, and the End Season/Off Season window. Approved transfers queue until the window opens; a scheduled database job retries execution. On execution, the Driver moves to the buyer team and the seller's active season payroll contract is ended. Driver Loan proposals can be negotiated, but FIA execution is intentionally blocked until the loan's financial obligations, fee, and return rules are defined.
 - **Team affiliation:** Owner/Principal can request, accept, reject, or terminate an affiliation. Teams must have Admin-assigned division keys from License Scoring Engine, must be in different tiers, and each team can have only one pending/accepted affiliate relationship.
@@ -198,7 +198,7 @@ The database foundation also introduces operational records for sponsorship offe
 - `/race-checkin` — all-role race attendance; also used by the Driver Panel check-in route.
 - `/driver-panel/development` and `/team-panel/development` — DDP and TDP wallets.
 
-**Activation boundary:** the Operations Suite is deliberately configuration-first. No Wealth Tax is charged, no transfer tax is collected, no sponsorship payout is sent, and no race development tokens are awarded until the corresponding workflow is configured and invoked. Wealth Tax uses only Driver/Owner wallet balances. Admin selects flat or progressive calculation and configures every threshold and rate. Admin must run assessment after all season rounds and payroll claims are complete; collection is only accepted while the season's Off Season calendar period is active.
+**Activation boundary:** the Operations Suite is deliberately configuration-first. No Wealth Tax is charged, no transfer tax is collected, no sponsorship payout is sent, and no race development tokens are awarded until the corresponding workflow is configured and invoked. Wealth Tax is flat-only; all thresholds and rates are editable by Admin. Assessment and collection remain disabled until the taxable-wealth basis is confirmed.
 
 ## Current Project Notes
 
