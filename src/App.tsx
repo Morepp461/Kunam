@@ -82,7 +82,7 @@ function Shell({children,theme,setTheme,session,profile}:{children:ReactNode;the
  const nickname=profile?.web_nickname||session?.user.user_metadata?.full_name||session?.user.user_metadata?.name||session?.user.email?.split("@")[0]||"Member";
  const navigationGroups=session?[
   {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
-  ...panelGroups.map(group=>({title:group.label,items:group.tabs.map((tab,index)=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
+  ...panelGroups.map(group=>({title:group.label,items:group.tabs.map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
   {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
   ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>}]}]:[])
  ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];
