@@ -241,3 +241,30 @@ body.light .site-footer .footer-note{color:#514a3d}
  .site-header .brand{flex-basis:clamp(108px,36vw,125px);width:clamp(108px,36vw,125px);margin-left:7px}
  .site-header .brand img{transform:scale(1.25)}
 }
+
+/* CALERIS footer, adapted from the VML three-column footer. */
+.site{grid-template-rows:76px minmax(0,1fr) auto;overflow:visible}
+.site-footer{display:block;align-self:stretch;justify-content:initial;padding:0;background:rgba(5,7,9,.92);border-top:1px solid rgba(255,255,255,.08);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.footer-main{display:grid;width:min(100%,1500px);grid-template-columns:1.3fr 1fr 1fr;gap:clamp(28px,5vw,72px);margin:0 auto;padding:42px clamp(18px,2.5vw,38px) 36px}
+.footer-column{min-width:0}
+.footer-brand{display:flex;width:max-content;max-width:100%;height:58px;align-items:center;overflow:hidden}
+.footer-brand img{display:block;width:auto;max-width:min(100%,245px);height:58px;object-fit:contain;object-position:left center}
+.footer-column p{max-width:430px;margin:14px 0 0;color:rgba(244,243,239,.48);font-size:13px;line-height:1.9}
+.footer-vreeo-logo{display:block;width:48px;height:48px;margin:0 0 16px;object-fit:contain}
+.footer-column h2{margin:0;color:#c6a33a;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.22em}
+.footer-support nav{display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:24px}
+.footer-support nav a{color:rgba(244,243,239,.72);font-size:13px;line-height:1.5;text-decoration:none;transition:color .18s ease}
+.footer-support nav a:hover{color:#f1d77e}
+.footer-bottom{padding:18px 16px;border-top:1px solid rgba(255,255,255,.07);color:rgba(244,243,239,.26);font:600 10px 'Barlow Condensed',sans-serif;letter-spacing:.18em;text-align:center}
+.legal-blank-page{width:100%;min-height:1px}
+@media(max-width:760px){
+ .site{grid-template-rows:62px minmax(0,1fr) auto}
+ .footer-main{grid-template-columns:1fr;gap:32px;padding:34px 22px 30px}
+ .footer-column p{max-width:520px;font-size:12px}
+ .footer-brand{height:54px}
+ .footer-brand img{height:54px}
+ .footer-vreeo-logo{width:44px;height:44px;margin-bottom:13px}
+ .footer-support nav{gap:13px;margin-top:18px}
+ .footer-support nav a{font-size:13px}
+ .footer-bottom{padding:16px 12px;font-size:9px;letter-spacing:.13em}
+}
