@@ -27,6 +27,9 @@ def main():
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
+    assert "if(term.length<1)" in app
+    assert "query.trim().length>=1" in app
+    assert "},100);return()=>{active=false;window.clearTimeout(timer)}" in app
     assert "tire-trace" in app and "toast-stack" in app and "global-progress" in styles
     assert "cinematicCamera" in styles and "spotlightSweep" in styles
     assert "enable row level security" in sql.lower()
@@ -38,6 +41,7 @@ def main():
     assert search.is_file(), "Missing member directory search function"
     search_source = search.read_text(encoding="utf-8")
     assert 'action === "search"' in search_source
+    assert "if (term.length < 1)" in search_source
     assert r'raw.replace(/[^\p{L}\p{N} _-]/gu' in search_source
     assert r'.replace(/\s+/g, " ")' in search_source
     assert '.in("account_status", ["public", "active", "admin"])' in search_source
