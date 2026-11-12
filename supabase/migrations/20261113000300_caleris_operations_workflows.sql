@@ -50,12 +50,16 @@ begin
  if found then
   perform private.award_development_token('DDP',p_winner_member_id,null,v_rule.driver_win_ddp,'race_win',p_round_id,
    'race-win-ddp:'||p_round_id::text,'Race winner DDP · '||v_round.title,(select auth.uid()));
-  perform private.award_development_token('TDP',null,v_winner_team,v_rule.team_win_tdp,'race_win',p_round_id,
-   'race-win-tdp:'||p_round_id::text,'Race winner team TDP · '||v_round.title,(select auth.uid()));
+  if v_winner_team is not null then
+   perform private.award_development_token('TDP',null,v_winner_team,v_rule.team_win_tdp,'race_win',p_round_id,
+    'race-win-tdp:'||p_round_id::text,'Race winner team TDP · '||v_round.title,(select auth.uid()));
+  end if;
   perform private.award_development_token('DDP',p_pole_member_id,null,v_rule.driver_pole_ddp,'pole_position',p_round_id,
    'pole-ddp:'||p_round_id::text,'Pole position DDP · '||v_round.title,(select auth.uid()));
-  perform private.award_development_token('TDP',null,v_pole_team,v_rule.team_pole_tdp,'pole_position',p_round_id,
-   'pole-tdp:'||p_round_id::text,'Pole position team TDP · '||v_round.title,(select auth.uid()));
+  if v_pole_team is not null then
+   perform private.award_development_token('TDP',null,v_pole_team,v_rule.team_pole_tdp,'pole_position',p_round_id,
+    'pole-tdp:'||p_round_id::text,'Pole position team TDP · '||v_round.title,(select auth.uid()));
+  end if;
  end if;
  return jsonb_build_object('round_id',p_round_id,'winner_member_id',p_winner_member_id,'pole_member_id',p_pole_member_id,'rewards_issued',coalesce(v_rule.is_active,false));
 end;
