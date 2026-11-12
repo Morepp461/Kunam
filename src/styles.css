@@ -251,6 +251,12 @@ body.light .site-footer .footer-note{color:#514a3d}
 .footer-brand img{display:block;width:auto;max-width:min(100%,245px);height:58px;object-fit:contain;object-position:left center}
 .footer-column p{max-width:430px;margin:14px 0 0;color:rgba(244,243,239,.48);font-size:13px;line-height:1.9}
 .footer-vreeo-logo{display:block;width:48px;height:48px;margin:0 0 16px;object-fit:contain}
+.footer-directors{margin-top:26px}
+.footer-directors h2{margin:0;color:#c6a33a;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.22em}
+.footer-directors nav{display:flex;flex-direction:column;align-items:flex-start;gap:11px;margin-top:15px}
+.footer-directors nav a{color:rgba(244,243,239,.72);font-size:13px;line-height:1.5;text-decoration:none;transition:color .18s ease}
+.footer-directors nav a:hover{color:#f1d77e}
+
 .footer-column h2{margin:0;color:#c6a33a;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.22em}
 .footer-support nav{display:flex;flex-direction:column;align-items:flex-start;gap:14px;margin-top:24px}
 .footer-support nav a{color:rgba(244,243,239,.72);font-size:13px;line-height:1.5;text-decoration:none;transition:color .18s ease}
