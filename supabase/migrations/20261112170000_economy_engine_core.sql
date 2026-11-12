@@ -372,7 +372,7 @@ begin
   end if;
   return null;
 end;
-$;
+$economy_validation$;
 
 create constraint trigger economy_transaction_balanced_entries
 after insert on public.economy_transactions
@@ -387,7 +387,7 @@ as $economy_immutable$
 begin
   raise exception 'Economy ledger records are immutable. Use a reversal transaction.';
 end;
-$;
+$economy_immutable$;
 
 create trigger economy_transactions_immutable
 before update or delete on public.economy_transactions
@@ -420,7 +420,7 @@ begin
   end if;
   return new;
 end;
-$;
+$economy_claim_guard$;
 
 create trigger economy_reward_claim_guard
 before update or delete on public.economy_reward_claims
