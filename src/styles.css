@@ -101,3 +101,16 @@ body.light .site-footer .footer-note{color:#514a3d}
  .account-avatar-button img{width:29px;height:29px}
  .search-results{right:-45px;width:min(340px,calc(100vw - 20px))}
 }
+
+
+.drawer-nav{display:flex;flex:1;flex-direction:column;gap:20px;overflow-y:auto;padding-top:18px}
+.drawer-group{display:flex;flex-direction:column;gap:9px}
+.drawer-group .drawer-section{padding:0 5px;color:#c6a66a;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.24em}
+.drawer-group-items{display:flex;flex-direction:column;gap:8px}
+.site-drawer .drawer-nav-card{display:flex;align-items:center;gap:11px;width:100%;padding:12px 11px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.045);color:rgba(255,255,255,.72);text-decoration:none;text-align:left;transition:background .18s,border-color .18s}
+.site-drawer .drawer-nav-card:hover,.site-drawer .drawer-nav-card.active{border-color:rgba(198,163,58,.42);background:rgba(198,163,58,.1);color:#fff}
+.drawer-nav-icon{display:grid;place-items:center;flex:none;width:36px;height:36px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(0,0,0,.22);color:#c6a66a}
+.drawer-nav-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.drawer-nav-copy strong{font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.drawer-nav-copy small{color:rgba(255,255,255,.38);font-size:9px;line-height:1.45}
+.drawer-nav-card>svg{flex:none;color:rgba(255,255,255,.3)}
