@@ -16,7 +16,7 @@ export default function TeamAffiliate({session}:{session:Session}){
   if(pe||!p?.member_id){setMember(null);setRows([]);setLoading(false);setNotice(pe?.message||"Akun belum terhubung ke member.");return}
   const [m,t,a]=await Promise.all([
    supabase.from("members").select("id,role,team_id").eq("id",p.member_id).maybeSingle(),
-   supabase.from("teams").select("id,name,division_key").order("name"),
+   supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
    supabase.from("caleris_team_affiliations").select("*").order("created_at",{ascending:false})
   ]);
   const err=[m.error,t.error,a.error].find(Boolean);if(err)setNotice(err.message);
