@@ -328,3 +328,15 @@ body.light .avatar-edit-button{color:#725719;border-color:rgba(143,108,30,.45)}
  .paddock-calendar-anchored .paddock-calendar-grid{gap:3px}
  .paddock-calendar-anchored .paddock-calendar-grid>span,.paddock-calendar-anchored .paddock-calendar-grid>button{min-height:35px}
 }
+
+
+/* Keep the open date field above the later role picker in the same stacking context. */
+.paddock-access-shell,.paddock-access-form{overflow:visible}
+.paddock-picker-field.is-open{position:relative;z-index:260}
+.paddock-picker-field.is-open .paddock-picker-wrap{z-index:261}
+.paddock-calendar-anchored{z-index:262;overflow-y:auto;overflow-x:hidden;max-height:min(72dvh,560px)}
+.paddock-picker-field:not(.is-open){position:relative;z-index:1}
+.paddock-avatar-preview img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+@media(max-width:620px){
+ .paddock-calendar-anchored{max-height:68dvh}
+}
