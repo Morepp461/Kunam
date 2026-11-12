@@ -23,9 +23,8 @@ def main():
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
     assert 'provider:"discord"' in app
-    assert 'data-member={session ? "true" : "false"}' in app
-    assert '/assets/Untitled%20design_20261103_142659_0000.png' in app
-    assert '/assets/Background%202.png' in app
+    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/>' in app
+    assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
     assert "tire-trace" in app and "toast-stack" in app and "global-progress" in styles
