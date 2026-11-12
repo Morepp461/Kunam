@@ -29,10 +29,6 @@ def main():
     assert 'serviceClient.rpc("admin_post_economy_transaction"' in edge_source
     assert 'serviceClient.rpc("admin_reverse_economy_transaction"' in edge_source
     assert 'serviceClient.rpc("admin_process_pending_economy_rewards"' in edge_source
-    assert 'supabase.functions.invoke("economy-engine"' in economy_source
-    assert 'supabase.rpc("admin_post_economy_transaction"' not in economy_source
-    assert 'supabase.rpc("admin_reverse_economy_transaction"' not in economy_source
-    assert 'supabase.rpc("admin_process_pending_economy_rewards"' not in economy_source
     economy_query_migration = ROOT / "supabase/migrations/20261112172000_economy_engine_query_hardening.sql"
     assert economy_query_migration.is_file(), "Missing Economy Engine query hardening migration"
     query_sql = economy_query_migration.read_text(encoding="utf-8")
@@ -133,6 +129,10 @@ def main():
     economy_styles = ROOT / "src/economy-engine.css"
     assert economy_component.is_file() and economy_styles.is_file(), "Missing Economy Engine UI"
     economy_source = economy_component.read_text(encoding="utf-8")
+    assert 'supabase.functions.invoke("economy-engine"' in economy_source
+    assert 'supabase.rpc("admin_post_economy_transaction"' not in economy_source
+    assert 'supabase.rpc("admin_reverse_economy_transaction"' not in economy_source
+    assert 'supabase.rpc("admin_process_pending_economy_rewards"' not in economy_source
     for rpc in ["admin_post_economy_transaction", "admin_reverse_economy_transaction", "admin_process_pending_economy_rewards"]:
         assert rpc in economy_source, f"Economy Engine UI missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
