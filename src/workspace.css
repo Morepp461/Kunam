@@ -280,3 +280,34 @@ body.light .paddock-calendar-footer button{border-color:rgba(143,108,30,.36);bac
  .avatar-crop-dialog{padding:18px}
  .avatar-crop-preview{width:min(100%,235px)}
 }
+
+
+/* Mobile-safe popover layer: render above the form instead of inside clipped cards. */
+.paddock-picker-dismiss{position:fixed;inset:0;z-index:9997;border:0;background:transparent}
+.paddock-calendar-floating{position:fixed!important;z-index:9998!important;max-height:min(72dvh,520px);overflow:auto;overscroll-behavior:contain;isolation:isolate;touch-action:pan-y}
+.paddock-calendar-heading>div:first-child{min-width:0}
+.paddock-calendar-year{display:inline-flex;align-items:center;gap:7px;padding:3px 0;border:0;background:transparent;color:#f0e8d4;font:600 20px 'Barlow Condensed',sans-serif;letter-spacing:.04em}
+.paddock-calendar-year svg{color:#d6b85e}
+.paddock-calendar-nav{position:relative;z-index:2}
+.paddock-calendar-nav button{position:relative;z-index:3;touch-action:manipulation;pointer-events:auto}
+.paddock-year-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;max-height: min(48dvh,320px);overflow-y:auto;overscroll-behavior:contain;padding:12px 2px;scrollbar-width:thin;scrollbar-color:#a78a42 transparent}
+.paddock-year-grid button{min-height:38px;border:1px solid rgba(198,163,58,.18);border-radius:5px;background:rgba(255,255,255,.035);color:#e9e2d1;font:600 12px 'Barlow Condensed',sans-serif}
+.paddock-year-grid button:hover,.paddock-year-grid button.chosen{border-color:#d6b85e;background:linear-gradient(145deg,#d9bd68,#8f6e25);color:#17130a}
+.avatar-inline-crop{display:flex;flex-direction:column;align-items:center;gap:9px;padding:13px 12px 16px;border:1px solid rgba(198,163,58,.22);border-radius:7px;background:rgba(198,163,58,.035)}
+.avatar-inline-crop>span{color:#c6a94f;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.16em;text-align:center}
+.avatar-inline-stage{position:relative;width:min(100%,190px);aspect-ratio:1;overflow:hidden;border:2px solid #c6a94f;border-radius:50%;background:#080a0c;box-shadow:0 0 0 5px rgba(198,163,58,.08);touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.avatar-inline-stage:active{cursor:grabbing}
+.avatar-inline-stage img{display:block;width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none;-webkit-user-drag:none}
+body.light .paddock-calendar-year{color:#302c23}
+body.light .paddock-calendar-year svg{color:#80621b}
+body.light .paddock-year-grid button{background:rgba(255,255,255,.55);color:#494337;border-color:rgba(143,108,30,.2)}
+body.light .paddock-year-grid button:hover,body.light .paddock-year-grid button.chosen{background:linear-gradient(145deg,#d9bd68,#8f6e25);color:#17130a}
+body.light .avatar-inline-crop{background:rgba(183,143,43,.05);border-color:rgba(143,108,30,.22)}
+body.light .avatar-inline-crop>span{color:#80621b}
+@media(max-width:620px){
+ .paddock-calendar-floating{max-height:70dvh;padding:13px}
+ .paddock-calendar-floating .paddock-calendar-grid{gap:3px}
+ .paddock-calendar-floating .paddock-calendar-grid>span,.paddock-calendar-floating .paddock-calendar-grid>button{min-height:35px}
+ .paddock-year-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-height:44dvh}
+ .avatar-inline-stage{width:min(100%,170px)}
+}
