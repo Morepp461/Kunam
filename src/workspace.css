@@ -355,3 +355,39 @@ body.light .avatar-edit-button{color:#725719;border-color:rgba(143,108,30,.45)}
  .theme-preference{align-items:flex-start;flex-direction:column}
  .public-profile-sections{grid-template-columns:1fr}
 }
+
+
+/* Caleris Masters panel structure */
+.panel-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+.panel-feature-card{display:flex;align-items:center;gap:14px;min-width:0;padding:18px;border:1px solid rgba(198,163,58,.26);border-radius:8px;background:rgba(10,13,17,.88);color:#f4f3ef;text-decoration:none;transition:border-color .2s,transform .2s,background .2s}
+.panel-feature-card:hover{transform:translateY(-2px);border-color:rgba(225,192,91,.72);background:rgba(20,21,22,.94)}
+.panel-feature-card>svg:last-child{flex:none;color:#d6b85e}
+.panel-feature-card.static{cursor:default}
+.panel-feature-icon{display:grid;place-items:center;flex:none;width:42px;height:42px;border:1px solid rgba(198,163,58,.28);border-radius:7px;background:rgba(198,163,58,.09);color:#e1c66f}
+.panel-feature-copy{display:flex;flex:1;flex-direction:column;gap:5px;min-width:0}
+.panel-feature-copy strong{font:600 16px 'Barlow Condensed',sans-serif;letter-spacing:.045em;text-transform:uppercase}
+.panel-feature-copy small{color:#aeb1b4;font-size:11px;line-height:1.5}
+.panel-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:210px;padding:26px 20px;border:1px dashed rgba(198,163,58,.3);border-radius:8px;background:rgba(10,13,17,.66);text-align:center;color:#d6b85e}
+.panel-empty strong{color:#f0ede5;font:600 18px 'Barlow Condensed',sans-serif;letter-spacing:.05em;text-transform:uppercase}
+.panel-empty p{max-width:560px;margin:0;color:#aeb1b4;font-size:12px;line-height:1.7}
+.panel-empty span{margin-top:5px;color:#9d8950;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.16em}
+.panel-filter-bar{display:flex;flex-wrap:wrap;align-items:end;gap:10px;margin:14px 0 18px}
+.panel-search,.panel-filter{display:flex;flex-direction:column;gap:6px}
+.panel-search{flex:1;min-width:210px;position:relative;justify-content:center}
+.panel-search svg{position:absolute;left:12px;top:14px;color:#c6a33a}
+.panel-search input,.panel-filter select{height:42px;border:1px solid rgba(198,163,58,.3);border-radius:5px;background:rgba(0,0,0,.36);color:#eeeae0;outline:none}
+.panel-search input{width:100%;padding:0 12px 0 37px}
+.panel-filter span{color:#aeb1b4;font-size:9px;letter-spacing:.1em;text-transform:uppercase}
+.panel-filter select{min-width:118px;padding:0 10px;color-scheme:dark}
+.panel-note{margin:0 0 18px;color:#aeb1b4;font-size:11px;line-height:1.65}
+.attribute-chart-list{display:flex;flex-direction:column;gap:15px}
+.attribute-chart-row{display:grid;grid-template-columns:minmax(125px,1fr) minmax(100px,2fr) 28px;align-items:center;gap:12px}
+.attribute-chart-row>span{color:#d5d2c8;font-size:11px}
+.attribute-chart-row>strong{color:#b8a15b;font:600 12px 'Barlow Condensed',sans-serif;text-align:right}
+.attribute-chart-track{height:8px;overflow:hidden;border-radius:99px;background:linear-gradient(90deg,rgba(198,163,58,.1),rgba(198,163,58,.2));position:relative}
+.attribute-chart-track:before{content:"";position:absolute;left:0;top:0;bottom:0;width:100%;border:1px solid rgba(198,163,58,.22);border-radius:99px}
+.attribute-chart-track i{display:block;width:0;height:100%;background:linear-gradient(90deg,#9c7729,#e5c96d)}
+.panel-season-note{margin-top:14px}
+.panel-season-note p{margin:8px 0 15px;color:#bfc1c3;font-size:12px;line-height:1.7}
+@media(max-width:620px){.panel-card-grid{grid-template-columns:1fr;gap:8px}.panel-feature-card{padding:14px}.panel-feature-icon{width:38px;height:38px}.panel-filter-bar{align-items:stretch}.panel-filter{flex:1;min-width:calc(50% - 6px)}.panel-filter select{width:100%;min-width:0}.panel-search{flex-basis:100%}.attribute-chart-row{grid-template-columns:minmax(105px,1fr) minmax(65px,1fr) 22px;gap:8px}.attribute-chart-row>span{font-size:10px}}
+body.light .panel-feature-card,body.light .panel-empty,body.light .panel-season-note{background:rgba(15,17,19,.82);color:#f4f3ef}
