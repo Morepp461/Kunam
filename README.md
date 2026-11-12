@@ -131,6 +131,22 @@ Driver and team development pages include the requested attribute lists with a 5
 
 **Implementation status:** this is a UI/navigation scaffold only. Lists, charts, forms, sponsorship progress, quests, financial records, appeals, and FIA publication workflows do not yet read or write production data. No database schema or Supabase migration was added in this phase. Existing landing, account, profile, rules, and admin routes remain in place.
 
+## Panel Role Access
+
+Panel navigation and routes use the assigned role on the linked member record, not the self-selected `preferred_role` onboarding field.
+
+- **Admin** (verified through `site_admins`): full access to Main Event, Driver Panel, Team Panel, and FIA Panel, including every FIA workspace route.
+- **FIA** (`members.role = 'FIA'`): Main Event and FIA Panel.
+- **Driver** (`members.role = 'Driver'`): Main Event and Driver Panel.
+- **Owner / Principal** (`members.role = 'Owner'` or `'Principal'`): Main Event and Team Panel.
+- **Agent / Journalist**: Main Event only until their panel permissions are defined.
+
+The client loads the signed-in user's linked member role through the existing RLS-protected `profiles` and `members` records. Navigation entries are filtered by the resulting access map, and protected panel routes redirect unauthorized sessions to the dashboard. Admin status is determined only by the `site_admins` table; the profile's `account_status` and `preferred_role` are not treated as authorization grants.
+
+The current schema does not allow authenticated users to update `profiles.member_id` or write `members.role`; role assignment remains an administrator-controlled operation. Current panel pages are UI scaffolds, so future panel data tables and write workflows must receive matching server-side RLS policies before their data operations are enabled.
+
+**Database:** no schema change or migration was required for this access-control phase; it reuses the existing member-role relation and RLS policies.
+
 ## Current Project Notes
 
 - The footer and both legal routes are implemented; legal page copy is intentionally pending.
