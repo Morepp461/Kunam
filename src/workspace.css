@@ -107,3 +107,91 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .field-error{display:block;color:#ef9b8e;font-size:10px;line-height:1.5}
 .paddock-submit{width:100%;justify-content:center;margin-top:12px;min-height:48px}
 @media(max-width:620px){.paddock-access-workspace{padding:12px 10px 24px}.paddock-access-shell{padding:18px 15px}.paddock-access-heading{margin-bottom:18px}.paddock-avatar-preview{width:65px;height:65px}.paddock-avatar-field{padding:12px;gap:12px}.paddock-fields-grid{grid-template-columns:1fr;gap:0}.turnstile-widget{max-width:100%;overflow:hidden}}
+
+/* Branded controls and consistent paddock form fields. */
+.paddock-name-fields{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.settings-field select,.paddock-access-form .settings-field select{
+ appearance:none;-webkit-appearance:none;
+ padding-right:44px;
+ background-color:rgba(8,11,15,.88);
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23d6b85e' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+ background-repeat:no-repeat;background-position:right 13px center;background-size:17px 17px;
+ border:1px solid rgba(198,163,58,.42);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 5px 16px rgba(0,0,0,.12);
+}
+.settings-field select:focus,.paddock-access-form .settings-field select:focus{
+ border-color:#e0c36d;outline:none;box-shadow:0 0 0 2px rgba(198,163,58,.16),inset 0 1px 0 rgba(255,255,255,.04)
+}
+.settings-field select option,.paddock-access-form .settings-field select option{background:#101317;color:#f4f3ef}
+body.light .workspace{color:#302c23}
+body.light .page-title,body.light .page-heading .page-title{color:#302c23;text-shadow:none}
+body.light .page-description{color:#625c50}
+body.light .dashboard-event-card,
+body.light .stat-card,
+body.light .workspace-card,
+body.light .workflow-placeholder,
+body.light .profile-hero-card,
+body.light .settings-card,
+body.light .paddock-access-shell,
+body.light .access-denied{
+ color:#302c23;
+ background:linear-gradient(145deg,rgba(250,247,239,.97),rgba(238,231,216,.96));
+ border-color:rgba(143,108,30,.34);
+ box-shadow:0 14px 36px rgba(69,55,26,.11);
+}
+body.light .dashboard-event-card h2,
+body.light .workspace-card h2,
+body.light .section-title-row h2,
+body.light .workflow-placeholder h2,
+body.light .access-denied h2,
+body.light .profile-hero-copy h2,
+body.light .profile-info-item strong,
+body.light .empty-panel strong,
+body.light .avatar-editor strong,
+body.light .paddock-avatar-copy strong{color:#302c23}
+body.light .dashboard-event-card p,
+body.light .workspace-card>p,
+body.light .workflow-placeholder p,
+body.light .access-denied p,
+body.light .profile-hero-copy p,
+body.light .profile-info-item span,
+body.light .empty-panel p,
+body.light .avatar-editor p,
+body.light .paddock-avatar-copy small,
+body.light .settings-field{color:#625c50}
+body.light .stat-card strong{color:#302c23}
+body.light .stat-label,body.light .stat-card small{color:#716a5c}
+body.light .empty-tag,body.light .profile-role-pill{color:#725719;background:rgba(183,143,43,.11);border-color:rgba(143,108,30,.36)}
+body.light .profile-avatar-large{background:#e8dfca;color:#80621b;border-color:rgba(143,108,30,.42)}
+body.light .profile-info-item{border-color:rgba(143,108,30,.18)}
+body.light .account-avatar-button{background:rgba(250,247,239,.94);color:#80621b;border-color:rgba(143,108,30,.4)}
+body.light .account-dropdown{background:rgba(250,247,239,.99);border-color:rgba(143,108,30,.42);box-shadow:0 18px 45px rgba(55,43,21,.2)}
+body.light .dropdown-identity{border-color:rgba(143,108,30,.2)}
+body.light .dropdown-identity strong{color:#302c23}
+body.light .dropdown-identity small{color:#716a5c}
+body.light .account-dropdown a,body.light .account-dropdown>button{color:#494337}
+body.light .account-dropdown a:hover,body.light .account-dropdown>button:hover{background:rgba(183,143,43,.13);color:#725719}
+body.light .settings-field{color:#494337}
+body.light .settings-field input,
+body.light .settings-field select,
+body.light .paddock-access-form .settings-field input,
+body.light .paddock-access-form .settings-field select{
+ color:#302c23;background-color:#fffdf8;border-color:rgba(143,108,30,.38);color-scheme:light;
+}
+body.light .settings-field select,
+body.light .paddock-access-form .settings-field select{
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2380621b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+body.light .settings-field select option,body.light .paddock-access-form .settings-field select option{background:#fffdf8;color:#302c23}
+body.light .settings-field input:focus,body.light .settings-field select:focus{border-color:#9a7627;box-shadow:0 0 0 2px rgba(143,108,30,.14)}
+body.light .settings-note{background:rgba(183,143,43,.1);border-color:rgba(143,108,30,.28);color:#80621b}
+body.light .settings-note p{color:#625c50}
+body.light .paddock-access-shell{background:linear-gradient(145deg,rgba(250,247,239,.98),rgba(238,231,216,.97))}
+body.light .paddock-avatar-field{background:rgba(183,143,43,.06);border-color:rgba(143,108,30,.22)}
+body.light .paddock-avatar-preview{background:#eee6d4;color:#80621b;border-color:rgba(143,108,30,.42)}
+body.light .privacy-consent{background:rgba(183,143,43,.08);border-color:rgba(143,108,30,.26);color:#494337}
+body.light .turnstile-section{border-color:rgba(143,108,30,.2)}
+body.light .back-link,body.light .text-link{color:#80621b}
+body.light .text-link:hover{color:#493713}
+body.light .empty-panel{color:#625c50}
+@media(max-width:620px){.paddock-name-fields{grid-template-columns:minmax(0,1fr)}}
