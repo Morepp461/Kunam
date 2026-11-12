@@ -10,6 +10,7 @@ type Division={id:string;season_id:string;division_key:string;division_name:stri
 type PrizeRule={id:string;season_division_id:string;driver_win_ddp:number;team_win_tdp:number;driver_pole_ddp:number;team_pole_tdp:number;is_active:boolean};
 type Sponsor={id:string;name:string;description:string|null;industry:string|null;available_budget:number|null;is_active:boolean};
 type Team={id:string;name:string;division_key:string|null};
+type Season={id:string;title:string;status:string};
 type Valuation={id:string;team_id:string;assets_value:number;development_value:number;history_value:number;achievements_value:number;financial_health_value:number;total_valuation:number;assessed_at:string;team?:{name:string}};
 type Tab="tax"|"prizes"|"sponsors"|"valuation";
 const money=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
@@ -17,30 +18,31 @@ const number=(v:string)=>v.trim()===""?0:Number(v);
 export default function AdminOperations({session}:{session:Session}){
  const [tab,setTab]=useState<Tab>("tax"),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[prizes,setPrizes]=useState<PrizeRule[]>([]);
- const [sponsors,setSponsors]=useState<Sponsor[]>([]),[teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]);
+ const [sponsors,setSponsors]=useState<Sponsor[]>([]),[teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]),[seasons,setSeasons]=useState<Season[]>([]);
  const [taxType,setTaxType]=useState<"wealth"|"driver_transfer">("wealth"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null);
  const [divisionId,setDivisionId]=useState(""),[driverWin,setDriverWin]=useState(""),[teamWin,setTeamWin]=useState(""),[driverPole,setDriverPole]=useState(""),[teamPole,setTeamPole]=useState(""),[prizeActive,setPrizeActive]=useState(false);
  const [sponsorId,setSponsorId]=useState<string|null>(null),[sponsorName,setSponsorName]=useState(""),[sponsorDescription,setSponsorDescription]=useState(""),[sponsorIndustry,setSponsorIndustry]=useState(""),[sponsorBudget,setSponsorBudget]=useState(""),[sponsorActive,setSponsorActive]=useState(true);
- const [teamId,setTeamId]=useState(""),[assetValue,setAssetValue]=useState(""),[developmentValue,setDevelopmentValue]=useState(""),[historyValue,setHistoryValue]=useState(""),[achievementValue,setAchievementValue]=useState(""),[financialValue,setFinancialValue]=useState(""),[valuationNote,setValuationNote]=useState("");
+ const [taxSeasonId,setTaxSeasonId]=useState(""),[teamId,setTeamId]=useState(""),[assetValue,setAssetValue]=useState(""),[developmentValue,setDevelopmentValue]=useState(""),[historyValue,setHistoryValue]=useState(""),[achievementValue,setAchievementValue]=useState(""),[financialValue,setFinancialValue]=useState(""),[valuationNote,setValuationNote]=useState("");
 
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setNotice("");
-  const [tax,division,prize,sponsor,team,valuation]=await Promise.all([
+  const [tax,division,prize,sponsor,team,valuation,season]=await Promise.all([
    supabase.from("caleris_tax_rules").select("*").order("tax_type").order("minimum_base",{ascending:true}),
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,license_seasons(title)").order("created_at",{ascending:false}),
    supabase.from("caleris_race_reward_rules").select("*"),
    supabase.from("caleris_sponsors").select("*").order("name"),
    supabase.from("teams").select("id,name,division_key").order("name"),
-   supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100)
+   supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100),
+   supabase.from("license_seasons").select("id,title,status").order("starts_on",{ascending:false})
   ]);
-  const err=[tax.error,division.error,prize.error,sponsor.error,team.error,valuation.error].find(Boolean);
+  const err=[tax.error,division.error,prize.error,sponsor.error,team.error,valuation.error,season.error].find(Boolean);
   if(err)setNotice(err.message);
   setTaxRules((tax.data||[]) as TaxRule[]);
   setDivisions((division.data||[]).map((x:any)=>({...x,season:x.license_seasons})) as Division[]);
   setPrizes((prize.data||[]) as PrizeRule[]);
   setSponsors((sponsor.data||[]) as Sponsor[]);
   setTeams((team.data||[]) as Team[]);
-  setValuations((valuation.data||[]).map((x:any)=>({...x,team:x.teams})) as Valuation[]);
+  setValuations((valuation.data||[]).map((x:any)=>({...x,team:x.teams})) as Valuation[]);setSeasons((season.data||[]) as Season[]);
   setLoading(false);
  },[]);
  useEffect(()=>{void refresh()},[refresh]);
@@ -58,6 +60,7 @@ export default function AdminOperations({session}:{session:Session}){
  const resetTax=()=>{setEditingTax(null);setTaxLabel("");setTaxMinimum("");setTaxRate("");setTaxActive(true)};
  const editTax=(r:TaxRule)=>{setEditingTax(r.id);setTaxType(r.tax_type);setTaxLabel(r.label);setTaxMinimum(String(r.minimum_base));setTaxRate(String(r.rate_percent));setTaxActive(r.is_active)};
  const deleteTax=async(id:string)=>{if(!supabase||!window.confirm("Hapus aturan pajak ini?"))return;const {error}=await supabase.from("caleris_tax_rules").delete().eq("id",id);setNotice(error?.message||"Aturan dihapus.");await refresh()};
+ const runWealthTax=async(action:"admin_generate_wealth_tax_assessments"|"admin_collect_wealth_tax")=>{if(!supabase||!taxSeasonId)return;setSaving(true);setNotice("");const {data,error}=await supabase.rpc(action,{p_season_id:taxSeasonId});setSaving(false);setNotice(error?.message||JSON.stringify(data));await refresh()};
 
  const savePrize=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!divisionId)return;
@@ -113,6 +116,7 @@ export default function AdminOperations({session}:{session:Session}){
    </section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TAX TABLE</span><h2>Aturan tersimpan</h2></div></div>
     {loading?"Memuat...":taxRules.length===0?<p className="economy-empty">Belum ada aturan. Tidak ada pajak otomatis sebelum Admin membuat dan mengaktifkan konfigurasi.</p>:<div className="ops-record-list">{taxRules.map(r=><article key={r.id}><div><strong>{r.label}</strong><small>{r.tax_type==="wealth"?"Wealth Tax":"Driver Transfer Tax"} · Ambang {money(r.minimum_base)} · Tarif {r.rate_percent}% · {r.is_active?"Aktif":"Nonaktif"}</small></div><div className="ops-record-actions"><button onClick={()=>editTax(r)}>Edit</button><button onClick={()=>void deleteTax(r.id)} aria-label="Hapus aturan"><Trash2 size={14}/></button></div></article>)}</div>}
+    <div className="ops-tax-processing"><label>Season untuk Wealth Tax<select value={taxSeasonId} onChange={e=>setTaxSeasonId(e.target.value)}><option value="">Pilih season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label><div className="ops-actions"><button className="economy-secondary-button" onClick={()=>void runWealthTax("admin_generate_wealth_tax_assessments")} disabled={saving||!taxSeasonId}>Hitung snapshot tahunan</button><button className="economy-primary-button" onClick={()=>void runWealthTax("admin_collect_wealth_tax")} disabled={saving||!taxSeasonId}>Tagih saat Off Season</button></div><p className="economy-form-hint">Assessment mensyaratkan seluruh round ditutup dan payroll tidak tertunda. Penagihan hanya dapat dilakukan saat Off Season berlangsung.</p></div>
    </section>
   </div>}
   {tab==="prizes"&&<div className="ops-grid">
