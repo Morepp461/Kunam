@@ -107,7 +107,7 @@ def main():
         "security_invoker=true", "VreeoBank", "Sponsor Source",
     ]:
         assert fragment in economy_sql, f"Economy Engine migration missing: {fragment}"
-    assert "p_event_type not in ('checkin_reward','prize','sponsor_payout','bank_funding','tax','fine','transfer','admin_adjustment','reversal')" in economy_sql
+    assert "p_event_type not in ('checkin_reward','prize','bank_reward','sponsor_payout','bank_funding','tax','fine','transfer','admin_adjustment','reversal')" in economy_sql
     assert "p_event_type not in ('tax','fine')" in economy_sql
     assert "v_destination.account_kind<>'vreeo_bank' or v_source.account_kind in ('vreeo_bank','sponsor_source')" in economy_sql
     economy_component = ROOT / "src/AdminEconomyEngine.tsx"
