@@ -28,6 +28,16 @@ def main():
     assert '"/rules"' in app or 'path="/rules"' in app
     assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app
     assert 'COMMUNITY &amp; SUPPORT' in app and 'Dukung Vreeo · Socialbuzz' in app
+    assert 'DIRECTOR OF VREEO.ID' in app
+    for director, instagram in [
+        ("Muhammad Ovella", "lllllaaaaa44444"),
+        ("Agung Pradana", "pradana.3"),
+        ("Muhammad Alfarel", "alfredo_owenzaus"),
+        ("Liam Amir", "liam_amir26"),
+        ("Suhanda Arbawi", "_suhanda08"),
+    ]:
+        assert director in app and instagram in app, f"Missing director link: {director}"
+    assert 'footer-directors nav' in styles
     assert 'Gabung Discord' in app and 'Official Partners' not in app
     assert 'CALERIS MASTERS · POWERED BY VREEO' in app
     assert 'A Motorsport Roleplay Experience' not in app
