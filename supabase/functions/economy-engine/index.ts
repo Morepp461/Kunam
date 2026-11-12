@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
       if (!uuidPattern.test(sourceAccountId) || !uuidPattern.test(destinationAccountId) || sourceAccountId === destinationAccountId) {
         return respond(400, { error: "Wallet source or destination is invalid." });
       }
-      if (!Number.isFinite(amount) || amount <= 0 || amount > 999999999999999999.99 || Math.round(amount * 100) !== amount * 100) {
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 999999999999999999.99 || Number(amount.toFixed(2)) !== amount) {
         return respond(400, { error: "Transaction amount is invalid." });
       }
       if (!eventTypes.has(eventType)) return respond(400, { error: "Transaction type is invalid." });
