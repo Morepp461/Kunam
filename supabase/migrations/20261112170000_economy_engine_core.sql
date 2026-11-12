@@ -43,7 +43,7 @@ create index if not exists economy_wallet_team_lookup_idx
 create table if not exists public.economy_transactions (
   id uuid primary key default gen_random_uuid(),
   event_type text not null check (event_type in (
-    'checkin_reward','prize','sponsor_payout','bank_funding',
+    'checkin_reward','prize','bank_reward','sponsor_payout','bank_funding',
     'tax','fine','transfer','admin_adjustment','reversal'
   )),
   source_account_id uuid not null references public.economy_wallet_accounts(id) on delete restrict,
@@ -247,7 +247,7 @@ begin
      or p_source_account_id=p_destination_account_id then
     raise exception 'Sumber dan tujuan transaksi tidak valid.';
   end if;
-  if p_event_type not in ('checkin_reward','prize','sponsor_payout','bank_funding','tax','fine','transfer','admin_adjustment','reversal') then
+  if p_event_type not in ('checkin_reward','prize','bank_reward','sponsor_payout','bank_funding','tax','fine','transfer','admin_adjustment','reversal') then
     raise exception 'Jenis transaksi ekonomi tidak dikenal.';
   end if;
   if p_idempotency_key is null or length(trim(p_idempotency_key)) not between 8 and 180 then
@@ -303,8 +303,8 @@ begin
 
   if p_event_type='checkin_reward' and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind<>'driver') then
     raise exception 'Reward check-in wajib berasal dari VreeoBank dan masuk ke wallet Driver.';
-  elsif p_event_type='prize' and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
-    raise exception 'Hadiah kompetisi wajib bersumber dari VreeoBank dan menuju wallet penerima.';
+  elsif p_event_type in ('prize','bank_reward') and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Hadiah dan reward Bank wajib bersumber dari VreeoBank dan menuju wallet penerima.';
   elsif p_event_type='sponsor_payout' and (v_source.account_kind<>'sponsor_source' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
     raise exception 'Pembayaran sponsor wajib bersumber dari Sponsor dan menuju wallet penerima.';
   elsif p_event_type='bank_funding' and (v_source.account_kind<>'sponsor_source' or v_destination.account_kind<>'vreeo_bank') then
