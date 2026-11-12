@@ -63,3 +63,6 @@ FOR SELECT TO authenticated USING (
 GRANT SELECT ON public.member_id_change_logs TO authenticated;
 GRANT INSERT (first_name,last_name) ON public.profiles TO authenticated;
 GRANT UPDATE (first_name,last_name) ON public.profiles TO authenticated;
+
+REVOKE ALL ON FUNCTION public.generate_public_member_id() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.assign_public_member_id() FROM PUBLIC, anon, authenticated;
