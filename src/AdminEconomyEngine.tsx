@@ -110,10 +110,17 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
       setNotice({ kind: "error", text: "Sumber, tujuan, dan deskripsi transaksi wajib valid." }); return;
     }
     setSaving(true); setNotice(null);
-    const { error } = await supabase.rpc("admin_post_economy_transaction", {
-      p_source_account_id: sourceId, p_destination_account_id: destinationId, p_amount: numericAmount,
-      p_event_type: eventType, p_description: description.trim(), p_idempotency_key: crypto.randomUUID(),
-      p_metadata: { interface: "admin-economy-engine", submitted_by: session.user.id }
+    const { error } = await supabase.functions.invoke("economy-engine", {
+      body: {
+        action: "post",
+        sourceAccountId: sourceId,
+        destinationAccountId: destinationId,
+        amount: numericAmount,
+        eventType,
+        description: description.trim(),
+        idempotencyKey: crypto.randomUUID(),
+        metadata: { interface: "admin-economy-engine" }
+      }
     });
     setSaving(false);
     if (error) setNotice({ kind: "error", text: error.message });
@@ -140,11 +147,11 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   const processPending = async () => {
     if (!supabase) return;
     setSaving(true); setNotice(null);
-    const { data, error } = await supabase.rpc("admin_process_pending_economy_rewards");
+    const { data, error } = await supabase.functions.invoke("economy-engine", { body: { action: "process_pending" } });
     setSaving(false);
     if (error) setNotice({ kind: "error", text: error.message });
     else {
-      const result = data as { paid?: number; pending?: number };
+      const result = (data as { result?: { paid?: number; pending?: number } })?.result ?? {};
       setNotice({ kind: "success", text: String(result.paid ?? 0) + " reward dibayarkan. " + String(result.pending ?? 0) + " masih menunggu saldo VreeoBank mencukupi." });
       await refresh();
     }
@@ -153,7 +160,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   const reverseTransaction = async (transaction: Transaction) => {
     if (!supabase || transaction.is_reversed || !window.confirm("Batalkan transaksi " + transaction.description + "? Pembatalan akan membuat transaksi lawan, bukan menghapus riwayat.")) return;
     setSaving(true); setNotice(null);
-    const { error } = await supabase.rpc("admin_reverse_economy_transaction", { p_transaction_id: transaction.id });
+    const { error } = await supabase.functions.invoke("economy-engine", { body: { action: "reverse", transactionId: transaction.id } });
     setSaving(false);
     if (error) setNotice({ kind: "error", text: error.message });
     else { setNotice({ kind: "success", text: "Transaksi dibatalkan melalui entri reversal. Riwayat asli tetap utuh." }); await refresh(); }
