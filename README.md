@@ -176,6 +176,7 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261112185035_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
 - `20261112185431_operations_market_directories.sql` — authenticated, read-only safe directory views for Driver/Team marketplaces and FIA lists; private member balance and member-code columns remain hidden.
 - `20261112185541_team_takeover_market_valuation.sql` — exposes the latest valuation only for teams that have opened a Take Over listing.
+- `20261112185752_sponsorship_story_visibility_hardening.sql` — enforces Admin-only, participant-only, and public storyline visibility boundaries.
 
 ### Operational workflows added in this phase
 
