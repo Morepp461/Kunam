@@ -137,3 +137,40 @@ body.light .site-footer .footer-note{color:#514a3d}
  .drawer-brand img{transform:scale(2.2)}
  .drawer-close{top:16px;right:14px;width:42px;height:42px}
 }
+
+
+/* Fixed mobile header geometry and animated tyre search */
+.global-search{position:relative;display:flex;align-items:center;flex:none;width:44px;min-width:44px;height:44px;padding:0;border:1px solid transparent;border-radius:8px;background:transparent;color:var(--gold-hi);overflow:visible;z-index:36;transition:width 1s cubic-bezier(.22,.72,.2,1),min-width 1s cubic-bezier(.22,.72,.2,1),padding 1s ease,border-color .25s ease,background .25s ease}
+.global-search:not(.is-expanded)>input,.global-search:not(.is-expanded)>.search-clear{display:none}
+.global-search.is-expanded{width:min(280px,calc(100vw - 205px));min-width:min(280px,calc(100vw - 205px));padding:0 34px 0 52px;border-color:var(--line);background:rgba(4,7,10,.92);box-shadow:0 8px 24px #0005}
+.tire-search-trigger{position:absolute;right:0;top:0;display:grid;place-items:center;width:44px;height:44px;padding:5px;border:0;border-radius:50%;background:transparent;color:#d9bd67;z-index:2}
+.tire-search-trigger svg{display:block;width:100%;height:100%;filter:drop-shadow(0 2px 3px #0009)}
+.global-search.is-expanded .tire-search-trigger{left:4px;right:auto;animation:tireRollLeft 1s cubic-bezier(.22,.72,.2,1) both}
+@keyframes tireRollLeft{0%{transform:translateX(calc(min(280px,100vw - 205px) - 48px)) rotate(0deg)}100%{transform:translateX(0) rotate(-720deg)}}
+.global-search input{width:100%;min-width:0;height:100%;padding:0;border:0;outline:0;background:transparent;color:#f4f3ef;font:500 12px Inter,Arial,sans-serif;opacity:0}
+.global-search.is-expanded input{animation:searchTextReveal .35s ease .48s both}
+@keyframes searchTextReveal{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+.global-search input::placeholder{color:#aeb1b4}
+.global-search .search-clear{position:absolute;right:5px;top:9px;display:grid;place-items:center;width:25px;height:25px;border:0;background:transparent;color:#b9bdc3}
+.global-search.is-expanded:focus-within{border-color:var(--gold-hi);box-shadow:0 0 0 2px rgba(198,163,58,.12),0 8px 24px #0005}
+@media(max-width:620px){
+ .site-header{display:flex;justify-content:flex-start;gap:0;height:62px;min-width:0;padding:0 11px;overflow:visible}
+ .site-header .nav-toggle{flex:0 0 38px;width:38px;height:38px;margin:0}
+ .site-header .brand{flex:0 0 clamp(100px,31vw,125px);width:clamp(100px,31vw,125px);height:48px;min-width:0;margin:0 0 0 10px;overflow:hidden}
+ .site-header .brand img{width:100%;height:100%;object-fit:contain;object-position:left center;transform:none}
+ .site-header .header-tools{display:flex;flex:1 1 auto;align-items:center;justify-content:flex-end;gap:5px;min-width:0;margin-left:auto}
+ .site-header .global-search{flex:0 0 44px;width:44px;min-width:44px;height:44px}
+ .site-header .global-search.is-expanded{flex:0 1 min(280px,calc(100vw - 205px));width:min(280px,calc(100vw - 205px));min-width:min(280px,calc(100vw - 205px))}
+ .site-header .account-menu-wrap{flex:0 0 auto;margin-left:0}
+ .site-header .account-avatar-button{display:grid;place-items:center;width:34px;height:38px;padding:2px;border:0;background:transparent}
+ .site-header .account-avatar-button img{width:30px;height:30px;object-fit:cover;border-radius:50%}
+ .site-header .account-avatar-button>svg:last-child{display:none}
+ .site-header .search-results{position:fixed;top:108px;right:10px;width:min(360px,calc(100vw - 20px));max-height:60svh}
+ .site-header .search-dismiss{z-index:1}
+}
+@media(max-width:370px){
+ .site-header{padding-left:8px;padding-right:8px}
+ .site-header .brand{flex-basis:98px;width:98px;margin-left:7px}
+ .site-header .nav-toggle{flex-basis:35px;width:35px;height:35px}
+ .site-header .global-search.is-expanded{flex-basis:min(280px,calc(100vw - 180px));width:min(280px,calc(100vw - 180px));min-width:min(280px,calc(100vw - 180px))}
+}
