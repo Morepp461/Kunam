@@ -177,6 +177,25 @@ def main():
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
     assert '(isAdmin||panelAccess.fia_panel)' in app
+
+    cash_loan_migration = ROOT / "supabase/migrations/20261112173057_economy_cash_loan_engine.sql"
+    cash_loan_component = ROOT / "src/CashLoanCentre.tsx"
+    cash_loan_styles = ROOT / "src/cash-loan.css"
+    cash_loan_indexes = ROOT / "supabase/migrations/20261112173427_economy_cash_loan_indexes.sql"
+    cash_loan_edge = ROOT / "supabase/functions/economy-workflows/index.ts"
+    assert cash_loan_migration.is_file() and cash_loan_indexes.is_file() and cash_loan_component.is_file() and cash_loan_styles.is_file() and cash_loan_edge.is_file(), "Missing Cash Loan Engine files"
+    cash_loan_sql = cash_loan_migration.read_text(encoding="utf-8")
+    for fragment in ["economy_cash_loan_interest_rates", "economy_cash_loans", "economy_cash_loan_installments", "member_cash_loan_preview", "member_apply_cash_loan", "process_cash_loan_repayments", "loan_disbursement", "loan_repayment", "values(1,5),(2,10),(3,16),(4,24)"]:
+        assert fragment in cash_loan_sql, f"Cash Loan migration missing: {fragment}"
+    index_sql = cash_loan_indexes.read_text(encoding="utf-8")
+    for fragment in ["economy_cash_loans_profile_user_idx", "economy_cash_loans_wallet_idx", "economy_cash_loans_origin_season_idx", "economy_cash_loan_installments_season_idx", "economy_cash_loan_installments_period_idx"]:
+        assert fragment in index_sql, f"Cash Loan index migration missing: {fragment}"
+    cash_loan_source = cash_loan_component.read_text(encoding="utf-8")
+    for fragment in ["cash_loan_preview", "apply_cash_loan", "interest_rates", "has_open_loan", "race_period_count", "total_interest_rate"]:
+        assert fragment in cash_loan_source, f"Cash Loan UI missing: {fragment}"
+    cash_loan_gateway = cash_loan_edge.read_text(encoding="utf-8")
+    assert "auth.getUser(jwt)" in cash_loan_gateway and 'rpc("member_cash_loan_preview"' in cash_loan_gateway and 'rpc("member_apply_cash_loan"' in cash_loan_gateway
+    assert 'path="/financial-centre"' in app and 'import CashLoanCentre from "./CashLoanCentre"' in app
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":

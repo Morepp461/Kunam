@@ -255,3 +255,22 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 - Payroll transactions use the existing idempotency, wallet locking, ledger immutability, and reversal model. Reversing a payroll transaction marks its claim reversed; it is not silently paid again.
 
 Migration: `20261112160305_season_calendar_and_payroll.sql`.
+
+
+## Cash Loan Engine
+
+- Member Financial Centre is available to every authenticated member at `/financial-centre`.
+- Cash Loan eligibility is calculated from income already received during the active season. Eligible income event types include payroll, race check-in rewards, bank/quest rewards, and sponsorship payouts. Future sponsorship integration can feed the existing sponsor payout event type.
+- Maximum principal is 5× the member's received season income. The income calculation reads immutable incoming ledger entries across wallets linked to the member.
+- Only one unpaid Cash Loan may exist per member. A new application is blocked until the current loan is fully repaid.
+- Total fixed interest is based on the selected calendar-season tenor:
+  - 1 Season: 5%
+  - 2 Seasons: 10%
+  - 3 Seasons: 16%
+  - 4 Seasons: 24%
+- The application page previews the interest rate, interest amount, total repayment, and estimated Race Period installment count before submission.
+- Loan disbursement moves funds from VreeoBank to the member's role wallet and records an immutable double-entry transaction.
+- Repayments are attempted automatically after payroll at the final round of each Race Period. If the member wallet cannot cover the installment, the installment is marked overdue; it is retried at a later Race Period. Overdue loans block new applications.
+- The cash-loan workflow uses a separate JWT-verified Edge Function. It verifies the authenticated member and calls service-role-only database functions; members cannot directly insert loans or execute the loan mutation RPCs.
+- Database migrations: `20261112173057_economy_cash_loan_engine.sql` and `20261112173427_economy_cash_loan_indexes.sql`.
+- Edge Function: `economy-workflows` (JWT verification enabled).
