@@ -11,6 +11,9 @@ import PanelPage, { panelGroups } from "./PanelPages";
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
 type AccountProfile={user_id:string;member_id:string|null;public_member_id:string;avatar_url:string|null;avatar_path:string|null;web_nickname:string|null;driver_nickname:string|null;first_name:string|null;last_name:string|null;date_of_birth:string|null;preferred_role:string|null;account_status:"public"|"active"|"admin"|"suspended";onboarding_completed:boolean;privacy_accepted_at:string|null};
+type PanelAccess={is_admin:boolean;member_role:string|null;main_event:boolean;driver_panel:boolean;team_panel:boolean;fia_panel:boolean};
+const NO_PANEL_ACCESS:PanelAccess={is_admin:false,member_role:null,main_event:false,driver_panel:false,team_panel:false,fia_panel:false};
+const PANEL_ACCESS_KEYS:Record<string,keyof PanelAccess>={"main-event":"main_event","driver-panel":"driver_panel","team-panel":"team_panel","fia-panel":"fia_panel"};
 type TurnstileApi={render:(container:HTMLElement,options:{sitekey:string;theme:"dark";size:"normal";action:string;callback:(token:string)=>void;"expired-callback":()=>void;"error-callback":()=>void;})=>string;remove:(id:string)=>void;reset:(id:string)=>void;};
 declare global { interface Window { turnstile?:TurnstileApi } }
 type MemberRecord={id:string;member_code:string|null;character_name:string|null;role:string|null;license:string|null;team_id:string|null;balance:number|null};
@@ -28,17 +31,20 @@ function GlobalUI({children}:{children:ReactNode}){
 export default function App(){return <GlobalUI><Application/></GlobalUI>}
 function Application(){
  const [session,setSession]=useState<Session|null>(null),[authReady,setAuthReady]=useState(false),[theme,setTheme]=useState<"dark"|"light">(()=>{try{return localStorage.getItem("caleris-theme")==="light"?"light":"dark"}catch{return "dark"}});
- const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false),[isAdmin,setIsAdmin]=useState(false);
+ const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false),[isAdmin,setIsAdmin]=useState(false),[panelAccess,setPanelAccess]=useState<PanelAccess>(NO_PANEL_ACCESS);
  const location=useLocation();const {toast,loading}=useUI();
  const refreshProfile=useCallback(async()=>{
-  if(!supabase||!session){setProfile(null);setIsAdmin(false);setProfileReady(true);return;}
+  if(!supabase||!session){setProfile(null);setIsAdmin(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
   setProfileReady(false);
-  const [profileResult,adminResult]=await Promise.all([
+  const [profileResult,accessResult]=await Promise.all([
    supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",session.user.id).maybeSingle(),
-   supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle()
+   supabase.rpc("get_my_panel_access")
   ]);
   if(profileResult.error)toast("error","Profil gagal dimuat",profileResult.error.message);
-  if(adminResult.error)toast("error","Akses akun gagal diperiksa",adminResult.error.message);
+  if(accessResult.error)toast("error","Akses role gagal diperiksa",accessResult.error.message);
+  const access=(accessResult.data||NO_PANEL_ACCESS) as PanelAccess;
+  setPanelAccess(accessResult.error?NO_PANEL_ACCESS:access);
+  setIsAdmin(Boolean(!accessResult.error&&access.is_admin));
   let account=profileResult.data as AccountProfile|null;
   if(account?.avatar_path){const {data:signed,error:signedError}=await supabase.storage.from("profile-avatars").createSignedUrl(account.avatar_path,3600);if(signedError)toast("error","Foto profil gagal dimuat",signedError.message);account={...account,avatar_url:signed?.signedUrl??null};}
   setProfile(account);
@@ -53,7 +59,7 @@ function Application(){
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
- return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile}><Routes>
+ return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} panelAccess={panelAccess}><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session?(needsPaddockAccess?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to="/dashboard" replace/>):<Navigate to="/" replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
@@ -62,10 +68,10 @@ function Application(){
   <Route path="/member/:memberId" element={<PublicMemberProfile/>}/>
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
-  <Route path="/main-event/*" element={session&&!needsPaddockAccess?<PanelPage/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
-  <Route path="/driver-panel/*" element={session&&!needsPaddockAccess?<PanelPage/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
-  <Route path="/team-panel/*" element={session&&!needsPaddockAccess?<PanelPage/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
-  <Route path="/fia-panel/*" element={session&&!needsPaddockAccess?<PanelPage/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/main-event/*" element={session&&!needsPaddockAccess&&panelAccess.main_event?<PanelPage/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/driver-panel/*" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<PanelPage/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/team-panel/*" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<PanelPage/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/*" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<PanelPage/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/privacy-policy" element={<LegalBlankPage title="Kebijakan Privasi"/>}/>
   <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
@@ -73,16 +79,15 @@ function Application(){
   <Route path="*" element={<NotFound/>}/>
  </Routes></Shell>;
 }
-function Shell({children,theme,setTheme,session,profile}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null}){
- const {toast,loading}=useUI();const [menuOpen,setMenuOpen]=useState(false),[navOpen,setNavOpen]=useState(false),[isAdmin,setIsAdmin]=useState(false);const navigate=useNavigate();const location=useLocation();
+function Shell({children,theme,setTheme,session,profile,isAdmin,panelAccess}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null;isAdmin:boolean;panelAccess:PanelAccess}){
+ const {toast,loading}=useUI();const [menuOpen,setMenuOpen]=useState(false),[navOpen,setNavOpen]=useState(false);const navigate=useNavigate();const location=useLocation();
  useEffect(()=>{setMenuOpen(false);setNavOpen(false)},[location.pathname]);
- useEffect(()=>{let active=true;if(!supabase||!session){setIsAdmin(false);return;}supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle().then(({data})=>{if(active)setIsAdmin(Boolean(data?.user_id))});return()=>{active=false}},[session?.user.id]);
  const logout=async()=>{if(!supabase)return;loading(true);const {error}=await supabase.auth.signOut();loading(false);setMenuOpen(false);if(error)toast("error","Logout gagal",error.message);else{toast("success","Berhasil logout","Sesi akun sudah diakhiri.");navigate("/")}};
  const avatar=profile?.avatar_url||session?.user.user_metadata?.avatar_url||session?.user.user_metadata?.picture||"";
  const nickname=profile?.web_nickname||session?.user.user_metadata?.full_name||session?.user.user_metadata?.name||session?.user.email?.split("@")[0]||"Member";
  const navigationGroups=session?[
   {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
-  ...panelGroups.map(group=>({title:group.label,items:group.tabs.map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
+  ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
   {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
   ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>}]}]:[])
  ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];
