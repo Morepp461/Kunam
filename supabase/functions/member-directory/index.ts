@@ -135,13 +135,13 @@ Deno.serve(async (req: Request) => {
         admin.from("members").select("id").or([`character_name.ilike.${pattern}`, `member_code.ilike.${pattern}`, `role.ilike.${pattern}`].join(",")).limit(30),
         admin.from("teams").select("id").ilike("name", pattern).limit(20),
       ]);
+      if (memberMatches.error || teamMatches.error) return respond(500, { error: "Pencarian karakter dan tim gagal." });
       const matchedMemberIds = new Set<string>((memberMatches.data ?? []).map((row) => row.id));
       const matchedTeamIds = (teamMatches.data ?? []).map((row) => row.id);
       if (matchedTeamIds.length) {
         const { data: teamMembers } = await admin.from("members").select("id").in("team_id", matchedTeamIds).limit(30);
         (teamMembers ?? []).forEach((row) => matchedMemberIds.add(row.id));
       }
-      const existingProfileIds = new Set<string>((profiles ?? []).map((row) => row.public_member_id));
       const linkedMemberIds = (profiles ?? []).map((row) => row.member_id).filter(Boolean);
       const searchMemberIds = [...matchedMemberIds].filter((id) => !linkedMemberIds.includes(id));
       let linkedProfiles: ProfileRow[] = [];
