@@ -94,6 +94,32 @@ def main():
         assert card_title in app, f"Global search card header missing: {card_title}"
     edge = ROOT / "supabase/functions/complete-paddock-access/index.ts"
     assert edge.is_file() and "siteverify" in edge.read_text(encoding="utf-8")
+    economy_migration = ROOT / "supabase/migrations/20261112170000_economy_engine_core.sql"
+    assert economy_migration.is_file(), "Missing Economy Engine migration"
+    economy_sql = economy_migration.read_text(encoding="utf-8")
+    for fragment in [
+        "public.economy_wallet_accounts", "public.economy_transactions",
+        "public.economy_entries", "public.economy_reward_claims",
+        "private.post_economy_transaction", "pg_advisory_xact_lock",
+        "admin_post_economy_transaction", "admin_reverse_economy_transaction",
+        "admin_process_pending_economy_rewards", "economy_daily_checkin_reward",
+        "source_account_id", "destination_account_id", "idempotency_key",
+        "security_invoker=true", "VreeoBank", "Sponsor Source",
+    ]:
+        assert fragment in economy_sql, f"Economy Engine migration missing: {fragment}"
+    assert "p_event_type not in ('checkin_reward','prize','sponsor_payout','bank_funding','tax','fine','transfer','admin_adjustment','reversal')" in economy_sql
+    assert "p_event_type not in ('tax','fine')" in economy_sql
+    assert "v_destination.account_kind<>'vreeo_bank' or v_source.account_kind in ('vreeo_bank','sponsor_source')" in economy_sql
+    economy_component = ROOT / "src/AdminEconomyEngine.tsx"
+    economy_styles = ROOT / "src/economy-engine.css"
+    assert economy_component.is_file() and economy_styles.is_file(), "Missing Economy Engine UI"
+    economy_source = economy_component.read_text(encoding="utf-8")
+    for rpc in ["admin_post_economy_transaction", "admin_reverse_economy_transaction", "admin_process_pending_economy_rewards"]:
+        assert rpc in economy_source, f"Economy Engine UI missing RPC: {rpc}"
+    app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
+    assert 'from("./AdminEconomyEngine")' in app and 'from("economy_wallet_directory")' in app
+    assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in app
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
