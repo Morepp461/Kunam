@@ -20,7 +20,7 @@ export default function MemberRaceCheckIn({session}:{session:Session}){
   if(mError||!m){setMember(null);setRounds([]);setCheckins([]);setNotice(mError?.message||"Data member tidak ditemukan.");setLoading(false);return}
   setMember(m as Member);
   const now=new Date().toISOString();
-  const {data:r,error:rError}=await supabase.from("license_rounds").select("id,round_number,title,checkin_opens_at,checkin_closes_at,status,license_season_divisions(division_name,license_seasons(title,status))").eq("status","scheduled").lte("checkin_opens_at",now).gte("checkin_closes_at",now).order("checkin_opens_at");
+  const {data:r,error:rError}=await supabase.from("license_rounds").select("id,round_number,title,checkin_opens_at,checkin_closes_at,status,license_season_divisions(division_name,license_seasons(title,status))").neq("status","closed").lte("checkin_opens_at",now).gte("checkin_closes_at",now).order("checkin_opens_at");
   if(rError){setNotice(rError.message);setLoading(false);return}
   const current=(r||[]).filter((x:any)=>x.license_season_divisions?.license_seasons?.status==="active").map((x:any)=>({...x,division:{...x.license_season_divisions,season:x.license_season_divisions.license_seasons}})) as Round[];
   setRounds(current);
