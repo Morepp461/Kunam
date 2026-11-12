@@ -139,7 +139,8 @@ Panel navigation and routes use the assigned role on the linked member record, n
 - **FIA** (`members.role = 'FIA'`): Main Event and FIA Panel.
 - **Driver** (`members.role = 'Driver'`): Main Event and Driver Panel.
 - **Owner / Principal** (`members.role = 'Owner'` or `'Principal'`): Main Event and Team Panel.
-- **Agent / Journalist**: Main Event only until their panel permissions are defined.
+- **Agent**: Main Event only until its panel permissions are defined.
+- **Journalist** is a legacy role and is excluded from the current CALERIS role constraint.
 
 The client loads the signed-in user's linked member role through the existing RLS-protected `profiles` and `members` records. Navigation entries are filtered by the resulting access map, and protected panel routes redirect unauthorized sessions to the dashboard. Admin status is determined only by the `site_admins` table; the profile's `account_status` and `preferred_role` are not treated as authorization grants.
 
@@ -153,3 +154,27 @@ The current schema does not allow authenticated users to update `profiles.member
 - The global search UI and server-side directory endpoint are implemented. Search results depend on records existing in the corresponding Supabase tables and being eligible for display.
 - CALERIS MASTERS does not display partnership/Official Partners content.
 - Existing landing cinematic motion and background assets are retained. The legacy `cinematic-motion.js` remains active for landing dust particles.
+
+
+## Admin Configuration Foundation
+
+The Admin Control navigation includes **Configuration Center** at `/admin/configuration`. It is restricted by the existing administrator session check and backed by dedicated Supabase tables.
+
+Available configuration categories:
+
+- **License** — create, edit, activate/deactivate, order, and archive configuration records for license tiers and their details.
+- **Economy** — store configurable economic rules and values without seeding legacy amounts.
+- **Roles** — store role metadata and policy configuration records.
+- **Regulations** — store configurable regulation records.
+
+Configuration payloads are JSON objects so new properties can be added without changing the database schema. The interface validates JSON before saving. Each create, update, or delete is captured in an append-only revision table and can be reviewed from the configuration detail view.
+
+**Important implementation boundary:** this phase delivers the configuration management foundation and persistence. It does not yet apply license evaluations, salary payments, economy transactions, role-permission changes, or competition rules to operational workflows. Those engines are implemented in later phases and must consume these records server-side. No legacy numerical values are preloaded.
+
+### Configuration database
+
+- `public.caleris_configurations` stores the current configuration records by category and key.
+- `public.caleris_configuration_revisions` stores immutable change snapshots.
+- Both tables have RLS enabled. Only authenticated users listed in `site_admins` can read or modify current configurations; revision snapshots are Admin-readable and append-only.
+- The legacy `Journalist` member role was removed from the role constraint. Existing role names retained: Driver, Principal, Owner, Agent, and FIA.
+- Migrations: `20261112120938_caleris_configuration_foundation.sql` and `20261112121143_caleris_configuration_fk_indexes.sql`.
