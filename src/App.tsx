@@ -61,6 +61,8 @@ function Application(){
   <Route path="/member/:memberId" element={<PublicMemberProfile/>}/>
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
+  <Route path="/privacy-policy" element={<LegalBlankPage title="Kebijakan Privasi"/>}/>
+  <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
@@ -88,8 +90,40 @@ function Shell({children,theme,setTheme,session,profile}:{children:ReactNode;the
  </header>
  {session&&navOpen&&<><button className="drawer-dismiss" aria-label="Tutup navigasi" onClick={()=>setNavOpen(false)}/><aside className="site-drawer"><button type="button" className="drawer-close" aria-label="Tutup navbar" onClick={()=>setNavOpen(false)}><X size={21}/></button><div className="drawer-brand"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Caleris Masters"/></div><nav className="drawer-nav">{navigationGroups.map(group=><section className="drawer-group" key={group.title}><span className="drawer-section">{group.title}</span><div className="drawer-group-items">{group.items.map(item=><NavLink key={item.to} to={item.to} onClick={()=>setNavOpen(false)} className={({isActive})=>"drawer-nav-card"+(isActive?" active":"")}><span className="drawer-nav-icon">{item.icon}</span><span className="drawer-nav-copy"><strong>{item.label}</strong><small>{item.description}</small></span><ArrowUpRight size={15}/></NavLink>)}</div></section>)}</nav><div className="drawer-footer">A MOTORSPORT ROLEPLAY EXPERIENCE</div></aside></>}
 
- <main className="page-content">{children}</main><footer className="site-footer"><span className="footer-note">A Motorsport Roleplay Experience</span></footer></div>;
+ <main className="page-content">{children}</main><SiteFooter/></div>;
 }
+
+function LegalBlankPage({title}:{title:string}){
+ return <main className="legal-blank-page" aria-label={title}/>;
+}
+function SiteFooter(){
+ return <footer className="site-footer">
+  <div className="footer-main">
+   <section className="footer-column footer-caleris">
+    <Link to="/" className="footer-brand footer-brand-caleris" aria-label="Caleris Masters">
+     <img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"/>
+    </Link>
+    <p>Platform Motorsport Roleplay yang menghubungkan pembalap, tim, dan pengelola dalam satu ekosistem kompetisi.</p>
+   </section>
+   <section className="footer-column footer-vreeo">
+    <img className="footer-vreeo-logo" src="/assets/Untitled%20design_20261103_142659_0000.png" alt="Logo Vreeo"/>
+    <h2>TENTANG VREEO</h2>
+    <p>Komunitas game Android Indonesia yang menghadirkan beberapa event menarik.</p>
+   </section>
+   <section className="footer-column footer-support">
+    <h2>COMMUNITY &amp; SUPPORT</h2>
+    <nav aria-label="Community and support">
+     <a href="https://sociabuzz.com/vreeo/support" target="_blank" rel="noreferrer">Dukung Vreeo · Socialbuzz ↗</a>
+     <a href="https://discord.gg/yat2qWuyy" target="_blank" rel="noreferrer">Gabung Discord ↗</a>
+     <Link to="/privacy-policy">Kebijakan Privasi</Link>
+     <Link to="/terms-and-conditions">Syarat &amp; Ketentuan</Link>
+    </nav>
+   </section>
+  </div>
+  <div className="footer-bottom">© {new Date().getFullYear()} CALERIS MASTERS · POWERED BY VREEO</div>
+ </footer>;
+}
+
 function Home(){
  const {toast,loading}=useUI();const [invite,setInvite]=useState("");
  useEffect(()=>{if(!supabase)return;supabase.from("site_settings").select("value").eq("key","community_invite_url").maybeSingle().then(({data,error})=>{if(error)toast("error","Link komunitas gagal dimuat",error.message);else if(typeof data?.value==="string")setInvite(data.value)})},[toast]);
