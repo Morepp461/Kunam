@@ -231,9 +231,10 @@ Wallet creation is trigger-driven and idempotent. Existing members.balance is re
 
 ### Configuration and administration
 - Admin-only Economy Engine page: wallet registry, VreeoBank and Sponsor Source balances, transaction posting, reversal, pending check-in rewards, and transaction history.
+- Admin mutations pass through a JWT-verified Supabase Edge Function. It independently verifies the caller against site_admins; ledger mutation RPC execution is restricted to service_role, not authenticated clients.
 - Daily check-in reward configuration is stored in caleris_configurations and audited by the existing configuration revision trigger.
 - Initial check-in reward configuration is deliberately inactive with amount 0; no unapproved economy amount is assumed.
 - Profile balances now read from wallet accounts instead of the legacy members.balance field.
 
 ### Important boundary
-This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The migration is not yet applied to production. Do not treat this branch as live economy data until database QA, CI, and the production migration are complete.
+This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The wallet migration is applied to production. The service-gateway hardening migration and Edge Function deployment remain pending. Do not treat the Admin mutation interface as live until both are deployed and verified.
