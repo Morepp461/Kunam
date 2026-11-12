@@ -1,6 +1,6 @@
 import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
-import type {ChangeEvent,FormEvent,ReactNode} from "react";
+import type {ChangeEvent,FormEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
 import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate} from "react-router-dom";
 import {Activity,ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
@@ -134,7 +134,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   return()=>{cancelled=true;if(widgetId.current&&window.turnstile){window.turnstile.remove(widgetId.current);widgetId.current=null;}setTurnstileToken("");};
  },[privacyAccepted,sitekey,toast]);
  const chooseAvatar=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>3*1024*1024){setErrors(v=>({...v,avatar:"Gunakan JPG, PNG, atau WEBP maksimal 3 MB."}));e.target.value="";return;}if(avatarPreview)URL.revokeObjectURL(avatarPreview);setAvatarFile(file);setAvatarPreview(URL.createObjectURL(file));setCropX(50);setCropY(50);setErrors(v=>({...v,avatar:""}));e.target.value="";};
- const beginAvatarDrag=(e:React.PointerEvent<HTMLDivElement>)=>{if(!avatarFile)return;e.currentTarget.setPointerCapture(e.pointerId);avatarDragRef.current={x:e.clientX,y:e.clientY,cropX,cropY};};
+ const beginAvatarDrag=(e:ReactPointerEvent<HTMLDivElement>)=>{if(!avatarFile)return;e.currentTarget.setPointerCapture(e.pointerId);avatarDragRef.current={x:e.clientX,y:e.clientY,cropX,cropY};};
  const moveAvatarDrag=(e:React.PointerEvent<HTMLDivElement>)=>{const drag=avatarDragRef.current,stage=avatarStageRef.current,image=avatarImageRef.current;if(!drag||!stage||!image)return;const rect=stage.getBoundingClientRect(),aspect=image.naturalWidth/image.naturalHeight;const overflowX=Math.max(0,rect.height*aspect-rect.width),overflowY=Math.max(0,rect.width/aspect-rect.height);setCropX(Math.max(0,Math.min(100,drag.cropX-(e.clientX-drag.x)/Math.max(1,overflowX)*100)));setCropY(Math.max(0,Math.min(100,drag.cropY-(e.clientY-drag.y)/Math.max(1,overflowY)*100)));};
  const finishAvatarDrag=()=>{avatarDragRef.current=null;};
  const createCroppedAvatar=async(file:File)=>{const image=new Image(),url=URL.createObjectURL(file);image.src=url;try{await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=()=>reject(new Error("Foto tidak dapat dibaca."))});const side=Math.min(image.naturalWidth,image.naturalHeight),sx=(image.naturalWidth-side)*(cropX/100),sy=(image.naturalHeight-side)*(cropY/100);const canvas=document.createElement("canvas");canvas.width=640;canvas.height=640;const context=canvas.getContext("2d");if(!context)throw new Error("Browser tidak mendukung pemrosesan foto.");context.drawImage(image,sx,sy,side,side,0,0,640,640);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error("Foto gagal diproses.")),file.type,.92));return new File([blob],"caleris-profile."+(file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg"),{type:file.type});}finally{URL.revokeObjectURL(url)}};
@@ -175,7 +175,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setTurnstileToken("");setErrors(v=>({...v,privacy:"",turnstile:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
   {errors.privacy&&<small className="field-error">{errors.privacy}</small>}
   {privacyAccepted&&<div className="turnstile-section"><span className="section-eyebrow">SECURITY VERIFICATION</span>{sitekey?<><div ref={widgetContainer} className="turnstile-widget"/>{turnstileToken&&<span className="turnstile-success"><Check size={14}/> Verifikasi berhasil</span>}</>:<p className="field-error">Cloudflare Site Key belum diatur. Tambahkan VITE_CLOUDFLARE_TURNSTILE_SITE_KEY di Vercel.</p>}{errors.turnstile&&<small className="field-error">{errors.turnstile}</small>}</div>}
-  {pendingAvatarUrl&&<button className="action primary paddock-submit" type="submit" disabled={saving||!turnstileToken}>{saving?"Memproses akses...":"Submit Paddock Access"}</button>
+  <button className="action primary paddock-submit" type="submit" disabled={saving||!turnstileToken}>{saving?"Memproses akses...":"Submit Paddock Access"}</button>
  </form></div></section>;
 }
 function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
