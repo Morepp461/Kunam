@@ -44,7 +44,7 @@ export default function FIAOperations(){
  };
  const issueFine=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!targetId)return;
-  const value=Number(amount);if(!Number.isFinite(value)||value<=0||Math.round(value*100)!==value*100){setNotice("Nominal denda tidak valid.");return}
+  const value=Number(amount);if(!Number.isFinite(value)||value<=0||Number(value.toFixed(2))!==value){setNotice("Nominal denda tidak valid.");return}
   setSaving(true);setNotice("");
   const {error}=await supabase.rpc("fia_issue_fine",{p_target_kind:targetKind,p_target_id:targetId,p_amount:value,p_reason:reason,p_regulation_reference:regulation||null});
   setSaving(false);if(error){setNotice(error.message);return}
