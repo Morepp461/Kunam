@@ -175,6 +175,6 @@ Configuration payloads are JSON objects so new properties can be added without c
 
 - `public.caleris_configurations` stores the current configuration records by category and key.
 - `public.caleris_configuration_revisions` stores immutable change snapshots.
-- Both tables have RLS enabled. Only authenticated users listed in `site_admins` can read or modify current configurations; revision snapshots are Admin-readable and append-only.
+- Both tables have RLS enabled. Only authenticated users listed in `site_admins` can read or modify current configurations; revision snapshots are Admin-readable and append-only. Anonymous and PUBLIC table privileges are explicitly revoked.
 - The legacy `Journalist` member role was removed from the role constraint. Existing role names retained: Driver, Principal, Owner, Agent, and FIA.
-- Migrations: `20261112120938_caleris_configuration_foundation.sql` and `20261112121143_caleris_configuration_fk_indexes.sql`.
+- Migrations: `20261112120938_caleris_configuration_foundation.sql` `20261112121143_caleris_configuration_fk_indexes.sql`, and `20261112121349_restrict_caleris_configuration_table_grants.sql`.
