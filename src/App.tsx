@@ -90,7 +90,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
  const [errors,setErrors]=useState<Record<string,string>>({});
  const widgetContainer=useRef<HTMLDivElement|null>(null),widgetId=useRef<string|null>(null);
  const sitekey=import.meta.env.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY as string|undefined;
- const today=new Date();const maxDob=new Date(today.getFullYear()-13,today.getMonth(),today.getDate()).toISOString().slice(0,10);
+ const today=new Date();const maxDate=new Date(today.getFullYear()-13,today.getMonth(),today.getDate());const maxDob=`${maxDate.getFullYear()}-${String(maxDate.getMonth()+1).padStart(2,"0")}-${String(maxDate.getDate()).padStart(2,"0")}`;
  useEffect(()=>{
   if(!privacyAccepted||!sitekey||!widgetContainer.current)return;
   let cancelled=false;
