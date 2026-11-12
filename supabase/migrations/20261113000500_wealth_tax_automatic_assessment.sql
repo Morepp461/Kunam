@@ -4,6 +4,9 @@ alter table public.caleris_wealth_tax_assessments
  check (calculation_method in ('flat','progressive'));
 
 -- and all payroll claims for the season have settled.
+create unique index if not exists caleris_tax_rules_type_threshold_uidx
+ on public.caleris_tax_rules(tax_type,minimum_base);
+
 create or replace function private.try_assess_wealth_tax_for_season(p_season_id uuid)
 returns integer language plpgsql security definer set search_path='' as $$
 declare
@@ -15,7 +18,7 @@ begin
  if exists(select 1 from public.economy_payroll_claims where season_id=p_season_id and status='pending') then return 0; end if;
  select payload->>'method' into v_method from public.caleris_configurations
   where category='economy' and config_key='wealth-tax-calculation' and is_active;
- if v_method not in ('flat','progressive') then return 0; end if;
+ if coalesce(v_method,'') not in ('flat','progressive') then return 0; end if;
  for v_wallet in
   select wa.id wallet_id,wa.member_id,wa.balance
   from public.economy_wallet_accounts wa
