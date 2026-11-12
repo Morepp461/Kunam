@@ -1,7 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
-import {Flag,ShieldCheck,Trophy,RefreshCw,Save,AlertTriangle,Handshake} from "lucide-react";
-import type {Session} from "@supabase/supabase-js";
+import {ShieldCheck,Trophy,RefreshCw,Save,AlertTriangle,Handshake} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
 type Round={id:string;round_number:number;title:string;season_division_id:string;status:string;season_division?:{division_name:string;license_seasons?:{title:string}}};
@@ -9,7 +8,7 @@ type Member={id:string;character_name:string|null;role:string|null;team_id:strin
 type Team={id:string;name:string};
 type Fine={id:string;target_kind:string;target_member_id:string|null;target_team_id:string|null;amount:number;reason:string;regulation_reference:string|null;issued_at:string};
 type Move={id:string;driver_member_id:string;buyer_team_id:string;seller_team_id:string;move_type:string;agreed_amount:number|null;status:string};
-export default function FIAOperations({session}:{session:Session}){
+export default function FIAOperations(){
  const [rounds,setRounds]=useState<Round[]>([]),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]),[fines,setFines]=useState<Fine[]>([]),[moves,setMoves]=useState<Move[]>([]);
  const [roundId,setRoundId]=useState(""),[winnerId,setWinnerId]=useState(""),[poleId,setPoleId]=useState("");
  const [targetKind,setTargetKind]=useState<"member"|"team">("member"),[targetId,setTargetId]=useState(""),[amount,setAmount]=useState(""),[reason,setReason]=useState(""),[regulation,setRegulation]=useState("");
@@ -37,7 +36,7 @@ export default function FIAOperations({session}:{session:Session}){
  const recordResult=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!roundId||!winnerId||!poleId)return;
   setSaving(true);setNotice("");
-  const {data,error}=await supabase.rpc("fia_record_race_result",{p_round_id:roundId,p_winner_member_id:winnerId,p_pole_member_id:poleId});
+  const {error}=await supabase.rpc("fia_record_race_result",{p_round_id:roundId,p_winner_member_id:winnerId,p_pole_member_id:poleId});
   setSaving(false);if(error){setNotice(error.message);return}
   setNotice("Hasil race tersimpan. DDP/TDP hanya dibagikan jika aturan untuk divisi ini aktif.");setRoundId("");setWinnerId("");setPoleId("");await refresh();
  };
@@ -45,7 +44,7 @@ export default function FIAOperations({session}:{session:Session}){
   e.preventDefault();if(!supabase||!targetId)return;
   const value=Number(amount);if(!Number.isFinite(value)||value<=0||Math.round(value*100)!==value*100){setNotice("Nominal denda tidak valid.");return}
   setSaving(true);setNotice("");
-  const {data,error}=await supabase.rpc("fia_issue_fine",{p_target_kind:targetKind,p_target_id:targetId,p_amount:value,p_reason:reason,p_regulation_reference:regulation||null});
+  const {error}=await supabase.rpc("fia_issue_fine",{p_target_kind:targetKind,p_target_id:targetId,p_amount:value,p_reason:reason,p_regulation_reference:regulation||null});
   setSaving(false);if(error){setNotice(error.message);return}
   setNotice("Denda berhasil dicatat dan diposting ke ledger. Saldo target dapat menjadi negatif.");setAmount("");setReason("");setRegulation("");setTargetId("");await refresh();
  };
