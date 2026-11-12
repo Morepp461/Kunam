@@ -1,4 +1,8 @@
 -- Team takeover listing, offer/counter negotiation, and FIA review.
+create unique index if not exists caleris_team_takeover_one_open_per_team
+ on public.caleris_team_takeovers(target_team_id)
+ where status in ('offered','negotiating','seller_accepted','pending_fia','approved');
+
 create or replace function public.member_set_team_takeover_listing(p_is_listed boolean)
 returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_member public.members%rowtype;
