@@ -64,17 +64,17 @@ create index season_calendar_revisions_period_idx
 
 create or replace function private.touch_season_calendar_period()
 returns trigger language plpgsql set search_path=''
-as $ begin new.updated_at:=now(); return new; end; $;
+as $cal$ begin new.updated_at:=now(); return new; end; $cal$;
 create or replace function private.audit_season_calendar_period()
 returns trigger language plpgsql security definer set search_path=''
-as $
+as $cal$
 begin
   insert into public.season_calendar_period_revisions(period_id,action,snapshot,changed_by)
   values(new.id,case when tg_op='INSERT' then 'INSERT' else 'UPDATE' end,
     to_jsonb(new),(select auth.uid()));
   return new;
 end;
-$;
+$cal$;
 create trigger season_calendar_period_touch
 before update on public.season_calendar_periods
 for each row execute function private.touch_season_calendar_period();
