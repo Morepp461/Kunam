@@ -158,7 +158,7 @@ The current schema does not allow authenticated users to update `profiles.member
 
 ## Admin Configuration Foundation
 
-The Admin Control navigation includes **Configuration Center** at `/admin/configuration`. It is restricted by the existing administrator session check and backed by dedicated Supabase tables.
+The Admin Control navigation includes **Configuration Center** at `/admin/configuration`. It is restricted by the existing administrator session check and backed by dedicated Supabase tables. Its main heading uses the shared Audiowide page-title typography used by the other workspace headings.
 
 Available configuration categories:
 
@@ -167,7 +167,7 @@ Available configuration categories:
 - **Roles** — store role metadata and policy configuration records.
 - **Regulations** — store configurable regulation records.
 
-Configuration payloads are JSON objects so new properties can be added without changing the database schema. The interface validates JSON before saving. Each create, update, or delete is captured in an append-only revision table and can be reviewed from the configuration detail view.
+Configuration details are entered through ordinary form controls. Admin can add as many detail fields as needed and choose short text, number, yes/no, or long text for each field. The application stores these values in the existing JSON payload internally, so the Admin never needs to write JSON. Each create, update, or delete is captured in an append-only revision table and can be reviewed in a human-readable detail view.
 
 **Important implementation boundary:** this phase delivers the configuration management foundation and persistence. It does not yet apply license evaluations, salary payments, economy transactions, role-permission changes, or competition rules to operational workflows. Those engines are implemented in later phases and must consume these records server-side. No legacy numerical values are preloaded.
 
