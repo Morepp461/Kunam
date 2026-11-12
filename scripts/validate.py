@@ -157,8 +157,10 @@ def main():
         assert fragment in calendar_source, f"Season calendar UI missing: {fragment}"
     assert "annual_salary" in contracts_source and "economy_driver_contracts" in contracts_source
     assert "payroll" in edge_source and "process_payroll_pending" in edge_source
-    assert 'path="/fia-panel/season-calendar"' in app and 'path="/team-panel/driver-contracts"' in app
+    assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
     assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
+    license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
+    assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
     assert '(isAdmin||panelAccess.fia_panel)' in app
     print("Caleris QA static checks passed.")
 
