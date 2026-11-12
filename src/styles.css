@@ -220,3 +220,14 @@ body.light .site-footer .footer-note{color:#514a3d}
  .site-header .brand img{transform:scale(1.65)}
  .site-header .global-search.is-expanded{flex-basis:min(280px,calc(100vw - 180px));width:min(280px,calc(100vw - 180px));min-width:min(280px,calc(100vw - 180px))}
 }
+
+
+/* Use broadly supported calc arithmetic for the tyre travel distance. */
+.global-search.is-expanded .tire-search-trigger{animation:tyreLeadLeft 1s cubic-bezier(.68,0,.22,1) both}
+.global-search.is-expanded.is-closing .tire-search-trigger{animation:tyreLeadRight 1s cubic-bezier(.68,0,.22,1) both}
+@keyframes tyreLeadLeft{0%{transform:translateX(0) rotate(0)}100%{transform:translateX(calc(44px - min(280px, 100vw - 205px))) rotate(-720deg)}}
+@keyframes tyreLeadRight{0%{transform:translateX(calc(44px - min(280px, 100vw - 205px))) rotate(-720deg)}100%{transform:translateX(0) rotate(0)}}
+@media(max-width:370px){
+ @keyframes tyreLeadLeft{0%{transform:translateX(0) rotate(0)}100%{transform:translateX(calc(44px - min(280px, 100vw - 180px))) rotate(-720deg)}}
+ @keyframes tyreLeadRight{0%{transform:translateX(calc(44px - min(280px, 100vw - 180px))) rotate(-720deg)}100%{transform:translateX(0) rotate(0)}}
+}
