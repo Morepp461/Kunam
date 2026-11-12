@@ -10,7 +10,7 @@ begin
  if v_bank is null then raise exception 'Wallet VreeoBank tidak tersedia.'; end if;
  for v_season_id in
   select distinct p.season_id from public.season_calendar_periods p
-  where p.period_type='off_season' and current_date between p.starts_on and p.ends_on
+  where p.period_type='off_season' and (now() at time zone 'Asia/Jakarta')::date between p.starts_on and p.ends_on
  loop
   v_seasons:=v_seasons+1;
   for v_assessment in
