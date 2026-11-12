@@ -162,16 +162,16 @@ The database foundation also introduces operational records for sponsorship offe
 
 ### Operations database migrations
 
-- `20261113000100_caleris_operations_suite_foundation.sql` — operations tables, token ledgers, sponsor pool, tax rules, wealth assessments, transfer/takeover records, affiliations, valuation snapshots, fines, and member race check-ins.
-- `20261113000200_caleris_operations_admin_policies.sql` — Admin-only write policies for editable tax rules, race reward settings, sponsor pool, and valuation snapshots.
-- `20261113000300_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, Wealth Tax assessment/collection guardrails (disabled pending taxable-base decision), and FIA fine posting workflows.
-- `20261113000400_all_role_race_checkin.sql` — shared all-role race attendance, Driver-only license score integration, configurable reward payout, and pending reward processing.
-- `20261113000500_wealth_tax_automatic_assessment.sql` — reserved migration; annual assessment is deferred until taxable-wealth basis is confirmed.
-- `20261113000600_wealth_tax_offseason_scheduler.sql` — reserved migration; no cron job is installed while Wealth Tax basis remains undecided.
-- `20261113000700_team_affiliation_workflows.sql` — cross-tier one-affiliate request, accept/reject, and termination RPCs.
-- `20261113000800_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
-- `20261113000900_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
-- `20261113001000_operations_negotiation_configuration.sql` — editable negotiation limits and takeover valuation bounds seeded from the explicitly agreed rules.
+- `20261112184424_caleris_operations_suite_foundation.sql` — operations tables, token ledgers, sponsor pool, tax rules, wealth assessments, transfer/takeover records, affiliations, valuation snapshots, fines, and member race check-ins.
+- `20261112184428_caleris_operations_admin_policies.sql` — Admin-only write policies for editable tax rules, race reward settings, sponsor pool, and valuation snapshots.
+- `20261112184433_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, Wealth Tax assessment/collection guardrails (disabled pending taxable-base decision), and FIA fine posting workflows.
+- `20261112184437_all_role_race_checkin.sql` — shared all-role race attendance, Driver-only license score integration, configurable reward payout, and pending reward processing.
+- `20261112184440_wealth_tax_automatic_assessment.sql` — reserved migration; annual assessment is deferred until taxable-wealth basis is confirmed.
+- `20261112184444_wealth_tax_offseason_scheduler.sql` — reserved migration; no cron job is installed while Wealth Tax basis remains undecided.
+- `20261112184449_team_affiliation_workflows.sql` — cross-tier one-affiliate request, accept/reject, and termination RPCs.
+- `20261112184453_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
+- `20261112184457_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
+- `20261112184502_operations_negotiation_configuration.sql` — editable negotiation limits and takeover valuation bounds seeded from the explicitly agreed rules.
 - `20261113001100_team_takeover_workflows.sql` — team listing, valuation-bounded negotiation, counter offers, and FIA review.
 - `20261113001200_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
 
