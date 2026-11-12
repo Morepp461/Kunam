@@ -18,6 +18,7 @@ import DriverTransferMarket from "./DriverTransferMarket";
 import TeamTakeoverMarket from "./TeamTakeoverMarket";
 import AdminSponsorship from "./AdminSponsorship";
 import SponsorshipCentre from "./SponsorshipCentre";
+import DevelopmentTokens from "./DevelopmentTokens";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import TeamDriverContracts from "./TeamDriverContracts";
 
@@ -33,6 +34,7 @@ import "./driver-transfer-market.css";
 import "./team-takeover-market.css";
 import "./admin-sponsorship.css";
 import "./sponsorship-centre.css";
+import "./development-tokens.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 
@@ -118,7 +120,9 @@ function Application(){
   <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<FIAOperations/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/driver-contracts" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<TeamDriverContracts session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/team-panel/development" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<DevelopmentTokens session={session} asset="TDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/sponsorship" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/driver-panel/development" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<DevelopmentTokens session={session} asset="DDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/sponsorship" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/affiliate-team" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<TeamAffiliate session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
