@@ -1,7 +1,6 @@
 import {useCallback,useEffect,useState} from "react";
 import {ArrowLeft,RefreshCw,Send,Handshake,Target,Coins,Newspaper} from "lucide-react";
 import {Link} from "react-router-dom";
-import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
 type Sponsor={id:string;name:string;available_budget:number|null;is_active:boolean};
@@ -13,7 +12,7 @@ type Revision={id:string;offer_id:string;actor_kind:string;amount:number;terms:R
 type Contract={id:string;offer_id:string;sponsor_id:string;target_kind:string;target_member_id:string|null;target_team_id:string|null;season_id:string;contract_amount:number;status:string};
 type Target={id:string;contract_id:string;title:string;metric_key:string;target_value:number;current_value:number;bonus_amount:number;status:string};
 const money=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
-export default function AdminSponsorship({session}:{session:Session}){
+export default function AdminSponsorship(){
  const [sponsors,setSponsors]=useState<Sponsor[]>([]),[seasons,setSeasons]=useState<Season[]>([]),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]);
  const [offers,setOffers]=useState<Offer[]>([]),[revisions,setRevisions]=useState<Revision[]>([]),[contracts,setContracts]=useState<Contract[]>([]),[targets,setTargets]=useState<Target[]>([]);
  const [sponsorId,setSponsorId]=useState(""),[targetKind,setTargetKind]=useState<"driver"|"team">("driver"),[targetId,setTargetId]=useState(""),[seasonId,setSeasonId]=useState(""),[amount,setAmount]=useState(""),[terms,setTerms]=useState(""),[expires,setExpires]=useState("");
