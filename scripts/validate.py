@@ -19,7 +19,7 @@ def main():
     assert package["scripts"]["build"] == "tsc -b && vite build"
     vite_config = (ROOT / "vite.config.ts").read_text(encoding="utf-8")
     assert "copy-caleris-static-assets" in vite_config and "cpSync(source, destination" in vite_config
-    economy_gateway_migration = ROOT / "supabase/migrations/20261112171000_economy_edge_gateway.sql"
+    economy_gateway_migration = ROOT / "supabase/migrations/20261112140121_economy_edge_gateway.sql"
     economy_edge_function = ROOT / "supabase/functions/economy-engine/index.ts"
     assert economy_gateway_migration.is_file() and economy_edge_function.is_file(), "Missing Economy Engine gateway hardening"
     gateway_sql = economy_gateway_migration.read_text(encoding="utf-8")
@@ -30,9 +30,12 @@ def main():
     assert 'serviceClient.rpc("admin_post_economy_transaction"' in edge_source
     assert 'serviceClient.rpc("admin_reverse_economy_transaction"' in edge_source
     assert 'serviceClient.rpc("admin_process_pending_economy_rewards"' in edge_source
-    economy_query_migration = ROOT / "supabase/migrations/20261112172000_economy_engine_query_hardening.sql"
+    economy_query_migration = ROOT / "supabase/migrations/20261112140208_economy_engine_query_hardening.sql"
     assert economy_query_migration.is_file(), "Missing Economy Engine query hardening migration"
     query_sql = economy_query_migration.read_text(encoding="utf-8")
+    query_history_duplicate = ROOT / "supabase/migrations/20261112140552_economy_engine_query_hardening.sql"
+    assert query_history_duplicate.is_file(), "Missing second recorded Economy query migration version"
+    assert query_history_duplicate.read_text(encoding="utf-8") == query_sql, "Economy query migration history copies differ"
     for fragment in ["economy_transactions_created_by_idx", "economy_reward_claims_member_idx", "economy_reward_claims_source_idx", "Members and admins read economy wallets"]:
         assert fragment in query_sql, f"Economy query hardening missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
@@ -110,7 +113,7 @@ def main():
         assert card_title in app, f"Global search card header missing: {card_title}"
     edge = ROOT / "supabase/functions/complete-paddock-access/index.ts"
     assert edge.is_file() and "siteverify" in edge.read_text(encoding="utf-8")
-    economy_migration = ROOT / "supabase/migrations/20261112170000_economy_engine_core.sql"
+    economy_migration = ROOT / "supabase/migrations/20261112135818_economy_engine_core.sql"
     assert economy_migration.is_file(), "Missing Economy Engine migration"
     economy_sql = economy_migration.read_text(encoding="utf-8")
     for fragment in [

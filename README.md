@@ -208,7 +208,7 @@ Supabase migrations: `20261112150000_license_scoring_engine.sql`, `2026111215100
 
 ## Economy Engine · Stage 4
 
-**Status: implementation on feat/economy-engine-core; database deployment and isolated QA are pending.**
+**Status: merged into main, Supabase migrations applied, Economy Edge Function active, and Vercel production deployment READY.**
 
 ### Wallet entities
 - Public Member wallet: one per authenticated profile.
@@ -237,4 +237,4 @@ Wallet creation is trigger-driven and idempotent. Existing members.balance is re
 - Profile balances now read from wallet accounts instead of the legacy members.balance field.
 
 ### Important boundary
-This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The wallet, service-gateway, and query-hardening migrations are applied to Supabase production. The economy-engine Edge Function is deployed ACTIVE with JWT verification enabled. Economy mutation RPCs are executable only by service_role; the Edge Function validates the caller and Admin allow-list before forwarding requests.
+This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The wallet, service-gateway, and query-hardening migrations are applied to Supabase production. The repository migration filenames are aligned to the recorded Supabase versions. The query-hardening migration appears twice in the remote migration history because it was applied twice; both idempotent records are preserved as matching migration files so local and remote histories stay aligned. The economy-engine Edge Function is deployed ACTIVE with JWT verification enabled. Economy mutation RPCs are executable only by service_role; the Edge Function validates the caller and Admin allow-list before forwarding requests. Production Vercel deployment is READY and the application entry page returns HTTP 200.
