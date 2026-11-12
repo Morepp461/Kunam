@@ -91,8 +91,8 @@ body.light .site-footer .footer-note{color:#514a3d}
 @media(max-width:620px){
  .site-header{gap:7px;padding-left:11px;padding-right:11px}
  .nav-toggle{width:35px;height:35px}
- .brand{width:clamp(112px,34vw,160px);margin-left:5px}
- .brand img{transform:scale(1.8)}
+ .brand{width:clamp(108px,28vw,145px);margin-left:5px}
+ .brand img{transform:scale(1.35)}
  .header-tools{gap:7px}
  .global-search{width:min(205px,40vw);min-width:0;height:36px;padding:0 8px;gap:6px}
  .global-search input{font-size:10px}
