@@ -581,51 +581,6 @@ $reversal$;
 revoke all on function private.validate_period_round_count() from public,anon,authenticated,service_role;
 revoke all on function private.guard_economy_payroll_claim() from public,anon,authenticated,service_role;
 
-create or replace function public.fia_create_season_calendar_period(
-  p_season_id uuid,p_period_type text,p_period_number integer,p_title text,
-  p_starts_on date,p_ends_on date,p_sort_order integer,p_assignments jsonb default '[]'::jsonb
-)
-returns jsonb language plpgsql security definer set search_path=''
-as $$
-declare
-  v_period_id uuid;
-  v_assignment jsonb;
-  v_round_id uuid;
-  v_division_id uuid;
-  v_count integer;
-begin
-  if not public.is_caleris_fia_or_admin() then raise exception 'Hanya FIA atau Admin yang dapat membentuk kalender season.'; end if;
-  if p_period_type not in ('off_season','pre_season','race_period','race_break','end_season') then raise exception 'Jenis periode tidak valid.'; end if;
-  if p_title is null or length(trim(p_title)) not between 1 and 100 then raise exception 'Nama periode wajib diisi.'; end if;
-  if p_starts_on is null or p_ends_on is null or p_ends_on<p_starts_on then raise exception 'Tanggal periode tidak valid.'; end if;
-  if p_sort_order is null or p_sort_order<1 then raise exception 'Urutan periode tidak valid.'; end if;
-  if p_period_type in ('race_period','race_break') and (p_period_number is null or p_period_number<1) then raise exception 'Nomor periode wajib diisi.'; end if;
-  if p_period_type in ('off_season','pre_season','end_season') and p_period_number is not null then raise exception 'Periode ini tidak menggunakan nomor urut berulang.'; end if;
-  if p_period_type='race_period' and jsonb_typeof(p_assignments)<>'array' then raise exception 'Daftar round Race Period tidak valid.'; end if;
-  insert into public.season_calendar_periods(season_id,period_type,period_number,title,starts_on,ends_on,sort_order,created_by)
-  values(p_season_id,p_period_type,p_period_number,trim(p_title),p_starts_on,p_ends_on,p_sort_order,(select auth.uid()))
-  returning id into v_period_id;
-  if p_period_type='race_period' then
-    select count(*) into v_count from public.license_season_divisions where season_id=p_season_id;
-    if v_count=0 or jsonb_array_length(p_assignments)<>v_count then raise exception 'Setiap divisi season harus memiliki 3 sampai 5 round pada Race Period.'; end if;
-    for v_assignment in select value from jsonb_array_elements(p_assignments) loop
-      v_division_id:=(v_assignment->>'season_division_id')::uuid;
-      if not exists(select 1 from public.license_season_divisions where id=v_division_id and season_id=p_season_id) then raise exception 'Divisi tidak termasuk season ini.'; end if;
-      if jsonb_typeof(v_assignment->'round_ids')<>'array' or jsonb_array_length(v_assignment->'round_ids') not between 3 and 5 then raise exception 'Setiap Race Period harus berisi 3 sampai 5 round per divisi.'; end if;
-      for v_round_id in select value::text::uuid from jsonb_array_elements_text(v_assignment->'round_ids') loop
-        insert into public.season_period_rounds(period_id,season_division_id,round_id)
-        values(v_period_id,v_division_id,v_round_id);
-      end loop;
-    end loop;
-  end if;
-  return jsonb_build_object('id',v_period_id);
-end;
-$$;
-revoke all on function public.fia_create_season_calendar_period(uuid,text,integer,text,date,date,integer,jsonb) from public,anon,service_role;
-grant execute on function public.fia_create_season_calendar_period(uuid,text,integer,text,date,date,integer,jsonb) to authenticated;
-revoke insert on public.season_calendar_periods from authenticated;
-revoke insert,update,delete on public.season_period_rounds from authenticated;
-
 create or replace function public.fia_create_season_calendar(p_season_id uuid,p_periods jsonb)
 returns jsonb language plpgsql security definer set search_path=''
 as $$
