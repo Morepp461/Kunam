@@ -108,8 +108,11 @@ begin
   select id into v_bank from public.economy_wallet_accounts where account_kind='vreeo_bank' and is_active;
   if v_buy_wallet is null or v_sell_wallet is null or v_bank is null then continue; end if;
   select * into v_tax_rule from public.caleris_tax_rules where tax_type='driver_transfer' and is_active and minimum_base<=v_neg.agreed_amount order by minimum_base desc,sort_order desc,created_at desc limit 1;
-  if not found then continue; end if;
-  v_tax:=round(v_neg.agreed_amount*v_tax_rule.rate_percent/100,2);
+  if not found then
+   v_tax:=0;
+  else
+   v_tax:=round(v_neg.agreed_amount*v_tax_rule.rate_percent/100,2);
+  end if;
   v_total:=v_neg.agreed_amount+v_tax;
   perform 1 from public.economy_wallet_accounts where id in (v_buy_wallet,v_sell_wallet,v_bank) order by id for update;
   if (select balance from public.economy_wallet_accounts where id=v_buy_wallet)<v_total then continue; end if;
