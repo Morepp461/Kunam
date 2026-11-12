@@ -37,9 +37,9 @@ export default function AdminSeasonCalendar(){
   const assignments=seasonDivisions.map(d=>({division:d,roundIds:selectedRounds[d.id]||[]}));
   if(periodType==="race_period"&&(!seasonDivisions.length||assignments.some(x=>x.roundIds.length<3||x.roundIds.length>5))){setNotice({kind:"error",text:"Setiap divisi harus memilih 3 sampai 5 round untuk Race Period ini."});return}
   setBusy(true);setNotice(null);const number=periodType==="race_period"||periodType==="race_break"?periods.filter(p=>p.period_type===periodType).reduce((m,p)=>Math.max(m,p.period_number||0),0)+1:null;const order=periods.reduce((m,p)=>Math.max(m,p.sort_order),0)+1;
-  const auth=await supabase.auth.getUser();const result=await supabase.from("season_calendar_periods").insert({season_id:seasonId,period_type:periodType,period_number:number,title:title.trim()||typeName(periodType),starts_on:startsOn,ends_on:endsOn,sort_order:order,created_by:auth.data.user?.id}).select("id").single();
+  const assignmentsPayload=assignments.map(x=>({season_division_id:x.division.id,round_ids:x.roundIds}));
+  const result=await supabase.rpc("fia_create_season_calendar_period",{p_season_id:seasonId,p_period_type:periodType,p_period_number:number,p_title:title.trim()||typeName(periodType),p_starts_on:startsOn,p_ends_on:endsOn,p_sort_order:order,p_assignments:assignmentsPayload});
   if(result.error){setBusy(false);setNotice({kind:"error",text:result.error.message});return}
-  if(periodType==="race_period"){const rows=assignments.flatMap(x=>x.roundIds.map(roundId=>({period_id:result.data.id,season_division_id:x.division.id,round_id:roundId})));const mapped=await supabase.from("season_period_rounds").insert(rows);if(mapped.error){await supabase.from("season_calendar_periods").delete().eq("id",result.data.id);setBusy(false);setNotice({kind:"error",text:mapped.error.message});return}}
   setBusy(false);setTitle("");setStartsOn("");setEndsOn("");setSelectedRounds({});setNotice({kind:"success",text:"Periode season berhasil dibuat."});await load();
  };
  const beginReschedule=(p:Period)=>{setRescheduleId(p.id);setRescheduleStart(p.starts_on);setRescheduleEnd(p.ends_on)};
