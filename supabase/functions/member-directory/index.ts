@@ -132,7 +132,7 @@ Deno.serve(async (req: Request) => {
     if (action === "search") {
       const raw = typeof body.query === "string" ? body.query : "";
       const term = raw.replace(/[^\p{L}\p{N} _-]/gu, " ").trim().replace(/\s+/g, " ").slice(0, 64);
-      if (term.length < 2) return respond(200, { members: [], teams: [], pages: [] });
+      if (term.length < 1) return respond(200, { members: [], teams: [], pages: [] });
       const pattern = `%${term}%`;
 
       const [profileMatches, memberMatches, teamMatches] = await Promise.all([
