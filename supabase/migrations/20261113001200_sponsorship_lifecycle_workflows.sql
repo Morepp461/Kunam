@@ -229,7 +229,7 @@ begin
   if p_amount<>v_target.bonus_amount then raise exception 'Nominal payout harus sama dengan bonus target yang dikonfigurasi.'; end if;
  else
   select coalesce(sum(amount),0) into v_base_paid from public.caleris_sponsorship_payouts where contract_id=v_contract.id and target_id is null;
-  if v_base_paid+p_amount>v_contract.contract_amount then raise exception 'Total pembayaran kontrak melebihi nilai kontrak.';
+  if v_base_paid+p_amount>v_contract.contract_amount then raise exception 'Total pembayaran kontrak melebihi nilai kontrak.'; end if;
  end if;
  if v_contract.target_kind='driver' then
   select id into v_destination from public.economy_wallet_accounts where account_kind='driver' and member_id=v_contract.target_member_id and is_active;
