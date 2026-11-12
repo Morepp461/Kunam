@@ -75,6 +75,7 @@ begin
   if v_new_type not in ('transfer','loan') then raise exception 'Jenis perpindahan tidak valid.'; end if;
   if v_new_type='loan' and (p_loan_starts_on is null or p_loan_ends_on is null or p_loan_ends_on<=p_loan_starts_on) then raise exception 'Periode Driver Loan wajib diisi.'; end if;
   select count(*) into v_side_count from public.caleris_driver_move_offers o join public.members m on m.id=o.offered_by_member_id where o.negotiation_id=v_neg.id and m.team_id=v_actor.team_id and o.response<>'superseded';
+  if v_actor.team_id=v_neg.buyer_team_id then v_side_count:=greatest(v_side_count-1,0); end if;
   select count(*)-1 into v_total_count from public.caleris_driver_move_offers where negotiation_id=v_neg.id;
   if v_side_count>=v_max_side or v_total_count>=v_max_total then raise exception 'Batas negosiasi ulang telah tercapai.'; end if;
   update public.caleris_driver_move_offers set response='countered' where id=v_last.id;
@@ -122,6 +123,7 @@ begin
   end if;
   update public.members set team_id=v_neg.buyer_team_id where id=v_neg.driver_member_id and role='Driver' and team_id=v_neg.seller_team_id;
   if not found then raise exception 'Driver team assignment changed during approved transfer.'; end if;
+  update public.economy_driver_contracts set status='ended',updated_at=now() where member_id=v_neg.driver_member_id and team_id=v_neg.seller_team_id and status='active';
   update public.caleris_driver_move_negotiations set status='executed',
    transfer_transaction_id=(v_result->>'transaction_id')::uuid,
    tax_transaction_id=case when v_tax>0 then (v_tax_result->>'transaction_id')::uuid else null end,
