@@ -240,8 +240,8 @@ declare
   v_original public.economy_transactions%rowtype;
   v_transaction_id uuid;
 begin
-  if p_amount is null or p_amount<=0 or p_amount<>round(p_amount,2) then
-    raise exception 'Nominal transaksi harus lebih besar dari nol dan maksimal dua angka desimal.';
+  if p_amount is null or p_amount<=0 or p_amount>999999999999999999.99 or p_amount<>round(p_amount,2) then
+    raise exception 'Nominal transaksi harus lebih besar dari nol, maksimal 18 digit sebelum koma, dan maksimal dua angka desimal.';
   end if;
   if p_source_account_id is null or p_destination_account_id is null
      or p_source_account_id=p_destination_account_id then
@@ -303,10 +303,10 @@ begin
 
   if p_event_type='checkin_reward' and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind<>'driver') then
     raise exception 'Reward check-in wajib berasal dari VreeoBank dan masuk ke wallet Driver.';
-  elsif p_event_type='prize' and v_source.account_kind<>'vreeo_bank' then
-    raise exception 'Hadiah kompetisi wajib bersumber dari VreeoBank.';
-  elsif p_event_type='sponsor_payout' and v_source.account_kind<>'sponsor_source' then
-    raise exception 'Pembayaran sponsor wajib bersumber dari Sponsor.';
+  elsif p_event_type='prize' and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Hadiah kompetisi wajib bersumber dari VreeoBank dan menuju wallet penerima.';
+  elsif p_event_type='sponsor_payout' and (v_source.account_kind<>'sponsor_source' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Pembayaran sponsor wajib bersumber dari Sponsor dan menuju wallet penerima.';
   elsif p_event_type='bank_funding' and (v_source.account_kind<>'sponsor_source' or v_destination.account_kind<>'vreeo_bank') then
     raise exception 'Pendanaan VreeoBank harus berasal dari sumber Sponsor.';
   elsif p_event_type in ('tax','fine') and (v_destination.account_kind<>'vreeo_bank' or v_source.account_kind in ('vreeo_bank','sponsor_source')) then
@@ -347,6 +347,84 @@ begin
   return jsonb_build_object('transaction_id',v_transaction_id,'status','posted');
 end;
 $$;
+
+create or replace function private.validate_economy_transaction_balance()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_entry_count integer;
+  v_outflow_count integer;
+  v_inflow_count integer;
+begin
+  select
+    count(*),
+    count(*) filter(where entry_side='outflow' and account_id=new.source_account_id and amount=new.amount),
+    count(*) filter(where entry_side='inflow' and account_id=new.destination_account_id and amount=new.amount)
+  into v_entry_count,v_outflow_count,v_inflow_count
+  from public.economy_entries
+  where transaction_id=new.id;
+
+  if v_entry_count<>2 or v_outflow_count<>1 or v_inflow_count<>1 then
+    raise exception 'Ledger transaction must contain exactly one matching outflow and one matching inflow.';
+  end if;
+  return null;
+end;
+$;
+
+create constraint trigger economy_transaction_balanced_entries
+after insert on public.economy_transactions
+deferrable initially deferred
+for each row execute function private.validate_economy_transaction_balance();
+
+create or replace function private.reject_economy_ledger_mutation()
+returns trigger
+language plpgsql
+set search_path=''
+as $
+begin
+  raise exception 'Economy ledger records are immutable. Use a reversal transaction.';
+end;
+$;
+
+create trigger economy_transactions_immutable
+before update or delete on public.economy_transactions
+for each row execute function private.reject_economy_ledger_mutation();
+create trigger economy_entries_immutable
+before update or delete on public.economy_entries
+for each row execute function private.reject_economy_ledger_mutation();
+
+create or replace function private.guard_economy_reward_claim()
+returns trigger
+language plpgsql
+set search_path=''
+as $
+begin
+  if tg_op='DELETE' then
+    raise exception 'Economy reward claims cannot be deleted.';
+  end if;
+  if new.id is distinct from old.id
+     or new.source_type is distinct from old.source_type
+     or new.source_id is distinct from old.source_id
+     or new.member_id is distinct from old.member_id
+     or new.amount is distinct from old.amount
+     or new.idempotency_key is distinct from old.idempotency_key
+     or new.created_at is distinct from old.created_at then
+    raise exception 'Economy reward claim identity and amount are immutable.';
+  end if;
+  if not ((old.status='pending' and new.status='paid')
+       or (old.status='paid' and new.status='reversed')) then
+    raise exception 'Invalid economy reward claim status transition.';
+  end if;
+  return new;
+end;
+$;
+
+create trigger economy_reward_claim_guard
+before update or delete on public.economy_reward_claims
+for each row execute function private.guard_economy_reward_claim();
 
 create or replace function public.admin_post_economy_transaction(
   p_source_account_id uuid,
@@ -473,7 +551,7 @@ begin
   where category='economy' and config_key='daily-checkin-reward' and is_active;
   if not found then return new; end if;
   v_amount:=nullif(v_config.payload->>'amount','')::numeric;
-  if v_amount is null or v_amount<=0 or v_amount<>round(v_amount,2) then return new; end if;
+  if v_amount is null or v_amount<=0 or v_amount>999999999999999999.99 or v_amount<>round(v_amount,2) then return new; end if;
 
   select id into v_driver_wallet_id from public.economy_wallet_accounts
   where account_kind='driver' and member_id=new.member_id and is_active;
@@ -549,6 +627,9 @@ values(
 )
 on conflict(category,config_key) do nothing;
 
+revoke all on function private.validate_economy_transaction_balance() from public,anon,authenticated,service_role;
+revoke all on function private.reject_economy_ledger_mutation() from public,anon,authenticated,service_role;
+revoke all on function private.guard_economy_reward_claim() from public,anon,authenticated,service_role;
 revoke all on function private.ensure_profile_economy_wallet() from public,anon,authenticated,service_role;
 revoke all on function private.ensure_member_economy_wallets() from public,anon,authenticated,service_role;
 revoke all on function private.ensure_team_economy_wallet() from public,anon,authenticated,service_role;
