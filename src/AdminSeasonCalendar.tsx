@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
 import {ArrowLeft,CalendarDays,Plus,RefreshCw,ShieldCheck,Trash2} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
@@ -35,7 +36,7 @@ export default function AdminSeasonCalendar(){
  const addBreak=()=>setDrafts(cur=>{const n=cur.filter(d=>d.period_type==="race_break").length+1;const endIndex=cur.findIndex(d=>d.period_type==="end_season");const copy=[...cur];copy.splice(endIndex<0?copy.length:endIndex,0,makeDraft("race_break",n));return copy});
  const removeDraft=(key:string)=>setDrafts(cur=>cur.filter(d=>d.key!==key));
  const availableFor=(draft:Draft,divisionId:string)=>seasonRounds.filter(r=>r.season_division_id===divisionId&&!mappings.some(m=>m.round_id===r.id)&&!drafts.some(other=>other.key!==draft.key&&other.period_type==="race_period"&&(other.rounds[divisionId]||[]).includes(r.id)));
- const saveCalendar=async(e:React.FormEvent)=>{e.preventDefault();if(!supabase||!seasonId)return;
+ const saveCalendar=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!seasonId)return;
   for(const type of ["off_season","pre_season","end_season"]){if(drafts.filter(d=>d.period_type===type).length!==1){setNotice({kind:"error",text:"Off Season, Pre Season, dan End Season masing-masing harus tepat satu."});return}}
   const races=drafts.filter(d=>d.period_type==="race_period");if(!races.length){setNotice({kind:"error",text:"Season harus memiliki minimal satu Race Period."});return}
   for(const d of drafts){if(!d.title.trim()||!d.starts_on||!d.ends_on||d.ends_on<d.starts_on){setNotice({kind:"error",text:"Lengkapi nama dan tanggal setiap periode."});return}if(d.period_type==="race_period"&&seasonDivisions.some(div=>(d.rounds[div.id]||[]).length<3||(d.rounds[div.id]||[]).length>5)){setNotice({kind:"error",text:"Setiap Race Period wajib berisi 3–5 round untuk setiap divisi."});return}}
