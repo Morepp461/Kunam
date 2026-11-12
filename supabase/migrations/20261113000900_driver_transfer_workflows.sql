@@ -94,7 +94,7 @@ returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_neg public.caleris_driver_move_negotiations%rowtype;v_buy_wallet uuid;v_sell_wallet uuid;v_bank uuid;
  v_tax_rule public.caleris_tax_rules%rowtype;v_tax numeric:=0;v_total numeric;v_result jsonb;v_tax_result jsonb;v_done integer:=0;
 begin
- if not exists(select 1 from public.season_calendar_periods p where p.period_type in ('end_season','off_season') and current_date between p.starts_on and p.ends_on) then
+ if not exists(select 1 from public.season_calendar_periods p where p.period_type in ('end_season','off_season') and (now() at time zone 'Asia/Jakarta')::date between p.starts_on and p.ends_on) then
   return jsonb_build_object('executed',0,'reason','transfer_window_closed');
  end if;
  for v_neg in
