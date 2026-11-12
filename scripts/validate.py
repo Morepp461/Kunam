@@ -136,7 +136,7 @@ def main():
     assert 'supabase.rpc("admin_reverse_economy_transaction"' not in economy_source
     assert 'supabase.rpc("admin_process_pending_economy_rewards"' not in economy_source
     for rpc in ["admin_post_economy_transaction", "admin_reverse_economy_transaction", "admin_process_pending_economy_rewards"]:
-        assert rpc in economy_source, f"Economy Engine UI missing RPC: {rpc}"
+        assert rpc in edge_source, f"Economy Edge gateway missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
     assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in app
