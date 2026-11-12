@@ -19,7 +19,9 @@ def main():
     assert package["scripts"]["build"] == "tsc -b && vite build"
     vite_config = (ROOT / "vite.config.ts").read_text(encoding="utf-8")
     assert "copy-caleris-static-assets" in vite_config and "cpSync(source, destination" in vite_config
-    license_migration_versions = [
+    history_aligned_migrations = [
+        "20261112092221_split_public_content_rls_admin_lookup.sql",
+        "20261112093246_grant_search_service_role_select.sql",
         "20261112123648_license_scoring_engine.sql",
         "20261112123731_license_wdc_finalization_validation.sql",
         "20261112123814_license_driver_read_policies_and_milestone_validation.sql",
@@ -30,7 +32,7 @@ def main():
     ]
     for migration in license_migration_versions:
         assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
-    for obsolete in ["20261112150000_license_scoring_engine.sql", "20261112151000_license_wdc_finalization_validation.sql", "20261112152000_license_driver_read_policies_and_milestone_validation.sql", "20261112153000_license_round_processing_order.sql", "20261112154000_license_offseason_hiatus_guard.sql", "20261112155000_race_day_checkin_and_lifetime_wdc.sql", "20261112160000_wdc_highest_division_dynamic_points.sql"]:
+    for obsolete in ["20261112110000_split_public_content_rls_admin_lookup.sql", "20261112123000_grant_search_service_role_select.sql", "20261112150000_license_scoring_engine.sql", "20261112151000_license_wdc_finalization_validation.sql", "20261112152000_license_driver_read_policies_and_milestone_validation.sql", "20261112153000_license_round_processing_order.sql", "20261112154000_license_offseason_hiatus_guard.sql", "20261112155000_race_day_checkin_and_lifetime_wdc.sql", "20261112160000_wdc_highest_division_dynamic_points.sql"]:
         assert not (ROOT / "supabase/migrations" / obsolete).exists(), f"Obsolete migration version remains: {obsolete}"
     economy_gateway_migration = ROOT / "supabase/migrations/20261112140121_economy_edge_gateway.sql"
     economy_edge_function = ROOT / "supabase/functions/economy-engine/index.ts"
@@ -85,7 +87,7 @@ def main():
     assert 'import {createPortal} from "react-dom"' in app
     assert "searchRootRef" in app and "document.body" in app
     assert "dropdownStyle.maxHeight" in app
-    rls_fix = ROOT / "supabase/migrations/20261112110000_split_public_content_rls_admin_lookup.sql"
+    rls_fix = ROOT / "supabase/migrations/20261112092221_split_public_content_rls_admin_lookup.sql"
     assert rls_fix.is_file(), "Missing public RLS split migration"
     rls_source = rls_fix.read_text(encoding="utf-8")
     assert "TO anon, authenticated" in rls_source
@@ -95,7 +97,7 @@ def main():
     assert '"Public can read published content"' in rls_source
     assert '"Admins read all site content"' in rls_source
     assert "},100);return()=>{active=false;window.clearTimeout(timer)}" in app
-    permissions_migration = ROOT / "supabase/migrations/20261112123000_grant_search_service_role_select.sql"
+    permissions_migration = ROOT / "supabase/migrations/20261112093246_grant_search_service_role_select.sql"
     assert permissions_migration.is_file(), "Missing search service-role grants migration"
     permissions_sql = permissions_migration.read_text(encoding="utf-8").lower()
     assert "grant select on table" in permissions_sql
