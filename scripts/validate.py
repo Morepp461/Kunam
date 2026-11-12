@@ -19,6 +19,19 @@ def main():
     assert package["scripts"]["build"] == "tsc -b && vite build"
     vite_config = (ROOT / "vite.config.ts").read_text(encoding="utf-8")
     assert "copy-caleris-static-assets" in vite_config and "cpSync(source, destination" in vite_config
+    license_migration_versions = [
+        "20261112123648_license_scoring_engine.sql",
+        "20261112123731_license_wdc_finalization_validation.sql",
+        "20261112123814_license_driver_read_policies_and_milestone_validation.sql",
+        "20261112124122_license_round_processing_order.sql",
+        "20261112124242_license_offseason_hiatus_guard.sql",
+        "20261112125157_race_day_checkin_and_lifetime_wdc.sql",
+        "20261112130133_wdc_highest_division_dynamic_points.sql",
+    ]
+    for migration in license_migration_versions:
+        assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
+    for obsolete in ["20261112150000_license_scoring_engine.sql", "20261112151000_license_wdc_finalization_validation.sql", "20261112152000_license_driver_read_policies_and_milestone_validation.sql", "20261112153000_license_round_processing_order.sql", "20261112154000_license_offseason_hiatus_guard.sql", "20261112155000_race_day_checkin_and_lifetime_wdc.sql", "20261112160000_wdc_highest_division_dynamic_points.sql"]:
+        assert not (ROOT / "supabase/migrations" / obsolete).exists(), f"Obsolete migration version remains: {obsolete}"
     economy_gateway_migration = ROOT / "supabase/migrations/20261112140121_economy_edge_gateway.sql"
     economy_edge_function = ROOT / "supabase/functions/economy-engine/index.ts"
     assert economy_gateway_migration.is_file() and economy_edge_function.is_file(), "Missing Economy Engine gateway hardening"
