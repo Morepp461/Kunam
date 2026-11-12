@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
-import {Flag,ShieldCheck,Trophy,RefreshCw,Save,AlertTriangle} from "lucide-react";
+import {Flag,ShieldCheck,Trophy,RefreshCw,Save,AlertTriangle,Handshake} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
@@ -75,7 +75,7 @@ export default function FIAOperations({session}:{session:Session}){
     </form>
    </section>
   </div>
-  <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TRANSFER REVIEW</span><h2>Driver transfer approvals</h2></div><Handshake size={19}/></div>{moves.length===0?<p className="economy-empty">Tidak ada transfer yang menunggu FIA.</p>:<div className="ops-record-list">{moves.map(m=><article key={m.id}><div><strong>{members.find(x=>x.id===m.driver_member_id)?.character_name||"Driver"} · {cash(m.agreed_amount||0)}</strong><small>{teams.find(x=>x.id===m.buyer_team_id)?.name||"Buyer"} ← {teams.find(x=>x.id===m.seller_team_id)?.name||"Seller"} · {m.move_type.toUpperCase()}</small></div><div className="ops-record-actions"><button onClick={()=>void reviewMove(m.id,true)} disabled={saving}>Approve</button><button onClick={()=>void reviewMove(m.id,false)} disabled={saving}>Reject</button></div></article>)}</div>}</section>
+  <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TRANSFER REVIEW</span><h2>Driver transfer approvals</h2></div><Handshake size={19}/></div>{moves.length===0?<p className="economy-empty">Tidak ada transfer yang menunggu FIA.</p>:<div className="ops-record-list">{moves.map(m=><article key={m.id}><div><strong>{members.find(x=>x.id===m.driver_member_id)?.character_name||"Driver"} · {money(m.agreed_amount||0)}</strong><small>{teams.find(x=>x.id===m.buyer_team_id)?.name||"Buyer"} ← {teams.find(x=>x.id===m.seller_team_id)?.name||"Seller"} · {m.move_type.toUpperCase()}</small></div><div className="ops-record-actions"><button onClick={()=>void reviewMove(m.id,true)} disabled={saving}>Approve</button><button onClick={()=>void reviewMove(m.id,false)} disabled={saving}>Reject</button></div></article>)}</div>}</section>
   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">DISCIPLINARY RECORD</span><h2>Fine history</h2></div><button className="economy-secondary-button" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>
    {fines.length===0?<p className="economy-empty">Belum ada denda FIA.</p>:<div className="ops-record-list">{fines.map(f=><article key={f.id}><div><strong>{targetName(f)} · {money(f.amount)}</strong><small>{f.reason}{f.regulation_reference?" · "+f.regulation_reference:""} · {new Date(f.issued_at).toLocaleString("id-ID")}</small></div><span className="empty-tag">{f.target_kind.toUpperCase()}</span></article>)}</div>}
   </section>
