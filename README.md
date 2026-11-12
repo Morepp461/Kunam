@@ -194,3 +194,11 @@ License scoring is processed by Supabase triggers and immutable score-ledger tra
 - Final standings are locked after WDC finalization. Official results are entered by Admin because the current project has no external race-results feed.
 
 Supabase migrations: `20261112150000_license_scoring_engine.sql`, `20261112151000_license_wdc_finalization_validation.sql`, and `20261112152000_license_driver_read_policies_and_milestone_validation.sql`, `20261112153000_license_round_processing_order.sql`, and `20261112154000_license_offseason_hiatus_guard.sql`.
+
+### Race-day attendance and lifetime WDC correction
+
+- Attendance is per scheduled race, not daily. The check-in button is available only on the Jakarta calendar date of a configured round and only within that round's configured opening/closing time. A non-race day has no check-in button and is not counted as an absence.
+- Each attendance row references one round. A driver can check in once per round, including separate rounds scheduled on different dates. Database triggers validate the race date, time window, active season/division registration, and Driver role.
+- WDC score is a one-time lifetime award per member across all seasons and divisions. A later championship does not add another WDC score. The original WDC ledger row cannot be updated or deleted, and the member-level unique index prevents a second award. Seasonal scoring and inactivity calculations continue to exclude WDC points.
+- If a driver who already owns the lifetime WDC score wins another division/season, the new division can still be finalized as champion, but no additional WDC points are granted.
+- Migration: `20261112155000_race_day_checkin_and_lifetime_wdc.sql`.
