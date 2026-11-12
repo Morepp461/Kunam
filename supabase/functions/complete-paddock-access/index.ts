@@ -15,11 +15,11 @@ function ageOnToday(dateOfBirth: string): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return null;
   const dob = new Date(`${dateOfBirth}T00:00:00.000Z`);
   if (Number.isNaN(dob.getTime()) || dob.toISOString().slice(0, 10) !== dateOfBirth) return null;
-  const now = new Date();
-  let age = now.getUTCFullYear() - dob.getUTCFullYear();
-  const beforeBirthday =
-    now.getUTCMonth() < dob.getUTCMonth() ||
-    (now.getUTCMonth() === dob.getUTCMonth() && now.getUTCDate() < dob.getUTCDate());
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jakarta", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+  const part = (type: string) => Number(parts.find((item) => item.type === type)?.value ?? 0);
+  const todayYear = part("year"), todayMonth = part("month"), todayDay = part("day");
+  let age = todayYear - dob.getUTCFullYear();
+  const beforeBirthday = todayMonth < dob.getUTCMonth() + 1 || (todayMonth === dob.getUTCMonth() + 1 && todayDay < dob.getUTCDate());
   if (beforeBirthday) age--;
   return age;
 }
