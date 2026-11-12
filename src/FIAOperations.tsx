@@ -18,8 +18,8 @@ export default function FIAOperations(){
   if(!supabase)return;setLoading(true);
   const [r,m,t,f,mv,tv]=await Promise.all([
    supabase.from("license_rounds").select("id,round_number,title,season_division_id,status,license_season_divisions(division_name,license_seasons(title))").eq("status","closed").order("round_number",{ascending:false}),
-   supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
-   supabase.from("teams").select("id,name").order("name"),
+   supabase.from("caleris_member_directory").select("id,character_name,role,team_id").order("character_name"),
+   supabase.from("caleris_team_directory").select("id,name").order("name"),
    supabase.from("caleris_fines").select("*").order("issued_at",{ascending:false}).limit(100),
    supabase.from("caleris_driver_move_negotiations").select("id,driver_member_id,buyer_team_id,seller_team_id,move_type,agreed_amount,status").eq("status","pending_fia").order("created_at"),
    supabase.from("caleris_team_takeovers").select("id,target_team_id,buyer_member_id,seller_member_id,agreed_amount,status").eq("status","pending_fia").order("created_at")
