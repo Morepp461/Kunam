@@ -89,6 +89,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   }, [eventType, spendable]);
   const destinationOptions = useMemo(() => {
     if (eventType === "tax" || eventType === "fine" || eventType === "bank_funding") return spendable.filter((account) => account.account_kind === "vreeo_bank");
+    if (eventType === "checkin_reward") return spendable.filter((account) => account.account_kind === "driver");
     if (eventType === "admin_adjustment") return spendable.filter((account) => account.account_kind !== "sponsor_source");
     return spendable.filter((account) => !["vreeo_bank", "sponsor_source"].includes(account.account_kind));
   }, [eventType, spendable]);
