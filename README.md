@@ -242,7 +242,7 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 
 ## Season Calendar & Team Payroll
 
-- FIA and Admin can manage season operations. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
+- FIA Panel exposes Season Calendar and License Scoring Engine. FIA can configure season operations, process rounds, and finalize WDC. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
 - FIA Panel → Season Calendar builds the complete season timeline in one form: exactly one Off Season, one Pre Season, one End Season, one or more Race Periods, and zero or more Break Race Periods.
 - Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
 - Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
