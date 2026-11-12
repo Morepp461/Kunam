@@ -226,7 +226,7 @@ begin
   select * into v_target from public.caleris_sponsorship_targets where id=p_target_id and contract_id=v_contract.id and status='achieved' for update;
   if not found then raise exception 'Bonus hanya dapat dibayar untuk target yang sudah tercapai.'; end if;
   if exists(select 1 from public.caleris_sponsorship_payouts where target_id=p_target_id) then raise exception 'Bonus target ini sudah pernah dibayarkan.'; end if;
-  if p_amount<>v_target.bonus_amount then raise exception 'Nominal payout harus sama dengan bonus target yang dikonfigurasi.';
+  if p_amount<>v_target.bonus_amount then raise exception 'Nominal payout harus sama dengan bonus target yang dikonfigurasi.'; end if;
  else
   select coalesce(sum(amount),0) into v_base_paid from public.caleris_sponsorship_payouts where contract_id=v_contract.id and target_id is null;
   if v_base_paid+p_amount>v_contract.contract_amount then raise exception 'Total pembayaran kontrak melebihi nilai kontrak.';
