@@ -33,6 +33,11 @@ def main():
     assert 'supabase.rpc("admin_post_economy_transaction"' not in economy_source
     assert 'supabase.rpc("admin_reverse_economy_transaction"' not in economy_source
     assert 'supabase.rpc("admin_process_pending_economy_rewards"' not in economy_source
+    economy_query_migration = ROOT / "supabase/migrations/20261112172000_economy_engine_query_hardening.sql"
+    assert economy_query_migration.is_file(), "Missing Economy Engine query hardening migration"
+    query_sql = economy_query_migration.read_text(encoding="utf-8")
+    for fragment in ["economy_transactions_created_by_idx", "economy_reward_claims_member_idx", "economy_reward_claims_source_idx", "Members and admins read economy wallets"]:
+        assert fragment in query_sql, f"Economy query hardening missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
