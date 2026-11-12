@@ -353,7 +353,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=''
-as $
+as $economy_validation$
 declare
   v_entry_count integer;
   v_outflow_count integer;
@@ -383,7 +383,7 @@ create or replace function private.reject_economy_ledger_mutation()
 returns trigger
 language plpgsql
 set search_path=''
-as $
+as $economy_immutable$
 begin
   raise exception 'Economy ledger records are immutable. Use a reversal transaction.';
 end;
@@ -400,7 +400,7 @@ create or replace function private.guard_economy_reward_claim()
 returns trigger
 language plpgsql
 set search_path=''
-as $
+as $economy_claim_guard$
 begin
   if tg_op='DELETE' then
     raise exception 'Economy reward claims cannot be deleted.';
