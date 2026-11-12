@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const requestOrigin = (req: Request) => req.headers.get("Origin") ?? "";
 const isAllowedOrigin = (origin: string) => origin === "http://localhost:5173" || origin === "https://calerismastersnewgen-mu.vercel.app" || /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
