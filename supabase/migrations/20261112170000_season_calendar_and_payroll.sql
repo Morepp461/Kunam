@@ -82,6 +82,30 @@ create trigger season_calendar_period_audit
 after insert or update on public.season_calendar_periods
 for each row execute function private.audit_season_calendar_period();
 
+create or replace function private.guard_season_calendar_period()
+returns trigger language plpgsql set search_path=''
+as $
+begin
+  if new.id is distinct from old.id or new.season_id is distinct from old.season_id
+    or new.period_type is distinct from old.period_type or new.period_number is distinct from old.period_number
+    or new.sort_order is distinct from old.sort_order or new.created_by is distinct from old.created_by
+    or new.created_at is distinct from old.created_at then
+    raise exception 'Identitas, jenis, dan urutan periode kalender tidak dapat diubah.';
+  end if;
+  if exists(select 1 from public.season_calendar_periods other
+    where other.season_id=old.season_id and other.id<>old.id
+      and daterange(new.starts_on,new.ends_on,'[]') && daterange(other.starts_on,other.ends_on,'[]')) then
+    raise exception 'Tanggal reschedule tidak boleh bertabrakan dengan periode lain.';
+  end if;
+  return new;
+end;
+$;
+create trigger season_calendar_period_guard
+before update on public.season_calendar_periods
+for each row execute function private.guard_season_calendar_period();
+revoke all on function private.guard_season_calendar_period() from public,anon,authenticated,service_role;
+
+
 create or replace function private.validate_season_period_round()
 returns trigger language plpgsql security definer set search_path=''
 as $$
@@ -622,7 +646,7 @@ declare
   v_race_count integer:=0;
   v_period_count integer:=0;
   v_unassigned integer;
-  v_last_start date;
+  v_previous_end date;
 begin
   if not public.is_caleris_fia_or_admin() then raise exception 'Hanya FIA atau Admin yang dapat membentuk kalender season.'; end if;
   if not exists(select 1 from public.license_seasons where id=p_season_id and status in ('draft','active')) then raise exception 'Season tidak ditemukan atau sudah selesai.'; end if;
@@ -636,6 +660,7 @@ begin
   if v_race_count<1 then raise exception 'Season wajib memiliki minimal satu Race Period.'; end if;
   select count(*) into v_division_count from public.license_season_divisions where season_id=p_season_id;
   if v_division_count<1 then raise exception 'Buat minimal satu divisi sebelum membentuk kalender.'; end if;
+  if exists(select 1 from jsonb_array_elements(p_periods) x where x->>'period_type' not in ('off_season','pre_season','race_period','race_break','end_season')) then raise exception 'Jenis periode tidak valid.'; end if;
 
   for v_period in select value from jsonb_array_elements(p_periods) loop
     v_order:=v_order+1;
@@ -645,6 +670,7 @@ begin
     v_starts:=(v_period->>'starts_on')::date;
     v_ends:=(v_period->>'ends_on')::date;
     if v_title is null or v_starts is null or v_ends is null or v_ends<v_starts then raise exception 'Nama atau tanggal periode tidak valid.'; end if;
+    if v_previous_end is not null and v_starts<=v_previous_end then raise exception 'Tanggal periode harus berurutan dan tidak boleh saling tumpang tindih.'; end if;
     if v_type in ('race_period','race_break') then
       select count(*)+1 into v_number from public.season_calendar_periods
       where season_id=p_season_id and period_type=v_type;
@@ -653,8 +679,9 @@ begin
     values(p_season_id,v_type,v_number,v_title,v_starts,v_ends,v_order,(select auth.uid()))
     returning id into v_period_id;
     if v_type='race_period' then
-      if jsonb_typeof(v_period->'assignments')<>'array' or jsonb_array_length(v_period->'assignments')<>v_division_count then
-        raise exception 'Setiap Race Period wajib mengatur round untuk seluruh divisi season.';
+      if jsonb_typeof(v_period->'assignments')<>'array' or jsonb_array_length(v_period->'assignments')<>v_division_count
+        or (select count(distinct x->>'season_division_id') from jsonb_array_elements(v_period->'assignments') x)<>v_division_count then
+        raise exception 'Setiap Race Period wajib mengatur tepat satu daftar round untuk seluruh divisi season.';
       end if;
       for v_assignment in select value from jsonb_array_elements(v_period->'assignments') loop
         v_division_id:=(v_assignment->>'season_division_id')::uuid;
@@ -665,6 +692,7 @@ begin
         end loop;
       end loop;
     end if;
+    v_previous_end:=v_ends;
     v_period_count:=v_period_count+1;
   end loop;
   select count(*) into v_unassigned from public.license_rounds r
