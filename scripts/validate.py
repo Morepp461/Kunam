@@ -29,6 +29,18 @@ def main():
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
     assert "if(term.length<1)" in app
     assert "query.trim().length>=1" in app
+    assert 'import {createPortal} from "react-dom"' in app
+    assert "searchRootRef" in app and "document.body" in app
+    assert "dropdownStyle.maxHeight" in app
+    rls_fix = ROOT / "supabase/migrations/20261112110000_split_public_content_rls_admin_lookup.sql"
+    assert rls_fix.is_file(), "Missing public RLS split migration"
+    rls_source = rls_fix.read_text(encoding="utf-8")
+    assert "TO anon, authenticated" in rls_source
+    assert "TO authenticated" in rls_source
+    assert '"Public can read community setting"' in rls_source
+    assert '"Admins read all site settings"' in rls_source
+    assert '"Public can read published content"' in rls_source
+    assert '"Admins read all site content"' in rls_source
     assert "},100);return()=>{active=false;window.clearTimeout(timer)}" in app
     assert "tire-trace" in app and "toast-stack" in app and "global-progress" in styles
     assert "cinematicCamera" in styles and "spotlightSweep" in styles
