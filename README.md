@@ -174,6 +174,8 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261112184502_operations_negotiation_configuration.sql` — editable negotiation limits and takeover valuation bounds seeded from the explicitly agreed rules.
 - `20261112185030_team_takeover_workflows.sql` — team listing, valuation-bounded negotiation, counter offers, and FIA review.
 - `20261112185035_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
+- `20261112185040_operations_market_directories.sql` — authenticated, read-only safe directory views for Driver/Team marketplaces and FIA lists; private member balance and member-code columns remain hidden.
+- `20261112185045_team_takeover_market_valuation.sql` — exposes the latest valuation only for teams that have opened a Take Over listing.
 
 ### Operational workflows added in this phase
 
