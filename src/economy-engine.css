@@ -1,0 +1,64 @@
+.economy-workspace{display:flex;flex-direction:column;gap:22px}
+.economy-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:6px 0 4px}
+.economy-heading h1{margin:7px 0 8px;color:#f4f1e8;font:800 clamp(30px,4vw,46px) 'Barlow Condensed',sans-serif;letter-spacing:.025em;text-transform:uppercase}
+.economy-heading p{margin:0;color:rgba(244,243,239,.58);font-size:13px;line-height:1.7}
+.economy-admin-mark{display:inline-flex;align-items:center;gap:7px;flex:none;padding:8px 11px;border:1px solid rgba(198,163,58,.35);border-radius:5px;color:#e0c36c;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.14em}
+.economy-summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.economy-summary-card{display:flex;min-width:0;flex-direction:column;gap:9px;padding:17px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(8,11,15,.78);backdrop-filter:blur(12px)}
+.economy-summary-card>span{display:flex;align-items:center;gap:8px;color:#d5bd78;font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.economy-summary-card strong{overflow-wrap:anywhere;color:#f3f0e8;font:700 clamp(20px,2.5vw,27px) 'Barlow Condensed',sans-serif}
+.economy-summary-card small{color:rgba(244,243,239,.43);font-size:10px;line-height:1.5}
+.economy-summary-card.pending strong{color:#e7c86b}
+.economy-main-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.economy-panel{min-width:0;padding:20px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(7,10,14,.84);box-shadow:0 14px 35px rgba(0,0,0,.12);backdrop-filter:blur(14px)}
+.economy-panel-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px;color:#d7bb65}
+.economy-panel-heading h2{margin:5px 0 0;color:#f0ede5;font:700 22px 'Barlow Condensed',sans-serif;letter-spacing:.03em;text-transform:uppercase}
+.economy-form{display:flex;flex-direction:column;gap:13px}
+.economy-form label{display:flex;min-width:0;flex-direction:column;gap:7px;color:rgba(244,243,239,.72);font-size:11px;font-weight:650}
+.economy-form input,.economy-form select{width:100%;min-width:0;min-height:42px;padding:10px 11px;border:1px solid rgba(255,255,255,.13);border-radius:5px;outline:0;background:#10151b;color:#f0eee7;font:500 12px Inter,Arial,sans-serif}
+.economy-form input:focus,.economy-form select:focus{border-color:#c6a33a;box-shadow:0 0 0 2px rgba(198,163,58,.1)}
+.economy-form-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.economy-form-hint{margin:0;color:rgba(244,243,239,.43);font-size:10px;line-height:1.65}
+.economy-primary-button,.economy-secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:39px;padding:9px 13px;border:1px solid rgba(198,163,58,.42);border-radius:5px;font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.economy-primary-button{background:linear-gradient(120deg,#9c7624,#d4b65c);color:#111}
+.economy-primary-button:hover{filter:brightness(1.08)}
+.economy-secondary-button{background:rgba(255,255,255,.045);color:#dfc779}
+.economy-secondary-button:hover{background:rgba(198,163,58,.1)}
+.economy-primary-button:disabled,.economy-secondary-button:disabled{opacity:.45;cursor:not-allowed}
+.economy-source-route{display:flex;align-items:center;justify-content:center;gap:12px;padding:13px;border:1px solid rgba(198,163,58,.2);border-radius:6px;background:rgba(198,163,58,.055);color:#d7bd70;font:700 12px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.economy-source-route strong{color:#f1e5b9}
+.economy-toggle{display:flex!important;flex-direction:row!important;align-items:center;gap:9px!important}
+.economy-toggle input{width:17px;height:17px;min-height:17px;accent-color:#c6a33a}
+.economy-pending-box{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:17px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:6px;background:rgba(255,255,255,.035)}
+.economy-pending-box>div{display:flex;min-width:0;flex-direction:column;gap:4px}
+.economy-pending-box strong{color:#eee9dc;font-size:11px}
+.economy-pending-box small{color:rgba(244,243,239,.43);font-size:10px}
+.economy-wallet-panel{width:100%}
+.economy-wallet-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.economy-wallet-card{position:relative;display:flex;min-width:0;flex-direction:column;gap:7px;padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:6px;background:rgba(255,255,255,.035)}
+.economy-wallet-card>span{color:#c6aa60;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase}
+.economy-wallet-card strong{overflow-wrap:anywhere;color:#f2eee3;font:700 20px 'Barlow Condensed',sans-serif}
+.economy-wallet-card small{overflow:hidden;color:rgba(244,243,239,.55);font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.economy-wallet-card em{align-self:flex-start;color:rgba(244,243,239,.35);font:700 8px 'Barlow Condensed',sans-serif;letter-spacing:.12em;font-style:normal}
+.economy-wallet-card.negative{border-color:rgba(201,87,75,.45);background:rgba(120,35,30,.1)}
+.economy-wallet-card.negative strong{color:#e78b80}
+.economy-ledger-list{display:flex;flex-direction:column}
+.economy-ledger-row{display:flex;align-items:center;gap:12px;padding:13px 0;border-top:1px solid rgba(255,255,255,.075)}
+.economy-ledger-icon{display:grid;place-items:center;flex:none;width:35px;height:35px;border:1px solid rgba(198,163,58,.22);border-radius:50%;color:#d8bd6b}
+.economy-ledger-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.economy-ledger-copy strong{overflow:hidden;color:#eeeae1;font-size:11px;text-overflow:ellipsis;white-space:nowrap}
+.economy-ledger-copy span,.economy-ledger-copy small{overflow:hidden;color:rgba(244,243,239,.42);font-size:9px;text-overflow:ellipsis;white-space:nowrap}
+.economy-ledger-value{display:flex;flex:none;flex-direction:column;align-items:flex-end;gap:5px}
+.economy-ledger-value strong{color:#f0e5bd;font:700 14px 'Barlow Condensed',sans-serif}
+.economy-ledger-value button{padding:4px 7px;border:1px solid rgba(200,105,92,.35);border-radius:4px;background:rgba(140,40,35,.1);color:#e6a49b;font-size:9px}
+.economy-ledger-value button:disabled{opacity:.4}
+.economy-ledger-value em{color:#d1b86e;font:700 8px 'Barlow Condensed',sans-serif;letter-spacing:.12em;font-style:normal}
+.economy-empty{display:flex;align-items:center;justify-content:center;gap:9px;min-height:80px;color:rgba(244,243,239,.42);font-size:11px;text-align:center}
+.economy-notice{display:flex;align-items:flex-start;gap:9px;padding:12px 14px;border:1px solid;border-radius:6px;font-size:11px;line-height:1.6}
+.economy-notice.success{border-color:rgba(92,160,116,.35);background:rgba(44,105,65,.12);color:#a8d2b3}
+.economy-notice.error{border-color:rgba(196,90,80,.4);background:rgba(120,35,30,.12);color:#e7a19a}
+.economy-security-note{display:flex;align-items:flex-start;gap:10px;padding:13px 15px;border:1px solid rgba(198,163,58,.2);border-radius:6px;background:rgba(198,163,58,.045);color:#d5b963}
+.economy-security-note p{margin:0;color:rgba(244,243,239,.5);font-size:10px;line-height:1.7}
+@media(max-width:900px){.economy-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.economy-wallet-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:680px){.economy-main-grid{grid-template-columns:1fr}.economy-heading{flex-direction:column}.economy-panel{padding:15px}.economy-form-row{grid-template-columns:1fr}.economy-wallet-grid{grid-template-columns:1fr 1fr}.economy-ledger-row{gap:8px}.economy-ledger-copy span{max-width:52vw}}
+@media(max-width:390px){.economy-summary-grid{grid-template-columns:1fr 1fr;gap:8px}.economy-summary-card{padding:12px}.economy-wallet-grid{grid-template-columns:1fr}.economy-pending-box{align-items:flex-start;flex-direction:column}}
