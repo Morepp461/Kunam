@@ -193,7 +193,7 @@ License scoring is processed by Supabase triggers and immutable score-ledger tra
 - Seasonal points are scoped by season. WDC ledger points are permanent. Hiatus preserves the last-license snapshot and excludes the driver from inactivity and final classification.
 - Final standings are locked after WDC finalization. Official results are entered by Admin because the current project has no external race-results feed.
 
-Supabase migrations: `20261112150000_license_scoring_engine.sql`, `20261112151000_license_wdc_finalization_validation.sql`, and `20261112152000_license_driver_read_policies_and_milestone_validation.sql`, `20261112153000_license_round_processing_order.sql`, and `20261112154000_license_offseason_hiatus_guard.sql`.
+Supabase migrations aligned to the production Supabase history: `20261112123648_license_scoring_engine.sql`, `20261112123731_license_wdc_finalization_validation.sql`, `20261112123814_license_driver_read_policies_and_milestone_validation.sql`, `20261112124122_license_round_processing_order.sql`, `20261112124242_license_offseason_hiatus_guard.sql`, `20261112125157_race_day_checkin_and_lifetime_wdc.sql`, and `20261112130133_wdc_highest_division_dynamic_points.sql`.
 
 ### Race-day attendance and lifetime WDC correction
 
@@ -203,7 +203,7 @@ Supabase migrations: `20261112150000_license_scoring_engine.sql`, `2026111215100
 - The WDC score remains linked to the highest division achieved and automatically synchronizes when Admin changes that division's WDC points configuration. For example, changing Premio's configured value from 35 to 40 updates existing Premio WDC awards from 35 to 40, including awards from earlier seasons.
 - Each member has one WDC ledger row across all seasons. Its award identity and original provenance remain protected; only the score value and highest-achievement metadata can be revised by the validated championship or configuration-sync database workflows. Seasonal scoring and inactivity calculations continue to exclude WDC points.
 - Premio and Zwei tier priorities are stored in their WDC configuration payloads, not hardcoded into the scoring engine.
-- Migration: `20261112160000_wdc_highest_division_dynamic_points.sql`.
+- Migration: `20261112130133_wdc_highest_division_dynamic_points.sql`.
 
 
 ## Economy Engine · Stage 4
