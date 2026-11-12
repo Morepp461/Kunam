@@ -69,17 +69,9 @@ grant execute on function public.fia_record_race_result(uuid,uuid,uuid) to authe
 
 create or replace function public.admin_generate_wealth_tax_assessments(p_season_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare v_count integer;
 begin
  if not exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat menghitung Wealth Tax.'; end if;
- if not exists(select 1 from public.license_seasons where id=p_season_id and status in ('active','completed')) then raise exception 'Season tidak ditemukan.'; end if;
- if exists(select 1 from public.license_rounds r join public.license_season_divisions d on d.id=r.season_division_id where d.season_id=p_season_id and r.status<>'closed') then raise exception 'Seluruh round season harus ditutup sebelum Wealth Tax dihitung.'; end if;
- if exists(select 1 from public.economy_payroll_claims where season_id=p_season_id and status='pending') then raise exception 'Selesaikan payroll tertunda sebelum menghitung Wealth Tax.'; end if;
- if not exists(select 1 from public.caleris_configurations where category='economy' and config_key='wealth-tax-calculation' and is_active and payload->>'method' in ('flat','progressive')) then
-  raise exception 'Admin harus memilih metode Wealth Tax (flat atau progressive) sebelum assessment.';
- end if;
- v_count:=private.try_assess_wealth_tax_for_season(p_season_id);
- return jsonb_build_object('season_id',p_season_id,'assessments_created',v_count);
+ raise exception 'Wealth Tax belum dapat dihitung: basis kekayaan kena pajak masih menunggu keputusan Admin.';
 end;
 $$;
 revoke all on function public.admin_generate_wealth_tax_assessments(uuid) from public,anon,service_role;
@@ -87,26 +79,9 @@ grant execute on function public.admin_generate_wealth_tax_assessments(uuid) to 
 
 create or replace function public.admin_collect_wealth_tax(p_season_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare v_assessment public.caleris_wealth_tax_assessments%rowtype;v_bank uuid;v_result jsonb;v_paid integer:=0;v_pending integer:=0;
 begin
  if not exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat menagih Wealth Tax.'; end if;
- if not exists(select 1 from public.season_calendar_periods p where p.season_id=p_season_id and p.period_type='off_season' and (now() at time zone 'Asia/Jakarta')::date between p.starts_on and p.ends_on) then
-  raise exception 'Penagihan Wealth Tax hanya dapat diproses saat Off Season berlangsung.';
- end if;
- select id into v_bank from public.economy_wallet_accounts where account_kind='vreeo_bank' and is_active;
- if v_bank is null then raise exception 'Wallet VreeoBank tidak tersedia.'; end if;
- for v_assessment in select * from public.caleris_wealth_tax_assessments where season_id=p_season_id and status='assessed' order by id for update loop
-  if v_assessment.tax_amount<=0 then
-   update public.caleris_wealth_tax_assessments set status='paid',paid_at=now() where id=v_assessment.id;
-   v_paid:=v_paid+1;continue;
-  end if;
-  v_result:=private.post_economy_transaction(v_assessment.wallet_id,v_bank,v_assessment.tax_amount,'tax',
-   'Annual Wealth Tax · '||p_season_id::text,'wealth-tax:'||p_season_id::text||':'||v_assessment.wallet_id::text,
-   (select auth.uid()),jsonb_build_object('assessment_id',v_assessment.id,'season_id',p_season_id,'wallet_balance_snapshot',v_assessment.wallet_balance_snapshot,'rate_percent',v_assessment.applied_rate),null,false);
-  update public.caleris_wealth_tax_assessments set status='paid',transaction_id=(v_result->>'transaction_id')::uuid,paid_at=now() where id=v_assessment.id;
-  v_paid:=v_paid+1;
- end loop;
- return jsonb_build_object('paid',v_paid,'pending',v_pending);
+ raise exception 'Penagihan Wealth Tax dinonaktifkan sampai basis kekayaan kena pajak ditetapkan.';
 end;
 $$;
 revoke all on function public.admin_collect_wealth_tax(uuid) from public,anon,service_role;
