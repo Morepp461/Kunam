@@ -4,6 +4,7 @@ import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate} from "react-
 import {Activity,ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {missingSupabaseMessage,supabase} from "./lib/supabase";
+import "./workspace.css";
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
@@ -44,7 +45,7 @@ function Application(){
  useEffect(()=>{if(authReady)void refreshProfile()},[authReady,refreshProfile]);
  useEffect(()=>{window.scrollTo(0,0);loading(true);const frame=requestAnimationFrame(()=>loading(false));return()=>cancelAnimationFrame(frame)},[location.pathname,loading]);
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
- return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} profileReady={profileReady}><Routes>
+ return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile}><Routes>
   <Route path="/" element={session?<Navigate to="/dashboard" replace/>:<Home/>}/>
   <Route path="/dashboard" element={session?<Dashboard session={session} profile={profile} profileReady={profileReady}/>:<Navigate to="/" replace/>}/>
   <Route path="/admin-workflow" element={session?<AdminWorkflow session={session}/>:<Navigate to="/" replace/>}/>
@@ -56,9 +57,9 @@ function Application(){
   <Route path="*" element={<NotFound/>}/>
  </Routes></Shell>;
 }
-function Shell({children,theme,setTheme,session,profile,profileReady}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null;profileReady:boolean}){
- const {toast,loading}=useUI();const [menuOpen,setMenuOpen]=useState(false);const navigate=useNavigate();
- useEffect(()=>{setMenuOpen(false)},[useLocation().pathname]);
+function Shell({children,theme,setTheme,session,profile}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null}){
+ const {toast,loading}=useUI();const [menuOpen,setMenuOpen]=useState(false);const navigate=useNavigate();const location=useLocation();
+ useEffect(()=>{setMenuOpen(false)},[location.pathname]);
  const logout=async()=>{if(!supabase)return;loading(true);const {error}=await supabase.auth.signOut();loading(false);setMenuOpen(false);if(error)toast("error","Logout gagal",error.message);else{toast("success","Berhasil logout","Sesi akun sudah diakhiri.");navigate("/")}};
  const avatar=profile?.avatar_url||session?.user.user_metadata?.avatar_url||session?.user.user_metadata?.picture||"";
  const nickname=profile?.web_nickname||session?.user.user_metadata?.full_name||session?.user.user_metadata?.name||session?.user.email?.split("@")[0]||"Member";
