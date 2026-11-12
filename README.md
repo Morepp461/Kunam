@@ -116,6 +116,21 @@ python3 -B scripts/validate.py
 - Vercel deploys the production application from `main`.
 - Supabase database changes must be represented by versioned migrations and applied to the connected project.
 
+## Panel Structure
+
+The authenticated workspace now includes four additional navigation groups with dedicated route structures:
+
+- **Main Event**: Global, Caleris Premio, Caleris Zwei, Transfer Market, FIA Announcement, Job Search, Take Over, Circuit Pool, and Regulation.
+- **Driver Panel**: Character, Development, Sponsorship, Quest, Career History, and Financial Centre.
+- **Team Panel**: Team Summary, Development, Sponsorship, Driver Registration, Quest, Scout, Place Job Advert, Affiliate Team, and Appeal.
+- **FIA Panel**: Rules Input, Announcement Input, Punishment Input, and Appeal Room.
+
+Global, Premio, and Zwei overview pages have separate card destinations. Premio and Zwei place Calendar and Results before the shared competition cards. Selected ranking and statistics pages include chart layouts; Transfer Market, Job Search, Take Over, Driver List, and Team List include directory/table structures and filter controls.
+
+Driver and team development pages include the requested attribute lists with a 50–100 value range. Team Summary documents a configuration-driven season timeline; race-period calendar counts and phase durations are not hardcoded.
+
+**Implementation status:** this is a UI/navigation scaffold only. Lists, charts, forms, sponsorship progress, quests, financial records, appeals, and FIA publication workflows do not yet read or write production data. No database schema or Supabase migration was added in this phase. Existing landing, account, profile, rules, and admin routes remain in place.
+
 ## Current Project Notes
 
 - The footer and both legal routes are implemented; legal page copy is intentionally pending.
