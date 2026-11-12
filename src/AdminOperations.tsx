@@ -139,7 +139,7 @@ export default function AdminOperations({session}:{session:Session}){
    </section>
   </div>}
   {tab==="sponsors"&&<div className="ops-grid">
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SPONSOR DATABASE</span><h2>{sponsorId?"Edit sponsor":"Tambah sponsor"}</h2></div></div>
+   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SPONSOR DATABASE</span><h2>{sponsorId?"Edit sponsor":"Tambah sponsor"}</h2></div><Link className="text-link" to="/admin/sponsorship">Manage offers & contracts</Link></div>
     <form className="economy-form" onSubmit={saveSponsor}>
      <label>Nama sponsor<input value={sponsorName} onChange={e=>setSponsorName(e.target.value)} required maxLength={160}/></label>
      <label>Industri<input value={sponsorIndustry} onChange={e=>setSponsorIndustry(e.target.value)} maxLength={100}/></label>
