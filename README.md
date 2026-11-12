@@ -166,6 +166,29 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261113000200_caleris_operations_admin_policies.sql` — Admin-only write policies for editable tax rules, race reward settings, sponsor pool, and valuation snapshots.
 - `20261113000300_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, annual wallet-only Wealth Tax assessment/collection, and FIA fine posting workflows.
 
+### Operational workflows added in this phase
+
+- **All-role race check-in:** Dashboard and Driver Panel check-in routes now use one shared race check-in workflow for every member role. The existing Driver license trigger remains the only source of race attendance license points. Reward amount comes from the editable Economy configuration key `daily-checkin-reward`; pending all-role rewards can be processed from Admin → Economy Engine.
+- **DDP / TDP:** FIA can enter the official winner and pole sitter after a round closes. The active season-division reward rule issues DDP to the relevant Driver only and TDP to each relevant Driver's team. The two token assets have independent immutable ledgers and wallet views in Driver Development and Team Development.
+- **Wealth Tax:** assessment snapshots are generated after every round in the season is closed and payroll claims have settled. The highest active threshold at or below the wallet balance selects one flat rate applied to the entire Driver/Owner wallet balance. A `pg_cron` job checks each minute and posts the assessed tax when the corresponding Off Season period begins. The Admin page also exposes manual assessment and collection controls.
+- **FIA fines:** FIA/Admin can issue a fine against a member or team. The workflow posts the debit and VreeoBank credit atomically through the existing immutable economy ledger.
+- **Driver Transfer:** Team Owner/Principal can submit Transfer or Loan proposals, counter-offer, accept, or reject. The negotiation limits are editable in Configuration Center under **Driver Move Negotiation Limits**. Permanent transfers require FIA approval, the configured Driver Transfer Tax rule, sufficient buyer Team Wallet funds, and the End Season/Off Season window. Approved transfers queue until the window opens; a scheduled database job retries execution. On execution, the Driver moves to the buyer team and the seller's active season payroll contract is ended. Driver Loan proposals can be negotiated, but FIA execution is intentionally blocked until the loan's financial obligations, fee, and return rules are defined.
+- **Team affiliation:** Owner/Principal can request, accept, reject, or terminate an affiliation. Teams must have Admin-assigned division keys from License Scoring Engine, must be in different tiers, and each team can have only one pending/accepted affiliate relationship.
+- **Team Take Over:** Team owners can list a team, negotiate offers/counters, and submit the agreement to FIA. The editable valuation range and counter limits are in Configuration Center under **Team Takeover Valuation Range** and **Team Takeover Negotiation Limits**. FIA approval is recorded, but ownership transfer and payment are not executed until the Take Over window and treatment of team assets/liabilities are specified.
+- **Sponsorship:** Admin can create sponsor offers; members can accept, reject, or counter; Admin can respond to counters, create contracts and targets, record progress, publish storyline events, and pay contract/bonus amounts from Sponsor Source. Payouts reduce the sponsor's editable budget and use the existing economy ledger.
+
+### Admin entry points
+
+- `/admin/operations` — editable tax rules, DDP/TDP reward rules, Sponsor Pool, team division mapping, and team valuation snapshots.
+- `/admin/sponsorship` — sponsor offers, negotiations, contracts, targets, progress, storyline, and payout management.
+- `/fia-panel/punishment-input` — FIA race result entry, Driver transfer review, Team Take Over review, and fine issuance.
+- `/main-event/transfer-market` — Driver transfer negotiation.
+- `/main-event/take-over` — Team Take Over listing and negotiation.
+- `/team-panel/affiliate-team` — cross-tier team affiliation.
+- `/driver-panel/sponsorship` and `/team-panel/sponsorship` — member sponsorship centre.
+- `/race-checkin` — all-role race attendance; also used by the Driver Panel check-in route.
+- `/driver-panel/development` and `/team-panel/development` — DDP and TDP wallets.
+
 **Activation boundary:** the Operations Suite is deliberately configuration-first. No Wealth Tax is charged, no transfer tax is collected, no sponsorship payout is sent, and no race development tokens are awarded until the corresponding workflow is configured and invoked. Wealth Tax uses the full wallet balance and a single selected rate, never progressive bands. Admin must run assessment after all season rounds and payroll claims are complete; collection is only accepted while the season's Off Season calendar period is active.
 
 ## Current Project Notes
