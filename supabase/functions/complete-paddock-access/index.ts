@@ -11,9 +11,6 @@ const corsHeadersFor = (origin: string) => ({
   "Vary": "Origin",
 });
 
-const json = (status: number, body: Record<string, unknown>) =>
-  new Response(JSON.stringify(body), { status, headers: corsHeaders });
-
 function ageOnToday(dateOfBirth: string): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)) return null;
   const dob = new Date(`${dateOfBirth}T00:00:00.000Z`);
@@ -29,9 +26,10 @@ function ageOnToday(dateOfBirth: string): number | null {
 
 Deno.serve(async (req: Request) => {
   const corsHeaders = corsHeadersFor(requestOrigin(req));
-  if (!isAllowedOrigin(requestOrigin(req))) return json(403, { error: "Origin not allowed." });
+  const respond = (status: number, body: Record<string, unknown>) => new Response(JSON.stringify(body), { status, headers: corsHeaders });
+  if (!isAllowedOrigin(requestOrigin(req))) return respond(403, { error: "Origin not allowed." });
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json(405, { error: "Method not allowed" });
+  if (req.method !== "POST") return respond(405, { error: "Method not allowed" });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -41,23 +39,23 @@ Deno.serve(async (req: Request) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
     if (!supabaseUrl || !turnstileSecret) {
-      return json(500, { error: "Paddock Access verification is not configured." });
+      return respond(500, { error: "Paddock Access verification is not configured." });
     }
 
     const bearer = req.headers.get("Authorization") ?? "";
     const jwt = bearer.replace(/^Bearer\s+/i, "");
-    if (!jwt) return json(401, { error: "Authentication required." });
+    if (!jwt) return respond(401, { error: "Authentication required." });
 
     const publishableKey = publishableKeys ? JSON.parse(publishableKeys).default : anonKey;
     const adminKey = secretKeys ? JSON.parse(secretKeys).default : serviceRoleKey;
-    if (!publishableKey || !adminKey) return json(500, { error: "Supabase function keys are unavailable." });
+    if (!publishableKey || !adminKey) return respond(500, { error: "Supabase function keys are unavailable." });
 
     const authClient = createClient(supabaseUrl, publishableKey, {
       auth: { autoRefreshToken: false, persistSession: false },
       global: { headers: { Authorization: `Bearer ${jwt}` } },
     });
     const { data: authData, error: authError } = await authClient.auth.getUser(jwt);
-    if (authError || !authData.user) return json(401, { error: "Invalid or expired session." });
+    if (authError || !authData.user) return respond(401, { error: "Invalid or expired session." });
     const user = authData.user;
 
     const body = await req.json();
@@ -70,23 +68,23 @@ Deno.serve(async (req: Request) => {
     const preferredRole = typeof body.preferredRole === "string" ? body.preferredRole : "";
     const privacyAccepted = body.privacyAccepted === true;
 
-    if (!token || token.length > 2048) return json(400, { error: "Complete Cloudflare verification first." });
+    if (!token || token.length > 2048) return respond(400, { error: "Complete Cloudflare verification first." });
     if (!avatarUrl || !nickname || nickname.length > 32 || !dateOfBirth) {
-      return json(400, { error: "Complete all required Paddock Access fields." });
+      return respond(400, { error: "Complete all required Paddock Access fields." });
     }
-    if (firstName.length > 80 || lastName.length > 80) return json(400, { error: "Name is too long." });
+    if (firstName.length > 80 || lastName.length > 80) return respond(400, { error: "Name is too long." });
     if (!["FIA", "Team Owner", "Driver"].includes(preferredRole)) {
-      return json(400, { error: "Choose a valid role preference." });
+      return respond(400, { error: "Choose a valid role preference." });
     }
-    if (!privacyAccepted) return json(400, { error: "Privacy consent is required." });
+    if (!privacyAccepted) return respond(400, { error: "Privacy consent is required." });
     const age = ageOnToday(dateOfBirth);
-    if (age === null) return json(400, { error: "Enter a valid date of birth." });
-    if (age < 13) return json(403, { error: "Paddock Access is unavailable for users under 13." });
+    if (age === null) return respond(400, { error: "Enter a valid date of birth." });
+    if (age < 13) return respond(403, { error: "Paddock Access is unavailable for users under 13." });
 
     const avatar = new URL(avatarUrl);
     const expectedAvatarPrefix = `/storage/v1/object/public/profile-avatars/${user.id}/`;
     if (avatar.origin !== new URL(supabaseUrl).origin || !avatar.pathname.startsWith(expectedAvatarPrefix)) {
-      return json(400, { error: "Profile photo URL is not valid for this account." });
+      return respond(400, { error: "Profile photo URL is not valid for this account." });
     }
 
     const verifyResponse = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
@@ -94,14 +92,14 @@ Deno.serve(async (req: Request) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ secret: turnstileSecret, response: token }),
     });
-    if (!verifyResponse.ok) return json(502, { error: "Cloudflare verification service is unavailable." });
+    if (!verifyResponse.ok) return respond(502, { error: "Cloudflare verification service is unavailable." });
     const verification = await verifyResponse.json();
     if (verification.success !== true || (verification.action && verification.action !== "paddock_access")) {
-      return json(403, { error: "Cloudflare verification failed. Please try again." });
+      return respond(403, { error: "Cloudflare verification failed. Please try again." });
     }
     const allowedHostnames = (Deno.env.get("TURNSTILE_ALLOWED_HOSTNAMES") ?? "calerismastersnewgen-mu.vercel.app,localhost").split(",").map((host) => host.trim()).filter(Boolean);
     if (verification.hostname && !allowedHostnames.includes(verification.hostname)) {
-      return json(403, { error: "Cloudflare verification hostname is not allowed." });
+      return respond(403, { error: "Cloudflare verification hostname is not allowed." });
     }
 
     const adminClient = createClient(supabaseUrl, adminKey, {
@@ -121,12 +119,12 @@ Deno.serve(async (req: Request) => {
     }, { onConflict: "user_id" });
     if (saveError) {
       console.error("Paddock Access profile save failed:", saveError.message);
-      return json(500, { error: "Unable to save Paddock Access profile." });
+      return respond(500, { error: "Unable to save Paddock Access profile." });
     }
 
-    return json(200, { success: true });
+    return respond(200, { success: true });
   } catch (error) {
     console.error("Paddock Access request failed:", error);
-    return json(500, { error: "Unexpected Paddock Access error." });
+    return respond(500, { error: "Unexpected Paddock Access error." });
   }
 });
