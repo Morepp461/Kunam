@@ -114,3 +114,26 @@ body.light .site-footer .footer-note{color:#514a3d}
 .drawer-nav-copy strong{font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.12em;text-transform:uppercase}
 .drawer-nav-copy small{color:rgba(255,255,255,.38);font-size:9px;line-height:1.45}
 .drawer-nav-card>svg{flex:none;color:rgba(255,255,255,.3)}
+
+
+/* Requested header and drawer refinements */
+.site-header .brand{margin-left:0;width:190px}
+.site-header .brand img{transform:scale(2.35);transform-origin:left center}
+.site-drawer{padding-top:24px}
+.drawer-brand{height:142px;padding:12px 42px 16px 18px}
+.drawer-brand img{transform:scale(2.05);transform-origin:center center}
+.drawer-close{position:absolute;top:19px;right:17px;z-index:3;display:grid;place-items:center;width:40px;height:40px;border:1px solid rgba(198,163,58,.42);border-radius:7px;background:rgba(255,255,255,.055);color:#e8d18a;cursor:pointer}
+.drawer-close:hover{background:rgba(198,163,58,.16);border-color:#d7b85d}
+@media(max-width:900px){
+ .site-header .brand{width:180px}
+ .site-header .brand img{transform:scale(2.25)}
+}
+@media(max-width:620px){
+ .site-header{gap:0}
+ .site-header .brand{width:180px;height:calc(100% - 8px);margin-left:0}
+ .site-header .brand img{transform:scale(2.25)}
+ .site-header .header-tools{margin-left:auto}
+ .drawer-brand{height:150px;padding:14px 44px 17px 18px}
+ .drawer-brand img{transform:scale(2.2)}
+ .drawer-close{top:16px;right:14px;width:42px;height:42px}
+}
