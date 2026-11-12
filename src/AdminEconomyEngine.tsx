@@ -8,6 +8,7 @@ import { supabase } from "./lib/supabase";
 type WalletAccount = { id: string; account_kind: string; profile_user_id: string | null; member_id: string | null; team_id: string | null; balance: number; is_active: boolean; display_name: string };
 type Transaction = { id: string; event_type: string; amount: number; description: string; created_at: string; source_account_id: string; destination_account_id: string; source_name: string; destination_name: string; is_reversed: boolean };
 type RewardClaim = { id: string; amount: number; status: string; created_at: string; member_id: string };
+type PayrollClaim = { id: string; amount: number; status: string; created_at: string; member_id: string };
 type EventType = "checkin_reward" | "prize" | "bank_reward" | "sponsor_payout" | "bank_funding" | "tax" | "fine" | "transfer" | "admin_adjustment";
 type ConfigRow = { id: string; payload: Record<string, unknown>; is_active: boolean };
 const eventLabels: Record<string, string> = { checkin_reward: "Check-in Reward", prize: "Prize", bank_reward: "Bank Reward", sponsor_payout: "Sponsor Payout", bank_funding: "Bank Funding", tax: "Pajak", fine: "Denda", transfer: "Transfer", admin_adjustment: "Penyesuaian Admin", reversal: "Pembatalan" };
@@ -18,6 +19,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   const [accounts, setAccounts] = useState<WalletAccount[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [claims, setClaims] = useState<RewardClaim[]>([]);
+  const [payrollClaims, setPayrollClaims] = useState<PayrollClaim[]>([]);
   const [config, setConfig] = useState<ConfigRow | null>(null);
   const [amount, setAmount] = useState("");
   const [eventType, setEventType] = useState<EventType>("prize");
@@ -34,17 +36,19 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   const sponsor = accounts.find((account) => account.account_kind === "sponsor_source");
   const spendable = useMemo(() => accounts.filter((account) => account.is_active), [accounts]);
   const pendingClaims = claims.filter((claim) => claim.status === "pending");
+  const pendingPayroll = payrollClaims.filter((claim) => claim.status === "pending");
 
   const refresh = useCallback(async () => {
     if (!supabase) { setNotice({ kind: "error", text: "Koneksi Supabase belum tersedia." }); setLoading(false); return; }
     setLoading(true);
-    const [accountResult, transactionResult, claimResult, configResult] = await Promise.all([
+    const [accountResult, transactionResult, claimResult, payrollResult, configResult] = await Promise.all([
       supabase.from("economy_wallet_directory").select("*").order("account_kind").order("display_name"),
       supabase.from("economy_transaction_feed").select("*").order("created_at", { ascending: false }).limit(100),
       supabase.from("economy_reward_claims").select("id,amount,status,created_at,member_id").order("created_at", { ascending: false }).limit(100),
+      supabase.from("economy_payroll_claims").select("id,amount,status,created_at,member_id").order("created_at", { ascending: false }).limit(100),
       supabase.from("caleris_configurations").select("id,payload,is_active").eq("category", "economy").eq("config_key", "daily-checkin-reward").maybeSingle()
     ]);
-    const errors = [accountResult.error, transactionResult.error, claimResult.error, configResult.error].filter(Boolean);
+    const errors = [accountResult.error, transactionResult.error, claimResult.error, payrollResult.error, configResult.error].filter(Boolean);
     if (errors.length) setNotice({ kind: "error", text: errors.map((error) => error?.message).join(" · ") });
     if (accountResult.data) {
       const next = accountResult.data as WalletAccount[];
@@ -56,6 +60,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     }
     if (transactionResult.data) setTransactions(transactionResult.data as Transaction[]);
     if (claimResult.data) setClaims(claimResult.data as RewardClaim[]);
+    if (payrollResult.data) setPayrollClaims(payrollResult.data as PayrollClaim[]);
     if (configResult.data) {
       const row = configResult.data as ConfigRow;
       setConfig(row);
@@ -157,6 +162,19 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     }
   };
 
+  const processPendingPayroll = async () => {
+    if (!supabase) return;
+    setSaving(true); setNotice(null);
+    const { data, error } = await supabase.functions.invoke("economy-engine", { body: { action: "process_payroll_pending" } });
+    setSaving(false);
+    if (error) setNotice({ kind: "error", text: error.message });
+    else {
+      const result = (data as { result?: { paid?: number; pending?: number } })?.result ?? {};
+      setNotice({ kind: "success", text: String(result.paid ?? 0) + " payroll dibayarkan. " + String(result.pending ?? 0) + " masih menunggu saldo Team Wallet mencukupi." });
+      await refresh();
+    }
+  };
+
   const reverseTransaction = async (transaction: Transaction) => {
     if (!supabase || transaction.is_reversed || !window.confirm("Batalkan transaksi " + transaction.description + "? Pembatalan akan membuat transaksi lawan, bukan menghapus riwayat.")) return;
     setSaving(true); setNotice(null);
@@ -215,6 +233,10 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
         <div className="economy-pending-box">
           <div><strong>{pendingClaims.length} reward tertunda</strong><small>Saldo Bank saat ini: {bank ? money(bank.balance) : "—"}</small></div>
           <button type="button" className="economy-secondary-button" onClick={() => void processPending()} disabled={saving || pendingClaims.length === 0}><RefreshCw size={15}/> Proses pending</button>
+        </div>
+        <div className="economy-pending-box">
+          <div><strong>{pendingPayroll.length} payroll tertunda</strong><small>Menunggu saldo Team Wallet mencukupi</small></div>
+          <button type="button" className="economy-secondary-button" onClick={() => void processPendingPayroll()} disabled={saving || pendingPayroll.length === 0}><RefreshCw size={15}/> Proses payroll</button>
         </div>
       </section>
     </div>
