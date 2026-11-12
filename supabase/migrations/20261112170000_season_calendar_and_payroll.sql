@@ -601,3 +601,77 @@ revoke all on function public.fia_create_season_calendar_period(uuid,text,intege
 grant execute on function public.fia_create_season_calendar_period(uuid,text,integer,text,date,date,integer,jsonb) to authenticated;
 revoke insert on public.season_calendar_periods from authenticated;
 revoke insert,update,delete on public.season_period_rounds from authenticated;
+
+create or replace function public.fia_create_season_calendar(p_season_id uuid,p_periods jsonb)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare
+  v_period jsonb;
+  v_assignment jsonb;
+  v_period_id uuid;
+  v_type text;
+  v_title text;
+  v_starts date;
+  v_ends date;
+  v_number integer;
+  v_order integer:=0;
+  v_division_id uuid;
+  v_round_id uuid;
+  v_division_count integer;
+  v_type_count integer;
+  v_period_count integer:=0;
+  v_unassigned integer;
+  v_last_start date;
+begin
+  if not public.is_caleris_fia_or_admin() then raise exception 'Hanya FIA atau Admin yang dapat membentuk kalender season.'; end if;
+  if not exists(select 1 from public.license_seasons where id=p_season_id and status in ('draft','active')) then raise exception 'Season tidak ditemukan atau sudah selesai.'; end if;
+  if jsonb_typeof(p_periods)<>'array' or jsonb_array_length(p_periods)<4 then raise exception 'Kalender harus memuat Off Season, Pre Season, minimal satu Race Period, dan End Season.'; end if;
+  if exists(select 1 from public.season_calendar_periods where season_id=p_season_id) then raise exception 'Kalender season sudah terbentuk. Gunakan Reschedule untuk mengubah tanggal.'; end if;
+  for v_type in select unnest(array['off_season','pre_season','end_season']) loop
+    select count(*) into v_type_count from jsonb_array_elements(p_periods) x where x->>'period_type'=v_type;
+    if v_type_count<>1 then raise exception 'Kalender wajib memiliki tepat satu periode %.',v_type; end if;
+  end loop;
+  select count(*) into v_type_count from jsonb_array_elements(p_periods) x where x->>'period_type'='race_period';
+  if v_type_count<1 then raise exception 'Season wajib memiliki minimal satu Race Period.'; end if;
+  select count(*) into v_division_count from public.license_season_divisions where season_id=p_season_id;
+  if v_division_count<1 then raise exception 'Buat minimal satu divisi sebelum membentuk kalender.'; end if;
+
+  for v_period in select value from jsonb_array_elements(p_periods) loop
+    v_order:=v_order+1;
+    v_type:=v_period->>'period_type';
+    if v_type not in ('off_season','pre_season','race_period','race_break','end_season') then raise exception 'Jenis periode tidak valid.'; end if;
+    v_title:=nullif(trim(v_period->>'title'),'');
+    v_starts:=(v_period->>'starts_on')::date;
+    v_ends:=(v_period->>'ends_on')::date;
+    if v_title is null or v_starts is null or v_ends is null or v_ends<v_starts then raise exception 'Nama atau tanggal periode tidak valid.'; end if;
+    if v_type in ('race_period','race_break') then
+      select count(*)+1 into v_number from jsonb_array_elements(p_periods) x
+      where x->>'period_type'=v_type and (x->>'order_index')::integer < v_order;
+    else v_number:=null; end if;
+    insert into public.season_calendar_periods(season_id,period_type,period_number,title,starts_on,ends_on,sort_order,created_by)
+    values(p_season_id,v_type,v_number,v_title,v_starts,v_ends,v_order,(select auth.uid()))
+    returning id into v_period_id;
+    if v_type='race_period' then
+      if jsonb_typeof(v_period->'assignments')<>'array' or jsonb_array_length(v_period->'assignments')<>v_division_count then
+        raise exception 'Setiap Race Period wajib mengatur round untuk seluruh divisi season.';
+      end if;
+      for v_assignment in select value from jsonb_array_elements(v_period->'assignments') loop
+        v_division_id:=(v_assignment->>'season_division_id')::uuid;
+        if not exists(select 1 from public.license_season_divisions where id=v_division_id and season_id=p_season_id) then raise exception 'Divisi tidak termasuk season ini.'; end if;
+        if jsonb_typeof(v_assignment->'round_ids')<>'array' or jsonb_array_length(v_assignment->'round_ids') not between 3 and 5 then raise exception 'Setiap Race Period harus berisi 3 sampai 5 round per divisi.'; end if;
+        for v_round_id in select value::text::uuid from jsonb_array_elements_text(v_assignment->'round_ids') loop
+          insert into public.season_period_rounds(period_id,season_division_id,round_id) values(v_period_id,v_division_id,v_round_id);
+        end loop;
+      end loop;
+    end if;
+    v_period_count:=v_period_count+1;
+  end loop;
+  select count(*) into v_unassigned from public.license_rounds r
+  join public.license_season_divisions d on d.id=r.season_division_id
+  where d.season_id=p_season_id and not exists(select 1 from public.season_period_rounds pr where pr.round_id=r.id);
+  if v_unassigned>0 then raise exception 'Semua round pada seluruh divisi harus dimasukkan ke dalam Race Period. Masih ada % round belum terpetakan.',v_unassigned; end if;
+  return jsonb_build_object('season_id',p_season_id,'periods_created',v_period_count,'race_periods',v_type_count);
+end;
+$$;
+revoke all on function public.fia_create_season_calendar(uuid,jsonb) from public,anon,service_role;
+grant execute on function public.fia_create_season_calendar(uuid,jsonb) to authenticated;
