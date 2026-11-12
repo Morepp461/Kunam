@@ -62,19 +62,24 @@ create table public.season_calendar_period_revisions (
 create index season_calendar_revisions_period_idx
   on public.season_calendar_period_revisions(period_id,changed_at desc);
 
+create or replace function private.touch_season_calendar_period()
+returns trigger language plpgsql set search_path=''
+as $ begin new.updated_at:=now(); return new; end; $;
 create or replace function private.audit_season_calendar_period()
 returns trigger language plpgsql security definer set search_path=''
-as $$
+as $
 begin
   insert into public.season_calendar_period_revisions(period_id,action,snapshot,changed_by)
   values(new.id,case when tg_op='INSERT' then 'INSERT' else 'UPDATE' end,
     to_jsonb(new),(select auth.uid()));
-  new.updated_at:=now();
   return new;
 end;
-$$;
+$;
+create trigger season_calendar_period_touch
+before update on public.season_calendar_periods
+for each row execute function private.touch_season_calendar_period();
 create trigger season_calendar_period_audit
-before insert or update on public.season_calendar_periods
+after insert or update on public.season_calendar_periods
 for each row execute function private.audit_season_calendar_period();
 
 create or replace function private.validate_season_period_round()
@@ -315,6 +320,7 @@ declare
   v_season_id uuid;
   v_period_count integer;
   v_period_position integer;
+  v_assigned_count integer;
   v_item record;
   v_team_wallet uuid;
   v_driver_wallet uuid;
@@ -328,6 +334,8 @@ begin
   if not found then return jsonb_build_object('paid',0,'pending',0,'skipped','round_not_assigned'); end if;
   select * into v_period from public.season_calendar_periods where id=v_map.period_id and period_type='race_period';
   if not found then return jsonb_build_object('paid',0,'pending',0,'skipped','not_race_period'); end if;
+  select count(*) into v_assigned_count from public.season_period_rounds where period_id=v_period.id and season_division_id=v_map.season_division_id;
+  if v_assigned_count not between 3 and 5 then raise exception 'Race Period wajib berisi 3 sampai 5 round pada setiap divisi.'; end if;
   if exists(select 1 from public.season_period_rounds other_map
     join public.license_rounds other_round on other_round.id=other_map.round_id
     where other_map.period_id=v_period.id and other_map.season_division_id=v_map.season_division_id
@@ -457,6 +465,7 @@ end;
 $$;
 
 revoke all on function private.audit_season_calendar_period() from public,anon,authenticated,service_role;
+revoke all on function private.touch_season_calendar_period() from public,anon,authenticated,service_role;
 revoke all on function private.validate_season_period_round() from public,anon,authenticated,service_role;
 revoke all on function private.guard_driver_contract() from public,anon,authenticated,service_role;
 revoke all on function private.payroll_for_period_round(uuid,uuid) from public,anon,authenticated,service_role;
