@@ -1,5 +1,5 @@
 import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from "react";
-import type {ChangeEvent,ReactNode} from "react";
+import type {ChangeEvent,FormEvent,ReactNode} from "react";
 import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate} from "react-router-dom";
 import {Activity,ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
@@ -102,7 +102,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   return()=>{cancelled=true;if(widgetId.current&&window.turnstile){window.turnstile.remove(widgetId.current);widgetId.current=null;}setTurnstileToken("");};
  },[privacyAccepted,sitekey,toast]);
  const chooseAvatar=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)||file.size>3*1024*1024){setErrors(v=>({...v,avatar:"Gunakan JPG, PNG, WEBP, atau GIF maksimal 3 MB."}));e.target.value="";return;}setAvatarFile(file);setAvatarPreview(URL.createObjectURL(file));setErrors(v=>({...v,avatar:""}));};
- const submit=async(e:React.FormEvent<HTMLFormElement>)=>{
+ const submit=async(e:FormEvent<HTMLFormElement>)=>{
   e.preventDefault();const next:Record<string,string>={};
   if(!avatarFile)next.avatar="Foto profil harus dipilih.";
   if(!dateOfBirth)next.dateOfBirth="Tanggal lahir harus diisi.";
