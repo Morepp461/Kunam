@@ -219,9 +219,10 @@ create table if not exists public.caleris_team_affiliations (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (team_a_id<team_b_id),
-  check (requested_by_team_id in (team_a_id,team_b_id)),
-  unique(team_a_id,team_b_id)
+  check (requested_by_team_id in (team_a_id,team_b_id))
 );
+create unique index if not exists caleris_affiliate_active_pair
+  on public.caleris_team_affiliations(team_a_id,team_b_id) where status in ('pending','accepted');
 create unique index if not exists caleris_affiliate_team_a_active
   on public.caleris_team_affiliations(team_a_id) where status in ('pending','accepted');
 create unique index if not exists caleris_affiliate_team_b_active
