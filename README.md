@@ -272,5 +272,5 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - Loan disbursement moves funds from VreeoBank to the member's role wallet and records an immutable double-entry transaction.
 - Repayments are attempted automatically after payroll at the final round of each Race Period. If the member wallet cannot cover the installment, the installment is marked overdue; it is retried at a later Race Period. Overdue loans block new applications.
 - The cash-loan workflow uses a separate JWT-verified Edge Function. It verifies the authenticated member and calls service-role-only database functions; members cannot directly insert loans or execute the loan mutation RPCs.
-- Database migration: `20261112173057_economy_cash_loan_engine.sql`.
+- Database migrations: `20261112173057_economy_cash_loan_engine.sql` and `20261112173427_economy_cash_loan_indexes.sql`.
 - Edge Function: `economy-workflows` (JWT verification enabled).
