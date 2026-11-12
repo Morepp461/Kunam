@@ -42,6 +42,14 @@ def main():
     assert '"Public can read published content"' in rls_source
     assert '"Admins read all site content"' in rls_source
     assert "},100);return()=>{active=false;window.clearTimeout(timer)}" in app
+    permissions_migration = ROOT / "supabase/migrations/20261112123000_grant_search_service_role_select.sql"
+    assert permissions_migration.is_file(), "Missing search service-role grants migration"
+    permissions_sql = permissions_migration.read_text(encoding="utf-8").lower()
+    assert "grant select on table" in permissions_sql
+    for table in ["public.profiles", "public.members", "public.teams", "public.site_admins", "public.site_content"]:
+        assert table in permissions_sql
+    assert "to service_role" in permissions_sql
+    assert "to anon" not in permissions_sql and "to authenticated" not in permissions_sql
     assert "tire-trace" in app and "toast-stack" in app and "global-progress" in styles
     assert "cinematicCamera" in styles and "spotlightSweep" in styles
     assert "enable row level security" in sql.lower()
