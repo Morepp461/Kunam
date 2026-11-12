@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {CalendarCheck,CheckCircle2,Clock3,Flag,ShieldCheck} from "lucide-react";
+import {CalendarCheck,CheckCircle2,Clock3,ShieldCheck} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
