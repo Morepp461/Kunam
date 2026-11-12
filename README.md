@@ -204,3 +204,36 @@ Supabase migrations: `20261112150000_license_scoring_engine.sql`, `2026111215100
 - Each member has one WDC ledger row across all seasons. Its award identity and original provenance remain protected; only the score value and highest-achievement metadata can be revised by the validated championship or configuration-sync database workflows. Seasonal scoring and inactivity calculations continue to exclude WDC points.
 - Premio and Zwei tier priorities are stored in their WDC configuration payloads, not hardcoded into the scoring engine.
 - Migration: `20261112160000_wdc_highest_division_dynamic_points.sql`.
+
+
+## Economy Engine · Stage 4
+
+**Status: implementation on feat/economy-engine-core; database deployment and isolated QA are pending.**
+
+### Wallet entities
+- Public Member wallet: one per authenticated profile.
+- Driver wallet: created when a member receives the Driver role.
+- Team Owner wallet: created when a member receives the Owner role.
+- Team wallet: one per team.
+- VreeoBank: central in-game treasury.
+- Sponsor Source: external funding-clearing account, separate from VreeoBank.
+
+Wallet creation is trigger-driven and idempotent. Existing members.balance is retained for compatibility but is no longer the authoritative source of money.
+
+### Ledger and controls
+- Every posted movement creates one immutable transaction and two equal ledger entries: source outflow and destination inflow.
+- Balances are updated atomically under ordered wallet row locks.
+- Idempotency keys prevent duplicate posting; reusing a key with different transaction data is rejected.
+- Transactions and ledger entries cannot be edited or deleted. Corrections use a linked reversal transaction.
+- Tax and fine debits may take the payer wallet below zero. Other outgoing payments require sufficient source balance.
+- Check-in rewards and prizes must be paid by VreeoBank. Sponsor payouts and Bank funding use Sponsor Source. Tax and fines must be credited to VreeoBank.
+- If VreeoBank cannot fund an enabled check-in reward, the check-in remains valid and its reward claim stays pending until Admin processes it after funds become available.
+
+### Configuration and administration
+- Admin-only Economy Engine page: wallet registry, VreeoBank and Sponsor Source balances, transaction posting, reversal, pending check-in rewards, and transaction history.
+- Daily check-in reward configuration is stored in caleris_configurations and audited by the existing configuration revision trigger.
+- Initial check-in reward configuration is deliberately inactive with amount 0; no unapproved economy amount is assumed.
+- Profile balances now read from wallet accounts instead of the legacy members.balance field.
+
+### Important boundary
+This stage establishes the wallet, accounting, security, and check-in reward foundation. Race prize schedules, salary rules, sponsorship contracts, taxes, fines, and other game-specific amounts must be configured or specified before automatic payout rules are activated. The migration is not yet applied to production. Do not treat this branch as live economy data until database QA, CI, and the production migration are complete.
