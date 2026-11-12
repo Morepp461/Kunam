@@ -43,7 +43,10 @@ Deno.serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const publishableKey = publishableKeys ? JSON.parse(publishableKeys).default : anonKey;
-    const serviceKey = secretKeys ? JSON.parse(secretKeys).default : serviceRoleKey;
+    // Prefer the legacy service-role JWT when available. A new sb_secret key is
+    // not a JWT and must only be sent as the apikey header, never as Bearer.
+    const secretKey = secretKeys ? JSON.parse(secretKeys).default : null;
+    const serviceKey = serviceRoleKey || secretKey;
     if (!supabaseUrl || !publishableKey || !serviceKey) {
       return respond(500, { error: "Member directory is not configured." });
     }
@@ -54,8 +57,19 @@ Deno.serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
       global: jwt ? { headers: { Authorization: `Bearer ${jwt}` } } : undefined,
     });
+    const isSecretApiKey = serviceKey.startsWith("sb_secret_");
     const admin = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
+      ...(isSecretApiKey ? {
+        global: {
+          fetch: (input: RequestInfo | URL, init?: RequestInit) => {
+            const requestHeaders = new Headers(init?.headers);
+            requestHeaders.delete("Authorization");
+            requestHeaders.set("apikey", serviceKey);
+            return fetch(input, { ...init, headers: requestHeaders });
+          },
+        },
+      } : {}),
     });
 
     let userId: string | null = null;
@@ -116,7 +130,7 @@ Deno.serve(async (req: Request) => {
 
     if (action === "search") {
       const raw = typeof body.query === "string" ? body.query : "";
-      const term = raw.replace(/[^\p{L}\p{N} _-]/gu, " ").trim().replace(/\s+/g, " ").slice(0, 64);
+      const term = raw.replace(/[^\\p{L}\\p{N} _-]/gu, " ").trim().replace(/\\s+/g, " ").slice(0, 64);
       if (term.length < 2) return respond(200, { members: [], teams: [], pages: [] });
       const pattern = `%${term}%`;
 
