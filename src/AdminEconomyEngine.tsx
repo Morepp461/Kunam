@@ -103,7 +103,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     event.preventDefault();
     if (!supabase) return;
     const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 999999999999999999.99 || Math.round(numericAmount * 100) !== numericAmount * 100) {
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 999999999999999999.99 || Number(numericAmount.toFixed(2)) !== numericAmount) {
       setNotice({ kind: "error", text: "Nominal harus lebih besar dari nol dan maksimal dua angka desimal." }); return;
     }
     if (!sourceId || !destinationId || sourceId === destinationId || !description.trim()) {
