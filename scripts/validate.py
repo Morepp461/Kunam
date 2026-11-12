@@ -29,6 +29,9 @@ def main():
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
     assert "if(term.length<1)" in app
     assert "query.trim().length>=1" in app
+    assert 'import {createPortal} from "react-dom"' in app
+    assert "searchRootRef" in app and "document.body" in app
+    assert "dropdownStyle.maxHeight" in app
     assert "},100);return()=>{active=false;window.clearTimeout(timer)}" in app
     assert "tire-trace" in app and "toast-stack" in app and "global-progress" in styles
     assert "cinematicCamera" in styles and "spotlightSweep" in styles
