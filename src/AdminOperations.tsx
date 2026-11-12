@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useState} from "react";
 import type {FormEvent} from "react";
-import {ArrowLeft,Coins,Handshake,Plus,RefreshCw,Save,ShieldCheck,Trash2,Trophy,Wallet} from "lucide-react";
+import {ArrowLeft,Coins,Handshake,RefreshCw,Save,ShieldCheck,Trash2,Trophy,Wallet} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
