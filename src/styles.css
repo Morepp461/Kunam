@@ -179,3 +179,44 @@ body.light .site-footer .footer-note{color:#514a3d}
 .global-search>.tire-search-trigger{display:grid;width:44px;height:44px;min-width:44px;padding:5px;border:0;background:transparent;color:#d9bd67}
 .global-search>.search-clear{display:grid;width:25px;height:25px;min-width:25px;padding:0;border:0;background:transparent;color:#b9bdc3}
 @media(max-width:620px){.site-header .global-search>.tire-search-trigger{width:44px;height:44px;min-width:44px}.site-header .global-search>.search-clear{width:25px;height:25px;min-width:25px}}
+
+
+/* Search reveal is masked behind the moving tyre, so the tyre leads the opening edge. */
+.global-search{overflow:visible;clip-path:inset(0);transition:none}
+.global-search.is-expanded{width:min(280px,calc(100vw - 205px));min-width:min(280px,calc(100vw - 205px));padding:0 34px 0 52px;clip-path:inset(0);animation:tyreBoxReveal 1s cubic-bezier(.68,0,.22,1) both}
+.global-search.is-expanded.is-closing{animation:tyreBoxConceal 1s cubic-bezier(.68,0,.22,1) both}
+.global-search .tire-search-trigger{right:0;left:auto;transform:translateX(0) rotate(0deg);transition:none;overflow:visible}
+.global-search.is-expanded .tire-search-trigger{left:auto;right:0;animation:tyreLeadLeft 1s cubic-bezier(.68,0,.22,1) both}
+.global-search.is-expanded.is-closing .tire-search-trigger{animation:tyreLeadRight 1s cubic-bezier(.68,0,.22,1) both}
+.global-search.is-expanded input{opacity:1;animation:searchTextReveal .32s ease .58s both}
+.global-search.is-closing input{opacity:0;animation:searchTextHide .24s ease both}
+@keyframes tyreBoxReveal{0%{clip-path:inset(0 0 0 calc(100% - 44px));}100%{clip-path:inset(0)}}
+@keyframes tyreBoxConceal{0%{clip-path:inset(0)}100%{clip-path:inset(0 0 0 calc(100% - 44px))}}
+@keyframes tyreLeadLeft{0%{transform:translateX(0) rotate(0)}100%{transform:translateX(calc(-1 * (min(280px,100vw - 205px) - 44px))) rotate(-720deg)}}
+@keyframes tyreLeadRight{0%{transform:translateX(calc(-1 * (min(280px,100vw - 205px) - 44px))) rotate(-720deg)}100%{transform:translateX(0) rotate(0)}}
+@keyframes searchTextHide{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(8px)}}
+.tire-sparks{position:absolute;top:50%;left:calc(100% - 5px);width:42px;height:38px;transform:translateY(-50%);pointer-events:none;opacity:0}
+.tire-sparks i{position:absolute;display:block;width:4px;height:4px;border-radius:50%;background:#f3d16d;box-shadow:0 0 5px 1px #d99a38;opacity:0}
+.tire-sparks i:nth-child(1){top:7px;left:5px}
+.tire-sparks i:nth-child(2){top:17px;left:0;width:3px;height:3px}
+.tire-sparks i:nth-child(3){top:26px;left:8px;width:2px;height:2px}
+.tire-sparks i:nth-child(4){top:11px;left:17px;width:2px;height:2px;background:#fff0b5}
+.tire-sparks i:nth-child(5){top:30px;left:19px;width:3px;height:3px}
+.global-search.is-expanded .tire-sparks{opacity:1}
+.global-search.is-expanded .tire-sparks i{animation:asphaltSparkLeft .62s ease-out infinite}
+.global-search.is-expanded .tire-sparks i:nth-child(2n){animation-delay:.16s}
+.global-search.is-expanded .tire-sparks i:nth-child(3n){animation-delay:.31s}
+.global-search.is-expanded.is-closing .tire-sparks i{animation-name:asphaltSparkRight}
+@keyframes asphaltSparkLeft{0%{opacity:0;transform:translate(0,0) scale(.4)}18%{opacity:1}100%{opacity:0;transform:translate(32px,-13px) scale(1.25)}}
+@keyframes asphaltSparkRight{0%{opacity:0;transform:translate(0,0) scale(.4)}18%{opacity:1}100%{opacity:0;transform:translate(-32px,-13px) scale(1.25)}}
+@media(max-width:620px){
+ .site-header .brand{flex:0 0 clamp(100px,31vw,125px);width:clamp(100px,31vw,125px);height:48px;margin-left:10px;overflow:visible}
+ .site-header .brand img{width:100%;height:100%;object-fit:contain;object-position:left center;transform:scale(1.8);transform-origin:left center}
+ .site-header .global-search.is-expanded{flex:0 1 min(280px,calc(100vw - 205px));width:min(280px,calc(100vw - 205px));min-width:min(280px,calc(100vw - 205px))}
+ .site-header .global-search.is-expanded .tire-search-trigger{right:0;left:auto}
+}
+@media(max-width:370px){
+ .site-header .brand{flex-basis:98px;width:98px;margin-left:7px}
+ .site-header .brand img{transform:scale(1.65)}
+ .site-header .global-search.is-expanded{flex-basis:min(280px,calc(100vw - 180px));width:min(280px,calc(100vw - 180px));min-width:min(280px,calc(100vw - 180px))}
+}
