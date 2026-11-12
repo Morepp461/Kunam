@@ -136,6 +136,7 @@ begin
  if not exists(select 1 from public.site_admins where user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat merespons negosiasi sponsor.'; end if;
  select * into v_offer from public.caleris_sponsorship_offers where id=p_offer_id for update;
  if not found or v_offer.status<>'negotiating' then raise exception 'Tidak ada counter sponsorship yang menunggu.'; end if;
+ if v_offer.expires_at is not null and now()>v_offer.expires_at then update public.caleris_sponsorship_offers set status='expired' where id=v_offer.id;return jsonb_build_object('status','expired');end if;
  select * into v_last from public.caleris_sponsorship_offer_revisions where offer_id=v_offer.id order by created_at desc,id desc limit 1;
  if v_last.actor_kind<>'member' then raise exception 'Negosiasi belum menunggu respons member.'; end if;
  if p_action='reject' then
