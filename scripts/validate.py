@@ -118,7 +118,7 @@ def main():
         assert rpc in economy_source, f"Economy Engine UI missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
-    assert 'from("./AdminEconomyEngine")' in app and 'from("economy_wallet_directory")' in app
+    assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in app
     assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in app
     print("Caleris QA static checks passed.")
 
