@@ -619,6 +619,7 @@ declare
   v_round_id uuid;
   v_division_count integer;
   v_type_count integer;
+  v_race_count integer:=0;
   v_period_count integer:=0;
   v_unassigned integer;
   v_last_start date;
@@ -631,8 +632,8 @@ begin
     select count(*) into v_type_count from jsonb_array_elements(p_periods) x where x->>'period_type'=v_type;
     if v_type_count<>1 then raise exception 'Kalender wajib memiliki tepat satu periode %.',v_type; end if;
   end loop;
-  select count(*) into v_type_count from jsonb_array_elements(p_periods) x where x->>'period_type'='race_period';
-  if v_type_count<1 then raise exception 'Season wajib memiliki minimal satu Race Period.'; end if;
+  select count(*) into v_race_count from jsonb_array_elements(p_periods) x where x->>'period_type'='race_period';
+  if v_race_count<1 then raise exception 'Season wajib memiliki minimal satu Race Period.'; end if;
   select count(*) into v_division_count from public.license_season_divisions where season_id=p_season_id;
   if v_division_count<1 then raise exception 'Buat minimal satu divisi sebelum membentuk kalender.'; end if;
 
@@ -645,8 +646,8 @@ begin
     v_ends:=(v_period->>'ends_on')::date;
     if v_title is null or v_starts is null or v_ends is null or v_ends<v_starts then raise exception 'Nama atau tanggal periode tidak valid.'; end if;
     if v_type in ('race_period','race_break') then
-      select count(*)+1 into v_number from jsonb_array_elements(p_periods) x
-      where x->>'period_type'=v_type and (x->>'order_index')::integer < v_order;
+      select count(*)+1 into v_number from public.season_calendar_periods
+      where season_id=p_season_id and period_type=v_type;
     else v_number:=null; end if;
     insert into public.season_calendar_periods(season_id,period_type,period_number,title,starts_on,ends_on,sort_order,created_by)
     values(p_season_id,v_type,v_number,v_title,v_starts,v_ends,v_order,(select auth.uid()))
@@ -670,7 +671,7 @@ begin
   join public.license_season_divisions d on d.id=r.season_division_id
   where d.season_id=p_season_id and not exists(select 1 from public.season_period_rounds pr where pr.round_id=r.id);
   if v_unassigned>0 then raise exception 'Semua round pada seluruh divisi harus dimasukkan ke dalam Race Period. Masih ada % round belum terpetakan.',v_unassigned; end if;
-  return jsonb_build_object('season_id',p_season_id,'periods_created',v_period_count,'race_periods',v_type_count);
+  return jsonb_build_object('season_id',p_season_id,'periods_created',v_period_count,'race_periods',v_race_count);
 end;
 $$;
 revoke all on function public.fia_create_season_calendar(uuid,jsonb) from public,anon,service_role;
