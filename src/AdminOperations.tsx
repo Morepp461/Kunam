@@ -84,6 +84,8 @@ export default function AdminOperations({session}:{session:Session}){
  const editSponsor=(s:Sponsor)=>{setSponsorId(s.id);setSponsorName(s.name);setSponsorDescription(s.description||"");setSponsorIndustry(s.industry||"");setSponsorBudget(s.available_budget==null?"":String(s.available_budget));setSponsorActive(s.is_active)};
  const deleteSponsor=async(id:string)=>{if(!supabase||!window.confirm("Hapus sponsor dari pool? Sponsor yang sudah memiliki kontrak akan ditolak database."))return;const {error}=await supabase.from("caleris_sponsors").delete().eq("id",id);setNotice(error?.message||"Sponsor dihapus.");await refresh()};
 
+ const divisionOptions=Array.from(new Map(divisions.map(d=>[d.division_key,d.division_name])).entries());
+ const assignTeamTier=async(id:string,key:string)=>{if(!supabase)return;setSaving(true);const {error}=await supabase.rpc("admin_set_team_division",{p_team_id:id,p_division_key:key||null});setSaving(false);setNotice(error?.message||"Tier tim diperbarui.");await refresh()};
  const saveValuation=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!teamId)return;
   const values=[assetValue,developmentValue,historyValue,achievementValue,financialValue].map(number);
@@ -165,6 +167,7 @@ export default function AdminOperations({session}:{session:Session}){
      <button className="economy-primary-button" disabled={saving||!teamId}><Save size={15}/> Simpan valuation snapshot</button>
     </form>
    </section>
+   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TEAM TIER MAPPING</span><h2>Penetapan tier tim</h2></div></div><p className="economy-form-hint">Affiliate hanya dapat dibuat antar-tier berbeda. Pilih division key yang sudah dibuat melalui License Scoring Engine.</p><div className="ops-record-list">{teams.map(t=><article key={t.id}><div><strong>{t.name}</strong><small>Tier saat ini: {t.division_key||"Belum ditetapkan"}</small></div><select value={t.division_key||""} onChange={e=>void assignTeamTier(t.id,e.target.value)} disabled={saving||divisionOptions.length===0}><option value="">Belum ditetapkan</option>{divisionOptions.map(([key,name])=><option key={key} value={key}>{name} · {key}</option>)}</select></article>)}</div></section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">VALUATION HISTORY</span><h2>Snapshot valuasi</h2></div></div>
     {valuations.length===0?<p className="economy-empty">Belum ada penilaian tim.</p>:<div className="ops-record-list">{valuations.map(v=><article key={v.id}><div><strong>{v.team?.name||"Team"} · {money(v.total_valuation)}</strong><small>Assets {money(v.assets_value)} · Development {money(v.development_value)} · History {money(v.history_value)} · Achievements {money(v.achievements_value)} · Financial {money(v.financial_health_value)}</small></div><time>{new Date(v.assessed_at).toLocaleDateString("id-ID")}</time></article>)}</div>}
    </section>
