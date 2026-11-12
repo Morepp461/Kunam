@@ -311,3 +311,20 @@ body.light .avatar-inline-crop>span{color:#80621b}
  .paddock-year-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-height:44dvh}
  .avatar-inline-stage{width:min(100%,170px)}
 }
+
+
+/* Confirmable inline avatar positioning */
+.paddock-avatar-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:9px}
+.avatar-edit-button{min-height:34px;padding:0 12px;border-color:rgba(198,163,58,.42);color:#dfc36d;font-size:10px}
+.avatar-inline-crop{width:100%}
+.avatar-confirm-button{min-height:39px;padding:0 17px;font-size:10px;letter-spacing:.1em}
+body.light .avatar-edit-button{color:#725719;border-color:rgba(143,108,30,.45)}
+/* Date picker remains attached to its field while the document scrolls. */
+.paddock-picker-wrap{position:relative;z-index:90}
+.paddock-calendar-anchored{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:95;width:100%;max-height:min(72dvh,520px);overflow-y:auto;overscroll-behavior:contain;isolation:isolate;touch-action:pan-y}
+.paddock-calendar-anchored .paddock-calendar-grid{grid-template-columns:repeat(7,minmax(0,1fr))}
+@media(max-width:620px){
+ .paddock-calendar-anchored{max-height:68dvh;padding:13px}
+ .paddock-calendar-anchored .paddock-calendar-grid{gap:3px}
+ .paddock-calendar-anchored .paddock-calendar-grid>span,.paddock-calendar-anchored .paddock-calendar-grid>button{min-height:35px}
+}
