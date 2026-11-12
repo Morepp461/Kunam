@@ -540,19 +540,19 @@ before update or delete on public.economy_payroll_claims
 for each row execute function private.guard_economy_payroll_claim();
 
 -- Mark payroll claims reversed when their immutable ledger transaction is reversed.
-do $$
+do $reversal$
 declare v_definition text;
 begin
   v_definition:=pg_get_functiondef('public.admin_reverse_economy_transaction(uuid,uuid)'::regprocedure);
   v_definition:=replace(v_definition,
-    'update public.economy_reward_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid'';',
-    'update public.economy_reward_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid''; update public.economy_payroll_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid'';');
+    '  return v_result;',
+    '  update public.economy_payroll_claims set status=''reversed'' where transaction_id=v_original.id and status=''paid'';'||E'\n  '||'return v_result;');
   if v_definition=pg_get_functiondef('public.admin_reverse_economy_transaction(uuid,uuid)'::regprocedure) then
     raise exception 'Could not extend reversal handler for payroll claims.';
   end if;
   execute v_definition;
 end;
-$$;
+$reversal$;
 
 revoke all on function private.validate_period_round_count() from public,anon,authenticated,service_role;
 revoke all on function private.guard_economy_payroll_claim() from public,anon,authenticated,service_role;
