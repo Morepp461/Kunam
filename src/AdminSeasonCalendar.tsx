@@ -14,7 +14,7 @@ const labels:Record<string,string>={off_season:"Off Season",pre_season:"Pre Seas
 const makeDraft=(type:string,n:number):Draft=>({key:type+"-"+n+"-"+Math.random().toString(36).slice(2,7),period_type:type,title:labels[type]+(type==="race_period"||type==="race_break"?" "+n:""),starts_on:"",ends_on:"",rounds:{}});
 export default function AdminSeasonCalendar(){
  const [seasons,setSeasons]=useState<Season[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[rounds,setRounds]=useState<Round[]>([]),[periods,setPeriods]=useState<Period[]>([]),[mappings,setMappings]=useState<Mapping[]>([]);
- const [seasonId,setSeasonId]=useState(""),[drafts,setDrafts]=useState<Draft[]>([]),[rescheduleId,setRescheduleId]=useState(""),[rescheduleStart,setRescheduleStart]=useState(""),[rescheduleEnd,setRescheduleEnd]="";
+ const [seasonId,setSeasonId]=useState(""),[drafts,setDrafts]=useState<Draft[]>([]),[rescheduleId,setRescheduleId]=useState(""),[rescheduleStart,setRescheduleStart]=useState(""),[rescheduleEnd,setRescheduleEnd]=useState("");
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[notice,setNotice]=useState<{kind:"success"|"error";text:string}|null>(null);
  const load=useCallback(async()=>{if(!supabase){setLoading(false);return}setLoading(true);
   const [s,d,r]=await Promise.all([supabase.from("license_seasons").select("id,title,status,starts_on,ends_on").order("created_at",{ascending:false}),supabase.from("license_season_divisions").select("id,season_id,division_name").order("created_at"),supabase.from("license_rounds").select("id,season_division_id,round_number,title,status").order("round_number")]);
