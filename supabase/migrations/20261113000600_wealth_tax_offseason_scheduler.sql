@@ -1,5 +1,7 @@
 -- Schedule automatic Wealth Tax collection at the beginning of each configured Off Season.
-create extension if not exists pg_cron;
+create extension if not exists pg_cron with schema pg_catalog;
+grant usage on schema cron to postgres;
+grant all privileges on all tables in schema cron to postgres;
 
 create or replace function private.process_wealth_tax_offseason()
 returns jsonb language plpgsql security definer set search_path='' as $$
