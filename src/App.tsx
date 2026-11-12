@@ -16,6 +16,7 @@ import MemberRaceCheckIn from "./MemberRaceCheckIn";
 import TeamAffiliate from "./TeamAffiliate";
 import DriverTransferMarket from "./DriverTransferMarket";
 import TeamTakeoverMarket from "./TeamTakeoverMarket";
+import AdminSponsorship from "./AdminSponsorship";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import TeamDriverContracts from "./TeamDriverContracts";
 
@@ -29,6 +30,7 @@ import "./member-race-checkin.css";
 import "./team-affiliate.css";
 import "./driver-transfer-market.css";
 import "./team-takeover-market.css";
+import "./admin-sponsorship.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 
@@ -108,6 +110,7 @@ function Application(){
   <Route path="/admin/license-engine" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<AdminLicenseEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/economy-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminEconomyEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations" element={session&&!needsPaddockAccess&&isAdmin?<AdminOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<AdminSponsorship session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/daily-checkin" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/license-engine" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<AdminLicenseEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
