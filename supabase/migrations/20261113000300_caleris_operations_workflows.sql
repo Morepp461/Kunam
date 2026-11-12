@@ -105,7 +105,7 @@ returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_assessment public.caleris_wealth_tax_assessments%rowtype;v_bank uuid;v_result jsonb;v_paid integer:=0;v_pending integer:=0;
 begin
  if not exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat menagih Wealth Tax.'; end if;
- if not exists(select 1 from public.season_calendar_periods p where p.season_id=p_season_id and p.period_type='off_season' and current_date between p.starts_on and p.ends_on) then
+ if not exists(select 1 from public.season_calendar_periods p where p.season_id=p_season_id and p.period_type='off_season' and (now() at time zone 'Asia/Jakarta')::date between p.starts_on and p.ends_on) then
   raise exception 'Penagihan Wealth Tax hanya dapat diproses saat Off Season berlangsung.';
  end if;
  select id into v_bank from public.economy_wallet_accounts where account_kind='vreeo_bank' and is_active;
