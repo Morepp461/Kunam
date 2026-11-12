@@ -26,6 +26,7 @@ def main():
     assert "to service_role" in gateway_sql and "from public,anon,authenticated,service_role" in gateway_sql
     edge_source = economy_edge_function.read_text(encoding="utf-8")
     assert "auth.getUser(jwt)" in edge_source and 'from("site_admins")' in edge_source
+    assert "Number(amount.toFixed(2)) !== amount" in edge_source
     assert 'serviceClient.rpc("admin_post_economy_transaction"' in edge_source
     assert 'serviceClient.rpc("admin_reverse_economy_transaction"' in edge_source
     assert 'serviceClient.rpc("admin_process_pending_economy_rewards"' in edge_source
@@ -129,6 +130,7 @@ def main():
     economy_styles = ROOT / "src/economy-engine.css"
     assert economy_component.is_file() and economy_styles.is_file(), "Missing Economy Engine UI"
     economy_source = economy_component.read_text(encoding="utf-8")
+    assert "Number(numericAmount.toFixed(2)) !== numericAmount" in economy_source
     assert 'supabase.functions.invoke("economy-engine"' in economy_source
     assert 'supabase.rpc("admin_post_economy_transaction"' not in economy_source
     assert 'supabase.rpc("admin_reverse_economy_transaction"' not in economy_source
