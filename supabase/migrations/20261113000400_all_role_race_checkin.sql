@@ -4,7 +4,7 @@ declare v_definition text;v_original text;v_replacement text;
 begin
  v_definition:=pg_get_functiondef('private.post_economy_transaction(uuid,uuid,numeric,text,text,text,uuid,jsonb,uuid,boolean)'::regprocedure);
  v_original:='(v_source.account_kind<>''vreeo_bank'' or v_destination.account_kind<>''driver'')';
- v_replacement:='(v_source.account_kind<>''vreeo_bank'' or v_destination.account_kind in (''vreeo_bank'',''sponsor_source''))';
+ v_replacement:='(v_source.account_kind<>''vreeo_bank'' or v_destination.account_kind not in (''driver'',''team_owner'',''public_member''))';
  v_definition:=replace(v_definition,v_original,v_replacement);
  if position(v_replacement in v_definition)=0 then raise exception 'Could not widen check-in reward wallet destination validation.'; end if;
  execute v_definition;
@@ -63,7 +63,7 @@ begin
  else
   update public.caleris_member_race_checkins set reward_amount=0,reward_status='not_configured' where id=v_checkin_id;
  end if;
- return jsonb_build_object('checkin_id',v_checkin_id,'reward_amount',v_amount,'reward_status',coalesce(v_result->>'status','not_configured'),'license_points',v_member.role='Driver');
+ return jsonb_build_object('checkin_id',v_checkin_id,'reward_amount',v_amount,'reward_status',case when v_amount<=0 then 'not_configured' when v_result is null then 'pending' else 'paid' end,'license_points',v_member.role='Driver');
 end;
 $$;
 revoke all on function public.member_race_checkin(uuid) from public,anon,service_role;
