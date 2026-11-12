@@ -174,3 +174,8 @@ body.light .site-footer .footer-note{color:#514a3d}
  .site-header .nav-toggle{flex-basis:35px;width:35px;height:35px}
  .site-header .global-search.is-expanded{flex-basis:min(280px,calc(100vw - 180px));width:min(280px,calc(100vw - 180px));min-width:min(280px,calc(100vw - 180px))}
 }
+
+
+.global-search>.tire-search-trigger{display:grid;width:44px;height:44px;min-width:44px;padding:5px;border:0;background:transparent;color:#d9bd67}
+.global-search>.search-clear{display:grid;width:25px;height:25px;min-width:25px;padding:0;border:0;background:transparent;color:#b9bdc3}
+@media(max-width:620px){.site-header .global-search>.tire-search-trigger{width:44px;height:44px;min-width:44px}.site-header .global-search>.search-clear{width:25px;height:25px;min-width:25px}}
