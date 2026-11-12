@@ -250,3 +250,43 @@ end;
 $$;
 revoke all on function public.admin_pay_sponsorship_contract(uuid,numeric,text,uuid) from public,anon,service_role;
 grant execute on function public.admin_pay_sponsorship_contract(uuid,numeric,text,uuid) to authenticated;
+
+
+-- Keep new sponsorship history and payout records behind the same participant RLS boundary.
+alter table public.caleris_sponsorship_offer_revisions enable row level security;
+alter table public.caleris_sponsorship_payouts enable row level security;
+revoke all on public.caleris_sponsorship_offer_revisions,public.caleris_sponsorship_payouts
+ from public,anon,authenticated,service_role;
+grant select on public.caleris_sponsorship_offer_revisions,public.caleris_sponsorship_payouts to authenticated;
+
+create policy "Sponsorship offer revisions visible to participants and Admin"
+on public.caleris_sponsorship_offer_revisions for select to authenticated using (
+ public.is_caleris_fia_or_admin()
+ or exists(
+  select 1 from public.caleris_sponsorship_offers o
+  join public.profiles p on p.user_id=(select auth.uid()) and p.member_id=o.target_member_id
+  where o.id=offer_id and o.target_kind='driver'
+ )
+ or exists(
+  select 1 from public.caleris_sponsorship_offers o
+  join public.profiles p on p.user_id=(select auth.uid())
+  join public.members m on m.id=p.member_id and m.team_id=o.target_team_id and m.role in ('Owner','Principal')
+  where o.id=offer_id and o.target_kind='team'
+ )
+);
+
+create policy "Sponsorship payouts visible to participants and Admin"
+on public.caleris_sponsorship_payouts for select to authenticated using (
+ public.is_caleris_fia_or_admin()
+ or exists(
+  select 1 from public.caleris_sponsorship_contracts c
+  join public.profiles p on p.user_id=(select auth.uid()) and p.member_id=c.target_member_id
+  where c.id=contract_id and c.target_kind='driver'
+ )
+ or exists(
+  select 1 from public.caleris_sponsorship_contracts c
+  join public.profiles p on p.user_id=(select auth.uid())
+  join public.members m on m.id=p.member_id and m.team_id=c.target_team_id and m.role in ('Owner','Principal')
+  where c.id=contract_id and c.target_kind='team'
+ )
+);
