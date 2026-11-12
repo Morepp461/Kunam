@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "npm:@supabase/supabase-js@2.57.4";
+import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 
 const allowedOrigin = (origin: string) =>
   origin === "http://localhost:5173" ||
@@ -116,59 +116,92 @@ Deno.serve(async (req: Request) => {
 
     if (action === "search") {
       const raw = typeof body.query === "string" ? body.query : "";
-      const term = raw.replace(/[^\p{L}\p{N} _-]/gu, " ").trim().replace(/\s+/g, " ").slice(0, 64);
-      if (term.length < 2) return respond(200, { members: [], pages: [] });
+      const term = raw.replace(/[^\\p{L}\\p{N} _-]/gu, " ").trim().replace(/\\s+/g, " ").slice(0, 64);
+      if (term.length < 2) return respond(200, { members: [], teams: [], pages: [] });
       const pattern = `%${term}%`;
-      const { data: profiles, error } = await admin.from("profiles")
-        .select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
-        .or([
-          `public_member_id.ilike.${pattern}`,
-          `first_name.ilike.${pattern}`,
-          `last_name.ilike.${pattern}`,
-          `web_nickname.ilike.${pattern}`,
-          `driver_nickname.ilike.${pattern}`,
-        ].join(","))
-        .limit(10);
-      if (error) return respond(500, { error: "Pencarian member gagal." });
 
-      const [memberMatches, teamMatches] = await Promise.all([
-        admin.from("members").select("id").or([`character_name.ilike.${pattern}`, `member_code.ilike.${pattern}`, `role.ilike.${pattern}`].join(",")).limit(30),
-        admin.from("teams").select("id").ilike("name", pattern).limit(20),
+      const [profileMatches, memberMatches, teamMatches] = await Promise.all([
+        admin.from("profiles")
+          .select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
+          .in("account_status", ["public", "active", "admin"])
+          .or([
+            `public_member_id.ilike.${pattern}`,
+            `first_name.ilike.${pattern}`,
+            `last_name.ilike.${pattern}`,
+            `web_nickname.ilike.${pattern}`,
+            `driver_nickname.ilike.${pattern}`,
+          ].join(","))
+          .limit(20),
+        admin.from("members")
+          .select("id,team_id,character_name,member_code,role")
+          .or([`character_name.ilike.${pattern}`, `member_code.ilike.${pattern}`, `role.ilike.${pattern}`].join(","))
+          .limit(50),
+        admin.from("teams").select("id,name").ilike("name", pattern).limit(20),
       ]);
-      if (memberMatches.error || teamMatches.error) return respond(500, { error: "Pencarian karakter dan tim gagal." });
-      const matchedMemberIds = new Set<string>((memberMatches.data ?? []).map((row) => row.id));
-      const matchedTeamIds = (teamMatches.data ?? []).map((row) => row.id);
-      if (matchedTeamIds.length) {
-        const { data: teamMembers } = await admin.from("members").select("id").in("team_id", matchedTeamIds).limit(30);
-        (teamMembers ?? []).forEach((row) => matchedMemberIds.add(row.id));
+      if (profileMatches.error || memberMatches.error || teamMatches.error) {
+        console.error("Member directory search query failed:", {
+          profiles: profileMatches.error?.message,
+          members: memberMatches.error?.message,
+          teams: teamMatches.error?.message,
+        });
+        return respond(500, { error: "Pencarian member dan tim gagal dimuat." });
       }
-      const linkedMemberIds = (profiles ?? []).map((row) => row.member_id).filter(Boolean);
+
+      const matchingTeams = (teamMatches.data ?? []) as { id: string; name: string }[];
+      const matchingTeamIds = matchingTeams.map((team) => team.id);
+      const teamRoster = matchingTeamIds.length
+        ? await admin.from("members").select("id,team_id").in("team_id", matchingTeamIds).limit(100)
+        : { data: [], error: null };
+      if (teamRoster.error) {
+        console.error("Team roster search failed:", teamRoster.error.message);
+        return respond(500, { error: "Daftar anggota tim gagal dimuat." });
+      }
+
+      const matchedMemberIds = new Set<string>([
+        ...(memberMatches.data ?? []).map((row) => row.id),
+        ...((teamRoster.data ?? []).map((row) => row.id)),
+      ]);
+      const linkedMemberIds = (profileMatches.data ?? []).map((row) => row.member_id).filter(Boolean) as string[];
       const searchMemberIds = [...matchedMemberIds].filter((id) => !linkedMemberIds.includes(id));
       let linkedProfiles: ProfileRow[] = [];
       if (searchMemberIds.length) {
-        const { data: matches } = await admin.from("profiles")
+        const { data: matches, error: linkedError } = await admin.from("profiles")
           .select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
+          .in("account_status", ["public", "active", "admin"])
           .in("member_id", searchMemberIds);
+        if (linkedError) {
+          console.error("Linked member profile search failed:", linkedError.message);
+          return respond(500, { error: "Profil anggota tim gagal dimuat." });
+        }
         linkedProfiles = (matches ?? []) as ProfileRow[];
       }
-      const mergedProfiles = [...(profiles ?? []), ...linkedProfiles]
+
+      const mergedProfiles = [...(profileMatches.data ?? []), ...linkedProfiles]
         .filter((row, index, rows) => rows.findIndex((item) => item.public_member_id === row.public_member_id) === index)
-        .slice(0, 10);
+        .slice(0, 20);
       const members = await Promise.all(mergedProfiles.map((p) => withAvatar(p as ProfileRow)));
+      const teams = matchingTeams.map((team) => ({
+        id: team.id,
+        name: team.name,
+        member_count: (teamRoster.data ?? []).filter((member) => member.team_id === team.id).length,
+      }));
 
       let contentQuery = admin.from("site_content").select("slug,content,published");
       if (!isAdmin) contentQuery = contentQuery.eq("published", true);
-      const { data: content, error: contentError } = await contentQuery.limit(40);
-      if (contentError) return respond(500, { error: "Pencarian konten gagal." });
+      const { data: content, error: contentError } = await contentQuery.limit(100);
+      if (contentError) {
+        console.error("Site content search failed:", contentError.message);
+        return respond(500, { error: "Pencarian halaman gagal dimuat." });
+      }
       const needle = term.toLocaleLowerCase("id-ID");
       const pages = (content ?? []).flatMap((row) => {
         const value = row.content as Record<string, unknown>;
         const title = typeof value?.title === "string" ? value.title : row.slug;
-        const text = typeof value?.body === "string" ? value.body : "";
-        if (!(title + " " + text).toLocaleLowerCase("id-ID").includes(needle)) return [];
-        return [{ title, slug: row.slug, excerpt: text.slice(0, 150), href: row.slug === "rules" ? "/rules" : "/dashboard" }];
-      }).slice(0, 6);
-      return respond(200, { members, pages });
+        const searchableText = JSON.stringify(value ?? {}).replace(/[{}"\\[\\],:]/g, " ");
+        if (!(title + " " + searchableText).toLocaleLowerCase("id-ID").includes(needle)) return [];
+        return [{ title, slug: row.slug, excerpt: searchableText.trim().slice(0, 150), href: row.slug === "rules" ? "/rules" : "/dashboard" }];
+      }).slice(0, 12);
+      return respond(200, { members, teams, pages });
     }
 
     if (action === "update_member_id") {
