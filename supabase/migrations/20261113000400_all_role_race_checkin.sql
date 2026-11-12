@@ -24,7 +24,7 @@ begin
  select * into v_member from public.members where id=v_profile.member_id;
  if not found then raise exception 'Member tidak ditemukan.'; end if;
  select * into v_round from public.license_rounds where id=p_round_id for update;
- if not found or v_round.status<>'scheduled' then raise exception 'Race tidak tersedia untuk check-in.'; end if;
+ if not found or v_round.status='closed' then raise exception 'Race tidak tersedia untuk check-in.'; end if;
  if now()<v_round.checkin_opens_at or now()>v_round.checkin_closes_at
    or (now() at time zone 'Asia/Jakarta')::date<>(v_round.checkin_opens_at at time zone 'Asia/Jakarta')::date
    or (now() at time zone 'Asia/Jakarta')::date<>(v_round.checkin_closes_at at time zone 'Asia/Jakarta')::date then
