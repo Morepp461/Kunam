@@ -38,6 +38,8 @@ def main():
     assert search.is_file(), "Missing member directory search function"
     search_source = search.read_text(encoding="utf-8")
     assert 'action === "search"' in search_source
+    assert r'raw.replace(/[^\p{L}\p{N} _-]/gu' in search_source
+    assert r'.replace(/\s+/g, " ")' in search_source
     assert '.in("account_status", ["public", "active", "admin"])' in search_source
     assert 'admin.from("teams").select("id,name").ilike("name", pattern)' in search_source
     assert 'return respond(200, { members, teams, pages })' in search_source
