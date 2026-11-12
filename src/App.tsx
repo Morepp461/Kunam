@@ -11,6 +11,7 @@ import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
 import AdminEconomyEngine from "./AdminEconomyEngine";
 import AdminOperations from "./AdminOperations";
+import FIAOperations from "./FIAOperations";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import TeamDriverContracts from "./TeamDriverContracts";
 import LicenseCheckIn from "./LicenseCheckIn";
@@ -19,6 +20,7 @@ import "./license-engine.css";
 import "./admin-configuration.css";
 import "./economy-engine.css";
 import "./admin-operations.css";
+import "./fia-operations.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 
@@ -100,6 +102,7 @@ function Application(){
   <Route path="/driver-panel/daily-checkin" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<LicenseCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/license-engine" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<AdminLicenseEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<FIAOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/driver-contracts" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<TeamDriverContracts session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/member/:memberId" element={<PublicMemberProfile/>}/>
