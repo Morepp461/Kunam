@@ -80,7 +80,7 @@ begin
   if p_amount is null or p_amount<=v_last.offered_amount or p_amount<>round(p_amount,2) then raise exception 'Counter-offer wajib lebih tinggi dari penawaran sebelumnya.'; end if;
   select * into v_range from public.caleris_configurations where category='economy' and config_key='team-takeover-valuation-range' and is_active;
   v_min:=nullif(v_range.payload->>'minimum_percent','')::numeric;v_max:=nullif(v_range.payload->>'maximum_percent','')::numeric;
-  select * into v_range from public.caleris_configurations where category='economy' and config_key='team-takeover-valuation-range' and is_active;
+  if v_min is null or v_max is null or v_min<0 or v_max<v_min then raise exception 'Admin belum mengatur rentang valuasi Take Over dengan benar.';end if;
   if p_amount<(select total_valuation from public.caleris_team_valuations where id=v_take.valuation_id)*v_min/100
     or p_amount>(select total_valuation from public.caleris_team_valuations where id=v_take.valuation_id)*v_max/100 then
    raise exception 'Counter-offer berada di luar rentang valuasi yang dikonfigurasi Admin.';
