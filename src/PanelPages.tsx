@@ -22,6 +22,7 @@ export const panelGroups: PanelGroup[] = [
     { path: "regulation", label: "Regulation", description: "Regulasi kompetisi per season." }
   ]},
   { path: "driver-panel", label: "DRIVER PANEL", tabs: [
+    { path: "daily-checkin", label: "Daily Check-in", description: "Check-in harian dan poin lisensi driver." },
     { path: "character", label: "Character", description: "Profil karakter dan kontrak driver." },
     { path: "development", label: "Development", description: "Pengembangan delapan atribut driver." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
