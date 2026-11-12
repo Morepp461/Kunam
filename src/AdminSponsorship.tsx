@@ -52,13 +52,13 @@ export default function AdminSponsorship({session}:{session:Session}){
  };
  const createOffer=async()=>{
   if(!sponsorId||!targetId||!seasonId)return;const value=Number(amount);
-  if(!Number.isFinite(value)||value<0||Math.round(value*100)!==value*100){setNotice("Nilai offer tidak valid.");return}
+  if(!Number.isFinite(value)||value<0||Number(value.toFixed(2))!==value){setNotice("Nilai offer tidak valid.");return}
   await run("admin_create_sponsorship_offer",{p_sponsor_id:sponsorId,p_target_kind:targetKind,p_target_id:targetId,p_season_id:seasonId,p_amount:value,p_terms:{summary:terms.trim()},p_expires_at:expires?new Date(expires).toISOString():null},"Sponsorship offer dibuat dan dikirim ke target.");
   setTargetId("");setAmount("");setTerms("");setExpires("");
  };
  const respondOffer=async(id:string,action:"accept"|"reject"|"counter")=>{
   const value=Number(counterAmount);
-  if(action==="counter"&&(!Number.isFinite(value)||value<0||Math.round(value*100)!==value*100)){setNotice("Nominal counter tidak valid.");return}
+  if(action==="counter"&&(!Number.isFinite(value)||value<0||Number(value.toFixed(2))!==value)){setNotice("Nominal counter tidak valid.");return}
   await run("admin_respond_sponsorship_offer",{p_offer_id:id,p_action:action,p_amount:action==="counter"?value:null,p_terms:{summary:counterTerms.trim()}} ,action==="accept"?"Counter member diterima dan kontrak dibuat.":action==="reject"?"Negosiasi sponsor ditolak.":"Counter sponsor dikirim ke member.");
   setCounterOfferId(null);setCounterAmount("");setCounterTerms("");
  };
