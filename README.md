@@ -165,6 +165,15 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261113000100_caleris_operations_suite_foundation.sql` — operations tables, token ledgers, sponsor pool, tax rules, wealth assessments, transfer/takeover records, affiliations, valuation snapshots, fines, and member race check-ins.
 - `20261113000200_caleris_operations_admin_policies.sql` — Admin-only write policies for editable tax rules, race reward settings, sponsor pool, and valuation snapshots.
 - `20261113000300_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, annual wallet-only Wealth Tax assessment/collection, and FIA fine posting workflows.
+- `20261113000400_all_role_race_checkin.sql` — shared all-role race attendance, Driver-only license score integration, configurable reward payout, and pending reward processing.
+- `20261113000500_wealth_tax_automatic_assessment.sql` — deferred end-of-season assessment after all rounds close and payroll claims settle.
+- `20261113000600_wealth_tax_offseason_scheduler.sql` — pg_cron scheduler for automatic Wealth Tax collection during configured Off Season.
+- `20261113000700_team_affiliation_workflows.sql` — cross-tier one-affiliate request, accept/reject, and termination RPCs.
+- `20261113000800_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
+- `20261113000900_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
+- `20261113001000_operations_negotiation_configuration.sql` — editable negotiation limits and takeover valuation bounds seeded from the explicitly agreed rules.
+- `20261113001100_team_takeover_workflows.sql` — team listing, valuation-bounded negotiation, counter offers, and FIA review.
+- `20261113001200_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
 
 ### Operational workflows added in this phase
 
