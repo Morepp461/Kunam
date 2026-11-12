@@ -11,7 +11,6 @@ def main():
         "assets/Background 2.png",
         "assets/Untitled design_20261103_142659_0000.png",
         "assets/Add a heading_20260907_003952_0000.png",
-        "assets/Add a heading_20260907_003952_0000.png",
     ]
     for item in required:
         path = ROOT / item
