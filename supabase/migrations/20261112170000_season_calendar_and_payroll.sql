@@ -84,7 +84,7 @@ for each row execute function private.audit_season_calendar_period();
 
 create or replace function private.guard_season_calendar_period()
 returns trigger language plpgsql set search_path=''
-as $
+as $guard$
 begin
   if new.id is distinct from old.id or new.season_id is distinct from old.season_id
     or new.period_type is distinct from old.period_type or new.period_number is distinct from old.period_number
@@ -99,7 +99,7 @@ begin
   end if;
   return new;
 end;
-$;
+$guard$;
 create trigger season_calendar_period_guard
 before update on public.season_calendar_periods
 for each row execute function private.guard_season_calendar_period();
