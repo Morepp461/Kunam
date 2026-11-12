@@ -69,31 +69,16 @@ grant execute on function public.fia_record_race_result(uuid,uuid,uuid) to authe
 
 create or replace function public.admin_generate_wealth_tax_assessments(p_season_id uuid)
 returns jsonb language plpgsql security definer set search_path='' as $$
-declare v_wallet record;v_rule public.caleris_tax_rules%rowtype;v_amount numeric;v_count integer:=0;
+declare v_count integer;
 begin
  if not exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())) then raise exception 'Hanya Admin yang dapat menghitung Wealth Tax.'; end if;
  if not exists(select 1 from public.license_seasons where id=p_season_id and status in ('active','completed')) then raise exception 'Season tidak ditemukan.'; end if;
  if exists(select 1 from public.license_rounds r join public.license_season_divisions d on d.id=r.season_division_id where d.season_id=p_season_id and r.status<>'closed') then raise exception 'Seluruh round season harus ditutup sebelum Wealth Tax dihitung.'; end if;
  if exists(select 1 from public.economy_payroll_claims where season_id=p_season_id and status='pending') then raise exception 'Selesaikan payroll tertunda sebelum menghitung Wealth Tax.'; end if;
- for v_wallet in
-  select wa.id wallet_id,wa.member_id,wa.balance
-  from public.economy_wallet_accounts wa
-  join public.members m on m.id=wa.member_id
-  where wa.account_kind in ('driver','team_owner') and wa.is_active and wa.balance>0
-   and m.role in ('Driver','Owner')
-  order by wa.id
- loop
-  if exists(select 1 from public.caleris_wealth_tax_assessments where season_id=p_season_id and wallet_id=v_wallet.wallet_id) then continue; end if;
-  select * into v_rule from public.caleris_tax_rules
-   where tax_type='wealth' and is_active and minimum_base<=v_wallet.balance
-   order by minimum_base desc,sort_order desc,created_at desc limit 1;
-  if not found or v_rule.rate_percent<=0 then continue; end if;
-  v_amount:=round(v_wallet.balance*v_rule.rate_percent/100,2);
-  insert into public.caleris_wealth_tax_assessments(season_id,wallet_id,member_id,wallet_balance_snapshot,applied_rate,tax_amount,status)
-  values(p_season_id,v_wallet.wallet_id,v_wallet.member_id,v_wallet.balance,v_rule.rate_percent,v_amount,'assessed')
-  on conflict(season_id,wallet_id) do nothing;
-  v_count:=v_count+1;
- end loop;
+ if not exists(select 1 from public.caleris_configurations where category='economy' and config_key='wealth-tax-calculation' and is_active and payload->>'method' in ('flat','progressive')) then
+  raise exception 'Admin harus memilih metode Wealth Tax (flat atau progressive) sebelum assessment.';
+ end if;
+ v_count:=private.try_assess_wealth_tax_for_season(p_season_id);
  return jsonb_build_object('season_id',p_season_id,'assessments_created',v_count);
 end;
 $$;
