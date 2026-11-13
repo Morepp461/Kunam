@@ -62,7 +62,7 @@ begin
   if not found then raise exception 'Team not found'; end if;
 
   select array_agg(id order by starts_on desc) into v_seasons
-  from (select id,starts_on from public.license_seasons where status in ('active','completed','closed') order by starts_on desc limit 2) s;
+  from (select id,starts_on from public.license_seasons where status <> 'draft' order by starts_on desc limit 2) s;
   v_latest := v_seasons[1];
   v_previous := v_seasons[2];
 
@@ -91,11 +91,11 @@ begin
     join public.members m on m.id=fs.member_id
     where d.season_id=v_latest and m.team_id=p_team_id;
 
-    select coalesce(sum(t.amount),0) into v_cashflow
+    select coalesce(sum(case when t.destination_account_id=w.id then t.amount else -t.amount end),0) into v_cashflow
     from public.economy_transactions t
-    join public.economy_wallet_accounts w on w.id=t.source_account_id or w.id=t.destination_account_id
-    where w.team_id=p_team_id and w.account_kind='team'
-      and t.created_at >= (select starts_on::timestamptz from public.license_seasons where id=v_latest)
+    join public.economy_wallet_accounts w on w.team_id=p_team_id and w.account_kind='team'
+      and (w.id=t.source_account_id or w.id=t.destination_account_id)
+    where t.created_at >= (select starts_on::timestamptz from public.license_seasons where id=v_latest)
       and t.created_at < ((select ends_on from public.license_seasons where id=v_latest)+1)::timestamptz
       and t.event_type not in ('loan_disbursement','loan_repayment');
   end if;
@@ -117,7 +117,7 @@ begin
       coalesce((select avg(fs.final_position) from public.license_final_standings fs join public.license_season_divisions d on d.id=fs.season_division_id join public.members m on m.id=fs.member_id where d.season_id=v_latest and m.team_id=t.id),100) position,
       (select count(*) from public.caleris_achievements a where a.team_id=t.id) achievements,
       coalesce((select w.balance from public.economy_wallet_accounts w where w.team_id=t.id and w.account_kind='team' and w.is_active=true limit 1),0) wallet,
-      abs(coalesce((select sum(tx.amount) from public.economy_transactions tx join public.economy_wallet_accounts w on w.id=tx.source_account_id or w.id=tx.destination_account_id where w.team_id=t.id and w.account_kind='team' and tx.event_type not in ('loan_disbursement','loan_repayment')),0)) cashflow
+      greatest(0,coalesce((select sum(case when tx.destination_account_id=w.id then tx.amount else -tx.amount end) from public.economy_transactions tx join public.economy_wallet_accounts w on w.team_id=t.id and w.account_kind='team' and (w.id=tx.source_account_id or w.id=tx.destination_account_id) where tx.event_type not in ('loan_disbursement','loan_repayment')),0)) cashflow
     from public.teams t
   ) x;
 
@@ -126,9 +126,9 @@ begin
   v_trend := (v_points_score*0.5 + v_position_score*0.5);
   if v_previous is not null then
     v_trend := v_trend*0.65 + (
-      (case when v_max_points>0 then least(100,v_points_previous/v_max_points*100) else 0 end)*0.25
-      + (case when v_max_position>1 then greatest(0,least(100,(v_max_position-v_pos_previous)/(v_max_position-1)*100)) else 0 end)*0.25
-    );
+      (case when v_max_points>0 then least(100,v_points_previous/v_max_points*100) else 0 end)*0.5
+      + (case when v_max_position>1 then greatest(0,least(100,(v_max_position-v_pos_previous)/(v_max_position-1)*100)) else 0 end)*0.5
+    )*0.35;
   end if;
 
   v_development_score := least(100,greatest(0,v_development));
