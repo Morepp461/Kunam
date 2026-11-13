@@ -66,8 +66,6 @@ def main():
     invoker_sql = (ROOT / "supabase/migrations/20261113060112_stage5_rpc_invoker_security.sql").read_text(encoding="utf-8")
     for function_name in ["member_register_driver_for_season", "fia_decide_appeal", "fia_publish_regulation", "fia_record_race_result_entry"]:
         assert f"function public.{function_name}" in invoker_sql and "security invoker" in invoker_sql, f"Missing invoker-secured RPC: {function_name}"
-    for fragment in []:
-        assert fragment in stage5, f"Stage 5 panel missing: {fragment}"
     for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
         assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
