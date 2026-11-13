@@ -74,42 +74,54 @@ alter table public.economy_payroll_claim_splits enable row level security;
 revoke all on public.economy_payroll_claim_splits from public,anon;
 grant select on public.economy_payroll_claim_splits to authenticated;
 
-drop policy if exists "Members and team owners read payroll claim splits" on public.economy_payroll_claim_splits;
-create policy "Members and team owners read payroll claim splits"
-on public.economy_payroll_claim_splits
-for select to authenticated
-using (
-  exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))
-  or exists(
-    select 1 from public.economy_payroll_claims c
-    join public.profiles p on p.member_id=c.member_id
-    where c.id=economy_payroll_claim_splits.claim_id
-      and p.user_id=(select auth.uid())
-  )
-  or exists(
-    select 1 from public.profiles p
-    join public.members owner on owner.id=p.member_id
-    where p.user_id=(select auth.uid())
-      and owner.role='Owner'
-      and owner.team_id=economy_payroll_claim_splits.payer_team_id
-  )
-);
+create or replace function private.can_read_payroll_claim(p_claim_id uuid,p_origin_team_id uuid default null)
+returns boolean
+language sql
+stable
+security definer
+set search_path=''
+as $$
+  select
+    exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))
+    or exists(
+      select 1 from public.economy_payroll_claims c
+      join public.profiles p on p.member_id=c.member_id
+      where c.id=p_claim_id and p.user_id=(select auth.uid())
+    )
+    or exists(
+      select 1 from public.profiles p
+      join public.members owner on owner.id=p.member_id
+      where p.user_id=(select auth.uid())
+        and owner.role='Owner'
+        and owner.team_id=coalesce(
+          p_origin_team_id,
+          (select c.team_id from public.economy_payroll_claims c where c.id=p_claim_id)
+        )
+    )
+    or exists(
+      select 1 from public.economy_payroll_claim_splits s
+      join public.profiles p on p.user_id=(select auth.uid())
+      join public.members owner on owner.id=p.member_id
+      where s.claim_id=p_claim_id
+        and owner.role='Owner'
+        and owner.team_id=s.payer_team_id
+    );
+$$;
+revoke all on function private.can_read_payroll_claim(uuid,uuid) from public,anon,service_role;
+grant execute on function private.can_read_payroll_claim(uuid,uuid) to authenticated;
 
-drop policy if exists "Borrowing team owners read loan payroll claims" on public.economy_payroll_claims;
-create policy "Borrowing team owners read loan payroll claims"
+drop policy if exists "Members and team owners read own payroll and team payroll" on public.economy_payroll_claims;
+drop policy if exists "Members read own payroll and team payroll" on public.economy_payroll_claims;
+create policy "Members and teams read payroll claims"
 on public.economy_payroll_claims
 for select to authenticated
-using (
-  exists(
-    select 1
-    from public.economy_payroll_claim_splits s
-    join public.profiles p on p.user_id=(select auth.uid())
-    join public.members owner on owner.id=p.member_id
-    where s.claim_id=economy_payroll_claims.id
-      and s.payer_team_id=owner.team_id
-      and owner.role='Owner'
-  )
-);
+using (private.can_read_payroll_claim(id,team_id));
+
+drop policy if exists "Members and team owners read payroll claim splits" on public.economy_payroll_claim_splits;
+create policy "Members and teams read payroll claim splits"
+on public.economy_payroll_claim_splits
+for select to authenticated
+using (private.can_read_payroll_claim(claim_id,null));
 
 drop function if exists public.member_start_driver_move(uuid,text,numeric,date,date,text);
 create function public.member_start_driver_move(
@@ -142,7 +154,7 @@ begin
     raise exception 'Hanya Team Owner/Principal yang terhubung ke tim dapat mengajukan rekrutmen.';
   end if;
 
-  if p_move_type not in ('transfer','loan') then raise exception 'Jenis perpindahan tidak valid.'; end if;
+  if coalesce(p_move_type,'') not in ('transfer','loan') then raise exception 'Jenis perpindahan tidak valid.'; end if;
   if p_offer_amount is null or p_offer_amount<=0 or p_offer_amount<>round(p_offer_amount,2) then
     raise exception 'Nominal penawaran harus lebih besar dari nol.';
   end if;
@@ -165,6 +177,9 @@ begin
 
     if not found then
       raise exception 'Tanggal Driver Loan harus sama persis dengan awal dan akhir satu season pada Season Calendar.';
+    end if;
+    if p_loan_starts_on<(now() at time zone 'Asia/Jakarta')::date then
+      raise exception 'Driver Loan harus dimulai pada atau setelah tanggal hari ini.';
     end if;
 
     if not exists(
@@ -339,6 +354,7 @@ begin
       where starts_on=v_start and ends_on=v_end
       order by created_at desc limit 1;
       if not found then raise exception 'Tanggal Driver Loan harus sama persis dengan satu season penuh.'; end if;
+      if v_start<(now() at time zone 'Asia/Jakarta')::date then raise exception 'Driver Loan tidak dapat dimulai pada tanggal yang sudah lewat.'; end if;
       if not exists(
         select 1 from public.caleris_team_affiliations a
         where a.status='accepted'
@@ -367,7 +383,9 @@ begin
       v_start,v_end,v_share
     );
     update public.caleris_driver_move_negotiations
-    set status='negotiating',total_counteroffers=total_counteroffers+1,updated_at=now()
+    set status='negotiating',total_counteroffers=total_counteroffers+1,
+        loan_season_id=case when v_new_type='loan' then v_season.id else null end,
+        updated_at=now()
     where id=v_neg.id;
     return jsonb_build_object('status','negotiating','counteroffers',v_total_count+1);
   else
@@ -670,6 +688,135 @@ $$;
 revoke all on function public.fia_review_driver_move(uuid,boolean) from public,anon,service_role;
 grant execute on function public.fia_review_driver_move(uuid,boolean) to authenticated;
 
+create or replace function private.post_economy_transaction(
+  p_source_account_id uuid,
+  p_destination_account_id uuid,
+  p_amount numeric,
+  p_event_type text,
+  p_description text,
+  p_idempotency_key text,
+  p_actor_id uuid,
+  p_metadata jsonb default '{}'::jsonb,
+  p_reversal_of uuid default null,
+  p_allow_pending boolean default false
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path=''
+as $$
+declare
+  v_source public.economy_wallet_accounts%rowtype;
+  v_destination public.economy_wallet_accounts%rowtype;
+  v_existing public.economy_transactions%rowtype;
+  v_original public.economy_transactions%rowtype;
+  v_transaction_id uuid;
+begin
+  if p_amount is null or p_amount<=0 or p_amount>999999999999999999.99 or p_amount<>round(p_amount,2) then raise exception 'Nominal transaksi tidak valid.'; end if;
+  if p_source_account_id is null or p_destination_account_id is null or p_source_account_id=p_destination_account_id then raise exception 'Wallet tidak valid.'; end if;
+  if p_event_type not in ('checkin_reward','prize','bank_reward','sponsor_payout','bank_funding','tax','fine','transfer','admin_adjustment','reversal','payroll') then raise exception 'Jenis transaksi tidak dikenal.'; end if;
+  if p_idempotency_key is null or length(trim(p_idempotency_key)) not between 8 and 180 then raise exception 'Idempotency key tidak valid.'; end if;
+  if p_description is null or length(trim(p_description)) not between 1 and 240 then raise exception 'Deskripsi transaksi tidak valid.'; end if;
+  if p_metadata is null or jsonb_typeof(p_metadata)<>'object' then raise exception 'Metadata transaksi tidak valid.'; end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_idempotency_key,0));
+  select * into v_existing from public.economy_transactions where idempotency_key=p_idempotency_key;
+  if found then
+    if v_existing.source_account_id<>p_source_account_id or v_existing.destination_account_id<>p_destination_account_id or v_existing.amount<>p_amount or v_existing.event_type<>p_event_type then
+      raise exception 'Idempotency key digunakan transaksi berbeda.';
+    end if;
+    return jsonb_build_object('transaction_id',v_existing.id,'status','duplicate');
+  end if;
+
+  if p_event_type='reversal' then
+    if p_reversal_of is null then raise exception 'Referensi reversal wajib ada.'; end if;
+    select * into v_original from public.economy_transactions where id=p_reversal_of for update;
+    if not found or v_original.reversal_of is not null then raise exception 'Transaksi asal tidak valid.'; end if;
+    if v_original.source_account_id<>p_destination_account_id or v_original.destination_account_id<>p_source_account_id or v_original.amount<>p_amount then
+      raise exception 'Reversal tidak cocok.';
+    end if;
+  elsif p_reversal_of is not null then
+    raise exception 'Referensi reversal hanya untuk reversal.';
+  end if;
+
+  perform 1 from public.economy_wallet_accounts
+  where id in (p_source_account_id,p_destination_account_id)
+  order by id for update;
+  select * into v_source from public.economy_wallet_accounts where id=p_source_account_id;
+  select * into v_destination from public.economy_wallet_accounts where id=p_destination_account_id;
+
+  if v_source.id is null or v_destination.id is null or not v_source.is_active or not v_destination.is_active then
+    raise exception 'Wallet tidak ditemukan atau nonaktif.';
+  end if;
+
+  if p_event_type='checkin_reward' and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind not in ('driver','team_owner','public_member')) then
+    raise exception 'Rute reward check-in tidak valid.';
+  elsif p_event_type in ('prize','bank_reward') and (v_source.account_kind<>'vreeo_bank' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Rute reward Bank tidak valid.';
+  elsif p_event_type='sponsor_payout' and (v_source.account_kind<>'sponsor_source' or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Rute sponsor tidak valid.';
+  elsif p_event_type='bank_funding' and (v_source.account_kind<>'sponsor_source' or v_destination.account_kind<>'vreeo_bank') then
+    raise exception 'Rute funding Bank tidak valid.';
+  elsif p_event_type in ('tax','fine') and (v_destination.account_kind<>'vreeo_bank' or v_source.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Rute pajak/denda tidak valid.';
+  elsif p_event_type='transfer' and (v_source.account_kind in ('vreeo_bank','sponsor_source') or v_destination.account_kind in ('vreeo_bank','sponsor_source')) then
+    raise exception 'Rute transfer tidak valid.';
+  elsif p_event_type='admin_adjustment' and (v_source.account_kind='sponsor_source' or v_destination.account_kind='sponsor_source') then
+    raise exception 'Rute penyesuaian tidak valid.';
+  elsif p_event_type='payroll' and (
+    v_source.account_kind<>'team'
+    or v_destination.account_kind<>'driver'
+    or not exists(
+      select 1 from public.members m
+      where m.id=v_destination.member_id and m.role='Driver'
+        and (
+          m.team_id=v_source.team_id
+          or exists(
+            select 1 from public.caleris_driver_move_negotiations n
+            where n.id=nullif(p_metadata->>'loan_negotiation_id','')::uuid
+              and n.driver_member_id=m.id
+              and n.move_type='loan'
+              and n.status in ('loan_active','loan_returned')
+              and n.loan_season_id=nullif(p_metadata->>'season_id','')::uuid
+              and v_source.team_id in (n.buyer_team_id,n.seller_team_id)
+          )
+        )
+    )
+  ) then
+    raise exception 'Payroll harus berasal dari tim kontrak Driver atau salah satu tim pada Driver Loan aktif/selesai.';
+  end if;
+
+  if v_source.balance<p_amount and v_source.account_kind<>'sponsor_source' and p_event_type not in ('tax','fine') then
+    if p_allow_pending then return null; end if;
+    raise exception 'Saldo sumber tidak mencukupi.';
+  end if;
+
+  insert into public.economy_transactions(
+    event_type,source_account_id,destination_account_id,amount,idempotency_key,
+    description,metadata,created_by,reversal_of
+  )
+  values(
+    p_event_type,p_source_account_id,p_destination_account_id,p_amount,p_idempotency_key,
+    trim(p_description),p_metadata,p_actor_id,p_reversal_of
+  )
+  returning id into v_transaction_id;
+
+  insert into public.economy_entries(transaction_id,account_id,entry_side,amount)
+  values
+    (v_transaction_id,p_source_account_id,'outflow',p_amount),
+    (v_transaction_id,p_destination_account_id,'inflow',p_amount);
+
+  update public.economy_wallet_accounts
+  set balance=balance-p_amount,updated_at=now()
+  where id=p_source_account_id;
+  update public.economy_wallet_accounts
+  set balance=balance+p_amount,updated_at=now()
+  where id=p_destination_account_id;
+
+  return jsonb_build_object('transaction_id',v_transaction_id,'status','posted');
+end;
+$$;
+
 create or replace function private.process_economy_payroll_claim(p_claim_id uuid,p_actor_id uuid)
 returns jsonb
 language plpgsql
@@ -687,7 +834,8 @@ declare
   v_borrower_amount numeric(20,2);
   v_share numeric(5,2);
   v_origin_transaction jsonb;
-  v_payroll_transaction jsonb;
+  v_borrower_transaction jsonb;
+  v_primary_transaction jsonb;
   v_borrower_team_id uuid;
 begin
   select * into v_claim from public.economy_payroll_claims
@@ -715,7 +863,7 @@ begin
   select id into v_driver_wallet from public.economy_wallet_accounts
   where account_kind='driver' and member_id=v_claim.member_id and is_active;
 
-  if found and v_loan.id is not null then
+  if v_loan.id is not null then
     v_borrower_team_id:=v_loan.buyer_team_id;
     v_share:=v_loan.loan_salary_share_percent;
     v_borrower_amount:=round(v_claim.amount*v_share/100,2);
@@ -742,10 +890,6 @@ begin
     where id in (v_origin_wallet,v_borrower_wallet,v_driver_wallet)
     order by id for update;
 
-    if (select balance from public.economy_wallet_accounts where id=v_claim.team_id::uuid) is null then
-      null;
-    end if;
-
     if (select balance from public.economy_wallet_accounts where id=v_borrower_wallet)<v_borrower_amount
       or (select balance from public.economy_wallet_accounts where id=v_origin_wallet)<v_origin_amount then
       return jsonb_build_object('paid',false,'reason','insufficient_team_balances');
@@ -753,42 +897,48 @@ begin
 
     if v_origin_amount>0 then
       v_origin_transaction:=private.post_economy_transaction(
-        v_origin_wallet,v_borrower_wallet,v_origin_amount,'transfer',
-        'Driver Loan payroll contribution · '||v_period.title,
-        'driver-loan-payroll-contribution:'||v_claim.period_id::text||':'||v_claim.member_id::text,
+        v_origin_wallet,v_driver_wallet,v_origin_amount,'payroll',
+        'Driver Loan salary · '||v_period.title,
+        'payroll:'||v_claim.period_id::text||':'||v_claim.member_id::text||':origin',
         p_actor_id,
-        jsonb_build_object('payroll_claim_id',v_claim.id,'loan_negotiation_id',v_loan.id,
-          'payer_team_id',v_claim.team_id,'borrower_team_id',v_borrower_team_id,
-          'share_percent',100-v_share),
+        jsonb_build_object('season_id',v_claim.season_id,'period_id',v_claim.period_id,
+          'member_id',v_claim.member_id,'team_id',v_claim.team_id,
+          'annual_salary',v_claim.annual_salary,'period_count',v_claim.period_count,
+          'loan_negotiation_id',v_loan.id,'loan_payer','origin',
+          'loan_share_percent',100-v_share),
         null,false
       );
     end if;
 
-    v_payroll_transaction:=private.post_economy_transaction(
-      v_borrower_wallet,v_driver_wallet,v_claim.amount,'payroll',
-      'Annual salary · '||v_period.title,
-      'payroll:'||v_claim.period_id::text||':'||v_claim.member_id::text,
-      p_actor_id,
-      jsonb_build_object('season_id',v_claim.season_id,'period_id',v_claim.period_id,
-        'member_id',v_claim.member_id,'team_id',v_borrower_team_id,
-        'origin_team_id',v_claim.team_id,'annual_salary',v_claim.annual_salary,
-        'period_count',v_claim.period_count,'loan_negotiation_id',v_loan.id,
-        'borrower_share_percent',v_share,'origin_share_percent',100-v_share),
-      null,false
-    );
+    if v_borrower_amount>0 then
+      v_borrower_transaction:=private.post_economy_transaction(
+        v_borrower_wallet,v_driver_wallet,v_borrower_amount,'payroll',
+        'Driver Loan salary · '||v_period.title,
+        'payroll:'||v_claim.period_id::text||':'||v_claim.member_id::text||':borrower',
+        p_actor_id,
+        jsonb_build_object('season_id',v_claim.season_id,'period_id',v_claim.period_id,
+          'member_id',v_claim.member_id,'team_id',v_borrower_team_id,
+          'origin_team_id',v_claim.team_id,'annual_salary',v_claim.annual_salary,
+          'period_count',v_claim.period_count,'loan_negotiation_id',v_loan.id,
+          'loan_payer','borrower','loan_share_percent',v_share),
+        null,false
+      );
+    end if;
 
     update public.economy_payroll_claim_splits
     set status='paid',
         transaction_id=case when payer_team_id=v_claim.team_id
           then (v_origin_transaction->>'transaction_id')::uuid
-          else (v_payroll_transaction->>'transaction_id')::uuid end,
+          else (v_borrower_transaction->>'transaction_id')::uuid end,
         paid_at=now()
     where claim_id=v_claim.id;
 
+    v_primary_transaction:=coalesce(v_borrower_transaction,v_origin_transaction);
   else
     if v_origin_wallet is null or v_driver_wallet is null then
       return jsonb_build_object('paid',false,'reason','wallet_missing');
     end if;
+
     insert into public.economy_payroll_claim_splits(claim_id,payer_team_id,amount,share_percent)
     values(v_claim.id,v_claim.team_id,v_claim.amount,100)
     on conflict(claim_id,payer_team_id) do nothing;
@@ -799,7 +949,7 @@ begin
       return jsonb_build_object('paid',false,'reason','insufficient_team_balance');
     end if;
 
-    v_payroll_transaction:=private.post_economy_transaction(
+    v_primary_transaction:=private.post_economy_transaction(
       v_origin_wallet,v_driver_wallet,v_claim.amount,'payroll',
       'Annual salary · '||v_period.title,
       'payroll:'||v_claim.period_id::text||':'||v_claim.member_id::text,
@@ -809,16 +959,19 @@ begin
         'annual_salary',v_claim.annual_salary,'period_count',v_claim.period_count),
       null,false
     );
+
     update public.economy_payroll_claim_splits
-    set status='paid',transaction_id=(v_payroll_transaction->>'transaction_id')::uuid,paid_at=now()
+    set status='paid',transaction_id=(v_primary_transaction->>'transaction_id')::uuid,paid_at=now()
     where claim_id=v_claim.id;
   end if;
 
   update public.economy_payroll_claims
-  set status='paid',transaction_id=(v_payroll_transaction->>'transaction_id')::uuid,paid_at=now()
+  set status='paid',
+      transaction_id=(v_primary_transaction->>'transaction_id')::uuid,
+      paid_at=now()
   where id=v_claim.id;
 
-  return jsonb_build_object('paid',true,'transaction_id',v_payroll_transaction->>'transaction_id');
+  return jsonb_build_object('paid',true,'transaction_id',v_primary_transaction->>'transaction_id');
 end;
 $$;
 revoke all on function private.process_economy_payroll_claim(uuid,uuid) from public,anon,authenticated,service_role;
