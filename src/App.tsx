@@ -21,6 +21,7 @@ import TeamTakeoverMarket from "./TeamTakeoverMarket";
 import AdminSponsorship from "./AdminSponsorship";
 import SponsorshipCentre from "./SponsorshipCentre";
 import DevelopmentTokens from "./DevelopmentTokens";
+import AdminTestPersonas from "./AdminTestPersonas";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
@@ -144,6 +145,7 @@ function Application(){
   <Route path="/privacy-policy" element={<LegalBlankPage title="Kebijakan Privasi"/>}/>
   <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
+  <Route path="/admin/test-personas" element={session&&!needsPaddockAccess&&isAdmin?<AdminTestPersonas/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
  </Routes></Shell>;
