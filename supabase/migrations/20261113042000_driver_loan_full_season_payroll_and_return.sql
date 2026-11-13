@@ -10,6 +10,12 @@ alter table public.caleris_driver_move_negotiations
 alter table public.caleris_driver_move_offers
   add column if not exists loan_salary_share_percent numeric(5,2);
 
+alter table public.caleris_driver_move_offers
+  drop constraint if exists caleris_driver_move_offers_loan_dates_check;
+alter table public.caleris_driver_move_offers
+  add constraint caleris_driver_move_offers_loan_dates_check
+  check (loan_starts_on is null or loan_ends_on is null or loan_ends_on>loan_starts_on);
+
 alter table public.caleris_driver_move_negotiations
   drop constraint if exists caleris_driver_move_negotiations_status_check;
 alter table public.caleris_driver_move_negotiations
@@ -54,7 +60,7 @@ create table if not exists public.economy_payroll_claim_splits (
   id uuid primary key default gen_random_uuid(),
   claim_id uuid not null references public.economy_payroll_claims(id) on delete restrict,
   payer_team_id uuid not null references public.teams(id) on delete restrict,
-  amount numeric(20,2) not null check (amount>0),
+  amount numeric(20,2) not null check (amount>=0),
   share_percent numeric(5,2) not null check (share_percent>0 and share_percent<=100 and mod(share_percent,10)=0),
   status text not null default 'pending' check (status in ('pending','paid')),
   transaction_id uuid references public.economy_transactions(id) on delete restrict,
@@ -62,7 +68,8 @@ create table if not exists public.economy_payroll_claim_splits (
   created_at timestamptz not null default now(),
   unique(claim_id,payer_team_id),
   check ((status='pending' and transaction_id is null and paid_at is null)
-      or (status='paid' and transaction_id is not null and paid_at is not null))
+      or (status='paid' and paid_at is not null
+        and ((amount=0 and transaction_id is null) or (amount>0 and transaction_id is not null))))
 );
 
 create index if not exists economy_payroll_claim_splits_payer_team_idx
@@ -89,8 +96,8 @@ begin
     raise exception 'Payroll claim split identity and amount are immutable.';
   end if;
   if not (old.status='pending' and new.status='paid'
-    and old.transaction_id is null and new.transaction_id is not null
-    and old.paid_at is null and new.paid_at is not null) then
+    and old.transaction_id is null and old.paid_at is null and new.paid_at is not null
+    and ((new.amount=0 and new.transaction_id is null) or (new.amount>0 and new.transaction_id is not null))) then
     raise exception 'Invalid payroll claim split status transition.';
   end if;
   return new;
@@ -327,6 +334,7 @@ begin
   elsif p_action='accept' then
     if v_last.move_type='loan' then
       if v_last.loan_starts_on is null or v_last.loan_ends_on is null
+        or v_last.loan_ends_on<=v_last.loan_starts_on
         or v_last.loan_salary_share_percent is null then
         raise exception 'Ketentuan Driver Loan pada penawaran terakhir belum lengkap.';
       end if;
@@ -378,7 +386,7 @@ begin
     v_share:=case when v_new_type='loan' then coalesce(p_loan_salary_share_percent,v_last.loan_salary_share_percent) else null end;
 
     if v_new_type='loan' then
-      if v_start is null or v_end is null or v_share is null
+      if v_start is null or v_end is null or v_end<=v_start or v_share is null
         or v_share<0 or v_share>100 or mod(v_share,10)<>0 then
         raise exception 'Counter Driver Loan wajib memiliki tanggal satu season penuh dan pembagian gaji kelipatan 10%.';
       end if;
@@ -903,12 +911,12 @@ begin
     select id into v_borrower_wallet from public.economy_wallet_accounts
     where account_kind='team' and team_id=v_borrower_team_id and is_active;
 
-    if v_origin_amount>0 then
+    if 100-v_share>0 then
       insert into public.economy_payroll_claim_splits(claim_id,payer_team_id,amount,share_percent)
       values(v_claim.id,v_claim.team_id,v_origin_amount,100-v_share)
       on conflict(claim_id,payer_team_id) do nothing;
     end if;
-    if v_borrower_amount>0 then
+    if v_share>0 then
       insert into public.economy_payroll_claim_splits(claim_id,payer_team_id,amount,share_percent)
       values(v_claim.id,v_borrower_team_id,v_borrower_amount,v_share)
       on conflict(claim_id,payer_team_id) do nothing;
