@@ -1,0 +1,1 @@
+drop policy if exists "Authenticated members read season calendar periods" on public.season_calendar_periods;
