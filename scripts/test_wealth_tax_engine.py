@@ -37,6 +37,14 @@ assert "order by r.minimum_base desc" in sql
 assert "round(v_member.total_balance*v_rule.rate_percent/100,2)" in sql
 assert "round(v_team.total_balance*v_rule.rate_percent/100,2)" in sql
 assert "progressive" not in sql
+assert "v_member_rule_count<>3 or v_team_rule_count<>3" in sql
+assert "lag(r.rate_percent)" in sql
+assert "rate_percent<=tiers.previous_rate" in sql
+three_tier_migration = MIGRATIONS / "20261113035324_wealth_tax_exact_three_tier_validation.sql"
+assert three_tier_migration.is_file(), "Three-tier validation migration is missing"
+three_tier_sql = three_tier_migration.read_text(encoding="utf-8").lower()
+assert "v_member_rule_count<>3 or v_team_rule_count<>3" in three_tier_sql
+assert "lag(r.rate_percent)" in three_tier_sql
 
 # Collection is ledger-backed, idempotent, split across member wallets, and
 # checks total available balance before posting any debit.
