@@ -30,3 +30,5 @@ jobs:
         run: python3 -B scripts/test_wealth_tax_engine.py
       - name: Team Take Over settlement regression checks
         run: python3 -B scripts/test_team_takeover_settlement.py
+      - name: Driver Loan full-season payroll regression checks
+        run: python3 -B scripts/test_driver_loan_engine.py
