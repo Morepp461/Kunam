@@ -1,7 +1,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-migration = ROOT / "supabase/migrations/20261113042000_driver_loan_full_season_payroll_and_return.sql"
+migration = ROOT / "supabase/migrations/20261113042509_driver_loan_full_season_payroll_and_return.sql"
 ui = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
 fia = (ROOT / "src/FIAOperations.tsx").read_text(encoding="utf-8")
 contracts = (ROOT / "src/TeamDriverContracts.tsx").read_text(encoding="utf-8")
