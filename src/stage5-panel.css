@@ -78,3 +78,5 @@
 @media(max-width:460px){.s5-card{padding:14px;border-radius:13px}.s5-grid-2,.s5-grid-3{grid-template-columns:1fr 1fr}.s5-hero{padding:15px;gap:12px}.s5-avatar{width:66px;height:66px;flex-basis:66px}.s5-team-logo{width:62px;height:62px;flex-basis:62px}.s5-wallet-chip{width:100%;justify-content:center;margin:2px 0 0}.s5-dl{grid-template-columns:1fr;gap:4px}.s5-dl dd{margin-bottom:7px}}
 
 .s5-team-cell{display:flex;align-items:center;gap:8px;min-width:110px;font-weight:650}.s5-team-cell img{width:25px;height:25px;object-fit:contain;border-radius:5px;background:rgba(255,255,255,.07);padding:2px;flex:0 0 auto}
+
+.s5-schedule-round-list{display:flex;flex-direction:column;gap:7px;min-width:180px;white-space:normal}.s5-schedule-round{display:flex;align-items:center;gap:8px;line-height:1.35}.s5-schedule-round>b{font-size:1.05rem;flex:0 0 auto}.s5-schedule-round>span{overflow-wrap:anywhere}.s5-schedule-round>small{margin-left:auto;opacity:.65;white-space:nowrap}

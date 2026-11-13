@@ -22,6 +22,7 @@ import AdminSponsorship from "./AdminSponsorship";
 import SponsorshipCentre from "./SponsorshipCentre";
 import DevelopmentTokens from "./DevelopmentTokens";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
+import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
 
 import CashLoanCentre from "./CashLoanCentre";
@@ -259,7 +260,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
  const {toast,loading}=useUI();const navigate=useNavigate();
  const [avatarFile,setAvatarFile]=useState<File|null>(null),[avatarPreview,setAvatarPreview]=useState(""),[avatarEditing,setAvatarEditing]=useState(false),[cropX,setCropX]=useState(50),[cropY,setCropY]=useState(50);
  const originalAvatarFileRef=useRef<File|null>(null);
- const [firstName,setFirstName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState("");
+ const [firstName,setFirstName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState(""),[nationality,setNationality]=useState(""),[hometown,setHometown]=useState("");
  const [privacyAccepted,setPrivacyAccepted]=useState(false),[saving,setSaving]=useState(false);
  const [errors,setErrors]=useState<Record<string,string>>({});
  const avatarStageRef=useRef<HTMLDivElement|null>(null),avatarImageRef=useRef<HTMLImageElement|null>(null),avatarDragRef=useRef<{x:number;y:number;cropX:number;cropY:number}|null>(null);
@@ -274,6 +275,8 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   e.preventDefault();const next:Record<string,string>={};
   if(!avatarFile)next.avatar="Foto profil harus dipilih.";
   if(!dateOfBirth)next.dateOfBirth="Tanggal lahir harus diisi.";
+   if(!nationality)next.nationality="Nationality wajib dipilih.";
+   if(!hometown)next.hometown="Hometown wajib dipilih.";
   else if(dateOfBirth>maxDob)next.dateOfBirth="Paddock Access hanya tersedia mulai usia 13 tahun.";
   if(!nickname.trim())next.nickname="Nickname harus diisi.";
   if(nickname.trim().length>32)next.nickname="Nickname maksimal 32 karakter.";
@@ -288,7 +291,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
    const path=`${session.user.id}/paddock-${crypto.randomUUID()}.${ext}`;
    const {error:uploadError}=await supabase.storage.from("profile-avatars").upload(path,croppedAvatar,{upsert:false,contentType:croppedAvatar.type});
    if(uploadError)throw new Error(uploadError.message);
-   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,privacyAccepted}});
+   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,nationality,hometown,privacyAccepted}});
    if(error)throw new Error(error.message);
    if(!data?.success)throw new Error(data?.error||"Paddock Access gagal disimpan.");
    await onComplete();toast("success","Paddock Access disetujui","Profil akun berhasil dibuat.");navigate("/dashboard",{replace:true});
@@ -300,6 +303,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   {avatarPreview&&avatarEditing&&<div className="avatar-inline-crop"><span>GESER FOTO UNTUK MENGATUR POSISI</span><div ref={avatarStageRef} className="avatar-inline-stage" onPointerDown={beginAvatarDrag} onPointerMove={moveAvatarDrag} onPointerUp={finishAvatarDrag} onPointerCancel={finishAvatarDrag}><img ref={avatarImageRef} src={avatarPreview} alt="Geser foto profil" draggable={false} style={{objectPosition:cropX+"% "+cropY+"%"}}/></div><button type="button" className="action primary avatar-confirm-button" onClick={confirmAvatarCrop}>Konfirmasi posisi foto</button></div>}
   <div className="paddock-name-fields"><label className="settings-field">Nama panggilan<input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} autoComplete="nickname" placeholder="Nama panggilan"/></label></div>
   <PaddockDatePicker value={dateOfBirth} max={maxDob} onChange={setDateOfBirth}/>{errors.dateOfBirth&&<small className="field-error">{errors.dateOfBirth}</small>}
+   <LocationSelectors nationality={nationality} hometown={hometown} onNationalityChange={setNationality} onHometownChange={setHometown} errors={{nationality:errors.nationality,hometown:errors.hometown}}/>
   <label className="settings-field">Caleris Nickname<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} autoComplete="nickname" placeholder="Caleris Nickname"/>{errors.nickname&&<small className="field-error">{errors.nickname}</small>}</label>
   <PaddockRolePicker value={preferredRole} onChange={setPreferredRole}/>{errors.preferredRole&&<small className="field-error">{errors.preferredRole}</small>}
   <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setErrors(v=>({...v,privacy:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
@@ -308,11 +312,81 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
  </form></div></section>;
 }
 function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
- const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);
- useEffect(()=>{let active=true;async function check(){if(!supabase)return;const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Role gagal diperiksa",error.message);setIsAdmin(Boolean(data?.user_id))}void check();return()=>{active=false}},[session.user.id,toast]);
- const name=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
- return <section className="workspace"><PageHeading eyebrow="Member command center" title={`Welcome, ${name}`} description="Ringkasan aktivitas, event, dan perjalananmu di Caleris Masters."/><div style={{display:"flex",justifyContent:"flex-end",gap:18,flexWrap:"wrap",marginBottom:12}}><Link className="action primary" to="/race-checkin">Race Check-in <ArrowUpRight size={15}/></Link><Link className="text-link" to="/financial-centre">Financial Centre <ArrowUpRight size={15}/></Link></div><div className="dashboard-event-card"><div><span className="section-eyebrow">CURRENT EVENT</span><h2>Belum ada event aktif</h2><p>Informasi event akan muncul di sini setelah event pertama dipublikasikan.</p></div><div className="event-mark"><Flag size={25}/><span>CALERIS<br/>MASTERS</span></div></div><div className="section-title-row"><div><span className="section-eyebrow">OVERVIEW</span><h2>Statistik</h2></div><span className="empty-tag">Belum tersedia</span></div><div className="stat-grid">{[{label:"Total event",icon:<CalendarDays/>},{label:"Race start",icon:<Flag/>},{label:"Points",icon:<Activity/>},{label:"Account balance",icon:<Wallet/>}].map(item=><div className="stat-card" key={item.label}><span className="stat-icon">{item.icon}</span><span className="stat-label">{item.label}</span><strong>—</strong><small>Menunggu data tersedia</small></div>)}</div><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">YOUR PROFILE</span><h2>Informasi akun</h2><p>{profileReady?(profile?.driver_nickname||"Nickname driver belum diatur"):"Memuat profil..."}</p><Link className="text-link" to="/profile">Lihat profil <ArrowUpRight size={15}/></Link></div><div className="workspace-card"><span className="section-eyebrow">QUICK ACCESS</span><h2>Workspace</h2><p>{isAdmin?"Akses administrasi tersedia.":"Kelola informasi akun dan profilmu."}</p>{isAdmin?<Link className="text-link" to="/admin-workflow">Buka Admin Workflow <ArrowUpRight size={15}/></Link>:<Link className="text-link" to="/account/settings">Pengaturan akun <ArrowUpRight size={15}/></Link>}</div></div></section>;
+  const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);
+  const [statCards,setStatCards]=useState<{label:string;value:string;detail:string;icon:ReactNode}[]>([]);
+  const [statsLoading,setStatsLoading]=useState(true),[statsScope,setStatsScope]=useState("STATISTIK MEMBER");
+  useEffect(()=>{let active=true;async function check(){if(!supabase)return;const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Role gagal diperiksa",error.message);setIsAdmin(Boolean(data?.user_id))}void check();return()=>{active=false}},[session.user.id,toast]);
+  useEffect(()=>{let active=true;async function loadStats(){
+    if(!supabase||!profileReady){setStatsLoading(!profileReady);return;}
+    setStatsLoading(true);
+    const empty=[{label:"Season",value:"—",detail:"Belum ada data",icon:<CalendarDays/>},{label:"Race start",value:"—",detail:"Belum ada data",icon:<Flag/>},{label:"Points",value:"—",detail:"Belum ada data",icon:<Activity/>},{label:"Race wins",value:"—",detail:"Belum ada data",icon:<Trophy/>}];
+    if(!profile?.member_id){if(active){setStatsScope("STATISTIK MEMBER");setStatCards(empty);setStatsLoading(false)}return;}
+    const {data:ownMember,error:memberError}=await supabase.from("members").select("id,role,team_id").eq("id",profile.member_id).maybeSingle();
+    if(!active)return;
+    if(memberError){toast("error","Statistik gagal dimuat",memberError.message);setStatCards(empty);setStatsLoading(false);return;}
+    if(!ownMember){setStatCards(empty);setStatsLoading(false);return;}
+    const [activeSeasonsQ,registrationsQ]=await Promise.all([
+      supabase.from("license_seasons").select("id").eq("status","active"),
+      supabase.from("license_season_members").select("season_id").eq("member_id",ownMember.id)
+    ]);
+    const activeSeasonIds=(activeSeasonsQ.data||[]).map((row:any)=>row.id);
+    const seasonCount=new Set((registrationsQ.data||[]).map((row:any)=>row.season_id)).size;
+    let divisionIds:string[]=[],roundIds:string[]=[];
+    if(activeSeasonIds.length){
+      const {data:divisions}=await supabase.from("license_season_divisions").select("id").in("season_id",activeSeasonIds);
+      divisionIds=(divisions||[]).map((row:any)=>row.id);
+    }
+    if(divisionIds.length){
+      const {data:rounds}=await supabase.from("license_rounds").select("id").in("season_division_id",divisionIds).neq("status","cancelled");
+      roundIds=(rounds||[]).map((row:any)=>row.id);
+    }
+    if(ownMember.role==="Driver"){
+      const [entriesQ,pointsQ,winsQ]=await Promise.all([
+        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
+        roundIds.length?supabase.from("license_round_standings").select("points_total").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
+        roundIds.length?supabase.from("caleris_race_results").select("id").eq("winner_member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
+      ]);
+      const races=new Set((entriesQ.data||[]).map((row:any)=>row.round_id)).size;
+      const points=(pointsQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
+      if(active){setStatsScope("STATISTIK DRIVER");setStatCards([
+        {label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},
+        {label:"Race start",value:String(races),detail:"Klasifikasi resmi tercatat",icon:<Flag/>},
+        {label:"Season points",value:points.toLocaleString("id-ID"),detail:"Poin pada season aktif",icon:<Activity/>},
+        {label:"Race wins",value:String((winsQ.data||[]).length),detail:"Kemenangan season aktif",icon:<Trophy/>}
+      ]);}
+    }else if(ownMember.role==="Owner"&&ownMember.team_id){
+      const [teamMembersQ,entriesQ]=await Promise.all([
+        supabase.from("members").select("id").eq("team_id",ownMember.team_id).eq("role","Driver"),
+        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id,member_id").eq("team_id",ownMember.team_id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
+      ]);
+      const teamMemberIds=(teamMembersQ.data||[]).map((row:any)=>row.id);
+      const teamEntries=entriesQ.data||[];
+      const roundStandingsQ=teamMemberIds.length&&roundIds.length?await supabase.from("license_round_standings").select("round_id,member_id,points_total").in("member_id",teamMemberIds).in("round_id",roundIds):{data:[]};
+      const teamEntryKeys=new Set(teamEntries.map((row:any)=>row.round_id+":"+row.member_id));
+      const teamPoints=(roundStandingsQ.data||[]).filter((row:any)=>teamEntryKeys.has(row.round_id+":"+row.member_id)).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
+      const raceStarts=new Set(teamEntries.map((row:any)=>row.round_id)).size;
+      const winnersQ=roundIds.length?await supabase.from("caleris_race_results").select("round_id,winner_member_id").in("round_id",roundIds):{data:[]};
+      const teamWins=(winnersQ.data||[]).filter((winner:any)=>teamEntries.some((entry:any)=>entry.round_id===winner.round_id&&entry.member_id===winner.winner_member_id)).length;
+      if(active){setStatsScope("STATISTIK TIM");setStatCards([
+        {label:"Active drivers",value:String(teamMembersQ.data?.length||0),detail:"Driver terdaftar di tim",icon:<Users/>},
+        {label:"Race start",value:String(raceStarts),detail:"Round dengan klasifikasi tim",icon:<Flag/>},
+        {label:"Team points",value:teamPoints.toLocaleString("id-ID"),detail:"Poin season aktif",icon:<Activity/>},
+        {label:"Team wins",value:String(teamWins),detail:"Kemenangan season aktif",icon:<Trophy/>}
+      ]);}
+    }else{
+      const {data:wallets}=await supabase.from("economy_wallet_accounts").select("balance").eq("member_id",ownMember.id).eq("is_active",true);
+      const balance=(wallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0);
+      if(active){setStatsScope("STATISTIK AKUN");setStatCards([{label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},{label:"Account balance",value:"¢p "+balance.toLocaleString("id-ID"),detail:"Total saldo wallet pribadi",icon:<Wallet/>},{label:"Role",value:ownMember.role||"Member",detail:"Role akun saat ini",icon:<Users/>},{label:"Team",value:ownMember.team_id?"Terhubung":"Independent",detail:"Status afiliasi tim",icon:<Flag/>}]);}
+    }
+    if(active)setStatsLoading(false);
+  }
+  void loadStats();return()=>{active=false};
+  },[profile?.member_id,profileReady,session.user.id,toast]);
+  const name=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
+  return <section className="workspace"><PageHeading eyebrow="Member command center" title={`Welcome, ${name}`} description="Ringkasan aktivitas, event, dan perjalananmu di Caleris Masters."/><div style={{display:"flex",justifyContent:"flex-end",gap:18,flexWrap:"wrap",marginBottom:12}}><Link className="action primary" to="/race-checkin">Race Check-in <ArrowUpRight size={15}/></Link><Link className="text-link" to="/financial-centre">Financial Centre <ArrowUpRight size={15}/></Link></div><div className="dashboard-event-card"><div><span className="section-eyebrow">CURRENT EVENT</span><h2>Belum ada event aktif</h2><p>Informasi event akan muncul di sini setelah event pertama dipublikasikan.</p></div><div className="event-mark"><Flag size={25}/><span>CALERIS<br/>MASTERS</span></div></div><div className="section-title-row"><div><span className="section-eyebrow">OVERVIEW · {statsScope}</span><h2>{ownDashboardTitle(statsScope)}</h2></div><span className="empty-tag">{statsLoading?"Memuat statistik":"Data akun"}</span></div><div className="stat-grid">{(statCards.length?statCards:[{label:"Season",value:"—",detail:"Belum ada data",icon:<CalendarDays/>},{label:"Race start",value:"—",detail:"Belum ada data",icon:<Flag/>},{label:"Points",value:"—",detail:"Belum ada data",icon:<Activity/>},{label:"Race wins",value:"—",detail:"Belum ada data",icon:<Trophy/>}]).map(item=><div className="stat-card" key={item.label}><span className="stat-icon">{item.icon}</span><span className="stat-label">{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small></div>)}</div><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">YOUR PROFILE</span><h2>Informasi akun</h2><p>{profileReady?(profile?.driver_nickname||"Nickname driver belum diatur"):"Memuat profil..."}</p><Link className="text-link" to="/profile">Lihat profil <ArrowUpRight size={15}/></Link></div><div className="workspace-card"><span className="section-eyebrow">QUICK ACCESS</span><h2>Workspace</h2><p>{isAdmin?"Akses administrasi tersedia.":"Kelola informasi akun dan profilmu."}</p>{isAdmin?<Link className="text-link" to="/admin-workflow">Buka Admin Workflow <ArrowUpRight size={15}/></Link>:<Link className="text-link" to="/account/settings">Pengaturan akun <ArrowUpRight size={15}/></Link>}</div></div></section>;
 }
+function ownDashboardTitle(scope:string){return scope==="STATISTIK TIM"?"Statistik Tim":scope==="STATISTIK DRIVER"?"Statistik Driver":"Statistik Akun";}
+
 function AdminWorkflow({session}:{session:Session}){
  const [allowed,setAllowed]=useState(false),[checking,setChecking]=useState(true);const {toast}=useUI();
  useEffect(()=>{let active=true;async function run(){if(!supabase){setChecking(false);return;}const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Pemeriksaan akses gagal",error.message);setAllowed(Boolean(data?.user_id));setChecking(false)}void run();return()=>{active=false}},[session.user.id,toast]);
@@ -411,10 +485,10 @@ function AccountSettings({session,profile,profileReady,onSaved,theme,setTheme}:{
  const [webNickname,setWebNickname]=useState(""),[driverNickname,setDriverNickname]=useState(""),[firstName,setFirstName]=useState(""),[lastName,setLastName]=useState(""),[nationality,setNationality]=useState(""),[hometown,setHometown]=useState(""),[avatarUrl,setAvatarUrl]=useState(""),[avatarPath,setAvatarPath]=useState(""),[uploading,setUploading]=useState(false),[saving,setSaving]=useState(false);const {toast}=useUI();const navigate=useNavigate();
  useEffect(()=>{if(!profileReady)return;setWebNickname(profile?.web_nickname||"");setDriverNickname(profile?.driver_nickname||"");setFirstName(profile?.first_name||"");setLastName(profile?.last_name||"");setNationality(profile?.nationality||"");setHometown(profile?.hometown||"");setAvatarUrl(profile?.avatar_url||"");setAvatarPath(profile?.avatar_path||"")},[profile,profileReady]);
  const uploadAvatar=async(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file||!supabase)return;if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)||file.size>3*1024*1024){toast("warning","File tidak valid","Gunakan JPG, PNG, WEBP, atau GIF maksimal 3 MB.");e.target.value="";return;}setUploading(true);const ext=file.name.split(".").pop()?.toLowerCase()||"jpg",path=`${session.user.id}/avatar-${Date.now()}.${ext}`;const {error}=await supabase.storage.from("profile-avatars").upload(path,file,{upsert:true,contentType:file.type});if(error)toast("error","Upload foto gagal",error.message);else{const {data}=await supabase.storage.from("profile-avatars").createSignedUrl(path,3600);setAvatarPath(path);setAvatarUrl(data?.signedUrl||"");toast("success","Foto berhasil diunggah","Simpan perubahan untuk memperbarui profil.")}setUploading(false);e.target.value=""};
- const save=async()=>{if(!supabase)return;if(webNickname.trim().length>32||driverNickname.trim().length>32||firstName.trim().length>80||lastName.trim().length>80||nationality.trim().length>80||hometown.trim().length>120){toast("warning","Data terlalu panjang","Nickname maksimal 32 karakter dan nama maksimal 80 karakter.");return;}setSaving(true);const {error}=await supabase.from("profiles").upsert({user_id:session.user.id,avatar_url:null,avatar_path:avatarPath||null,web_nickname:webNickname.trim()||null,driver_nickname:driverNickname.trim()||null,first_name:firstName.trim()||null,last_name:lastName.trim()||null,nationality:nationality.trim()||null,hometown:hometown.trim()||null,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)toast("error","Profil gagal disimpan",error.message);else{await onSaved();toast("success","Pengaturan akun tersimpan","Informasi profil berhasil diperbarui.");navigate("/profile")}setSaving(false)};
+ const save=async()=>{if(!supabase)return;if(!nationality.trim()||!hometown.trim()){toast("warning","Identitas belum lengkap","Nationality dan hometown wajib dipilih dari daftar.");return;}if(webNickname.trim().length>32||driverNickname.trim().length>32||firstName.trim().length>80||lastName.trim().length>80||nationality.trim().length>80||hometown.trim().length>120){toast("warning","Data terlalu panjang","Nickname maksimal 32 karakter dan nama maksimal 80 karakter.");return;}setSaving(true);const {error}=await supabase.from("profiles").upsert({user_id:session.user.id,avatar_url:null,avatar_path:avatarPath||null,web_nickname:webNickname.trim()||null,driver_nickname:driverNickname.trim()||null,first_name:firstName.trim()||null,last_name:lastName.trim()||null,nationality:nationality.trim()||null,hometown:hometown.trim()||null,updated_at:new Date().toISOString()},{onConflict:"user_id"});if(error)toast("error","Profil gagal disimpan",error.message);else{await onSaved();toast("success","Pengaturan akun tersimpan","Informasi profil berhasil diperbarui.");navigate("/profile")}setSaving(false)};
  const currentAvatar=avatarUrl||session.user.user_metadata?.avatar_url||session.user.user_metadata?.picture||"";
  return <section className="workspace settings-workspace"><Link className="back-link" to="/profile"><ChevronLeft size={16}/> Profil</Link><PageHeading eyebrow="Account preferences" title="Pengaturan Akun" description="Perbarui identitas publik, foto profil, dan preferensi tampilan."/><div className="workspace-card settings-card">{!profileReady?<div className="center-state"><LoaderCircle className="spin"/><p>Memuat pengaturan...</p></div>:<><div className="avatar-editor"><div className="profile-avatar-large">{currentAvatar?<img src={currentAvatar} alt="Preview foto profil"/>:<UserCircle size={54}/>}</div><div><strong>Foto profil</strong><p>JPG, PNG, WEBP, atau GIF. Maksimal 3 MB.</p><label className="action upload-button"><Camera size={16}/>{uploading?"Mengunggah...":"Pilih foto"}<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={uploadAvatar} disabled={uploading} hidden/></label></div></div>
- <div className="settings-fields-grid"><label className="settings-field">Nama depan <span className="optional-label">Opsional</span><input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} placeholder="Nama depan"/></label><label className="settings-field">Nama belakang <span className="optional-label">Opsional</span><input value={lastName} onChange={e=>setLastName(e.target.value)} maxLength={80} placeholder="Nama belakang"/></label><label className="settings-field">Nationality <span className="optional-label">Opsional</span><input value={nationality} onChange={e=>setNationality(e.target.value)} maxLength={80} placeholder="Country / nationality"/></label><label className="settings-field">Hometown <span className="optional-label">Opsional</span><input value={hometown} onChange={e=>setHometown(e.target.value)} maxLength={120} placeholder="City / hometown"/></label></div>
+ <div className="settings-fields-grid"><label className="settings-field">Nama depan <span className="optional-label">Opsional</span><input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} placeholder="Nama depan"/></label><label className="settings-field">Nama belakang <span className="optional-label">Opsional</span><input value={lastName} onChange={e=>setLastName(e.target.value)} maxLength={80} placeholder="Nama belakang"/></label><LocationSelectors nationality={nationality} hometown={hometown} onNationalityChange={setNationality} onHometownChange={setHometown}/></div>
  <label className="settings-field">Nickname web<input value={webNickname} onChange={e=>setWebNickname(e.target.value)} maxLength={32} placeholder="Nama yang tampil di website"/></label><label className="settings-field">Nickname driver<input value={driverNickname} onChange={e=>setDriverNickname(e.target.value)} maxLength={32} placeholder="Nama karakter / driver"/></label>
  <div className="settings-note"><Shield size={16}/><p>Role, tim, saldo, kontrak, dan data karakter resmi tidak dapat diubah melalui pengaturan akun. Hubungi Admin untuk koreksi data tersebut.</p></div>
  <div className="theme-preference"><div><span className="section-eyebrow">DISPLAY</span><strong>Mode tampilan</strong><small>Preferensi ini juga berlaku di landing page.</small></div><div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div></div>
