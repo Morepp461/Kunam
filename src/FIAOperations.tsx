@@ -51,7 +51,7 @@ export default function FIAOperations(){
  const recordClassification=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!classificationRoundId||!classificationMemberId)return;
   const position=classificationStatus==="finished"?Number(classificationPosition):null;
-  const lapMatch=fastestLap.trim().match(/^(\\d{1,3}):(\\d{2})[.,](\\d{3})$/);const fastestLapMs=fastestLap.trim()?lapMatch?Number(lapMatch[1])*60000+Number(lapMatch[2])*1000+Number(lapMatch[3]):null:null;
+  const lapMatch=fastestLap.trim().match(/^(\d{1,3}):(\d{2})[.,](\d{3})$/);const fastestLapMs=fastestLap.trim()?lapMatch?Number(lapMatch[1])*60000+Number(lapMatch[2])*1000+Number(lapMatch[3]):null:null;
   if(fastestLap.trim()&&!fastestLapMs){setNotice("Format fastest lap harus m:ss.mmm, contoh 1:32.456.");return;}
   if(classificationStatus==="finished"&&(!Number.isInteger(position)||Number(position)<1)){setNotice("Finishing position harus berupa angka bulat positif.");return;}
   setSaving(true);setNotice("");
