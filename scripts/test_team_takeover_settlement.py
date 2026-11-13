@@ -17,7 +17,7 @@ assert "v_actor.role not in ('driver','fia')" in sql
 assert "v_seller.role<>'owner'" in sql
 assert "v_actor.id not in (v_take.buyer_member_id,v_take.seller_member_id)" in sql
 assert "v_last.offered_by_member_id=v_actor.id" in sql
-assert "v_actor.role is distinct from 'owner'" in guard_sql
+assert "v_member.role is distinct from 'owner'" in guard_sql
 assert "v_seller.role is distinct from 'owner'" in guard_sql
 assert "v_seller.team_id is distinct from v_take.target_team_id" in guard_sql
 
