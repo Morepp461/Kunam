@@ -171,7 +171,7 @@ The database foundation also introduces operational records for sponsorship offe
 - `20261112184449_team_affiliation_workflows.sql` — cross-tier one-affiliate request, accept/reject, and termination RPCs.
 - `20261112184453_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
 - `20261112184457_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
-- `20261113042000_driver_loan_full_season_payroll_and_return.sql` — affiliate-only one-season Driver Loan, fee settlement, automatic return, and split payroll ledger.
+- `20261113042509_driver_loan_full_season_payroll_and_return.sql` — affiliate-only one-season Driver Loan, fee settlement, automatic return, and split payroll ledger.
 - `20261112184502_operations_negotiation_configuration.sql` — editable negotiation limits and takeover valuation bounds seeded from the explicitly agreed rules.
 - `20261112185030_team_takeover_workflows.sql` — team listing, valuation-bounded negotiation, counter offers, and FIA review.
 - `20261112185035_sponsorship_lifecycle_workflows.sql` — sponsor offers, counter history, contract acceptance, targets, progress, story events, and Sponsor Source payouts.
