@@ -1,10 +1,9 @@
 import {useEffect,useState} from "react";
 import {Coins,RefreshCw,ShieldCheck} from "lucide-react";
-import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 type Season={id:string;title:string;status:string};
 type Config={token_price:number;is_active:boolean};
-export default function AdminDevelopmentShopSettings({session}:{session:Session}){
+export default function AdminDevelopmentShopSettings(){
  const [price,setPrice]=useState("0"),[active,setActive]=useState(false),[seasons,setSeasons]=useState<Season[]>([]),[ending,setEnding]=useState(""),[next,setNext]=useState(""),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const load=async()=>{if(!supabase)return;const [{data:config,error:ce},{data:rows,error:se}]=await Promise.all([supabase.from("caleris_development_shop_config").select("token_price,is_active").eq("singleton",true).maybeSingle(),supabase.from("license_seasons").select("id,title,status").order("created_at",{ascending:false})]);if(ce||se)setNotice(ce?.message||se?.message||"Gagal memuat konfigurasi.");if(config){const c=config as Config;setPrice(String(c.token_price));setActive(c.is_active)}setSeasons((rows||[]) as Season[])};
  useEffect(()=>{void load()},[]);
