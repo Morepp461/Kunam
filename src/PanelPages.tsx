@@ -48,7 +48,8 @@ export const panelGroups: PanelGroup[] = [
     { path: "season-calendar", label: "Season Calendar", description: "Jadwal Off Season, Pre Season, Race Period, Break, dan End Season." },
     { path: "announcement-input", label: "Announcement Input", description: "Penyusunan dan publikasi pengumuman FIA." },
     { path: "punishment-input", label: "Punishment Input", description: "Pencatatan sanksi driver dan tim." },
-    { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." }
+    { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." },
+    { path: "circuit-pool-input", label: "Circuit Pool Input", description: "Input master circuit dan spesifikasi sirkuit." }
   ]}
 ];
 
