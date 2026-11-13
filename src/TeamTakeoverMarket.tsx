@@ -19,7 +19,7 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
   if(!supabase){setLoading(false);return}
   setLoading(true);
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
-  if(pe||!p?.member_id){setMember(null);setLoading(false);setNotice(pe?.message||"Akun belum terhubung ke member.");return}
+  if(pe){setMember(null);setLoading(false);setNotice(pe.message);return}
   const [m,t,n,o,b]=await Promise.all([
    supabase.from("caleris_member_directory").select("id,character_name,role,team_id").order("character_name"),
    supabase.from("caleris_team_directory").select("id,name,division_key,takeover_listed,latest_valuation").order("name"),
@@ -30,7 +30,7 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
   const err=[m.error,t.error,n.error,o.error,b.error].find(Boolean);
   if(err)setNotice(err.message);
   const all=(m.data||[]) as Member[];
-  setMembers(all);setMember(all.find(x=>x.id===p.member_id)||null);
+  setMembers(all);setMember(p.member_id?all.find(x=>x.id===p.member_id)||null:null);
   setTeams((t.data||[]) as Team[]);setOfferBounds(Object.fromEntries((b.data||[]).map((x:any)=>[x.team_id,{minimum_offer:x.minimum_offer,maximum_offer:x.maximum_offer}])));setTakeovers((n.data||[]) as Takeover[]);setOffers((o.data||[]) as Offer[]);
   setLoading(false);
  },[session.user.id]);
