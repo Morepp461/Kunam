@@ -27,7 +27,7 @@ export default function DriverTransferMarket({session}:{session:Session}){
    supabase.from("caleris_driver_move_negotiations").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_driver_move_offers").select("*").order("created_at",{ascending:true}),
    supabase.from("caleris_team_affiliations").select("team_a_id,team_b_id,status").eq("status","accepted"),
-   p.member_id?supabase.from("members").select("id,character_name,role,team_id").eq("id",p.member_id).maybeSingle():Promise.resolve({data:null,error:null})
+   p?.member_id?supabase.from("members").select("id,character_name,role,team_id").eq("id",p.member_id).maybeSingle():Promise.resolve({data:null,error:null})
   ]);
   const err=[m.error,t.error,n.error,o.error,a.error,ownMemberQ.error].find(Boolean);if(err)setNotice(err.message);
   const allMembers=(m.data||[]) as Member[];setMembers(allMembers);setMember((ownMemberQ.data||null) as Member|null);
