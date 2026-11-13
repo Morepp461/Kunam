@@ -314,7 +314,7 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 
 ## Season Calendar & Team Payroll
 
-- FIA Panel exposes Season Calendar and License Scoring Engine. FIA can configure season operations, process rounds, and finalize WDC. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
+- FIA Panel exposes Rules Input, Season Calendar, Announcement Input, Punishment Input, and Appeal Room. FIA can configure season operations, process rounds, publish official rules and notices, issue punishments, and decide appeals. License Scoring Engine is Admin Control only. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
 - FIA Panel → Season Calendar builds the complete season timeline in one form: exactly one Off Season, one Pre Season, one End Season, one or more Race Periods, and zero or more Break Race Periods.
 - Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
 - Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
@@ -346,3 +346,23 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - The cash-loan workflow uses a separate JWT-verified Edge Function. It verifies the authenticated member and calls service-role-only database functions; members cannot directly insert loans or execute the loan mutation RPCs.
 - Database migrations: `20261112173057_economy_cash_loan_engine.sql` and `20261112173427_economy_cash_loan_indexes.sql`.
 - Edge Function: `economy-workflows` (JWT verification enabled).
+
+
+## Stage 5 · Panel Operations
+
+- A new panel operations layer connects Driver Panel, Team Panel, Main Event, and FIA Panel to live Supabase records. Existing operational routes such as Driver Contracts, Development, Sponsorship, Affiliate Team, Season Calendar, and Punishment Input remain in place.
+- Driver Panel → Character displays the signed-in member's own driver identity, avatar, nationality/hometown, age, wallet balance, team, season contract, salary, race history, statistics, attributes, and achievements.
+- Driver Panel → Career History aggregates registered seasons, final division positions, titles, race wins, poles, finishes, and DNFs from recorded race classifications. Finish/DNF figures are not reconstructed for older rounds where FIA has not entered a classification.
+- Driver Panel → Financial Centre reads the member's wallet accounts and double-entry ledger. Inflow/outflow access is restricted by RLS to the wallet owner, the relevant Team Owner, and Admin.
+- Driver Panel → Appeal and Team Panel → Appeal submit an appeal against an existing FIA fine. FIA Panel → Appeal Room receives the submission and records an approval/rejection decision with a written FIA reason. Team appeals are Owner-only; Driver appeals are restricted to the punished Driver.
+- Team Panel → Team Summary displays team metadata, wallet balance, active drivers, contract history, championship history, race statistics, engine assignment, and achievements. Metadata such as logo, origin, founding year, and history is stored in the Admin-managed team profile record.
+- Team Panel → Driver Registration is Owner-only. The database checks that the driver belongs to the team, has an active contract for the target season, matches the team's division, is not already registered, and that the target season is in its Off Season period.
+- Team Panel → Scout reads driver attributes and current contract availability. Team Panel → Place Job Advert publishes an Owner-authored vacancy to Main Event → Job Search.
+- Main Event → Global merges Premio and Zwei records. Premio and Zwei pages filter the same live source data by division. Driver Ranking and Team Ranking aggregate current-season round standings; Engine Ranking aggregates points for teams assigned to the same engine. Rookie of the Season uses the first full-time season registration and highest standings among debutants, adapted from the official MotoGP Rookie of the Year concept.
+- Main Event includes driver/team comparison, published announcements, published regulations, division-specific schedules, race winners/poles, and race statistics. Finish/DNF totals become available as FIA records detailed race classifications.
+- FIA Panel → Rules Input publishes permanent or season-specific regulations. Announcement Input publishes notices to Main Event → FIA Announcement. Punishment Input retains the existing fine workflow and now includes detailed race classification entry.
+- License Scoring Engine is removed from FIA Panel and restricted to Admin Control. Direct legacy FIA route redirects Admin to Admin Control and denies FIA-only users.
+- Driver List and Team List are now live Main Event directories backed by current member/team and standings records.
+- Driver Quest and Team Quest remain intentionally deferred until their reward rules, eligibility, reset schedule, and Admin configuration are finalized; no economy rules are fabricated.
+- Circuit Pool remains pending: the current repository and production database contain no circuit catalogue table or structured circuit source. The UI does not invent circuit records or technical values; define the circuit data fields and Admin maintenance workflow before adding the schema.
+- Supabase migrations applied and repository versions aligned: `20261113055303_stage5_panel_operations.sql`, `20261113055514_stage5_season_catalog_read.sql`, and `20261113055712_stage5_race_classification_rpc.sql`, and `20261113055954_stage5_regulation_announcement_sync.sql`, `20261113060112_stage5_rpc_invoker_security.sql`, and `20261113060125_stage5_team_roster_rls_guard.sql`, and `20261113060333_stage5_calendar_policy_cleanup.sql`. Panel RPCs now use invoker security with explicit role checks and RLS-backed writes. All new public tables have RLS enabled; write workflows validate ownership/role at the database layer.
