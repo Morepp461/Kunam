@@ -53,6 +53,8 @@ export default function AdminOperations({session}:{session:Session}){
   e.preventDefault();if(!supabase)return;
   const minimum=number(taxMinimum),rate=number(taxRate);
   if(!taxLabel.trim()||!Number.isFinite(minimum)||minimum<0||!Number.isFinite(rate)||rate<0||rate>100){setNotice("Periksa nama, ambang saldo, dan tarif pajak.");return}
+  const scopeCount=taxRules.filter(r=>r.tax_type==="wealth"&&r.tax_scope===taxScope&&r.id!==editingTax).length;
+  if(taxType==="wealth"&&scopeCount>=3){setNotice("Setiap kategori Wealth Tax hanya memiliki 3 tingkat. Edit atau hapus aturan yang ada.");return}
   setSaving(true);
   const payload={tax_type:taxType,tax_scope:taxType==="wealth"?taxScope:"member",label:taxLabel.trim(),minimum_base:minimum,rate_percent:rate,is_active:taxActive,updated_by:session.user.id,updated_at:new Date().toISOString()};
   const result=editingTax?await supabase.from("caleris_tax_rules").update(payload).eq("id",editingTax):await supabase.from("caleris_tax_rules").insert({...payload,created_by:session.user.id});
@@ -66,8 +68,14 @@ export default function AdminOperations({session}:{session:Session}){
 
 
  const seasonOptions=Array.from(new Map(divisions.map(d=>[d.season_id,{id:d.season_id,title:d.season?.title||"Season"}])).values());
+ const isValidWealthTierSet=(scope:"member"|"team")=>{
+  const rows=taxRules.filter(r=>r.tax_type==="wealth"&&r.tax_scope===scope&&r.is_active).sort((x,y)=>x.minimum_base-y.minimum_base);
+  return rows.length===3&&rows[0].rate_percent>0&&rows[1].rate_percent>rows[0].rate_percent&&rows[2].rate_percent>rows[1].rate_percent;
+ };
+ const wealthTaxReady=isValidWealthTierSet("member")&&isValidWealthTierSet("team");
  const runWealthTax=async(action:"wealth_tax_assess"|"wealth_tax_collect")=>{
   if(!supabase||!wealthSeasonId)return;
+  if(action==="wealth_tax_assess"&&!wealthTaxReady){setNotice("Aktifkan tepat 3 tingkat pada Member dan Team, dengan tarif yang meningkat pada setiap ambang.");return}
   setSaving(true);setNotice("");
   const {data,error}=await supabase.functions.invoke("economy-engine",{body:{action,seasonId:wealthSeasonId}});
   setSaving(false);
@@ -142,8 +150,8 @@ export default function AdminOperations({session}:{session:Session}){
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">WEALTH TAX PROCESSING</span><h2>Assessment & collection</h2></div></div>
     <div className="economy-form">
      <label>Season<select value={wealthSeasonId} onChange={e=>setWealthSeasonId(e.target.value)} required><option value="">Pilih season</option>{seasonOptions.map(s=><option key={s.id} value={s.id}>{s.title}</option>)}</select></label>
-     <div className="ops-actions"><button type="button" className="economy-primary-button" disabled={saving||!wealthSeasonId} onClick={()=>void runWealthTax("wealth_tax_assess")}>Generate assessment</button><button type="button" className="economy-secondary-button" disabled={saving||!wealthSeasonId||!assessments.some(a=>a.season_id===wealthSeasonId&&a.status==="assessed")} onClick={()=>void runWealthTax("wealth_tax_collect")}>Collect tax</button></div>
-     <p className="economy-form-hint">Assessment menyimpan snapshot saldo saat dijalankan. Collection hanya menagih assessment berstatus assessed dan tidak akan membuat saldo wallet negatif. Member dapat ditagih dari beberapa wallet personal secara berurutan.</p>
+     <div className="ops-actions"><button type="button" className="economy-primary-button" disabled={saving||!wealthSeasonId||!wealthTaxReady} onClick={()=>void runWealthTax("wealth_tax_assess")}>Generate assessment</button><button type="button" className="economy-secondary-button" disabled={saving||!wealthSeasonId||!assessments.some(a=>a.season_id===wealthSeasonId&&a.status==="assessed")} onClick={()=>void runWealthTax("wealth_tax_collect")}>Collect tax</button></div>
+     <p className="economy-form-hint">Tier aktif: Member {taxRules.filter(r=>r.tax_type==="wealth"&&r.tax_scope==="member"&&r.is_active).length}/3 · Team {taxRules.filter(r=>r.tax_type==="wealth"&&r.tax_scope==="team"&&r.is_active).length}/3. Setiap kategori harus memiliki tepat 3 tingkat aktif dan tarif meningkat sesuai ambang. Nilai ambang dan tarif tetap sepenuhnya editable. Assessment menyimpan snapshot saldo saat dijalankan. Collection hanya menagih assessment berstatus assessed dan tidak akan membuat saldo wallet negatif. Member dapat ditagih dari beberapa wallet personal secara berurutan.</p>
     </div>
     {assessments.filter(a=>!wealthSeasonId||a.season_id===wealthSeasonId).length===0?<p className="economy-empty">Belum ada assessment untuk season ini.</p>:<div className="ops-record-list">{assessments.filter(a=>!wealthSeasonId||a.season_id===wealthSeasonId).map(a=><article key={a.id}><div><strong>{a.target_kind==="member"?"Member":"Team"} · {(a.member_id||a.team_id||"").slice(0,8)}</strong><small>Saldo snapshot {money(a.wallet_balance_snapshot)} · Tarif {a.applied_rate}% · Pajak {money(a.tax_amount)} · {a.status.toUpperCase()}</small></div></article>)}</div>}
    </section>
