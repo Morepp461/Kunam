@@ -1,3 +1,5 @@
+drop policy if exists "Team Owners read own team roster" on public.members;
+create policy "Team Owners read own team roster" on public.members for select to authenticated using(exists(select 1 from public.profiles p join public.members owner on owner.id=p.member_id where p.user_id=(select auth.uid()) and owner.role='Owner' and owner.team_id=members.team_id));
 drop policy if exists "Authenticated members read season calendar periods" on public.season_calendar_periods;
 create policy "Authenticated members read season calendar periods" on public.season_calendar_periods for select to authenticated using(true);
 drop policy if exists "Team Owners register contracted drivers during Off Season" on public.license_season_members;
