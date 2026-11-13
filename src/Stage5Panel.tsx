@@ -151,7 +151,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
     });
     if (!map.size) (data.finalStandings || []).filter((r: Row) => (data.activeDivisions || []).some((d: Row) => d.id === r.season_division_id)).forEach((r: Row) => map.set(r.member_id, Number(r.final_points || 0)));
     return map;
-  }, [data.roundPoints, data.activeRoundIds, data.finalStandings, data.activeDivisions]);
+  }, [data.roundPoints, data.finalStandings, data.activeDivisions, scopedRoundIds]);
   const driverRows = useMemo(() => members.filter((m: Row) => m.role === "Driver" && inDivision(m.team_id)).map((m: Row) => ({
     ...m, points: roundPoints.get(m.id) || 0, team: teamOf(m.team_id), profile: teamProfile(m.team_id),
     wins: (data.raceResults || []).filter((r: Row) => r.winner_member_id === m.id && (data.activeRoundIds || []).includes(r.round_id)).length,
