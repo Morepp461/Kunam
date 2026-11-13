@@ -28,7 +28,8 @@ export const panelGroups: PanelGroup[] = [
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
     { path: "quest", label: "Quest", description: "Daily quest dan weekly quest." },
     { path: "career-history", label: "Career History", description: "Rekam jejak karier dan statistik." },
-    { path: "financial-centre", label: "Financial Centre", description: "Arus keuangan karakter driver." }
+    { path: "financial-centre", label: "Financial Centre", description: "Arus keuangan karakter driver." },
+    { path: "appeal", label: "Appeal", description: "Pengajuan banding atas sanksi FIA." }
   ]},
   { path: "team-panel", label: "TEAM PANEL", tabs: [
     { path: "team-summary", label: "Team Summary", description: "Profil, susunan driver, dan statistik tim." },
@@ -45,7 +46,6 @@ export const panelGroups: PanelGroup[] = [
   { path: "fia-panel", label: "FIA PANEL", tabs: [
     { path: "rules-input", label: "Rules Input", description: "Pengelolaan regulasi global dan divisi." },
     { path: "season-calendar", label: "Season Calendar", description: "Jadwal Off Season, Pre Season, Race Period, Break, dan End Season." },
-    { path: "license-engine", label: "License Scoring Engine", description: "Registrasi driver, round, standings, dan finalisasi WDC." },
     { path: "announcement-input", label: "Announcement Input", description: "Penyusunan dan publikasi pengumuman FIA." },
     { path: "punishment-input", label: "Punishment Input", description: "Pencatatan sanksi driver dan tim." },
     { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." }
