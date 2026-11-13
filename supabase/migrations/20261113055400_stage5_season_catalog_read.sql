@@ -1,2 +1,0 @@
-drop policy if exists "Authenticated members read season catalog" on public.license_seasons;
-create policy "Authenticated members read season catalog" on public.license_seasons for select to authenticated using (true);
