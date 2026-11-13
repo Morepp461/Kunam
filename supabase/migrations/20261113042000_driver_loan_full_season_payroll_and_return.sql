@@ -207,7 +207,7 @@ begin
       or p_loan_salary_share_percent is null
       or p_loan_salary_share_percent<0 or p_loan_salary_share_percent>100
       or mod(p_loan_salary_share_percent,10)<>0 then
-      raise exception 'Driver Loan wajib memiliki tanggal satu season penuh dan porsi gaji 0–100% dengan kelipatan 10%.';
+      raise exception 'Driver Loan wajib memiliki tanggal satu season penuh dan porsi gaji 0–100%% dengan kelipatan 10%%.';
     end if;
 
     select * into v_season from public.license_seasons
@@ -388,7 +388,7 @@ begin
     if v_new_type='loan' then
       if v_start is null or v_end is null or v_end<=v_start or v_share is null
         or v_share<0 or v_share>100 or mod(v_share,10)<>0 then
-        raise exception 'Counter Driver Loan wajib memiliki tanggal satu season penuh dan pembagian gaji kelipatan 10%.';
+        raise exception 'Counter Driver Loan wajib memiliki tanggal satu season penuh dan pembagian gaji kelipatan 10%%.';
       end if;
       select * into v_season from public.license_seasons
       where starts_on=v_start and ends_on=v_end
