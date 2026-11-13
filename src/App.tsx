@@ -12,6 +12,7 @@ import Stage5Panel from "./Stage5Panel";
 import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
 import AdminEconomyEngine from "./AdminEconomyEngine";
+import AdminDevelopmentShopSettings from "./AdminDevelopmentShopSettings";
 import AdminOperations from "./AdminOperations";
 import FIAOperations from "./FIAOperations";
 import MemberRaceCheckIn from "./MemberRaceCheckIn";
@@ -193,16 +194,6 @@ function SiteFooter(){
     <img className="footer-vreeo-logo" src="/assets/Untitled%20design_20261103_142659_0000.png" alt="Logo Vreeo"/>
     <h2>TENTANG VREEO</h2>
     <p>Komunitas game Android Indonesia yang menghadirkan beberapa event menarik.</p>
-    <div className="footer-directors">
-     <h2>DIRECTOR OF VREEO.ID</h2>
-     <nav aria-label="Director of Vreeo.id">
-      <a href="https://www.instagram.com/lllllaaaaa44444?rpxt=MXo5OGFyOWY5YXV2" target="_blank" rel="noopener noreferrer">Muhammad Ovella ↗</a>
-      <a href="https://www.instagram.com/pradana.3?psln=bWVkaGp6aWJuMG0=" target="_blank" rel="noopener noreferrer">Agung Pradana ↗</a>
-      <a href="https://www.instagram.com/alfredo_owenzaus?dlrf=MWh0d3F6czBwbXpxNw==" target="_blank" rel="noopener noreferrer">Muhammad Alfarel ↗</a>
-      <a href="https://www.instagram.com/liam_amir26?xtok=aXJhOG1vZHFldGs1" target="_blank" rel="noopener noreferrer">Liam Amir ↗</a>
-      <a href="https://www.instagram.com/_suhanda08?exln=dXp5MGIyaWN5dGgy" target="_blank" rel="noopener noreferrer">Suhanda Arbawi ↗</a>
-     </nav>
-    </div>
     <div className="footer-directors">
      <h2>DIRECTOR OF VREEO.ID</h2>
      <nav aria-label="Director of Vreeo.id">
