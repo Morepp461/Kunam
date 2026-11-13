@@ -117,7 +117,7 @@ begin
       coalesce((select avg(fs.final_position) from public.license_final_standings fs join public.license_season_divisions d on d.id=fs.season_division_id join public.members m on m.id=fs.member_id where d.season_id=v_latest and m.team_id=t.id),100) position,
       (select count(*) from public.caleris_achievements a where a.team_id=t.id) achievements,
       coalesce((select w.balance from public.economy_wallet_accounts w where w.team_id=t.id and w.account_kind='team' and w.is_active=true limit 1),0) wallet,
-      greatest(0,coalesce((select sum(case when tx.destination_account_id=w.id then tx.amount else -tx.amount end) from public.economy_transactions tx join public.economy_wallet_accounts w on w.team_id=t.id and w.account_kind='team' and (w.id=tx.source_account_id or w.id=tx.destination_account_id) where tx.event_type not in ('loan_disbursement','loan_repayment')),0)) cashflow
+      greatest(0,coalesce((select sum(case when tx.destination_account_id=w.id then tx.amount else -tx.amount end) from public.economy_transactions tx join public.economy_wallet_accounts w on w.team_id=t.id and w.account_kind='team' and (w.id=tx.source_account_id or w.id=tx.destination_account_id) where tx.event_type not in ('loan_disbursement','loan_repayment') and (v_latest is null or (tx.created_at >= (select starts_on::timestamptz from public.license_seasons where id=v_latest) and tx.created_at < ((select ends_on from public.license_seasons where id=v_latest)+1)::timestamptz))),0)) cashflow
     from public.teams t
   ) x;
 
