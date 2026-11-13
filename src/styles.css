@@ -282,3 +282,5 @@ body.light .site-footer .footer-note{color:#514a3d}
  .footer-directors nav a{font-size:12px}
  .footer-bottom{padding:16px 12px;font-size:9px;letter-spacing:.13em}
 }
+
+.required-label{display:inline-block;margin-left:7px;color:#d6b75e;font-size:.68rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase}.settings-field select{width:100%;min-height:48px;padding:12px 14px;border:1px solid var(--line,#555);border-radius:8px;background:rgba(8,9,12,.72);color:inherit;font:inherit}.settings-field select:disabled{opacity:.55;cursor:not-allowed}
