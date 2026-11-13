@@ -261,7 +261,6 @@ export default function Stage5Panel({ session, fallback }: Props) {
   };
 
   const heading = (eyebrow: string, title: string, desc: string) => <header className="page-heading"><span className="section-eyebrow">{eyebrow}</span><h1 className="page-title">{title}</h1><p className="page-description">{desc}</p></header>;
-  const refreshButton = <button className="s5-refresh" onClick={() => void refresh()} disabled={loading}><RefreshCw size={14}/> Refresh</button>;
   const standingsRows = driverRows.map((d: Row, i: number) => [<b className="s5-rank">{i + 1}</b>, <span className="s5-driver"><b>{d.character_name || "Driver"}</b><small>{d.license || "No licence"}</small></span>, <span className="s5-team-cell">{d.profile?.logo_url && <img src={d.profile.logo_url} alt="" />}<span>{d.team?.name || "Independent"}</span></span>, <strong>{d.points.toLocaleString("id-ID")}</strong>]);
   const teamStandingsRows = teamRows.map((t: Row, i: number) => [<b className="s5-rank">{i + 1}</b>, <span className="s5-team-cell">{t.profile?.logo_url && <img src={t.profile.logo_url} alt="" />}<span>{t.name}</span></span>, <strong>{t.points.toLocaleString("id-ID")}</strong>]);
   const statTiles = [["RACE WIN", stats.wins, Trophy], ["POLE", stats.poles, Flag], ["FINISH", stats.finishes, CheckCircle2], ["DNF", stats.dnf, Activity]] as const;
