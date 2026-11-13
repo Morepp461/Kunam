@@ -195,7 +195,8 @@ def main():
     assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
-    assert '(isAdmin||panelAccess.fia_panel)' in app
+    assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
+    assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to="/admin/license-engine"' in app, "License Scoring Engine must be Admin-only"
 
     cash_loan_migration = ROOT / "supabase/migrations/20261112173057_economy_cash_loan_engine.sql"
     cash_loan_component = ROOT / "src/CashLoanCentre.tsx"
