@@ -161,4 +161,121 @@ left join public.caleris_configurations c on c.category='economy' and c.config_k
 revoke all on public.caleris_team_takeover_offer_bounds from public,anon,authenticated,service_role;
 grant select on public.caleris_team_takeover_offer_bounds to authenticated;
 
+
+-- Public market directory exposes the latest valuation for all teams so buyers
+-- can calculate the configured offer bounds even when a listing is closed.
+create or replace view public.caleris_team_directory
+with (security_barrier=true) as
+select t.id,t.name,t.division_key,t.takeover_listed,
+ (select v.total_valuation from public.caleris_team_valuations v
+  where v.team_id=t.id order by v.assessed_at desc,v.id desc limit 1) as latest_valuation
+from public.teams t;
+revoke all on public.caleris_team_directory from public,anon,authenticated,service_role;
+grant select on public.caleris_team_directory to authenticated;
+
+create or replace function public.member_start_team_takeover(
+  p_target_team_id uuid,
+  p_offer_amount numeric,
+  p_note text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_actor public.members%rowtype;
+  v_target public.teams%rowtype;
+  v_seller public.members%rowtype;
+  v_valuation public.caleris_team_valuations%rowtype;
+  v_range public.caleris_configurations%rowtype;
+  v_min numeric;
+  v_max numeric;
+  v_id uuid;
+begin
+  select m.* into v_actor
+  from public.profiles p
+  join public.members m on m.id=p.member_id
+  where p.user_id=(select auth.uid())
+  for update of m;
+
+  if not found or (v_actor.role is not null and v_actor.role not in ('Driver','FIA')) then
+    raise exception 'Pembeli hanya dapat berstatus Public Member, Driver, atau FIA.';
+  end if;
+
+  if p_target_team_id is null then raise exception 'Tim target wajib dipilih.'; end if;
+  if p_offer_amount is null or p_offer_amount<=0 or p_offer_amount<>round(p_offer_amount,2) then
+    raise exception 'Nominal penawaran tidak valid.';
+  end if;
+
+  perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended(p_target_team_id::text,0));
+
+  select * into v_target
+  from public.teams
+  where id=p_target_team_id
+  for update;
+
+  if not found then raise exception 'Tim target tidak sedang membuka Take Over.'; end if;
+
+  select * into v_seller
+  from public.members
+  where team_id=p_target_team_id and role='Owner'
+  order by id
+  limit 1
+  for update;
+
+  if not found then raise exception 'Tim target belum memiliki Team Owner.'; end if;
+  if v_seller.id=v_actor.id then raise exception 'Tidak dapat mengambil alih tim sendiri.'; end if;
+
+  select * into v_valuation
+  from public.caleris_team_valuations
+  where team_id=p_target_team_id
+  order by assessed_at desc,id desc
+  limit 1;
+
+  if not found then raise exception 'Tim target belum memiliki valuation snapshot.'; end if;
+
+  select * into v_range
+  from public.caleris_configurations
+  where category='economy'
+    and config_key='team-takeover-valuation-range'
+    and is_active;
+
+  v_min:=nullif(v_range.payload->>'minimum_percent','')::numeric;
+  v_max:=nullif(v_range.payload->>'maximum_percent','')::numeric;
+
+  if v_min is null or v_max is null or v_min<0 or v_max<v_min then
+    raise exception 'Admin belum mengatur rentang valuasi Take Over.';
+  end if;
+
+  if p_offer_amount<v_valuation.total_valuation*v_min/100
+    or p_offer_amount>v_valuation.total_valuation*v_max/100 then
+    raise exception 'Penawaran harus berada dalam rentang valuasi yang dikonfigurasi Admin (%–% dari valuasi).',v_min,v_max;
+  end if;
+
+  if exists(
+    select 1 from public.caleris_team_takeovers
+    where target_team_id=p_target_team_id
+      and status in ('offered','negotiating','seller_accepted','pending_fia','approved')
+  ) then
+    raise exception 'Tim ini sudah memiliki negosiasi Take Over yang berjalan.';
+  end if;
+
+  insert into public.caleris_team_takeovers(
+    target_team_id,buyer_member_id,seller_member_id,valuation_id,status
+  )
+  values(p_target_team_id,v_actor.id,v_seller.id,v_valuation.id,'offered')
+  returning id into v_id;
+
+  insert into public.caleris_team_takeover_offers(
+    takeover_id,offered_by_member_id,offered_amount,note
+  )
+  values(v_id,v_actor.id,p_offer_amount,nullif(trim(p_note),''));
+
+  return v_id;
+end;
+$;
+
+
+
 commit;
