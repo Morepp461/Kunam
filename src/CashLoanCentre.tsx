@@ -23,8 +23,8 @@ export default function CashLoanCentre({session}:{session:Session}){
   if(!supabase){setLoading(false);setNotice({kind:"error",text:"Koneksi Supabase belum tersedia."});return}
   setLoading(true);
   const [p,l]=await Promise.all([
-   supabase.functions.invoke("economy-workflows",{body:{action:"cash_loan_preview"}}),
-   supabase.from("economy_cash_loans").select("id,principal,tenor_seasons,total_interest_rate,interest_amount,total_due,amount_repaid,status,created_at,paid_at").eq("profile_user_id",session.user.id).order("created_at",{ascending:false})
+   supabase.functions.invoke("economy-workflows",{body:{action:loanMode==="team"?"team_cash_loan_preview":"cash_loan_preview"}}),
+   supabase.from("economy_cash_loans").select("id,principal,tenor_seasons,total_interest_rate,interest_amount,total_due,amount_repaid,status,created_at,paid_at").eq("profile_user_id",session.user.id).eq("loan_type",loanMode).order("created_at",{ascending:false})
   ]);
   if(p.error||p.data?.error){setNotice({kind:"error",text:p.data?.error||p.error?.message||"Gagal memuat perhitungan pinjaman."});setPreview(null)}
   else setPreview(p.data?.result as Preview);
