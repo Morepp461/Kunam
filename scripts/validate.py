@@ -148,7 +148,7 @@ def main():
     for card_title in ["Current Event", "Statistik", "Informasi akun", "Informasi karakter", "Detail kontrak"]:
         assert card_title in app, f"Global search card header missing: {card_title}"
     edge = ROOT / "supabase/functions/complete-paddock-access/index.ts"
-    assert edge.is_file() and "siteverify" in edge.read_text(encoding="utf-8")
+    assert edge.is_file() and "turnstile" not in edge.read_text(encoding="utf-8").lower() and "cloudflare" not in edge.read_text(encoding="utf-8").lower()
     economy_migration = ROOT / "supabase/migrations/20261112135818_economy_engine_core.sql"
     assert economy_migration.is_file(), "Missing Economy Engine migration"
     economy_sql = economy_migration.read_text(encoding="utf-8")
