@@ -16,9 +16,17 @@ gateway_sql = gateway_migration.read_text(encoding="utf-8").lower()
 assert "tax_scope text not null default 'member'" in sql
 assert "tax_scope='member'" in sql and "tax_scope='team'" in sql
 assert "caleris_tax_rules_wealth_scope_threshold_unique" in sql
+aggregation_migration = MIGRATIONS / "20261113035234_wealth_tax_personal_wallet_aggregation_and_lock_order.sql"
+assert aggregation_migration.is_file(), "Personal-wallet aggregation and lock-order migration is missing"
+aggregation_sql = aggregation_migration.read_text(encoding="utf-8").lower()
+assert "w.account_kind='public_member'" in aggregation_sql
+assert "caleris_tax_rules_driver_transfer_member_scope" in aggregation_sql
+assert "order by w.id" in aggregation_sql and "for update" in aggregation_sql
 
 # Member wealth aggregates personal role wallets; team wealth uses only Team Wallet.
 assert "w.account_kind in ('driver','team_owner')" in sql
+assert "w.account_kind='public_member'" in sql
+assert "p.member_id" in sql
 assert "sum(w.balance)" in sql
 assert "w.account_kind='team'" in sql
 assert "v_member.total_balance>r.minimum_base" in sql
@@ -35,6 +43,7 @@ assert "progressive" not in sql
 assert "private.post_economy_transaction" in sql
 assert "'wealth-tax:'" in sql
 assert "v_total<v_remaining" in sql
+assert "order by w.id" in sql and "for update" in sql
 assert "caleris_wealth_tax_collections_v2" in sql
 assert "enable row level security" in sql
 
