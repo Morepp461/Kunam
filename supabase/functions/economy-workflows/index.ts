@@ -27,6 +27,16 @@ Deno.serve(async(req:Request)=>{
    const {data,error}=await admin.rpc("member_apply_cash_loan",{p_actor_id:actor,p_amount:amount,p_tenor_seasons:tenor});
    if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
   }
+  if(action==="team_cash_loan_preview"){
+   const {data,error}=await admin.rpc("member_team_cash_loan_preview",{p_actor_id:actor});if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
+  }
+  if(action==="apply_team_cash_loan"){
+   const amount=typeof body.amount==="number"?body.amount:Number.NaN,tenor=typeof body.tenorSeasons==="number"?body.tenorSeasons:0;
+   if(!Number.isFinite(amount)||amount<=0||amount>999999999999999999.99||Number(amount.toFixed(2))!==amount)return respond(400,{error:"Nominal pinjaman tidak valid."});
+   if(!Number.isInteger(tenor)||tenor<1||tenor>4)return respond(400,{error:"Tenor hanya 1 sampai 4 season."});
+   const {data,error}=await admin.rpc("member_apply_team_cash_loan",{p_actor_id:actor,p_amount:amount,p_tenor_seasons:tenor});
+   if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
+  }
   return respond(400,{error:"Unknown Economy workflow action."});
  }catch(error){console.error("Economy workflow gateway error:",error);return respond(500,{error:"Unexpected Economy workflow error."});}
 });
