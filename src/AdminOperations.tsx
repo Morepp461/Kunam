@@ -73,10 +73,11 @@ export default function AdminOperations({session}:{session:Session}){
   setSaving(false);
   if(error){setNotice(error.message);return}
   const result=(data as {result?:Record<string,unknown>})?.result||{};
-  setNotice(action==="wealth_tax_assess"
+  const message=action==="wealth_tax_assess"
    ? "Assessment dibuat: "+String(result.member_assessments_created??0)+" member, "+String(result.team_assessments_created??0)+" tim."
-   : "Penagihan selesai: "+String(result.paid??0)+" lunas, "+String(result.insufficient_balance??0)+" saldo belum cukup, "+String(result.skipped??0)+" dilewati.");
+   : "Penagihan selesai: "+String(result.paid??0)+" lunas, "+String(result.insufficient_balance??0)+" saldo belum cukup, "+String(result.skipped??0)+" dilewati.";
   await refresh();
+  setNotice(message);
  };
 
  const savePrize=async(e:FormEvent)=>{
