@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Link, useLocation } from "react-router-dom";
-import { Activity, CheckCircle2, Flag, Medal, RefreshCw, Search, Trophy, Wallet } from "lucide-react";
+import { Activity, CheckCircle2, Flag, Medal, Search, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
 
 type Props = { session: Session; fallback: ReactNode };
@@ -301,6 +301,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
 
 
   if ((isDriver || isTeam) && tab === "appeal") {
+    if (isTeam && member?.role !== "Owner") return <section className="workspace s5-workspace">{heading("TEAM PANEL", "Appeal", "Pengajuan banding atas sanksi tim.")}<Empty>Hanya Team Owner yang dapat mengirim banding untuk tim.</Empty></section>;
     return <section className="workspace s5-workspace">{heading(isDriver?"DRIVER PANEL · FIA":"TEAM PANEL · FIA","Appeal","Ajukan banding atas sanksi resmi yang tercatat untuk akun atau tim ini.")}<Card title="Submit Appeal" eyebrow="FORMAL REVIEW">{filteredFines.length ? <form className="s5-form" onSubmit={sendAppeal}><Field label="Punishment"><select value={form.fine_id||""} onChange={e=>set("fine_id",e.target.value)} required><option value="">Pilih sanksi</option>{filteredFines.map((f: Row)=><option key={f.id} value={f.id}>{money(Number(f.amount))} · {f.reason}</option>)}</select></Field><Field label="Appeal statement"><textarea rows={5} maxLength={3000} value={form.appeal_statement||""} onChange={e=>set("appeal_statement",e.target.value)} required placeholder="Jelaskan alasan dan dasar banding."/></Field><button className="s5-primary" disabled={saving}>{saving?"Mengirim...":"Kirim banding ke FIA"}</button></form> : <Empty>Tidak ada sanksi yang tersedia untuk diajukan banding, atau seluruh sanksi sudah memiliki banding aktif.</Empty>}</Card><Card title="Appeal History" eyebrow="SUBMISSION STATUS"><Table headers={["Submitted","Punishment","Status","FIA Decision"]} rows={ownAppeals.map((a: Row)=>[dateLabel(a.submitted_at),money(Number((data.fines||[]).find((f: Row)=>f.id===a.fine_id)?.amount||0)),a.status.toUpperCase(),a.fia_decision||"Menunggu keputusan"])}/></Card></section>;
   }
 
@@ -329,7 +330,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
   if (isTeam && tab === "scout") {
     const query = String(form.scout_query||"");
     const scoutRows = members.filter((m: Row)=>m.role==="Driver"&&m.id!==member?.id&&String(m.character_name||"").toLowerCase().includes(query.toLowerCase())).map((m: Row)=>({ ...m, team:teamOf(m.team_id), attributes:(data.attributes||[]).find((a: Row)=>a.member_id===m.id)?.attributes||{}, contracted:(data.contracts||[]).some((c: Row)=>c.member_id===m.id&&c.status==="active"&&c.season_id===activeSeasonId)}));
-    return <section className="workspace s5-workspace">{heading("TEAM PANEL · RECRUITMENT INTELLIGENCE", "Scout", "Pantau atribut dan status kontrak driver dari seluruh kompetisi.")}<Card title="Driver Scouting" eyebrow="FOOTBALL MANAGER-STYLE DATABASE"><label className="s5-search"><Search size={15}/><input value={query} onChange={e=>set("scout_query",e.target.value)} placeholder="Cari nama driver"/></label><Table headers={["Driver","Team","Licence","Availability","Average Attribute"]} rows={scoutRows.map((d: Row)=>{const vals=Object.values(d.attributes).map(Number).filter(Number.isFinite);const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;return [d.character_name||"Driver",d.team?.name||"Independent",d.license||"—",d.contracted?"Under Contract":"Check Contract",avg===null?"No attribute data":avg+"/100"]})}/></Card></section>;
+    return <section className="workspace s5-workspace">{heading("TEAM PANEL · RECRUITMENT INTELLIGENCE", "Scout", "Pantau atribut dan status kontrak driver dari seluruh kompetisi.")}<Card title="Driver Scouting" eyebrow="FOOTBALL MANAGER-STYLE DATABASE"><label className="s5-search"><Search size={15}/><input value={query} onChange={e=>set("scout_query",e.target.value)} placeholder="Cari nama driver"/></label><Table headers={["Driver","Team","Licence","Availability","Average Attribute"]} rows={scoutRows.map((d: Row)=>{const vals=Object.values(d.attributes).map(Number).filter(Number.isFinite);const avg=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length):null;return [d.character_name||"Driver",d.team?.name||"Independent",d.license||"—",!d.team_id?"Free Agent":d.contracted?"Under Contract":"Assigned to Team",avg===null?"No attribute data":avg+"/100"]})}/><p className="s5-footnote">Status ketersediaan menggunakan penempatan tim yang tercatat. Detail kontrak dan gaji tim lain tidak dibuka ke Scout.</p></Card></section>;
   }
 
   if (isTeam && tab === "appeal" && member?.role !== "Owner") return <section className="workspace s5-workspace">{heading("TEAM PANEL", "Appeal", "Pengajuan banding atas sanksi tim.")}<Empty>Hanya Team Owner yang dapat mengirim banding untuk tim.</Empty></section>;
