@@ -3,14 +3,14 @@ begin;
 create or replace view public.caleris_driver_market_directory
 with (security_barrier=true) as
 select m.id,m.character_name,m.role,m.team_id,m.license,p.nationality,
- p.public_member_id,coalesce(a.attributes,'{}'::jsonb) as attributes,
+ coalesce(a.attributes,'{}'::jsonb) as attributes,
  c.ends_on as contract_ends_on,
  case
   when m.team_id is null then 'Free Agent'
   when n.move_type='loan' and n.status in ('offered','negotiating','seller_accepted','pending_fia','approved_waiting_window','approved','loan_active') then 'Loan List'
   when n.move_type='transfer' and n.status in ('offered','negotiating','seller_accepted','pending_fia','approved_waiting_window','approved') then 'Transfer List'
   else 'Under Contract'
- end as market_status
+ end as market_status,p.public_member_id
 from public.members m
 left join public.profiles p on p.member_id=m.id
 left join public.caleris_driver_attributes a on a.member_id=m.id
