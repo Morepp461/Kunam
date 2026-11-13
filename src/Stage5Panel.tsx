@@ -77,7 +77,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
       supabase.from("season_period_rounds").select("id,period_id,season_division_id,round_id")
     ]);
     const errors = [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ].map(x => x.error).filter(Boolean);
-    if (errors.length) setNotice(errors[0].message);
+    if (errors.length && errors[0]) setNotice(errors[0].message);
     let ownProfile = (p.data || null) as Row | null;
     if (ownProfile?.avatar_path) {
       const signed = await supabase.storage.from("profile-avatars").createSignedUrl(ownProfile.avatar_path, 3600);
@@ -275,7 +275,6 @@ export default function Stage5Panel({ session, fallback }: Props) {
 
   if (isDriver && tab === "character") {
     const team = teamOf(member?.team_id);
-    const tProfile = teamProfile(member?.team_id);
     const statsAll = {
       wins: (data.raceResults || []).filter((r: Row) => r.winner_member_id === member?.id).length,
       poles: (data.raceResults || []).filter((r: Row) => r.pole_member_id === member?.id).length,
