@@ -35,6 +35,7 @@ def main():
         "20261113055954_stage5_regulation_announcement_sync.sql",
         "20261113060112_stage5_rpc_invoker_security.sql",
         "20261113060125_stage5_team_roster_rls_guard.sql",
+        "20261113060333_stage5_calendar_policy_cleanup.sql",
     ]
     for migration in history_aligned_migrations:
         assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
