@@ -22,10 +22,14 @@ export default function CashLoanCentre({session}:{session:Session}){
  const refresh=useCallback(async()=>{
   if(!supabase){setLoading(false);setNotice({kind:"error",text:"Koneksi Supabase belum tersedia."});return}
   setLoading(true);
-  const [p,l]=await Promise.all([
-   supabase.functions.invoke("economy-workflows",{body:{action:loanMode==="team"?"team_cash_loan_preview":"cash_loan_preview"}}),
-   supabase.from("economy_cash_loans").select("id,principal,tenor_seasons,total_interest_rate,interest_amount,total_due,amount_repaid,status,created_at,paid_at").eq("profile_user_id",session.user.id).eq("loan_type",loanMode).order("created_at",{ascending:false})
-  ]);
+  const p=await supabase.functions.invoke("economy-workflows",{body:{action:loanMode==="team"?"team_cash_loan_preview":"cash_loan_preview"}});
+  const previewResult=p.data?.result as Preview|undefined;
+  let loanQuery=supabase.from("economy_cash_loans").select("id,principal,tenor_seasons,total_interest_rate,interest_amount,total_due,amount_repaid,status,created_at,paid_at").eq("loan_type",loanMode).order("created_at",{ascending:false});
+  if(loanMode==="team"){
+   if(previewResult?.team_id)loanQuery=loanQuery.eq("team_id",previewResult.team_id);
+   else loanQuery=loanQuery.eq("team_id","00000000-0000-0000-0000-000000000000");
+  }else loanQuery=loanQuery.eq("profile_user_id",session.user.id);
+  const l=await loanQuery;
   if(p.error||p.data?.error){setNotice({kind:"error",text:p.data?.error||p.error?.message||"Gagal memuat perhitungan pinjaman."});setPreview(null)}
   else setPreview(p.data?.result as Preview);
   if(l.error)setNotice({kind:"error",text:l.error.message});
