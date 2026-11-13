@@ -39,6 +39,3 @@ create policy driver_development_history_read on public.caleris_driver_developme
  exists(select 1 from public.site_admins a where a.user_id=auth.uid())
  or exists(select 1 from public.profiles p where p.user_id=auth.uid() and p.member_id=caleris_driver_development_history.member_id)
 );
-
--- Make the valuation engine callable only by authenticated admins.
-drop function if exists public.admin_assess_team_valuation(uuid,numeric,text);
