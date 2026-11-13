@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowDownLeft, ArrowUpRight, Banknote, CheckCircle2, Clock3,
 import { Link } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
+import AdminDevelopmentShopSettings from "./AdminDevelopmentShopSettings";
 
 type WalletAccount = { id: string; account_kind: string; profile_user_id: string | null; member_id: string | null; team_id: string | null; balance: number; is_active: boolean; display_name: string };
 type Transaction = { id: string; event_type: string; amount: number; description: string; created_at: string; source_account_id: string; destination_account_id: string; source_name: string; destination_name: string; is_reversed: boolean };
@@ -206,6 +207,8 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
       <div><span className="section-eyebrow">ADMIN CONTROL · FINANCIAL CORE</span><h1>Economy Engine</h1><p>Wallet, sumber dana, transaksi, pajak, denda, dan rekonsiliasi ¢p.</p></div>
       <span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span>
     </header>
+
+    <AdminDevelopmentShopSettings />
 
     <div className="economy-summary-grid">
       <article className="economy-summary-card bank"><span><Banknote size={17}/> VreeoBank</span><strong>{bank ? money(bank.balance) : "—"}</strong><small>Sumber hadiah, check-in, dan pembayaran resmi</small></article>
