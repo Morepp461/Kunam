@@ -143,6 +143,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
     if (!divisionFilter) return true;
     return String(teamOf(teamId)?.division_key || "").toLowerCase().includes(divisionFilter);
   };
+  const scopedRoundIds = (data.activeRounds || []).filter((r: Row) => !divisionFilter || String((data.activeDivisions || []).find((d: Row) => d.id === r.season_division_id)?.division_key || "").toLowerCase().includes(divisionFilter)).map((r: Row) => r.id);
   const roundPoints = useMemo(() => {
     const map = new Map<string, number>();
     (data.roundPoints || []).forEach((r: Row) => {
@@ -157,7 +158,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
     poles: (data.raceResults || []).filter((r: Row) => r.pole_member_id === m.id && (data.activeRoundIds || []).includes(r.round_id)).length,
     finishes: (data.resultEntries || []).filter((r: Row) => r.member_id === m.id && r.finish_status === "finished" && (data.activeRoundIds || []).includes(r.round_id)).length,
     dnf: (data.resultEntries || []).filter((r: Row) => r.member_id === m.id && r.finish_status === "dnf" && (data.activeRoundIds || []).includes(r.round_id)).length
-  })).sort((a: Row, b: Row) => b.points - a.points || a.wins - b.wins), [members, data, roundPoints, divisionFilter]);
+  })).sort((a: Row, b: Row) => b.points - a.points || a.wins - b.wins), [members, data, roundPoints, divisionFilter, scopedRoundIds]);
   const teamRows = useMemo(() => teams.filter((t: Row) => !divisionFilter || String(t.division_key || "").toLowerCase().includes(divisionFilter)).map((t: Row) => {
     const drivers = driverRows.filter((d: Row) => d.team_id === t.id);
     return { ...t, profile: teamProfile(t.id), drivers, points: drivers.reduce((n: number, d: Row) => n + d.points, 0), wins: drivers.reduce((n: number, d: Row) => n + d.wins, 0), poles: drivers.reduce((n: number, d: Row) => n + d.poles, 0) };
@@ -173,7 +174,6 @@ export default function Stage5Panel({ session, fallback }: Props) {
     });
     return [...map.values()].sort((a: Row, b: Row) => b.points - a.points);
   }, [teamRows, data.teamEngines]);
-  const scopedRoundIds = (data.activeRounds || []).filter((r: Row) => !divisionFilter || String((data.activeDivisions || []).find((d: Row) => d.id === r.season_division_id)?.division_key || "").toLowerCase().includes(divisionFilter)).map((r: Row) => r.id);
   const stats = useMemo(() => ({
     wins: (data.raceResults || []).filter((r: Row) => (data.activeRoundIds || []).includes(r.round_id)).length,
     poles: (data.raceResults || []).filter((r: Row) => (data.activeRoundIds || []).includes(r.round_id) && r.pole_member_id).length,
