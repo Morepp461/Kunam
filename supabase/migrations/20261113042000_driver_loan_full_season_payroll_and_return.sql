@@ -82,7 +82,7 @@ create or replace function private.guard_economy_payroll_claim_split()
 returns trigger
 language plpgsql
 set search_path=''
-as $
+as $payroll_guard$
 begin
   if tg_op='DELETE' then
     raise exception 'Payroll claim splits cannot be deleted.';
@@ -102,7 +102,7 @@ begin
   end if;
   return new;
 end;
-$;
+$payroll_guard$;
 
 drop trigger if exists economy_payroll_claim_split_guard on public.economy_payroll_claim_splits;
 create trigger economy_payroll_claim_split_guard
