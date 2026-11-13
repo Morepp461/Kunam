@@ -32,6 +32,7 @@ def main():
         "20261113055303_stage5_panel_operations.sql",
         "20261113055514_stage5_season_catalog_read.sql",
         "20261113055712_stage5_race_classification_rpc.sql",
+        "20261113055954_stage5_regulation_announcement_sync.sql",
     ]
     for migration in history_aligned_migrations:
         assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
@@ -58,7 +59,7 @@ def main():
         assert fragment in query_sql, f"Economy query hardening missing: {fragment}"
     stage5 = (ROOT / "src/Stage5Panel.tsx").read_text(encoding="utf-8")
     stage5_css = (ROOT / "src/stage5-panel.css").read_text(encoding="utf-8")
-    for fragment in ["driver-panel", "career-history", "financial-centre", "team-summary", "driver-registration", "place-job-advert", "caleris_announcements", "caleris_regulations", "caleris_appeals", "Engine Ranking", "Rookie of the Season"]:
+    for fragment in ["driver-panel", "career-history", "financial-centre", "team-summary", "driver-registration", "place-job-advert", "caleris_announcements", "caleris_regulations", "caleris_appeals", "Engine Ranking", "Rookie of the Season", "fia_publish_regulation"]:
         assert fragment in stage5, f"Stage 5 panel missing: {fragment}"
     for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
         assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
