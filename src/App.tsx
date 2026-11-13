@@ -344,8 +344,7 @@ function Dashboard({session,profile,profileReady}:{session:Session;profile:Accou
       const [entriesQ,pointsQ,winsQ,walletsQ]=await Promise.all([
         roundIds.length?supabase.from("caleris_race_result_entries").select("round_id").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
         roundIds.length?supabase.from("license_round_standings").select("points_total").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        roundIds.length?supabase.from("caleris_race_results").select("id").eq("winner_member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        supabase.from("economy_wallet_accounts").select("balance").eq("member_id",ownMember.id).eq("is_active",true)
+        roundIds.length?supabase.from("caleris_race_results").select("id").eq("winner_member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
       ]);
       const races=new Set((entriesQ.data||[]).map((row:any)=>row.round_id)).size;
       const points=(pointsQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
@@ -358,8 +357,7 @@ function Dashboard({session,profile,profileReady}:{session:Session;profile:Accou
     }else if(ownMember.role==="Owner"&&ownMember.team_id){
       const [teamMembersQ,entriesQ,walletQ]=await Promise.all([
         supabase.from("members").select("id").eq("team_id",ownMember.team_id).eq("role","Driver"),
-        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id,member_id").eq("team_id",ownMember.team_id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        supabase.from("economy_wallet_accounts").select("balance").eq("team_id",ownMember.team_id).eq("account_kind","team").eq("is_active",true)
+        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id,member_id").eq("team_id",ownMember.team_id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
       ]);
       const teamMemberIds=(teamMembersQ.data||[]).map((row:any)=>row.id);
       const teamEntries=entriesQ.data||[];
@@ -367,7 +365,6 @@ function Dashboard({session,profile,profileReady}:{session:Session;profile:Accou
       const teamEntryKeys=new Set(teamEntries.map((row:any)=>row.round_id+":"+row.member_id));
       const teamPoints=(roundStandingsQ.data||[]).filter((row:any)=>teamEntryKeys.has(row.round_id+":"+row.member_id)).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
       const raceStarts=new Set(teamEntries.map((row:any)=>row.round_id)).size;
-      const walletBalance=(walletQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0);
       const winnersQ=roundIds.length?await supabase.from("caleris_race_results").select("round_id,winner_member_id").in("round_id",roundIds):{data:[]};
       const teamWins=(winnersQ.data||[]).filter((winner:any)=>teamEntries.some((entry:any)=>entry.round_id===winner.round_id&&entry.member_id===winner.winner_member_id)).length;
       if(active){setStatsScope("STATISTIK TIM");setStatCards([
