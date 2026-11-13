@@ -153,7 +153,7 @@ The current schema does not allow authenticated users to update `profiles.member
 
 The Admin Control → Operations Suite workspace is introduced at `/admin/operations`. It provides editable records for:
 
-- **Tax Rules:** Admin-configurable Wealth Tax thresholds and rates using flat calculation only, plus Driver Transfer Tax rules. The highest eligible threshold selects one rate applied to the full taxable base. No tax thresholds or rates are preloaded. Wealth Tax assessment and collection remain disabled until the taxable-wealth basis is confirmed.
+- **Tax Rules:** Admin-configurable Driver Transfer Tax plus two independent Wealth Tax scopes: Member and Team. Each Wealth Tax scope requires exactly three active tiers and applies the single highest eligible flat rate to the full taxable base (not progressive). No thresholds or rates are preloaded. Admin manually generates and collects Wealth Tax assessments per season through the Economy Engine.
 - **Race Development Rewards:** per-season-division settings for winner and pole-sitter DDP awards and their respective teams' TDP awards. DDP/TDP use separate immutable development-token ledgers and never affect ¢p wallets. Values start at zero and inactive.
 - **Sponsor Pool:** Admin-managed sponsor records and optional budgets. Sponsor names and commercial terms are not invented or preloaded.
 - **Team Valuation:** Admin-entered component snapshots for assets, development parts, history, achievements, and financial health. Total valuation is the sum of those entered component values; no hidden weights are applied.
@@ -164,10 +164,10 @@ The database foundation also introduces operational records for sponsorship offe
 
 - `20261112184424_caleris_operations_suite_foundation.sql` — operations tables, token ledgers, sponsor pool, tax rules, wealth assessments, transfer/takeover records, affiliations, valuation snapshots, fines, and member race check-ins.
 - `20261112184428_caleris_operations_admin_policies.sql` — Admin-only write policies for editable tax rules, race reward settings, sponsor pool, and valuation snapshots.
-- `20261112184433_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP award, Wealth Tax assessment/collection guardrails (disabled pending taxable-base decision), and FIA fine posting workflows.
+- `20261112184433_caleris_operations_workflows.sql` — validated FIA race-result/DDP-TDP awards, initial Wealth Tax guardrails later completed by the Stage 5 ledger migrations, and FIA fine posting workflows.
 - `20261112184437_all_role_race_checkin.sql` — shared all-role race attendance, Driver-only license score integration, configurable reward payout, and pending reward processing.
-- `20261112184440_wealth_tax_automatic_assessment.sql` — reserved migration; annual assessment is deferred until taxable-wealth basis is confirmed.
-- `20261112184444_wealth_tax_offseason_scheduler.sql` — reserved migration; no cron job is installed while Wealth Tax basis remains undecided.
+- `20261112184440_wealth_tax_automatic_assessment.sql` — reserved and not applied; Wealth Tax is intentionally run manually per season.
+- `20261112184444_wealth_tax_offseason_scheduler.sql` — reserved and not applied; no automatic offseason Wealth Tax cron job is enabled.
 - `20261112184449_team_affiliation_workflows.sql` — cross-tier one-affiliate request, accept/reject, and termination RPCs.
 - `20261112184453_admin_team_division_assignment.sql` — Admin assignment of team division keys used by affiliation validation.
 - `20261112184457_driver_transfer_workflows.sql` — Driver negotiation, counter limits, FIA review, transfer tax, transfer-window queue, and scheduled execution.
