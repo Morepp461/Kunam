@@ -20,13 +20,13 @@ aggregation_migration = MIGRATIONS / "20261113035234_wealth_tax_personal_wallet_
 assert aggregation_migration.is_file(), "Personal-wallet aggregation and lock-order migration is missing"
 aggregation_sql = aggregation_migration.read_text(encoding="utf-8").lower()
 assert "w.account_kind='public_member'" in aggregation_sql
+assert "p.member_id" in aggregation_sql
 assert "caleris_tax_rules_driver_transfer_member_scope" in aggregation_sql
+assert "v_total<v_remaining" in aggregation_sql
 assert "order by w.id" in aggregation_sql and "for update" in aggregation_sql
 
 # Member wealth aggregates personal role wallets; team wealth uses only Team Wallet.
 assert "w.account_kind in ('driver','team_owner')" in sql
-assert "w.account_kind='public_member'" in sql
-assert "p.member_id" in sql
 assert "sum(w.balance)" in sql
 assert "w.account_kind='team'" in sql
 assert "v_member.total_balance>r.minimum_base" in sql
@@ -37,14 +37,12 @@ assert "order by r.minimum_base desc" in sql
 assert "round(v_member.total_balance*v_rule.rate_percent/100,2)" in sql
 assert "round(v_team.total_balance*v_rule.rate_percent/100,2)" in sql
 assert "progressive" not in sql
-assert "v_member_rule_count<>3 or v_team_rule_count<>3" in sql
-assert "lag(r.rate_percent)" in sql
-assert "rate_percent<=tiers.previous_rate" in sql
 three_tier_migration = MIGRATIONS / "20261113035324_wealth_tax_exact_three_tier_validation.sql"
 assert three_tier_migration.is_file(), "Three-tier validation migration is missing"
 three_tier_sql = three_tier_migration.read_text(encoding="utf-8").lower()
 assert "v_member_rule_count<>3 or v_team_rule_count<>3" in three_tier_sql
 assert "lag(r.rate_percent)" in three_tier_sql
+assert "rate_percent<=tiers.previous_rate" in three_tier_sql
 
 # Collection is ledger-backed, idempotent, split across member wallets, and
 # checks total available balance before posting any debit.
