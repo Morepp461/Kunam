@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Activity, CheckCircle2, Flag, Medal, Search, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
 
-type Props = { session: Session; fallback: ReactNode };
+type Props = { session: Session; fallback: ReactNode; isAdmin?: boolean };
 type Row = Record<string, any>;
 const money = (n: number) => "¢p " + Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const dateLabel = (v?: string | null) => v ? new Date(v + (v.length === 10 ? "T00:00:00" : "")).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "Belum diatur";
@@ -23,7 +23,7 @@ const Empty = ({ children = "Belum ada data yang dipublikasikan." }: { children?
 const Table = ({ headers, rows, empty = "Belum ada data." }: { headers: string[]; rows: ReactNode[][]; empty?: string }) => <div className="s5-table-wrap"><table className="s5-table"><thead><tr>{headers.map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.length ? rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>) : <tr><td colSpan={headers.length}><Empty>{empty}</Empty></td></tr>}</tbody></table></div>;
 const Field = ({ label, children }: { label: string; children: ReactNode }) => <label className="s5-field"><span>{label}</span>{children}</label>;
 
-export default function Stage5Panel({ session, fallback }: Props) {
+export default function Stage5Panel({ session, fallback, isAdmin = false }: Props) {
   const location = useLocation();
   const parts = location.pathname.split("/").filter(Boolean);
   const group = parts[0] || "";
