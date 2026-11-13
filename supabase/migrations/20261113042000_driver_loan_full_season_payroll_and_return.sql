@@ -106,7 +106,7 @@ alter table public.economy_payroll_claim_splits enable row level security;
 revoke all on public.economy_payroll_claim_splits from public,anon;
 grant select on public.economy_payroll_claim_splits to authenticated;
 
-create or replace function private.can_read_payroll_claim(p_claim_id uuid,p_origin_team_id uuid default null)
+create or replace function public.economy_can_read_payroll_claim(p_claim_id uuid,p_origin_team_id uuid default null)
 returns boolean
 language sql
 stable
@@ -139,21 +139,21 @@ as $$
         and owner.team_id=s.payer_team_id
     );
 $$;
-revoke all on function private.can_read_payroll_claim(uuid,uuid) from public,anon,service_role;
-grant execute on function private.can_read_payroll_claim(uuid,uuid) to authenticated;
+revoke all on function public.economy_can_read_payroll_claim(uuid,uuid) from public,anon,service_role;
+grant execute on function public.economy_can_read_payroll_claim(uuid,uuid) to authenticated;
 
 drop policy if exists "Members and team owners read own payroll and team payroll" on public.economy_payroll_claims;
 drop policy if exists "Members read own payroll and team payroll" on public.economy_payroll_claims;
 create policy "Members and teams read payroll claims"
 on public.economy_payroll_claims
 for select to authenticated
-using (private.can_read_payroll_claim(id,team_id));
+using (public.economy_can_read_payroll_claim(id,team_id));
 
 drop policy if exists "Members and team owners read payroll claim splits" on public.economy_payroll_claim_splits;
 create policy "Members and teams read payroll claim splits"
 on public.economy_payroll_claim_splits
 for select to authenticated
-using (private.can_read_payroll_claim(claim_id,null));
+using (public.economy_can_read_payroll_claim(claim_id,null));
 
 drop function if exists public.member_start_driver_move(uuid,text,numeric,date,date,text);
 create function public.member_start_driver_move(
