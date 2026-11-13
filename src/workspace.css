@@ -406,3 +406,27 @@ body.light .panel-feature-card,body.light .panel-empty,body.light .panel-season-
 .chart-line-dash{fill:none;stroke:#b89a4d;stroke-width:2;stroke-dasharray:7 8;opacity:.55}
 .chart-bars-muted rect{fill:rgba(198,163,58,.12);stroke:rgba(198,163,58,.28);stroke-width:1}
 body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,0,.16)}
+
+/* Marketplace item cards and purchase confirmation */
+.shop-item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;margin-top:22px}
+.shop-item-card{display:flex;align-items:flex-start;flex-direction:column;gap:12px;width:100%;min-height:250px;padding:22px;text-align:left;color:inherit;background:linear-gradient(145deg,rgba(28,29,33,.96),rgba(9,10,13,.96));border:1px solid rgba(211,177,87,.28);border-radius:14px;cursor:pointer;transition:border-color .18s,transform .18s}
+.shop-item-card:hover{border-color:rgba(225,190,100,.8);transform:translateY(-2px)}
+.shop-item-icon{display:grid;place-items:center;width:54px;height:54px;border-radius:12px;color:#e0bd65;background:rgba(204,164,67,.12)}
+.shop-item-card>strong{font-size:20px;letter-spacing:.02em}
+.shop-item-description{color:var(--muted);font-size:13px;line-height:1.55}
+.shop-item-price{margin-top:auto;color:#e2c16c;font-weight:800;font-size:18px}
+.shop-item-price small,.shop-modal-price small{font-size:11px;color:var(--muted);font-weight:500}
+.shop-item-action{display:flex;align-items:center;gap:7px;color:#e2c16c;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.shop-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.76);backdrop-filter:blur(7px)}
+.shop-item-modal{position:relative;width:min(100%,500px);max-height:min(90dvh,760px);overflow:auto;padding:28px;background:linear-gradient(155deg,#191a1e,#090a0d);border:1px solid rgba(218,184,97,.4);border-radius:16px;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.shop-modal-close{position:absolute;top:15px;right:15px;display:grid;place-items:center;width:36px;height:36px;color:var(--text);background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:9px;cursor:pointer}
+.shop-item-modal h2{margin:12px 42px 10px 0;font-size:25px}
+.shop-item-modal>p{color:var(--muted);font-size:13px;line-height:1.65}
+.shop-modal-price{margin:20px 0;color:#e2c16c;font-size:24px;font-weight:850}
+.shop-quantity-field{display:flex;flex-direction:column;gap:8px;margin-top:20px;font-size:12px;color:var(--muted)}
+.shop-quantity-field input{width:100%;min-height:46px;padding:10px 12px;color:var(--text);background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px}
+.shop-modal-total{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:16px 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.shop-modal-total span{color:var(--muted);font-size:13px}
+.shop-modal-total strong{color:#e2c16c;font-size:19px}
+.admin-development-shop-settings .admin-season-rollover{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
+@media(max-width:560px){.shop-item-modal{padding:23px 18px}.shop-item-card{min-height:220px}}
