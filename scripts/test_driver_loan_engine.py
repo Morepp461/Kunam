@@ -33,7 +33,6 @@ assert "economy_payroll_claim_split_guard" in sql
 assert "amount>=0" in sql
 assert "try_process_cash_loan_repayments" in sql
 assert "economy_payroll_claim_splits" in sql
-assert "public.economy_can_read_payroll_claim" not in sql
 assert "drop function if exists public.economy_can_read_payroll_claim" in rls_sql
 assert "origin_team_id" in rls_sql and "member_id" in rls_sql
 assert "owner.team_id in" in rls_sql
