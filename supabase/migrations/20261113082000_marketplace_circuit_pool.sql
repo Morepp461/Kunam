@@ -117,7 +117,7 @@ create or replace function public.fia_record_race_result_entry(
  p_round_id uuid,p_member_id uuid,p_finish_status text,
  p_finishing_position integer default null,p_note text default null,
  p_fastest_lap_ms integer default null
-) returns uuid language plpgsql security definer set search_path='' as $
+) returns uuid language plpgsql security definer set search_path='' as $$
 declare v_round public.license_rounds%rowtype;v_member public.members%rowtype;v_id uuid;
 begin
  if (select auth.uid()) is null or not public.is_caleris_fia_or_admin() then
@@ -182,7 +182,7 @@ returns uuid
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 declare
   v_actor public.members%rowtype;
   v_target public.teams%rowtype;
@@ -274,7 +274,7 @@ begin
 
   return v_id;
 end;
-$;
+$$;
 
 
 
