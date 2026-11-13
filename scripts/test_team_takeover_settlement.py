@@ -2,18 +2,24 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 migration = ROOT / "supabase/migrations/20261113040440_team_takeover_settlement_and_role_transfer.sql"
+guard_migration = ROOT / "supabase/migrations/20261113040627_team_takeover_null_safe_role_guards.sql"
 ui = (ROOT / "src/TeamTakeoverMarket.tsx").read_text(encoding="utf-8")
 fia = (ROOT / "src/FIAOperations.tsx").read_text(encoding="utf-8")
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
 assert migration.is_file(), "Team Take Over settlement migration is missing"
+assert guard_migration.is_file(), "Take Over role guard and lock-order migration is missing"
 sql = migration.read_text(encoding="utf-8").lower()
+guard_sql = guard_migration.read_text(encoding="utf-8").lower()
 
 # Buyer eligibility and seller identity are checked by member identity, not team affiliation.
 assert "v_actor.role not in ('driver','fia')" in sql
-assert "v_actor.role<>'owner'" in sql
+assert "v_seller.role<>'owner'" in sql
 assert "v_actor.id not in (v_take.buyer_member_id,v_take.seller_member_id)" in sql
 assert "v_last.offered_by_member_id=v_actor.id" in sql
+assert "v_actor.role is distinct from 'owner'" in guard_sql
+assert "v_seller.role is distinct from 'owner'" in guard_sql
+assert "v_seller.team_id is distinct from v_take.target_team_id" in guard_sql
 
 # Settlement is one atomic, ledger-backed operation.
 assert "private.post_economy_transaction" in sql
@@ -26,6 +32,7 @@ assert "set role=null,team_id=null where id=v_seller.id" in sql
 assert "set role='owner',team_id=v_team.id where id=v_buyer.id" in sql
 assert "status='completed'" in sql and "transaction_id=" in sql and "settled_at=now()" in sql
 assert "members_one_team_owner_per_team" in sql
+assert "pg_advisory_xact_lock" in guard_sql
 assert "revoke all on function public.fia_review_team_takeover(uuid,boolean) from public,anon,service_role" in sql
 
 # Member UI exposes buyer flow to Public Member, Driver, and FIA only.
@@ -40,5 +47,6 @@ assert "p_approve:approve" in fia
 assert "pembayaran dan perpindahan" in fia.lower()
 assert "Team Take Over" in readme and "Team Owner wallet" in readme
 assert "20261113040440_team_takeover_settlement_and_role_transfer.sql" in readme
+assert "20261113040627_team_takeover_null_safe_role_guards.sql" in readme
 
 print("Team Take Over settlement regression checks passed.")
