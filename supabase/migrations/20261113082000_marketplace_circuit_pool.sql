@@ -16,8 +16,8 @@ create table if not exists public.caleris_circuits (
  initial_lap_record_ms integer check(initial_lap_record_ms > 0),
  created_by uuid references auth.users(id) on delete set null,
  created_at timestamptz not null default now(),
- updated_at timestamptz not null default now(),
- );
+ updated_at timestamptz not null default now()
+);
 create unique index if not exists caleris_circuits_name_country_unique
  on public.caleris_circuits(lower(name),country_code);
 
@@ -145,7 +145,7 @@ begin
   recorded_by=excluded.recorded_by,recorded_at=now()
  returning id into v_id;
  return v_id;
-end;$;
+end;$$;
 revoke all on function public.fia_record_race_result_entry(uuid,uuid,text,integer,text,integer) from public,anon,service_role;
 grant execute on function public.fia_record_race_result_entry(uuid,uuid,text,integer,text,integer) to authenticated;
 
