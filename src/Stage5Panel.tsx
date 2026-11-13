@@ -251,7 +251,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
     if (!title || !body) throw new Error("Judul dan isi regulasi wajib diisi.");
     const scope = form.scope_kind || "permanent";
     if (scope === "seasonal" && !form.season_id) throw new Error("Pilih season untuk regulasi seasonal.");
-    const { error } = await supabase.from("caleris_regulations").insert({ title, body, scope_kind: scope, division_key: form.division_key || null, season_id: scope === "seasonal" ? form.season_id : null, version_label: String(form.version_label || "").trim() || null, is_published: true, published_at: new Date().toISOString(), created_by: session.user.id });
+    const { error } = await supabase.rpc("fia_publish_regulation", { p_title: title, p_body: body, p_scope_kind: scope, p_division_key: form.division_key || null, p_season_id: scope === "seasonal" ? form.season_id : null, p_version_label: String(form.version_label || "").trim() || null });
     if (error) throw error; setForm({}); setNotice("Regulasi dipublikasikan ke Main Event → Regulation."); await refresh();
   });
   const decideAppeal = async (id: string, approve: boolean) => {
