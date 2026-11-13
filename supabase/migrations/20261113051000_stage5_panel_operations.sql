@@ -29,7 +29,7 @@ alter table public.caleris_regulations enable row level security;
 alter table public.caleris_job_adverts enable row level security;
 alter table public.caleris_appeals enable row level security;
 revoke all on public.caleris_driver_attributes,public.caleris_team_profiles,public.caleris_achievements,public.caleris_engines,public.caleris_team_engines,public.caleris_race_result_entries,public.caleris_announcements,public.caleris_regulations,public.caleris_job_adverts,public.caleris_appeals from anon,authenticated,service_role,public;
-grant select on public.caleris_driver_attributes,public.caleris_team_profiles,public.caleris_achievements,public.caleris_engines,public.caleris_team_engines,public.caleris_race_result_entries to authenticated;
+grant select,insert,update,delete on public.caleris_driver_attributes,public.caleris_team_profiles,public.caleris_achievements,public.caleris_engines,public.caleris_team_engines,public.caleris_race_result_entries to authenticated;
 grant select,insert,update,delete on public.caleris_announcements,public.caleris_regulations,public.caleris_job_adverts,public.caleris_appeals to authenticated;
 create policy "Authenticated members read driver attributes" on public.caleris_driver_attributes for select to authenticated using(true);
 create policy "Admins manage driver attributes" on public.caleris_driver_attributes for all to authenticated using(exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))) with check(exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())));
@@ -98,6 +98,6 @@ create or replace function public.caleris_seed_driver_attributes() returns trigg
 begin if new.role='Driver' then insert into public.caleris_driver_attributes(member_id) values(new.id) on conflict(member_id) do nothing;end if;return new;end;$$;
 revoke all on function public.caleris_seed_driver_attributes() from public,anon,authenticated,service_role;
 drop trigger if exists caleris_seed_driver_attributes_after_member_insert on public.members;
-create trigger caleris_seed_driver_attributes_after_member_insert after insert on public.members for each row execute function public.caleris_seed_driver_attributes();
+create trigger caleris_seed_driver_attributes_after_member_insert after insert or update of role on public.members for each row execute function public.caleris_seed_driver_attributes();
 insert into public.caleris_driver_attributes(member_id) select m.id from public.members m where m.role='Driver' on conflict(member_id) do nothing;
 commit;
