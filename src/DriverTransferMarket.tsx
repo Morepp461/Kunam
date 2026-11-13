@@ -4,14 +4,14 @@ import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
-type Member={id:string;character_name:string|null;role:string|null;team_id:string|null;license?:string|null;nationality?:string|null};
+type Member={id:string;character_name:string|null;role:string|null;team_id:string|null;license?:string|null;nationality?:string|null;attributes?:Record<string,number>;contract_ends_on?:string|null;market_status?:string};
 type Team={id:string;name:string;division_key:string|null};
 type Negotiation={id:string;move_type:string;driver_member_id:string;buyer_team_id:string;seller_team_id:string;agreed_amount:number|null;loan_starts_on:string|null;loan_ends_on:string|null;loan_salary_share_percent:number|null;status:string;created_at:string};
 type Offer={id:string;negotiation_id:string;offered_by_member_id:string;offered_amount:number;move_type:string;note:string|null;response:string;loan_starts_on:string|null;loan_ends_on:string|null;loan_salary_share_percent:number|null;created_at:string};
 type Affiliation={team_a_id:string;team_b_id:string;status:string};
 const cash=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 export default function DriverTransferMarket({session}:{session:Session}){
- const [member,setMember]=useState<Member|null>(null),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]),[attributes,setAttributes]=useState<Record<string,number>>({}),[contracts,setContracts]=useState<Record<string,any>>({});
+ const [member,setMember]=useState<Member|null>(null),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]);
  const [search,setSearch]=useState(""),[filterLicense,setFilterLicense]=useState(""),[filterAttribute,setFilterAttribute]=useState(""),[minimumAttribute,setMinimumAttribute]=useState(""),[filterTeam,setFilterTeam]=useState(""),[filterNationality,setFilterNationality]=useState(""),[filterStatus,setFilterStatus]=useState(""),[contractRemaining,setContractRemaining]=useState("");
  const [negotiations,setNegotiations]=useState<Negotiation[]>([]),[offers,setOffers]=useState<Offer[]>([]),[affiliations,setAffiliations]=useState<Affiliation[]>([]);
  const [driverId,setDriverId]=useState(""),[moveType,setMoveType]=useState<"transfer"|"loan">("transfer"),[offerAmount,setOfferAmount]=useState(""),[loanStart,setLoanStart]=useState(""),[loanEnd,setLoanEnd]=useState(""),[loanShare,setLoanShare]=useState(""),[note,setNote]=useState("");
@@ -21,26 +21,22 @@ export default function DriverTransferMarket({session}:{session:Session}){
   if(!supabase)return;setLoading(true);setNotice("");
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe){setMember(null);setLoading(false);setNotice(pe.message);return}
-  const [m,t,n,o,a,attrQ,contractQ]=await Promise.all([
-   supabase.from("caleris_member_directory").select("id,character_name,role,team_id,license,nationality").order("character_name"),
+  const [m,t,n,o,a]=await Promise.all([
+   supabase.from("caleris_driver_market_directory").select("id,character_name,role,team_id,license,nationality,attributes,contract_ends_on,market_status").order("character_name"),
    supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
    supabase.from("caleris_driver_move_negotiations").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_driver_move_offers").select("*").order("created_at",{ascending:true}),
-   supabase.from("caleris_team_affiliations").select("team_a_id,team_b_id,status").eq("status","accepted"),
-   supabase.from("caleris_driver_attributes").select("member_id,attributes"),
-   supabase.from("contracts").select("member_id,starts_on,ends_on,salary,status").eq("status","active")
+   supabase.from("caleris_team_affiliations").select("team_a_id,team_b_id,status").eq("status","accepted")
   ]);
-  const err=[m.error,t.error,n.error,o.error,a.error,attrQ.error,contractQ.error].find(Boolean);if(err)setNotice(err.message);
+  const err=[m.error,t.error,n.error,o.error,a.error].find(Boolean);if(err)setNotice(err.message);
   const allMembers=(m.data||[]) as Member[];setMembers(allMembers);setMember(p.member_id?allMembers.find(x=>x.id===p.member_id)||null:null);
-  setAttributes(Object.fromEntries((attrQ.data||[]).map((r:any)=>[r.member_id,r.attributes||{}])));
-  setContracts(Object.fromEntries((contractQ.data||[]).map((r:any)=>[r.member_id,r])));
   setTeams((t.data||[]) as Team[]);setNegotiations((n.data||[]) as Negotiation[]);setOffers((o.data||[]) as Offer[]);setAffiliations((a.data||[]) as Affiliation[]);setLoading(false);
  },[session.user.id]);
  useEffect(()=>{void refresh()},[refresh]);
  const ownTeamId=member?.team_id||"";
  const canRecruit=Boolean(ownTeamId&&["Owner","Principal"].includes(member?.role||""));
  const drivers=useMemo(()=>members.filter(m=>m.role==="Driver"&&m.team_id&&m.team_id!==ownTeamId&&!negotiations.some(n=>n.driver_member_id===m.id&&["offered","negotiating","seller_accepted","pending_fia","approved_waiting_window","approved","loan_active"].includes(n.status))),[members,ownTeamId,negotiations]);
- const directoryRows=useMemo(()=>members.filter(m=>m.role==="Driver"||(m.role==null&&!m.team_id)).map(m=>{const move=negotiations.find(n=>n.driver_member_id===m.id&&["offered","negotiating","seller_accepted","pending_fia","approved_waiting_window","approved","loan_active"].includes(n.status));const status=m.role==null&&!m.team_id?"Free Agent":move?.move_type==="loan"?"Loan List":move?.move_type==="transfer"?"Transfer List":"Under Contract";const c=contracts[m.id];const remaining=c?.ends_on?Math.max(0,Math.ceil((new Date(c.ends_on+"T00:00:00").getTime()-Date.now())/86400000)):null;return {...m,marketStatus:status,contract:c,remaining,attributes:attributes[m.id]||{}}}).filter(m=>(!search||String(m.character_name||"").toLowerCase().includes(search.toLowerCase()))&&(!filterLicense||String(m.license||"").toLowerCase().includes(filterLicense.toLowerCase()))&&(!filterTeam||(filterTeam==="__independent"?!m.team_id:m.team_id===filterTeam))&&(!filterNationality||m.nationality===filterNationality)&&(!filterStatus||m.marketStatus===filterStatus)&&(!contractRemaining||m.remaining!==null&&m.remaining<=Number(contractRemaining)*30)&&(!filterAttribute||Number(m.attributes[filterAttribute]||0)>=Number(minimumAttribute||0))),[members,negotiations,contracts,attributes,search,filterLicense,filterTeam,filterNationality,filterStatus,contractRemaining,filterAttribute,minimumAttribute]);
+ const directoryRows=useMemo(()=>members.map(m=>{const remaining=m.contract_ends_on?Math.max(0,Math.ceil((new Date(m.contract_ends_on+"T00:00:00").getTime()-Date.now())/86400000)):null;return {...m,marketStatus:m.market_status||"Under Contract",remaining,attributes:m.attributes||{}}}).filter(m=>(!search||String(m.character_name||"").toLowerCase().includes(search.toLowerCase()))&&(!filterLicense||String(m.license||"").toLowerCase().includes(filterLicense.toLowerCase()))&&(!filterTeam||(filterTeam==="__independent"?!m.team_id:m.team_id===filterTeam))&&(!filterNationality||m.nationality===filterNationality)&&(!filterStatus||m.marketStatus===filterStatus)&&(!contractRemaining||m.remaining!==null&&m.remaining<=Number(contractRemaining)*30)&&(!filterAttribute||Number(m.attributes[filterAttribute]||0)>=Number(minimumAttribute||0))),[members,search,filterLicense,filterTeam,filterNationality,filterStatus,contractRemaining,filterAttribute,minimumAttribute]);
  const eligibleDrivers=useMemo(()=>moveType==="loan"?drivers.filter(d=>affiliations.some(a=>(a.team_a_id===ownTeamId&&a.team_b_id===d.team_id)||(a.team_b_id===ownTeamId&&a.team_a_id===d.team_id))):drivers,[moveType,drivers,affiliations,ownTeamId]);
  const driverName=(id:string)=>members.find(m=>m.id===id)?.character_name||"Driver";
  const teamName=(id:string)=>teams.find(t=>t.id===id)?.name||"Team";
