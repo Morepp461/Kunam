@@ -64,12 +64,14 @@ Deno.serve(async (req: Request) => {
     const dateOfBirth = typeof body.dateOfBirth === "string" ? body.dateOfBirth : "";
     const nickname = typeof body.nickname === "string" ? body.nickname.trim() : "";
     const preferredRole = typeof body.preferredRole === "string" ? body.preferredRole : "";
+    const nationality = typeof body.nationality === "string" ? body.nationality.trim() : "";
+    const hometown = typeof body.hometown === "string" ? body.hometown.trim() : "";
     const privacyAccepted = body.privacyAccepted === true;
 
-    if (!avatarPath || !nickname || nickname.length > 32 || !dateOfBirth) {
+    if (!avatarPath || !nickname || nickname.length > 32 || !dateOfBirth || !nationality || !hometown) {
       return respond(400, { error: "Complete all required Paddock Access fields." });
     }
-    if (firstName.length > 80 || lastName.length > 80) return respond(400, { error: "Name is too long." });
+    if (firstName.length > 80 || lastName.length > 80 || nationality.length > 80 || hometown.length > 120) return respond(400, { error: "Profile field is too long." });
     if (!["FIA", "Team Owner", "Driver"].includes(preferredRole)) {
       return respond(400, { error: "Choose a valid role preference." });
     }
@@ -93,6 +95,8 @@ Deno.serve(async (req: Request) => {
       first_name: firstName || null,
       last_name: lastName || null,
       date_of_birth: dateOfBirth,
+      nationality,
+      hometown,
       web_nickname: nickname,
       preferred_role: preferredRole,
       privacy_accepted_at: new Date().toISOString(),
