@@ -70,6 +70,38 @@ create index if not exists economy_payroll_claim_splits_payer_team_idx
 create index if not exists economy_payroll_claim_splits_claim_idx
   on public.economy_payroll_claim_splits(claim_id);
 
+
+create or replace function private.guard_economy_payroll_claim_split()
+returns trigger
+language plpgsql
+set search_path=''
+as $
+begin
+  if tg_op='DELETE' then
+    raise exception 'Payroll claim splits cannot be deleted.';
+  end if;
+  if new.id is distinct from old.id
+    or new.claim_id is distinct from old.claim_id
+    or new.payer_team_id is distinct from old.payer_team_id
+    or new.amount is distinct from old.amount
+    or new.share_percent is distinct from old.share_percent
+    or new.created_at is distinct from old.created_at then
+    raise exception 'Payroll claim split identity and amount are immutable.';
+  end if;
+  if not (old.status='pending' and new.status='paid'
+    and old.transaction_id is null and new.transaction_id is not null
+    and old.paid_at is null and new.paid_at is not null) then
+    raise exception 'Invalid payroll claim split status transition.';
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists economy_payroll_claim_split_guard on public.economy_payroll_claim_splits;
+create trigger economy_payroll_claim_split_guard
+before update or delete on public.economy_payroll_claim_splits
+for each row execute function private.guard_economy_payroll_claim_split();
+
 alter table public.economy_payroll_claim_splits enable row level security;
 revoke all on public.economy_payroll_claim_splits from public,anon;
 grant select on public.economy_payroll_claim_splits to authenticated;
@@ -424,7 +456,7 @@ begin
     select * from public.caleris_driver_move_negotiations
     where status='approved_waiting_window'
       and move_type='loan'
-      and loan_starts_on<=v_today
+      and loan_starts_on=v_today
       and loan_ends_on>=v_today
       and (p_negotiation_id is null or id=p_negotiation_id)
     order by loan_starts_on,created_at
@@ -491,12 +523,12 @@ begin
     v_started:=v_started+1;
   end loop;
 
-  -- An approved loan that missed its full-season start window cannot be activated late.
+  -- An approved loan that misses its exact full-season start date cannot be activated late.
   update public.caleris_driver_move_negotiations
   set status='expired',updated_at=now()
   where status='approved_waiting_window'
     and move_type='loan'
-    and loan_ends_on<v_today
+    and loan_starts_on<v_today
     and (p_negotiation_id is null or id=p_negotiation_id);
   get diagnostics v_expired=row_count;
 
