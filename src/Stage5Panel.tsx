@@ -222,7 +222,7 @@ export default function Stage5Panel({ session, fallback }: Props) {
     const title = String(form.title || "").trim(), description = String(form.description || "").trim();
     if (!title || !description) throw new Error("Judul dan deskripsi wajib diisi.");
     const { error } = await supabase.from("caleris_job_adverts").insert({ team_id: activeTeamId, season_id: activeSeasonId || null, division_key: ownTeam.division_key, title, description, requirements: String(form.requirements || "").trim() || null, open_seats: Math.max(1, Number(form.open_seats || 1)), available_from: form.available_from || null, status: "published", created_by: session.user.id });
-    if (error) throw error; setForm({}); setNotice("Lowongan berhasil dipublikasikan ke Job Search."); await refresh();
+    if (error) throw error; setForm({}); await refresh(); setNotice("Lowongan berhasil dipublikasikan ke Job Search.");
   });
   const sendAppeal = async (e: FormEvent) => submit(e, async () => {
     if (!supabase || !form.fine_id) throw new Error("Pilih keputusan sanksi yang akan diajukan banding.");
@@ -231,19 +231,19 @@ export default function Stage5Panel({ session, fallback }: Props) {
     const payload = { fine_id: fine.id, target_kind: fine.target_kind, target_member_id: fine.target_member_id, target_team_id: fine.target_team_id, appeal_statement: String(form.appeal_statement || "").trim(), status: "pending", submitted_by: session.user.id };
     if (!payload.appeal_statement) throw new Error("Alasan banding wajib diisi.");
     const { error } = await supabase.from("caleris_appeals").insert(payload);
-    if (error) throw error; setForm({}); setNotice("Banding terkirim ke FIA Appeal Room."); await refresh();
+    if (error) throw error; setForm({}); await refresh(); setNotice("Banding terkirim ke FIA Appeal Room.");
   });
   const registerDriver = async (e: FormEvent) => submit(e, async () => {
     if (!supabase || !form.driver_id || !form.season_division_id) throw new Error("Pilih season/divisi dan driver.");
     const { error } = await supabase.rpc("member_register_driver_for_season", { p_season_division_id: form.season_division_id, p_driver_member_id: form.driver_id });
-    if (error) throw error; setForm({}); setNotice("Driver berhasil didaftarkan untuk season tujuan."); await refresh();
+    if (error) throw error; setForm({}); await refresh(); setNotice("Driver berhasil didaftarkan untuk season tujuan.");
   });
   const publishAnnouncement = async (e: FormEvent) => submit(e, async () => {
     if (!supabase) return;
     const title = String(form.title || "").trim(), body = String(form.body || "").trim();
     if (!title || !body) throw new Error("Judul dan isi pengumuman wajib diisi.");
     const { error } = await supabase.from("caleris_announcements").insert({ title, body, category: form.category || "general", division_key: form.division_key || null, season_id: form.season_id || null, is_published: true, published_at: new Date().toISOString(), created_by: session.user.id });
-    if (error) throw error; setForm({}); setNotice("Pengumuman dipublikasikan ke Main Event → FIA Announcement."); await refresh();
+    if (error) throw error; setForm({}); await refresh(); setNotice("Pengumuman dipublikasikan ke Main Event → FIA Announcement.");
   });
   const publishRegulation = async (e: FormEvent) => submit(e, async () => {
     if (!supabase) return;
@@ -257,10 +257,10 @@ export default function Stage5Panel({ session, fallback }: Props) {
   const decideAppeal = async (id: string, approve: boolean) => {
     if (!supabase || saving) return; setSaving(true); setNotice("");
     const { error } = await supabase.rpc("fia_decide_appeal", { p_appeal_id: id, p_approve: approve, p_decision: String(form.decision || "").trim() });
-    setSaving(false); if (error) setNotice(error.message); else { setNotice("Keputusan banding berhasil dicatat."); setForm({}); await refresh(); }
+    setSaving(false); if (error) setNotice(error.message); else { setForm({}); await refresh(); setNotice("Keputusan banding berhasil dicatat."); }
   };
 
-  const heading = (eyebrow: string, title: string, desc: string) => <header className="page-heading"><span className="section-eyebrow">{eyebrow}</span><h1 className="page-title">{title}</h1><p className="page-description">{desc}</p></header>;
+  const heading = (eyebrow: string, title: string, desc: string) => <><header className="page-heading"><span className="section-eyebrow">{eyebrow}</span><h1 className="page-title">{title}</h1><p className="page-description">{desc}</p></header>{notice&&<div className="s5-notice" role="status">{notice}</div>}</>;
   const standingsRows = driverRows.map((d: Row, i: number) => [<b className="s5-rank">{i + 1}</b>, <span className="s5-driver"><b>{d.character_name || "Driver"}</b><small>{d.license || "No licence"}</small></span>, <span className="s5-team-cell">{d.profile?.logo_url && <img src={d.profile.logo_url} alt="" />}<span>{d.team?.name || "Independent"}</span></span>, <strong>{d.points.toLocaleString("id-ID")}</strong>]);
   const teamStandingsRows = teamRows.map((t: Row, i: number) => [<b className="s5-rank">{i + 1}</b>, <span className="s5-team-cell">{t.profile?.logo_url && <img src={t.profile.logo_url} alt="" />}<span>{t.name}</span></span>, <strong>{t.points.toLocaleString("id-ID")}</strong>]);
   const statTiles = [["RACE WIN", stats.wins, Trophy], ["POLE", stats.poles, Flag], ["FINISH", stats.finishes, CheckCircle2], ["DNF", stats.dnf, Activity]] as const;
