@@ -46,7 +46,11 @@ export default function LocationSelectors({
     if (!countries.length) return;
     const match = countries.find((country) => country.name.toLocaleLowerCase() === nationality.trim().toLocaleLowerCase());
     setSelectedCode(match?.iso2 || "");
-  }, [countries, nationality]);
+    if (nationality.trim() && !match) {
+      onNationalityChange("");
+      onHometownChange("");
+    }
+  }, [countries, nationality, onNationalityChange, onHometownChange]);
 
   useEffect(() => {
     if (!selectedCode) {
@@ -64,7 +68,9 @@ export default function LocationSelectors({
           const populationDifference = Number(b.population || 0) - Number(a.population || 0);
           return populationDifference || a.name.localeCompare(b.name);
         });
-        setCities(selectedCode === "ID" ? sorted : sorted.slice(0, 10));
+        const visibleCities = selectedCode === "ID" ? sorted : sorted.slice(0, 10);
+        setCities(visibleCities);
+        if (hometown && !visibleCities.some((city) => city.name === hometown)) onHometownChange("");
       })
       .catch(() => {
         if (active) {
@@ -76,7 +82,7 @@ export default function LocationSelectors({
         if (active) setLoadingCities(false);
       });
     return () => { active = false; };
-  }, [selectedCode]);
+  }, [selectedCode, hometown, onHometownChange]);
 
   const selectedCountry = useMemo(
     () => countries.find((country) => country.iso2 === selectedCode),
@@ -126,7 +132,7 @@ export default function LocationSelectors({
             <option key={city.name + "-" + index} value={city.name}>{city.name}</option>
           ))}
         </select>
-        {selectedCountry && <small className="field-hint">{flagFor(selectedCountry)} {selectedCountry.name}{selectedCode === "ID" ? " · Daftar kota Indonesia" : " · Maksimal 10 kota utama"}</small>}
+        {selectedCountry && <small className="field-hint">{flagFor(selectedCountry)} {selectedCountry.name}{selectedCode === "ID" ? " · Daftar kota Indonesia" : " · Maksimal 10 kota"}</small>}
         {errors.hometown && <small className="field-error">{errors.hometown}</small>}
       </label>
       {loadError && <small className="field-error">{loadError}</small>}
