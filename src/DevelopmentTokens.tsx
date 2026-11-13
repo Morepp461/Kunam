@@ -3,6 +3,7 @@ import {ArrowLeft,Coins,RefreshCw,Trophy} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import DevelopmentShop from "./DevelopmentShop";
 
 type Account={id:string;asset_type:"DDP"|"TDP";balance:number;member_id:string|null;team_id:string|null};
 type Entry={id:string;delta:number;source_type:string;description:string;created_at:string};
@@ -62,6 +63,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
   setTargets(v=>({...v,[key]:""}));setUpgrading(null);await refresh();
  };
  return <section className="workspace development-token-workspace">
+  <DevelopmentShop session={session}/>
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
   <header className="page-heading"><span className="section-eyebrow">DEVELOPMENT ECONOMY</span><h1 className="page-title">{asset} Wallet</h1><p className="page-description">{asset==="DDP"?"Driver Development Points":"Team Development Points"} disimpan terpisah dari saldo ¢p dan hanya bertambah melalui reward resmi atau penyesuaian Admin.</p></header>
   {loading?<div className="workspace-card"><p>Memuat development wallet...</p></div>:<><div className="development-token-hero"><div><span className="section-eyebrow">{asset==="DDP"?"DRIVER DEVELOPMENT POINTS":"TEAM DEVELOPMENT POINTS"}</span><strong>{balance.toLocaleString("id-ID",{maximumFractionDigits:2})}</strong><small>{asset==="DDP"?member?.character_name||"Driver":team?.name||"Team"}</small></div><span className="development-token-icon">{asset==="DDP"?<Trophy size={28}/>:<Coins size={28}/>}</span></div>
