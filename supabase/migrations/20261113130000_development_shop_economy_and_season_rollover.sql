@@ -104,13 +104,13 @@ begin
  select p_ending_season_id,a.member_id,'DDP',coalesce(jsonb_object_agg(d.attribute_key,d.current_value),'{}'::jsonb),'season_end'
  from public.caleris_development_accounts a left join public.caleris_driver_development_attributes d on d.member_id=a.member_id
  where a.asset_type='DDP' and a.member_id is not null group by a.member_id
- on conflict(season_id,asset_type,member_id) where member_id is not null do update set attributes=excluded.attributes,snapshot_stage='season_end';
+ on conflict(season_id,asset_type,member_id,snapshot_stage) where member_id is not null do update set attributes=excluded.attributes;
  get diagnostics v_rows=row_count; v_count:=v_count+v_rows;
  insert into public.caleris_development_season_snapshots(season_id,team_id,asset_type,attributes,snapshot_stage)
  select p_ending_season_id,a.team_id,'TDP',coalesce(jsonb_object_agg(d.part_key,d.current_value),'{}'::jsonb),'season_end'
  from public.caleris_development_accounts a left join public.caleris_team_development_parts d on d.team_id=a.team_id
  where a.asset_type='TDP' and a.team_id is not null group by a.team_id
- on conflict(season_id,asset_type,team_id) where team_id is not null do update set attributes=excluded.attributes,snapshot_stage='season_end';
+ on conflict(season_id,asset_type,team_id,snapshot_stage) where team_id is not null do update set attributes=excluded.attributes;
  get diagnostics v_rows=row_count; v_count:=v_count+v_rows;
  insert into public.caleris_development_season_snapshots(season_id,member_id,asset_type,attributes,snapshot_stage)
  select p_next_season_id,member_id,asset_type,attributes,'season_baseline'
