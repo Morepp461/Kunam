@@ -12,7 +12,7 @@ type Takeover={id:string;target_team_id:string;buyer_member_id:string;seller_mem
 export default function FIAOperations(){
  const [rounds,setRounds]=useState<Round[]>([]),[classificationRounds,setClassificationRounds]=useState<Round[]>([]),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]),[fines,setFines]=useState<Fine[]>([]),[moves,setMoves]=useState<Move[]>([]),[takeovers,setTakeovers]=useState<Takeover[]>([]),[registrations,setRegistrations]=useState<{member_id:string;season_division_id:string}[]>([]);
  const [roundId,setRoundId]=useState(""),[winnerId,setWinnerId]=useState(""),[poleId,setPoleId]=useState("");
- const [classificationRoundId,setClassificationRoundId]=useState(""),[classificationMemberId,setClassificationMemberId]=useState(""),[classificationStatus,setClassificationStatus]=useState<"finished"|"dnf"|"dns"|"dsq">("finished"),[classificationPosition,setClassificationPosition]=useState(""),[classificationNote,setClassificationNote]=useState("");
+ const [classificationRoundId,setClassificationRoundId]=useState(""),[classificationMemberId,setClassificationMemberId]=useState(""),[classificationStatus,setClassificationStatus]=useState<"finished"|"dnf"|"dns"|"dsq">("finished"),[classificationPosition,setClassificationPosition]=useState(""),[classificationNote,setClassificationNote]=useState(""),[fastestLap,setFastestLap]=useState("");
  const [targetKind,setTargetKind]=useState<"member"|"team">("member"),[targetId,setTargetId]=useState(""),[amount,setAmount]=useState(""),[reason,setReason]=useState(""),[regulation,setRegulation]=useState("");
  const [saving,setSaving]=useState(false),[loading,setLoading]=useState(false),[notice,setNotice]=useState("");
  const refresh=useCallback(async()=>{
@@ -51,11 +51,13 @@ export default function FIAOperations(){
  const recordClassification=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!classificationRoundId||!classificationMemberId)return;
   const position=classificationStatus==="finished"?Number(classificationPosition):null;
+  const lapMatch=fastestLap.trim().match(/^(\\d{1,3}):(\\d{2})[.,](\\d{3})$/);const fastestLapMs=fastestLap.trim()?lapMatch?Number(lapMatch[1])*60000+Number(lapMatch[2])*1000+Number(lapMatch[3]):null:null;
+  if(fastestLap.trim()&&!fastestLapMs){setNotice("Format fastest lap harus m:ss.mmm, contoh 1:32.456.");return;}
   if(classificationStatus==="finished"&&(!Number.isInteger(position)||Number(position)<1)){setNotice("Finishing position harus berupa angka bulat positif.");return;}
   setSaving(true);setNotice("");
-  const {error}=await supabase.rpc("fia_record_race_result_entry",{p_round_id:classificationRoundId,p_member_id:classificationMemberId,p_finish_status:classificationStatus,p_finishing_position:position,p_note:classificationNote||null});
+  const {error}=await supabase.rpc("fia_record_race_result_entry",{p_round_id:classificationRoundId,p_member_id:classificationMemberId,p_finish_status:classificationStatus,p_finishing_position:position,p_note:classificationNote||null,p_fastest_lap_ms:fastestLapMs});
   setSaving(false);if(error){setNotice(error.message);return;}
-  setNotice("Klasifikasi driver berhasil dicatat.");setClassificationMemberId("");setClassificationPosition("");setClassificationNote("");await refresh();
+  setNotice("Klasifikasi driver berhasil dicatat.");setClassificationMemberId("");setClassificationPosition("");setClassificationNote("");setFastestLap("");await refresh();
  };
  const issueFine=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!targetId)return;
@@ -98,8 +100,8 @@ export default function FIAOperations(){
     <label>Registered driver<select value={classificationMemberId} onChange={e=>setClassificationMemberId(e.target.value)} required><option value="">Pilih driver terdaftar</option>{eligibleClassificationDrivers.map(m=><option key={m.id} value={m.id}>{m.character_name||"Driver"}</option>)}</select></label>
     <label>Finish status<select value={classificationStatus} onChange={e=>{setClassificationStatus(e.target.value as typeof classificationStatus);setClassificationPosition("");}}><option value="finished">Finished</option><option value="dnf">DNF</option><option value="dns">DNS</option><option value="dsq">DSQ</option></select></label>
     {classificationStatus==="finished"&&<label>Finishing position<input type="number" min="1" step="1" value={classificationPosition} onChange={e=>setClassificationPosition(e.target.value)} required/></label>}
-    <label>Notes (optional)<textarea rows={2} maxLength={500} value={classificationNote} onChange={e=>setClassificationNote(e.target.value)}/></label>
-    <p className="economy-form-hint">FIA hanya dapat mencatat driver yang terdaftar pada divisi round. Status finish, DNF, DNS, dan DSQ disimpan sebagai klasifikasi resmi.</p>
+    <label>Fastest lap time (optional)<input value={fastestLap} onChange={e=>setFastestLap(e.target.value)} placeholder="m:ss.mmm · contoh 1:32.456"/></label><label>Notes (optional)<textarea rows={2} maxLength={500} value={classificationNote} onChange={e=>setClassificationNote(e.target.value)}/></label>
+    <p className="economy-form-hint">FIA hanya dapat mencatat driver yang terdaftar pada divisi round. Status finish, DNF, DNS, dan DSQ disimpan sebagai klasifikasi resmi. Fastest lap yang dicatat menjadi sumber pembaruan lap record Circuit Pool.</p>
     <button className="economy-primary-button" disabled={saving||!classificationRoundId||!classificationMemberId}><Save size={15}/>{saving?"Menyimpan...":"Simpan klasifikasi"}</button>
    </form>
   </section>
