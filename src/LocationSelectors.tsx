@@ -133,3 +133,24 @@ export default function LocationSelectors({
     </>
   );
 }
+
+export function CountryCodeSelect({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [countries, setCountries] = useState<Country[]>([]);
+  useEffect(() => {
+    let active = true;
+    getCountries().then((items) => {
+      if (active) setCountries((items || []).filter((item) => item.iso2 && item.name) as Country[]);
+    }).catch(() => undefined);
+    return () => { active = false; };
+  }, []);
+  return (
+    <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <option value="">Pilih negara circuit</option>
+      {countries.map((country) => (
+        <option key={country.iso2} value={country.iso2}>
+          {country.emoji || country.iso2} {country.name}
+        </option>
+      ))}
+    </select>
+  );
+}
