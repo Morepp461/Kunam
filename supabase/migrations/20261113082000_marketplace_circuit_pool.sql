@@ -149,4 +149,16 @@ end;$;
 revoke all on function public.fia_record_race_result_entry(uuid,uuid,text,integer,text,integer) from public,anon,service_role;
 grant execute on function public.fia_record_race_result_entry(uuid,uuid,text,integer,text,integer) to authenticated;
 
+
+create or replace view public.caleris_team_takeover_offer_bounds
+with (security_barrier=true) as
+select t.id as team_id,t.name as team_name,t.division_key,t.takeover_listed,v.total_valuation,
+ round(v.total_valuation*nullif(c.payload->>'minimum_percent','')::numeric/100,2) as minimum_offer,
+ round(v.total_valuation*nullif(c.payload->>'maximum_percent','')::numeric/100,2) as maximum_offer
+from public.teams t
+left join lateral (select total_valuation from public.caleris_team_valuations where team_id=t.id order by assessed_at desc,id desc limit 1) v on true
+left join public.caleris_configurations c on c.category='economy' and c.config_key='team-takeover-valuation-range' and c.is_active;
+revoke all on public.caleris_team_takeover_offer_bounds from public,anon,authenticated,service_role;
+grant select on public.caleris_team_takeover_offer_bounds to authenticated;
+
 commit;
