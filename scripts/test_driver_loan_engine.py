@@ -16,6 +16,8 @@ assert "loan_salary_share_percent between 0 and 100" in sql
 assert "mod(loan_salary_share_percent,10)=0" in sql
 assert "'loan_active'" in sql and "'loan_returned'" in sql
 assert "driver-loan-fee:" in sql
+assert "loan_starts_on=v_today" in sql
+assert "loan_starts_on<v_today" in sql
 assert "loan_ends_on<v_today" in sql
 assert "set team_id=v_neg.seller_team_id" in sql
 
@@ -24,8 +26,11 @@ assert "v_origin_amount:=v_claim.amount-v_borrower_amount" in sql
 assert "loan_negotiation_id" in sql
 assert "private.process_economy_payroll_claim" in sql
 assert "economy_payroll_claim_splits" in sql
+assert "economy_payroll_claim_split_guard" in sql
+assert "amount>=0" in sql
 assert "try_process_cash_loan_repayments" in sql
-assert "private.can_read_payroll_claim" in sql
+assert "public.economy_can_read_payroll_claim" in sql
+assert "private.can_read_payroll_claim" not in sql
 assert "loan_active','loan_returned" in sql
 
 assert "p_loan_salary_share_percent" in ui
@@ -34,6 +39,6 @@ assert "loan_salary_share_percent" in fia
 assert "loan_returned" in ui
 assert "economy_payroll_claim_splits" in contracts
 assert "Driver Loan" in readme
-assert "satu season penuh" in readme.lower()
+assert "one full configured season" in readme.lower()
 
 print("Driver Loan full-season payroll regression checks passed.")
