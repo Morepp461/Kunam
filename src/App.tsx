@@ -139,8 +139,8 @@ function Application(){
   <Route path="/main-event/transfer-market" element={session&&!needsPaddockAccess&&panelAccess.main_event?<DriverTransferMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/*" element={session&&!needsPaddockAccess&&panelAccess.main_event?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/*" element={session&&!needsPaddockAccess&&panelAccess.driver_panel?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/team-panel/*" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<Stage5Panel session={session} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/fia-panel/*" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<Stage5Panel session={session} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/team-panel/*" element={session&&!needsPaddockAccess&&panelAccess.team_panel?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/*" element={session&&!needsPaddockAccess&&panelAccess.fia_panel?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/privacy-policy" element={<LegalBlankPage title="Kebijakan Privasi"/>}/>
   <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
