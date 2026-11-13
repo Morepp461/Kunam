@@ -11,7 +11,7 @@ type Division={id:string;season_id:string;division_key:string;division_name:stri
 type PrizeRule={id:string;season_division_id:string;driver_win_ddp:number;team_win_tdp:number;driver_pole_ddp:number;team_pole_tdp:number;is_active:boolean};
 type Sponsor={id:string;name:string;description:string|null;industry:string|null;available_budget:number|null;is_active:boolean};
 type Team={id:string;name:string;division_key:string|null};
-type Valuation={id:string;team_id:string;assets_value:number;development_value:number;history_value:number;achievements_value:number;financial_health_value:number;total_valuation:number;assessed_at:string;team?:{name:string}};
+type Valuation={id:string;team_id:string;base_valuation:number|null;team_score:number|null;score_breakdown:Record<string,any>|null;debt_penalty:number;overdue_penalty:number;total_valuation:number;assessed_at:string;team?:{name:string}};
 type Tab="tax"|"prizes"|"sponsors"|"valuation";
 const money=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const number=(v:string)=>v.trim()===""?0:Number(v);
@@ -22,7 +22,7 @@ export default function AdminOperations({session}:{session:Session}){
  const [taxType,setTaxType]=useState<"wealth"|"driver_transfer">("wealth"),[taxScope,setTaxScope]=useState<"member"|"team">("member"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null),[wealthSeasonId,setWealthSeasonId]=useState("");
  const [divisionId,setDivisionId]=useState(""),[driverWin,setDriverWin]=useState(""),[teamWin,setTeamWin]=useState(""),[driverPole,setDriverPole]=useState(""),[teamPole,setTeamPole]=useState(""),[prizeActive,setPrizeActive]=useState(false);
  const [sponsorId,setSponsorId]=useState<string|null>(null),[sponsorName,setSponsorName]=useState(""),[sponsorDescription,setSponsorDescription]=useState(""),[sponsorIndustry,setSponsorIndustry]=useState(""),[sponsorBudget,setSponsorBudget]=useState(""),[sponsorActive,setSponsorActive]=useState(true);
- const [teamId,setTeamId]=useState(""),[assetValue,setAssetValue]=useState(""),[developmentValue,setDevelopmentValue]=useState(""),[historyValue,setHistoryValue]=useState(""),[achievementValue,setAchievementValue]=useState(""),[financialValue,setFinancialValue]=useState(""),[valuationNote,setValuationNote]=useState("");
+ const [teamId,setTeamId]=useState(""),[baseValuation,setBaseValuation]=useState(""),[valuationNote,setValuationNote]=useState("");
 
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setNotice("");
@@ -114,12 +114,16 @@ export default function AdminOperations({session}:{session:Session}){
  const assignTeamTier=async(id:string,key:string)=>{if(!supabase)return;setSaving(true);const {error}=await supabase.rpc("admin_set_team_division",{p_team_id:id,p_division_key:key||null});setSaving(false);setNotice(error?.message||"Tier tim diperbarui.");await refresh()};
  const saveValuation=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!teamId)return;
-  const values=[assetValue,developmentValue,historyValue,achievementValue,financialValue].map(number);
-  if(values.some(v=>!Number.isFinite(v)||v<0)){setNotice("Nilai komponen valuasi harus nol atau lebih.");return}
-  setSaving(true);const {error}=await supabase.from("caleris_team_valuations").insert({team_id:teamId,assets_value:values[0],development_value:values[1],history_value:values[2],achievements_value:values[3],financial_health_value:values[4],notes:valuationNote.trim()||null,assessed_by:session.user.id});
-  setSaving(false);setNotice(error?.message||"Snapshot valuasi tim tersimpan.");if(!error){setAssetValue("");setDevelopmentValue("");setHistoryValue("");setAchievementValue("");setFinancialValue("");setValuationNote("");await refresh()}
+  const base=number(baseValuation);
+  if(!Number.isFinite(base)||base<0){setNotice("Base valuation harus nol atau lebih.");return}
+  setSaving(true);setNotice("");
+  const {data,error}=await supabase.rpc("admin_assess_team_valuation",{p_team_id:teamId,p_base_valuation:base,p_notes:valuationNote.trim()||null});
+  setSaving(false);
+  if(error){setNotice(error.message);return}
+  const result=data as {team_score?:number;total_valuation?:number};
+  setNotice("Valuasi tersimpan. Team Score "+Number(result.team_score||0).toFixed(2)+"/100 · Final "+money(Number(result.total_valuation||0)));
+  setBaseValuation("");setValuationNote("");await refresh();
  };
-
  return <section className="workspace ops-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
   <header className="economy-heading"><div><span className="section-eyebrow">ADMIN CONTROL · OPERATIONS</span><h1>Operations Suite</h1><p>Konfigurasi pajak, hadiah development, sponsor pool, dan valuasi tim.</p></div><span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span></header>
@@ -189,22 +193,18 @@ export default function AdminOperations({session}:{session:Session}){
    </section>
   </div>}
   {tab==="valuation"&&<div className="ops-grid">
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TEAM VALUATION INPUT</span><h2>Assess team value</h2></div></div>
+   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">HYBRID TEAM VALUATION</span><h2>Assess team value</h2></div></div>
     <form className="economy-form" onSubmit={saveValuation}>
      <label>Team<select value={teamId} onChange={e=>setTeamId(e.target.value)} required><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.division_key?" · "+t.division_key:""}</option>)}</select></label>
-     <label>Assets<input type="number" min="0" step="0.01" value={assetValue} onChange={e=>setAssetValue(e.target.value)} required/></label>
-     <label>Development parts<input type="number" min="0" step="0.01" value={developmentValue} onChange={e=>setDevelopmentValue(e.target.value)} required/></label>
-     <label>History<input type="number" min="0" step="0.01" value={historyValue} onChange={e=>setHistoryValue(e.target.value)} required/></label>
-     <label>Achievements<input type="number" min="0" step="0.01" value={achievementValue} onChange={e=>setAchievementValue(e.target.value)} required/></label>
-     <label>Financial health<input type="number" min="0" step="0.01" value={financialValue} onChange={e=>setFinancialValue(e.target.value)} required/></label>
+     <label>Base valuation (¢p)<input type="number" min="0" step="0.01" value={baseValuation} onChange={e=>setBaseValuation(e.target.value)} required/></label>
      <label>Notes<textarea rows={3} value={valuationNote} onChange={e=>setValuationNote(e.target.value)}/></label>
-     <p className="economy-form-hint">Setiap komponen dinilai Admin dalam ¢p. Total valuasi adalah penjumlahan komponen, tanpa bobot tersembunyi atau formula asumsi.</p>
-     <button className="economy-primary-button" disabled={saving||!teamId}><Save size={15}/> Simpan valuation snapshot</button>
+     <p className="economy-form-hint">Admin hanya memasukkan Base Valuation. Sistem menghitung Development Progress 25%, Achievement History 15%, tren dua season 20%, Team Wallet 10%, lisensi driver terbaik 10%, dan Net Cashflow 10%. Bobot 90% dinormalisasi menjadi 100%. Hutang aktif dan tunggakan menjadi penalti. Snapshot historis lama tidak diubah.</p>
+     <button className="economy-primary-button" disabled={saving||!teamId||baseValuation.trim()===""}><Save size={15}/> Hitung & simpan valuation</button>
     </form>
    </section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TEAM TIER MAPPING</span><h2>Penetapan tier tim</h2></div></div><p className="economy-form-hint">Affiliate hanya dapat dibuat antar-tier berbeda. Pilih division key yang sudah dibuat melalui License Scoring Engine.</p><div className="ops-record-list">{teams.map(t=><article key={t.id}><div><strong>{t.name}</strong><small>Tier saat ini: {t.division_key||"Belum ditetapkan"}</small></div><select value={t.division_key||""} onChange={e=>void assignTeamTier(t.id,e.target.value)} disabled={saving||divisionOptions.length===0}><option value="">Belum ditetapkan</option>{divisionOptions.map(([key,name])=><option key={key} value={key}>{name} · {key}</option>)}</select></article>)}</div></section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">VALUATION HISTORY</span><h2>Snapshot valuasi</h2></div></div>
-    {valuations.length===0?<p className="economy-empty">Belum ada penilaian tim.</p>:<div className="ops-record-list">{valuations.map(v=><article key={v.id}><div><strong>{v.team?.name||"Team"} · {money(v.total_valuation)}</strong><small>Assets {money(v.assets_value)} · Development {money(v.development_value)} · History {money(v.history_value)} · Achievements {money(v.achievements_value)} · Financial {money(v.financial_health_value)}</small></div><time>{new Date(v.assessed_at).toLocaleDateString("id-ID")}</time></article>)}</div>}
+    {valuations.length===0?<p className="economy-empty">Belum ada penilaian tim.</p>:<div className="ops-record-list">{valuations.map(v=><article key={v.id}><div><strong>{v.team?.name||"Team"} · {money(v.total_valuation)}</strong><small>Base {money(Number(v.base_valuation||0))} · Score {Number(v.team_score||0).toFixed(2)}/100 · Penalti hutang {Number(v.debt_penalty||0).toFixed(2)} · Penalti tunggakan {Number(v.overdue_penalty||0).toFixed(2)}</small><small>{v.score_breakdown?"Komponen: "+Object.entries(v.score_breakdown).filter(([k])=>k!=="weights_normalized_from").map(([k,val]:[string,any])=>k.replaceAll("_"," ")+": "+(val?.score!=null?Number(val.score).toFixed(1)+"/100":money(Number(val?.amount||0)))).join(" · "):"Legacy snapshot · data historis dipertahankan"}</small></div><time>{new Date(v.assessed_at).toLocaleDateString("id-ID")}</time></article>)}</div>}
    </section>
   </div>}
   {notice&&<div className="license-notice" role="status">{notice}</div>}
