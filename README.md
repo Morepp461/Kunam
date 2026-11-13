@@ -376,4 +376,4 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - License rounds now support nullable `circuit_name` and `circuit_country_code` fields. FIA/Admin can add circuit metadata when creating a round and update existing rounds through License Scoring Engine. Existing rounds are left intact until their circuit data is entered.
 - Main Event → Schedule displays each mapped round's circuit name, round number, and country flag. A missing circuit remains visibly unconfigured instead of inventing a circuit.
 - Dashboard statistics are scoped to the signed-in member: Drivers see their own season/race/points/win figures; Team Owners see their team's active drivers, race starts, points, and wins. Team points are attributed using the team recorded on each race classification, not guessed from current ownership.
-- Migration: `20261113091000_profile_location_and_round_circuits.sql`.
+- Migration: `20261113075432_profile_location_and_round_circuits.sql`.
