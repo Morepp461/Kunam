@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 migration = ROOT / "supabase/migrations/20261113042509_driver_loan_full_season_payroll_and_return.sql"
-rls_migration = ROOT / "supabase/migrations/20261113043000_driver_loan_payroll_split_rls_denormalization.sql"
+rls_migration = ROOT / "supabase/migrations/20261113042901_driver_loan_payroll_split_rls_denormalization.sql"
 ui = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
 fia = (ROOT / "src/FIAOperations.tsx").read_text(encoding="utf-8")
 contracts = (ROOT / "src/TeamDriverContracts.tsx").read_text(encoding="utf-8")
@@ -47,6 +47,6 @@ assert "economy_payroll_claims!inner" not in contracts
 assert "split.member_id" in contracts
 assert "Driver Loan" in readme
 assert "one full configured season" in readme.lower()
-assert "20261113043000_driver_loan_payroll_split_rls_denormalization.sql" in readme
+assert "20261113042901_driver_loan_payroll_split_rls_denormalization.sql" in readme
 
 print("Driver Loan full-season payroll regression checks passed.")
