@@ -341,7 +341,7 @@ function Dashboard({session,profile,profileReady}:{session:Session;profile:Accou
       roundIds=(rounds||[]).map((row:any)=>row.id);
     }
     if(ownMember.role==="Driver"){
-      const [entriesQ,pointsQ,winsQ,walletsQ]=await Promise.all([
+      const [entriesQ,pointsQ,winsQ]=await Promise.all([
         roundIds.length?supabase.from("caleris_race_result_entries").select("round_id").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
         roundIds.length?supabase.from("license_round_standings").select("points_total").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
         roundIds.length?supabase.from("caleris_race_results").select("id").eq("winner_member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
@@ -355,7 +355,7 @@ function Dashboard({session,profile,profileReady}:{session:Session;profile:Accou
         {label:"Race wins",value:String((winsQ.data||[]).length),detail:"Kemenangan season aktif",icon:<Trophy/>}
       ]);}
     }else if(ownMember.role==="Owner"&&ownMember.team_id){
-      const [teamMembersQ,entriesQ,walletQ]=await Promise.all([
+      const [teamMembersQ,entriesQ]=await Promise.all([
         supabase.from("members").select("id").eq("team_id",ownMember.team_id).eq("role","Driver"),
         roundIds.length?supabase.from("caleris_race_result_entries").select("round_id,member_id").eq("team_id",ownMember.team_id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
       ]);
