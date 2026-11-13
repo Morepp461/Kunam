@@ -26,3 +26,5 @@ jobs:
         run: python3 -B scripts/test_economy_regressions.py
       - name: Economy wallet lifecycle checks
         run: python3 -B scripts/test_economy_wallet_lifecycle.py
+      - name: Wealth Tax engine regression checks
+        run: python3 -B scripts/test_wealth_tax_engine.py

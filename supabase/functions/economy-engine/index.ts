@@ -157,6 +157,23 @@ Deno.serve(async (req: Request) => {
       return respond(200, { success: true, result: data });
     }
 
+    if (action === "wealth_tax_assess" || action === "wealth_tax_collect") {
+      const seasonId = typeof body.seasonId === "string" ? body.seasonId : "";
+      if (!uuidPattern.test(seasonId)) return respond(400, { error: "Season id is invalid." });
+      const rpcName = action === "wealth_tax_assess"
+        ? "admin_generate_wealth_tax_assessments"
+        : "admin_collect_wealth_tax";
+      const { data, error } = await serviceClient.rpc(rpcName, {
+        p_season_id: seasonId,
+        p_actor_id: userId,
+      });
+      if (error) {
+        console.error("Wealth Tax processing failed:", error.message);
+        return respond(422, { error: error.message });
+      }
+      return respond(200, { success: true, result: data });
+    }
+
     return respond(400, { error: "Unknown Economy Engine action." });
   } catch (error) {
     console.error("Economy Engine gateway error:", error);
