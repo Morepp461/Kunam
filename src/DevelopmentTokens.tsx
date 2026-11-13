@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {ArrowLeft,RefreshCw,Trophy,Coins,ShoppingBag} from "lucide-react";
+import {ArrowLeft,RefreshCw,Trophy,Coins} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -65,7 +65,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const latestEnd=history.find(s=>s.snapshot_stage==="season_end");
  const latestBaseline=history.find(s=>s.snapshot_stage==="season_baseline");
  return <section className="workspace development-token-workspace">
-  <div className="development-page-actions"><Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link><Link className="economy-secondary-button" to="/shop"><ShoppingBag size={15}/> Shop</Link></div>
+  <div className="development-page-actions"><Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link></div>
   <header className="page-heading"><span className="section-eyebrow">DEVELOPMENT ECONOMY</span><h1 className="page-title">{asset==="DDP"?"Driver Development":"Team Car Development"}</h1><p className="page-description">{asset==="DDP"?"Development atribut pribadi driver.":"Development 16 atribut mobil milik tim."} Upgrade menggunakan token {asset} dan setiap perubahan tercatat.</p></header>
   {loading?<div className="workspace-card">Memuat data development...</div>:<>
    <div className="development-token-hero"><div><span className="section-eyebrow">{asset==="DDP"?"DRIVER DEVELOPMENT POINTS":"TEAM DEVELOPMENT POINTS"}</span><strong>{money(balance)}</strong><small>{asset==="DDP"?member?.character_name||"Driver":team?.name||"Tim belum tersedia"}</small></div><span className="development-token-icon">{asset==="DDP"?<Trophy size={28}/>:<Coins size={28}/>}</span></div>
