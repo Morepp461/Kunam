@@ -30,7 +30,7 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
   const err=[m.error,t.error,n.error,o.error,b.error].find(Boolean);
   if(err)setNotice(err.message);
   const all=(m.data||[]) as Member[];
-  setMembers(all);setMember(p.member_id?all.find(x=>x.id===p.member_id)||null:null);
+  setMembers(all);setMember(p?.member_id?all.find(x=>x.id===p.member_id)||null:null);
   setTeams((t.data||[]) as Team[]);setOfferBounds(Object.fromEntries((b.data||[]).map((x:any)=>[x.team_id,{minimum_offer:x.minimum_offer,maximum_offer:x.maximum_offer}])));setTakeovers((n.data||[]) as Takeover[]);setOffers((o.data||[]) as Offer[]);
   setLoading(false);
  },[session.user.id]);
