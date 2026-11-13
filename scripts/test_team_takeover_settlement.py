@@ -3,14 +3,17 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 migration = ROOT / "supabase/migrations/20261113040440_team_takeover_settlement_and_role_transfer.sql"
 guard_migration = ROOT / "supabase/migrations/20261113040627_team_takeover_null_safe_role_guards.sql"
+contract_migration = ROOT / "supabase/migrations/20261113040857_team_takeover_driver_contract_closeout.sql"
 ui = (ROOT / "src/TeamTakeoverMarket.tsx").read_text(encoding="utf-8")
 fia = (ROOT / "src/FIAOperations.tsx").read_text(encoding="utf-8")
 readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
 assert migration.is_file(), "Team Take Over settlement migration is missing"
 assert guard_migration.is_file(), "Take Over role guard and lock-order migration is missing"
+assert contract_migration.is_file(), "Driver contract closeout migration is missing"
 sql = migration.read_text(encoding="utf-8").lower()
 guard_sql = guard_migration.read_text(encoding="utf-8").lower()
+contract_sql = contract_migration.read_text(encoding="utf-8").lower()
 
 # Buyer eligibility and seller identity are checked by member identity, not team affiliation.
 assert "v_actor.role not in ('driver','fia')" in sql
@@ -33,6 +36,8 @@ assert "set role='owner',team_id=v_team.id where id=v_buyer.id" in sql
 assert "status='completed'" in sql and "transaction_id=" in sql and "settled_at=now()" in sql
 assert "members_one_team_owner_per_team" in sql
 assert "pg_advisory_xact_lock" in guard_sql
+assert "update public.economy_driver_contracts" in contract_sql
+assert "set status='ended'" in contract_sql
 assert "revoke all on function public.fia_review_team_takeover(uuid,boolean) from public,anon,service_role" in sql
 
 # Member UI exposes buyer flow to Public Member, Driver, and FIA only.
@@ -48,5 +53,6 @@ assert "pembayaran dan perpindahan" in fia.lower()
 assert "Team Take Over" in readme and "Team Owner wallet" in readme
 assert "20261113040440_team_takeover_settlement_and_role_transfer.sql" in readme
 assert "20261113040627_team_takeover_null_safe_role_guards.sql" in readme
+assert "20261113040857_team_takeover_driver_contract_closeout.sql" in readme
 
 print("Team Take Over settlement regression checks passed.")
