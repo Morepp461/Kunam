@@ -50,7 +50,7 @@ alter table public.caleris_job_adverts
 -- profile fields, member codes and balances out of this view.
 create or replace view public.caleris_member_directory
 with (security_barrier=true) as
-select m.id,m.character_name,m.role,m.team_id,m.license,p.nationality
+select m.id,m.character_name,m.role,m.team_id,m.license,m.public_member_id,p.nationality
 from public.members m
 left join public.profiles p on p.member_id=m.id;
 revoke all on public.caleris_member_directory from public,anon,authenticated,service_role;
