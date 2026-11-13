@@ -21,15 +21,16 @@ export default function DriverTransferMarket({session}:{session:Session}){
   if(!supabase)return;setLoading(true);setNotice("");
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe){setMember(null);setLoading(false);setNotice(pe.message);return}
-  const [m,t,n,o,a]=await Promise.all([
+  const [m,t,n,o,a,ownMemberQ]=await Promise.all([
    supabase.from("caleris_driver_market_directory").select("id,character_name,role,team_id,license,nationality,attributes,contract_ends_on,market_status").order("character_name"),
    supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
    supabase.from("caleris_driver_move_negotiations").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_driver_move_offers").select("*").order("created_at",{ascending:true}),
-   supabase.from("caleris_team_affiliations").select("team_a_id,team_b_id,status").eq("status","accepted")
+   supabase.from("caleris_team_affiliations").select("team_a_id,team_b_id,status").eq("status","accepted"),
+   p.member_id?supabase.from("members").select("id,character_name,role,team_id").eq("id",p.member_id).maybeSingle():Promise.resolve({data:null,error:null})
   ]);
-  const err=[m.error,t.error,n.error,o.error,a.error].find(Boolean);if(err)setNotice(err.message);
-  const allMembers=(m.data||[]) as Member[];setMembers(allMembers);setMember(p.member_id?allMembers.find(x=>x.id===p.member_id)||null:null);
+  const err=[m.error,t.error,n.error,o.error,a.error,ownMemberQ.error].find(Boolean);if(err)setNotice(err.message);
+  const allMembers=(m.data||[]) as Member[];setMembers(allMembers);setMember((ownMemberQ.data||null) as Member|null);
   setTeams((t.data||[]) as Team[]);setNegotiations((n.data||[]) as Negotiation[]);setOffers((o.data||[]) as Offer[]);setAffiliations((a.data||[]) as Affiliation[]);setLoading(false);
  },[session.user.id]);
  useEffect(()=>{void refresh()},[refresh]);
