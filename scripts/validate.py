@@ -29,6 +29,9 @@ def main():
         "20261112124242_license_offseason_hiatus_guard.sql",
         "20261112125157_race_day_checkin_and_lifetime_wdc.sql",
         "20261112130133_wdc_highest_division_dynamic_points.sql",
+        "20261113055303_stage5_panel_operations.sql",
+        "20261113055514_stage5_season_catalog_read.sql",
+        "20261113055712_stage5_race_classification_rpc.sql",
     ]
     for migration in history_aligned_migrations:
         assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
@@ -53,7 +56,16 @@ def main():
     assert query_history_duplicate.read_text(encoding="utf-8") == query_sql, "Economy query migration history copies differ"
     for fragment in ["economy_transactions_created_by_idx", "economy_reward_claims_member_idx", "economy_reward_claims_source_idx", "Members and admins read economy wallets"]:
         assert fragment in query_sql, f"Economy query hardening missing: {fragment}"
+    stage5 = (ROOT / "src/Stage5Panel.tsx").read_text(encoding="utf-8")
+    stage5_css = (ROOT / "src/stage5-panel.css").read_text(encoding="utf-8")
+    for fragment in ["driver-panel", "career-history", "financial-centre", "team-summary", "driver-registration", "place-job-advert", "caleris_announcements", "caleris_regulations", "caleris_appeals", "Engine Ranking", "Rookie of the Season"]:
+        assert fragment in stage5, f"Stage 5 panel missing: {fragment}"
+    for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
+        assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    assert 'import Stage5Panel from "./Stage5Panel";' in app
+    assert 'path="/fia-panel/license-engine" element={isAdmin?' in app
+    assert 'path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?' in app
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
     assert 'provider:"discord"' in app
