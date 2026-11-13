@@ -46,8 +46,6 @@ type AccountProfile={user_id:string;member_id:string|null;public_member_id:strin
 type PanelAccess={is_admin:boolean;member_role:string|null;main_event:boolean;driver_panel:boolean;team_panel:boolean;fia_panel:boolean};
 const NO_PANEL_ACCESS:PanelAccess={is_admin:false,member_role:null,main_event:false,driver_panel:false,team_panel:false,fia_panel:false};
 const PANEL_ACCESS_KEYS:Record<string,keyof PanelAccess>={"main-event":"main_event","driver-panel":"driver_panel","team-panel":"team_panel","fia-panel":"fia_panel"};
-type TurnstileApi={render:(container:HTMLElement,options:{sitekey:string;theme:"dark";size:"normal";action:string;callback:(token:string)=>void;"expired-callback":()=>void;"error-callback":()=>void;})=>string;remove:(id:string)=>void;reset:(id:string)=>void;};
-declare global { interface Window { turnstile?:TurnstileApi } }
 type MemberRecord={id:string;member_code:string|null;character_name:string|null;role:string|null;license:string|null;team_id:string|null};
 type TeamRecord={id:string;name:string};
 type ContractRecord={id:string;duration_label:string|null;starts_on:string|null;ends_on:string|null;salary:number|null;target:unknown;release_clause:number|null;status:string};
@@ -262,21 +260,10 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
  const [avatarFile,setAvatarFile]=useState<File|null>(null),[avatarPreview,setAvatarPreview]=useState(""),[avatarEditing,setAvatarEditing]=useState(false),[cropX,setCropX]=useState(50),[cropY,setCropY]=useState(50);
  const originalAvatarFileRef=useRef<File|null>(null);
  const [firstName,setFirstName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState("");
- const [privacyAccepted,setPrivacyAccepted]=useState(false),[turnstileToken,setTurnstileToken]=useState(""),[saving,setSaving]=useState(false);
+ const [privacyAccepted,setPrivacyAccepted]=useState(false),[saving,setSaving]=useState(false);
  const [errors,setErrors]=useState<Record<string,string>>({});
- const widgetContainer=useRef<HTMLDivElement|null>(null),widgetId=useRef<string|null>(null),avatarStageRef=useRef<HTMLDivElement|null>(null),avatarImageRef=useRef<HTMLImageElement|null>(null),avatarDragRef=useRef<{x:number;y:number;cropX:number;cropY:number}|null>(null);
- const sitekey=import.meta.env.VITE_CLOUDFLARE_TURNSTILE_SITE_KEY as string|undefined;
+ const avatarStageRef=useRef<HTMLDivElement|null>(null),avatarImageRef=useRef<HTMLImageElement|null>(null),avatarDragRef=useRef<{x:number;y:number;cropX:number;cropY:number}|null>(null);
  const today=new Date();const maxDate=new Date(today.getFullYear()-13,today.getMonth(),today.getDate());const maxDob=`${maxDate.getFullYear()}-${String(maxDate.getMonth()+1).padStart(2,"0")}-${String(maxDate.getDate()).padStart(2,"0")}`;
- useEffect(()=>{
-  if(!privacyAccepted||!sitekey||!widgetContainer.current)return;
-  let cancelled=false;
-  const render=()=>{if(cancelled||!window.turnstile||!widgetContainer.current||widgetId.current)return;widgetId.current=window.turnstile.render(widgetContainer.current,{sitekey,theme:"dark",size:"normal",action:"paddock_access",callback:(token)=>setTurnstileToken(token),"expired-callback":()=>setTurnstileToken(""),"error-callback":()=>{setTurnstileToken("");toast("error","Verifikasi Cloudflare gagal","Muat ulang widget lalu coba lagi.")}})};
-  const existing=document.getElementById("caleris-turnstile-script") as HTMLScriptElement|null;
-  if(window.turnstile)render();
-  else if(existing){existing.addEventListener("load",render);existing.addEventListener("error",()=>toast("error","Cloudflare tidak dapat dimuat")); }
-  else {const script=document.createElement("script");script.id="caleris-turnstile-script";script.src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";script.async=true;script.defer=true;script.onload=render;script.onerror=()=>toast("error","Cloudflare tidak dapat dimuat","Periksa koneksi atau hostname widget.");document.head.appendChild(script);}
-  return()=>{cancelled=true;if(widgetId.current&&window.turnstile){window.turnstile.remove(widgetId.current);widgetId.current=null;}setTurnstileToken("");};
- },[privacyAccepted,sitekey,toast]);
  const chooseAvatar=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>3*1024*1024){setErrors(v=>({...v,avatar:"Gunakan JPG, PNG, atau WEBP maksimal 3 MB."}));e.target.value="";return;}if(avatarPreview)URL.revokeObjectURL(avatarPreview);originalAvatarFileRef.current=file;setAvatarFile(file);setAvatarPreview(URL.createObjectURL(file));setAvatarEditing(true);setCropX(50);setCropY(50);setErrors(v=>({...v,avatar:""}));e.target.value="";};
  const beginAvatarDrag=(e:ReactPointerEvent<HTMLDivElement>)=>{if(!avatarFile)return;e.currentTarget.setPointerCapture(e.pointerId);avatarDragRef.current={x:e.clientX,y:e.clientY,cropX,cropY};};
  const moveAvatarDrag=(e:ReactPointerEvent<HTMLDivElement>)=>{const drag=avatarDragRef.current,stage=avatarStageRef.current,image=avatarImageRef.current;if(!drag||!stage||!image)return;const rect=stage.getBoundingClientRect(),aspect=image.naturalWidth/image.naturalHeight;const overflowX=Math.max(0,rect.height*aspect-rect.width),overflowY=Math.max(0,rect.width/aspect-rect.height);setCropX(Math.max(0,Math.min(100,drag.cropX-(e.clientX-drag.x)/Math.max(1,overflowX)*100)));setCropY(Math.max(0,Math.min(100,drag.cropY-(e.clientY-drag.y)/Math.max(1,overflowY)*100)));};
@@ -292,8 +279,6 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   if(nickname.trim().length>32)next.nickname="Nickname maksimal 32 karakter.";
   if(!preferredRole)next.preferredRole="Pilih preferensi role.";
   if(!privacyAccepted)next.privacy="Persetujuan privasi diperlukan.";
-  if(privacyAccepted&&!turnstileToken)next.turnstile="Selesaikan verifikasi Cloudflare.";
-  if(!sitekey)next.turnstile="Site Key Cloudflare belum dikonfigurasi.";
   setErrors(next);if(Object.keys(next).length)return;
   if(!supabase){toast("error","Supabase belum tersedia",missingSupabaseMessage());return;}
   setSaving(true);loading(true);
@@ -303,11 +288,11 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
    const path=`${session.user.id}/paddock-${crypto.randomUUID()}.${ext}`;
    const {error:uploadError}=await supabase.storage.from("profile-avatars").upload(path,croppedAvatar,{upsert:false,contentType:croppedAvatar.type});
    if(uploadError)throw new Error(uploadError.message);
-   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{turnstileToken,avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,privacyAccepted}});
+   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,privacyAccepted}});
    if(error)throw new Error(error.message);
    if(!data?.success)throw new Error(data?.error||"Paddock Access gagal disimpan.");
    await onComplete();toast("success","Paddock Access disetujui","Profil akun berhasil dibuat.");navigate("/dashboard",{replace:true});
-  }catch(error){const message=error instanceof Error?error.message:"Terjadi kesalahan.";toast("error","Pendaftaran gagal",message);if(widgetId.current&&window.turnstile)window.turnstile.reset(widgetId.current);setTurnstileToken("");}
+  }catch(error){const message=error instanceof Error?error.message:"Terjadi kesalahan.";toast("error","Pendaftaran gagal",message);}
   finally{loading(false);setSaving(false);}
  };
  return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Paddock Access</h1><p className="page-description">Lengkapi identitas untuk membuka akses ke paddock Caleris Masters.</p></div><form className="paddock-access-form" onSubmit={submit} noValidate>
@@ -317,10 +302,9 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   <PaddockDatePicker value={dateOfBirth} max={maxDob} onChange={setDateOfBirth}/>{errors.dateOfBirth&&<small className="field-error">{errors.dateOfBirth}</small>}
   <label className="settings-field">Caleris Nickname<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} autoComplete="nickname" placeholder="Caleris Nickname"/>{errors.nickname&&<small className="field-error">{errors.nickname}</small>}</label>
   <PaddockRolePicker value={preferredRole} onChange={setPreferredRole}/>{errors.preferredRole&&<small className="field-error">{errors.preferredRole}</small>}
-  <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setTurnstileToken("");setErrors(v=>({...v,privacy:"",turnstile:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
+  <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setErrors(v=>({...v,privacy:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
   {errors.privacy&&<small className="field-error">{errors.privacy}</small>}
-  {privacyAccepted&&<div className="turnstile-section"><span className="section-eyebrow">SECURITY VERIFICATION</span>{sitekey?<><div ref={widgetContainer} className="turnstile-widget"/>{turnstileToken&&<span className="turnstile-success"><Check size={14}/> Verifikasi berhasil</span>}</>:<p className="field-error">Cloudflare Site Key belum diatur. Tambahkan VITE_CLOUDFLARE_TURNSTILE_SITE_KEY di Vercel.</p>}{errors.turnstile&&<small className="field-error">{errors.turnstile}</small>}</div>}
-  <button className="action primary paddock-submit" type="submit" disabled={saving||!turnstileToken}>{saving?"Memproses akses...":"Submit Paddock Access"}</button>
+    <button className="action primary paddock-submit" type="submit" disabled={saving}>{saving?"Memproses akses...":"Submit Paddock Access"}</button>
  </form></div></section>;
 }
 function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){

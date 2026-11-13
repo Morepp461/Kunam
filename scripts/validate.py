@@ -129,7 +129,9 @@ def main():
     assert "enable row level security" in sql.lower()
     assert "create policy" in sql.lower()
     assert "Paddock Access" in app and "complete-paddock-access" in app
-    assert "VITE_CLOUDFLARE_TURNSTILE_SITE_KEY" in (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    paddock_function = (ROOT / "supabase/functions/complete-paddock-access/index.ts").read_text(encoding="utf-8").lower()
+    assert "turnstile" not in app.lower() and "cloudflare" not in app.lower()
+    assert "turnstile" not in paddock_function and "cloudflare" not in paddock_function
     assert "onboarding_completed" in app and "preferredRole" in app
     search = ROOT / "supabase/functions/member-directory/index.ts"
     assert search.is_file(), "Missing member directory search function"
@@ -146,7 +148,7 @@ def main():
     for card_title in ["Current Event", "Statistik", "Informasi akun", "Informasi karakter", "Detail kontrak"]:
         assert card_title in app, f"Global search card header missing: {card_title}"
     edge = ROOT / "supabase/functions/complete-paddock-access/index.ts"
-    assert edge.is_file() and "siteverify" in edge.read_text(encoding="utf-8")
+    assert edge.is_file() and "turnstile" not in edge.read_text(encoding="utf-8").lower() and "cloudflare" not in edge.read_text(encoding="utf-8").lower()
     economy_migration = ROOT / "supabase/migrations/20261112135818_economy_engine_core.sql"
     assert economy_migration.is_file(), "Missing Economy Engine migration"
     economy_sql = economy_migration.read_text(encoding="utf-8")

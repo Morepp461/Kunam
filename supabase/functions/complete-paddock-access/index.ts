@@ -37,9 +37,8 @@ Deno.serve(async (req: Request) => {
     const secretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const turnstileSecret = Deno.env.get("TURNSTILE_SECRET_KEY");
-    if (!supabaseUrl || !turnstileSecret) {
-      return respond(500, { error: "Paddock Access verification is not configured." });
+    if (!supabaseUrl) {
+      return respond(500, { error: "Paddock Access is not configured." });
     }
 
     const bearer = req.headers.get("Authorization") ?? "";
@@ -59,7 +58,6 @@ Deno.serve(async (req: Request) => {
     const user = authData.user;
 
     const body = await req.json();
-    const token = typeof body.turnstileToken === "string" ? body.turnstileToken : "";
     const avatarPath = typeof body.avatarPath === "string" ? body.avatarPath : "";
     const firstName = typeof body.firstName === "string" ? body.firstName.trim() : "";
     const lastName = typeof body.lastName === "string" ? body.lastName.trim() : "";
@@ -68,7 +66,6 @@ Deno.serve(async (req: Request) => {
     const preferredRole = typeof body.preferredRole === "string" ? body.preferredRole : "";
     const privacyAccepted = body.privacyAccepted === true;
 
-    if (!token || token.length > 2048) return respond(400, { error: "Complete Cloudflare verification first." });
     if (!avatarPath || !nickname || nickname.length > 32 || !dateOfBirth) {
       return respond(400, { error: "Complete all required Paddock Access fields." });
     }
@@ -84,21 +81,6 @@ Deno.serve(async (req: Request) => {
     const expectedAvatarPrefix = `${user.id}/`;
     if (!avatarPath.startsWith(expectedAvatarPrefix) || avatarPath.includes("..") || avatarPath.split("/").length !== 2) {
       return respond(400, { error: "Profile photo path is not valid for this account." });
-    }
-
-    const verifyResponse = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret: turnstileSecret, response: token }),
-    });
-    if (!verifyResponse.ok) return respond(502, { error: "Cloudflare verification service is unavailable." });
-    const verification = await verifyResponse.json();
-    if (verification.success !== true || (verification.action && verification.action !== "paddock_access")) {
-      return respond(403, { error: "Cloudflare verification failed. Please try again." });
-    }
-    const allowedHostnames = (Deno.env.get("TURNSTILE_ALLOWED_HOSTNAMES") ?? "calerismastersnewgen-mu.vercel.app,localhost").split(",").map((host) => host.trim()).filter(Boolean);
-    if (verification.hostname && !allowedHostnames.includes(verification.hostname)) {
-      return respond(403, { error: "Cloudflare verification hostname is not allowed." });
     }
 
     const adminClient = createClient(supabaseUrl, adminKey, {
