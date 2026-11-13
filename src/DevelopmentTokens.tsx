@@ -48,7 +48,6 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  useEffect(()=>{void refresh()},[refresh]);
  const balance=Number(account?.balance||0);
  const current=useMemo(()=>Object.fromEntries(attributes.map(a=>[a.key,a.value])),[attributes]);
- const selectedLabel=definitions.find(x=>x[0]===selected)?.[1]||"Pilih atribut";
  const cost=Number(amount||0);
  const validAmount=Number.isInteger(cost)&&cost>0&&cost<=balance;
  const upgrade=async()=>{
