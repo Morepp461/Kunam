@@ -12,7 +12,6 @@ import Stage5Panel from "./Stage5Panel";
 import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
 import AdminEconomyEngine from "./AdminEconomyEngine";
-import AdminDevelopmentShopSettings from "./AdminDevelopmentShopSettings";
 import AdminOperations from "./AdminOperations";
 import FIAOperations from "./FIAOperations";
 import MemberRaceCheckIn from "./MemberRaceCheckIn";
