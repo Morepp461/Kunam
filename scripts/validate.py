@@ -33,6 +33,8 @@ def main():
         "20261113055514_stage5_season_catalog_read.sql",
         "20261113055712_stage5_race_classification_rpc.sql",
         "20261113055954_stage5_regulation_announcement_sync.sql",
+        "20261113060112_stage5_rpc_invoker_security.sql",
+        "20261113060125_stage5_team_roster_rls_guard.sql",
     ]
     for migration in history_aligned_migrations:
         assert (ROOT / "supabase/migrations" / migration).is_file(), f"Missing Supabase-history-aligned migration: {migration}"
@@ -60,6 +62,11 @@ def main():
     stage5 = (ROOT / "src/Stage5Panel.tsx").read_text(encoding="utf-8")
     stage5_css = (ROOT / "src/stage5-panel.css").read_text(encoding="utf-8")
     for fragment in ["driver-panel", "career-history", "financial-centre", "team-summary", "driver-registration", "place-job-advert", "caleris_announcements", "caleris_regulations", "caleris_appeals", "Engine Ranking", "Rookie of the Season", "fia_publish_regulation"]:
+        assert fragment in stage5, f"Stage 5 panel missing: {fragment}"
+    invoker_sql = (ROOT / "supabase/migrations/20261113060112_stage5_rpc_invoker_security.sql").read_text(encoding="utf-8")
+    for function_name in ["member_register_driver_for_season", "fia_decide_appeal", "fia_publish_regulation", "fia_record_race_result_entry"]:
+        assert f"function public.{function_name}" in invoker_sql and "security invoker" in invoker_sql, f"Missing invoker-secured RPC: {function_name}"
+    for fragment in []:
         assert fragment in stage5, f"Stage 5 panel missing: {fragment}"
     for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
         assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
