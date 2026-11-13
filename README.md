@@ -377,3 +377,11 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - Main Event → Schedule displays each mapped round's circuit name, round number, and country flag. A missing circuit remains visibly unconfigured instead of inventing a circuit.
 - Dashboard statistics are scoped to the signed-in member: Drivers see their own season/race/points/win figures; Team Owners see their team's active drivers, race starts, points, and wins. Team points are attributed using the team recorded on each race classification, not guessed from current ownership.
 - Migration: `20261113075432_profile_location_and_round_circuits.sql`.
+
+
+## Profile Save Permission Fix
+
+- Account settings upsert requires authenticated column-level `INSERT` and `UPDATE` privileges for `profiles.nationality` and `profiles.hometown`. Migration `20261113080500_profiles_location_column_grants.sql` grants only those two self-service columns; the existing own-profile RLS policy remains the row-level boundary.
+- No grants were added for role, member linkage, team, balance, contracts, or other protected profile fields.
+- The Caleris Masters testing account matching web nickname `Pperom` was added to `site_admins`. Its existing FIA member role remains separate and unchanged; Admin is an independent application permission.
+- The Rookie of the Season criteria/explanation footnote was removed from the shared Main Event card, covering Global, Caleris Premio, and Caleris Zwei.
