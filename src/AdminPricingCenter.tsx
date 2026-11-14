@@ -12,7 +12,6 @@ type LoanRate={tenor_seasons:number;total_interest_rate:number};
 const TEAM:[string,string][]=[["race_pace","Race Pace"],["qualifying_pace","Qualifying Pace"],["engine_power","Engine Power"],["aero_power","Aero Power"],["low_speed_corners","Low Speed Corners"],["high_speed_corners","High Speed Corners"],["traction","Traction"],["mechanical_grip","Mechanical Grip"],["team_tyre_management","Team Tyre Management"],["strategy_quality","Strategy Quality"],["team_morale","Team Morale"],["reliability","Reliability"],["car_tyre_wear","Car Tyre Wear"],["pit_stop_efficiency","Pit Stop Efficiency"],["drs_efficiency","DRS Efficiency"],["ers_efficiency","ERS Efficiency"]];
 const DRIVER:[string,string][]=[["race_pace","Race Pace"],["qualifying_pace","Qualifying Pace"],["experience","Experience"],["aggression","Aggression"],["defensive_strength","Defensive Strength"],["overtake_skill","Overtake Skill"],["mistake_rate","Mistake Rate"],["tyre_management","Tyre Management"]];
 const num=(v:string)=>Number(v);
-const money=(v:number)=>"¢p "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const blankTax=(scope:"member"|"team",i:number):TaxRule=>({tax_scope:scope,label:scope==="member"?"Member Tier "+(i+1):"Team Tier "+(i+1),minimum_base:"",rate_percent:"",is_active:true,sort_order:i+1});
 export default function AdminPricingCenter(){
  const [shopPrice,setShopPrice]=useState("0"),[shopActive,setShopActive]=useState(false);
