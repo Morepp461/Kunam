@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Search, RefreshCw, UserRound, ShieldCheck, Settings2, X, ExternalLink, Users } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import "./admin-users.css";
@@ -94,7 +95,7 @@ export default function AdminUsers() {
         member?.role, user.team_name,
       ].filter(Boolean).join(" ").toLocaleLowerCase("id-ID");
       const matchesSearch = !needle || haystack.includes(needle);
-      const status = !profile ? "unlinked" : profile.account_status;
+      const status = user.is_admin ? "admin" : !profile ? "unlinked" : profile.account_status;
       const matchesStatus = statusFilter === "all" || status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -122,13 +123,9 @@ export default function AdminUsers() {
       setError(data?.error || invokeError?.message || "Konfigurasi role gagal disimpan.");
       return;
     }
-    setUsers((current) => current.map((user) => user.user_id !== selected.user_id ? user : {
-      ...user,
-      profile: user.profile ? { ...user.profile, preferred_role: preferredRole || null } : user.profile,
-      member: user.member ? { ...user.member, role: assignedRole || null } : user.member,
-    }));
     setSelected(null);
     setError("");
+    await load();
   };
 
   const stats = useMemo(() => ({
@@ -171,7 +168,7 @@ export default function AdminUsers() {
             <div className="admin-user-main">
               <div className="admin-user-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt=""/> : <UserRound size={22}/>}</div>
               <div className="admin-user-identity">
-                {profileHref ? <a href={profileHref} className="admin-user-name">{displayName}<ExternalLink size={13}/></a> : <strong className="admin-user-name">{displayName}</strong>}
+                {profileHref ? <Link to={profileHref} className="admin-user-name">{displayName}<ExternalLink size={13}/></Link> : <strong className="admin-user-name">{displayName}</strong>}
                 <span>{user.email || "Email tidak tersedia"}</span>
                 <small>{profile?.public_member_id ? `Member ID · ${profile.public_member_id}` : "Belum memiliki Member ID"}</small>
               </div>
@@ -186,7 +183,7 @@ export default function AdminUsers() {
               </div>
             </div>
             <div className="admin-user-meta">
-              <span><b>Status akun</b>{profile?.account_status || "Belum onboarding"}</span>
+              <span><b>Status akun</b>{user.is_admin ? "Admin" : profile?.account_status || "Belum onboarding"}</span>
               <span><b>Karakter</b>{member?.character_name || profile?.driver_nickname || "Belum terhubung"}</span>
               <span><b>License</b>{member?.license || "—"}</span>
               <span><b>Login terakhir</b>{dateTime(user.last_sign_in_at)}</span>
