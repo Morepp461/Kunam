@@ -88,7 +88,7 @@ export default function AdminConfiguration({ session }: { session: Session }) {
   const loadRows = useCallback(async () => {
     if (!supabase) { setLoading(false); setMessage({ kind: "error", text: "Koneksi Supabase belum tersedia." }); return; }
     setLoading(true);
-    const { data, error } = await supabase.from("caleris_configurations").select("*").eq("category", category).order("sort_order", { ascending: true }).order("title", { ascending: true });
+    const { data, error } = await supabase.from("caleris_configurations").select("*").eq("category", category).not("config_key", "in", '("daily-checkin-reward","team-takeover-valuation-range")').order("sort_order", { ascending: true }).order("title", { ascending: true });
     if (error) setMessage({ kind: "error", text: error.message });
     else setRows((data ?? []) as Configuration[]);
     setLoading(false);

@@ -12,7 +12,6 @@ type RewardClaim = { id: string; amount: number; status: string; created_at: str
 type PayrollClaim = { id: string; amount: number; status: string; created_at: string; member_id: string };
 type MemberCheckinClaim = { id: string; member_id: string; reward_amount: number; reward_status: string; checkin_at: string };
 type EventType = "checkin_reward" | "prize" | "bank_reward" | "sponsor_payout" | "bank_funding" | "tax" | "fine" | "transfer" | "admin_adjustment";
-type ConfigRow = { id: string; payload: Record<string, unknown>; is_active: boolean };
 const eventLabels: Record<string, string> = { checkin_reward: "Check-in Reward", prize: "Prize", bank_reward: "Bank Reward", sponsor_payout: "Sponsor Payout", bank_funding: "Bank Funding", tax: "Pajak", fine: "Denda", transfer: "Transfer", admin_adjustment: "Penyesuaian Admin", reversal: "Pembatalan" };
 const money = (value: number) => "¢p " + Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const date = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
@@ -23,14 +22,11 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   const [claims, setClaims] = useState<RewardClaim[]>([]);
   const [payrollClaims, setPayrollClaims] = useState<PayrollClaim[]>([]);
   const [memberCheckins, setMemberCheckins] = useState<MemberCheckinClaim[]>([]);
-  const [config, setConfig] = useState<ConfigRow | null>(null);
   const [amount, setAmount] = useState("");
   const [eventType, setEventType] = useState<EventType>("prize");
   const [sourceId, setSourceId] = useState("");
   const [destinationId, setDestinationId] = useState("");
   const [description, setDescription] = useState("");
-  const [rewardAmount, setRewardAmount] = useState("0");
-  const [rewardActive, setRewardActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ kind: "success" | "error"; text: string } | null>(null);
@@ -45,15 +41,14 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   const refresh = useCallback(async () => {
     if (!supabase) { setNotice({ kind: "error", text: "Koneksi Supabase belum tersedia." }); setLoading(false); return; }
     setLoading(true);
-    const [accountResult, transactionResult, claimResult, payrollResult, configResult, memberCheckinResult] = await Promise.all([
+    const [accountResult, transactionResult, claimResult, payrollResult, memberCheckinResult] = await Promise.all([
       supabase.from("economy_wallet_directory").select("*").order("account_kind").order("display_name"),
       supabase.from("economy_transaction_feed").select("*").order("created_at", { ascending: false }).limit(100),
       supabase.from("economy_reward_claims").select("id,amount,status,created_at,member_id").order("created_at", { ascending: false }).limit(100),
       supabase.from("economy_payroll_claims").select("id,amount,status,created_at,member_id").order("created_at", { ascending: false }).limit(100),
-      supabase.from("caleris_configurations").select("id,payload,is_active").eq("category", "economy").eq("config_key", "daily-checkin-reward").maybeSingle(),
       supabase.from("caleris_member_race_checkins").select("id,member_id,reward_amount,reward_status,checkin_at").eq("reward_status","pending").order("checkin_at",{ascending:false}).limit(100)
     ]);
-    const errors = [accountResult.error, transactionResult.error, claimResult.error, payrollResult.error, configResult.error, memberCheckinResult.error].filter(Boolean);
+    const errors = [accountResult.error, transactionResult.error, claimResult.error, payrollResult.error, memberCheckinResult.error].filter(Boolean);
     if (errors.length) setNotice({ kind: "error", text: errors.map((error) => error?.message).join(" · ") });
     if (accountResult.data) {
       const next = accountResult.data as WalletAccount[];
@@ -67,12 +62,6 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     if (claimResult.data) setClaims(claimResult.data as RewardClaim[]);
     if (payrollResult.data) setPayrollClaims(payrollResult.data as PayrollClaim[]);
     if (memberCheckinResult.data) setMemberCheckins(memberCheckinResult.data as MemberCheckinClaim[]);
-    if (configResult.data) {
-      const row = configResult.data as ConfigRow;
-      setConfig(row);
-      setRewardAmount(String(row.payload?.amount ?? 0));
-      setRewardActive(row.is_active);
-    }
     setLoading(false);
   }, []);
 
@@ -136,23 +125,6 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
     setSaving(false);
     if (error) setNotice({ kind: "error", text: error.message });
     else { setNotice({ kind: "success", text: "Transaksi berhasil dicatat. Saldo dan ledger diperbarui secara atomik." }); setAmount(""); setDescription(""); await refresh(); }
-  };
-
-  const saveRewardConfig = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!supabase || !config) return;
-    const numericAmount = Number(rewardAmount);
-    if (!Number.isFinite(numericAmount) || numericAmount < 0 || numericAmount > 999999999999999999.99 || Math.round(numericAmount * 100) !== numericAmount * 100) {
-      setNotice({ kind: "error", text: "Reward harus berupa angka nol atau lebih dengan maksimal dua angka desimal." }); return;
-    }
-    setSaving(true); setNotice(null);
-    const { error } = await supabase.from("caleris_configurations").update({
-      payload: { ...config.payload, amount: numericAmount, source: "VreeoBank", destination: "All Member Wallets", currency: "¢p" },
-      is_active: rewardActive && numericAmount > 0, updated_by: session.user.id, updated_at: new Date().toISOString()
-    }).eq("id", config.id);
-    setSaving(false);
-    if (error) setNotice({ kind: "error", text: error.message });
-    else { setNotice({ kind: "success", text: "Konfigurasi reward check-in tersimpan dan masuk riwayat konfigurasi." }); await refresh(); }
   };
 
   const processPending = async () => {
@@ -240,13 +212,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
 
       <section className="economy-panel">
         <div className="economy-panel-heading"><div><span className="section-eyebrow">AUTOMATED REWARD</span><h2>Daily Check-in Reward</h2></div><CheckCircle2 size={19}/></div>
-        {config ? <form className="economy-form" onSubmit={saveRewardConfig}>
-          <div className="economy-source-route"><span>VreeoBank</span><ArrowUpRight size={16}/><strong>All Member Wallets</strong></div>
-          <label>Reward per check-in (¢p)<input type="number" min="0" max="999999999999999999.99" step="0.01" value={rewardAmount} onChange={(event) => setRewardAmount(event.target.value)}/></label>
-          <label className="economy-toggle"><input type="checkbox" checked={rewardActive} onChange={(event) => setRewardActive(event.target.checked)}/> Aktifkan reward otomatis</label>
-          <p className="economy-form-hint">Nilai awal nol dan nonaktif. Jika saldo Bank belum cukup, check-in tetap tersimpan dan reward masuk antrean pending. Tidak ada reward yang hilang diam-diam.</p>
-          <button className="economy-primary-button" type="submit" disabled={saving}><ShieldCheck size={16}/> Simpan aturan reward</button>
-        </form> : <p className="economy-empty">Konfigurasi reward belum tersedia. Pastikan migration Economy Engine sudah diterapkan.</p>}
+        <p className="economy-form-hint">Nominal reward dan status aktivasi dikelola dari halaman Price Configuration.</p>
         <div className="economy-pending-box">
           <div><strong>{pendingClaims.length} reward tertunda</strong><small>Saldo Bank saat ini: {bank ? money(bank.balance) : "—"}</small></div>
           <button type="button" className="economy-secondary-button" onClick={() => void processPending()} disabled={saving || pendingClaims.length === 0}><RefreshCw size={15}/> Proses pending</button>
