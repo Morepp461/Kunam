@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
 
       const [profiles, members, teams] = await Promise.all([
         readAll("profiles", "user_id,member_id,public_member_id,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at,updated_at"),
-        readAll("members", "id,member_code,character_name,role,license,team_id,balance,created_at"),
+        readAll("members", "id,member_code,character_name,role,license,team_id,created_at"),
         readAll("teams", "id,name"),
       ]);
       const profileByUser = new Map(profiles.map((row) => [String(row.user_id), row]));
