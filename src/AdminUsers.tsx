@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 import { Search, RefreshCw, UserRound, ShieldCheck, Settings2, X, ExternalLink, Users } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import "./admin-users.css";
@@ -57,7 +56,7 @@ const dateOnly = (value: string | null | undefined) => value
   ? new Intl.DateTimeFormat("id-ID", { dateStyle: "long" }).format(new Date(value))
   : "Belum tersedia";
 
-export default function AdminUsers({ session }: { session: Session }) {
+export default function AdminUsers() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
