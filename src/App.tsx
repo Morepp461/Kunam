@@ -24,6 +24,7 @@ import SponsorshipCentre from "./SponsorshipCentre";
 import DevelopmentTokens from "./DevelopmentTokens";
 import ShopPage from "./ShopPage";
 import AdminTestPersonas from "./AdminTestPersonas";
+import AdminUsers from "./AdminUsers";
 import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
@@ -45,6 +46,7 @@ import "./sponsorship-centre.css";
 import "./development-tokens.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
+import "./admin-users.css";
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
@@ -150,6 +152,7 @@ function Application(){
   <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
   <Route path="/admin/test-personas" element={session&&!needsPaddockAccess&&isAdmin?<AdminTestPersonas/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/users" element={session&&!needsPaddockAccess&&isAdmin?<AdminUsers session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
  </Routes></Shell>;
@@ -164,7 +167,7 @@ function Shell({children,theme,setTheme,session,profile,isAdmin,panelAccess}:{ch
   {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},{to:"/shop",label:"Shop",description:"Beli Development Token dan item resmi.",icon:<ShoppingBag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
   ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
   {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
-  ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/license-engine",label:"License Scoring Engine",description:"Kelola season, check-in, standings, dan validasi WDC.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>}]}]:[])
+  ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/license-engine",label:"License Scoring Engine",description:"Kelola season, check-in, standings, dan validasi WDC.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/users",label:"Daftar Akun",description:"Seluruh akun, profil, dan konfigurasi role member.",icon:<Users size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>}]}]:[])
  ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];
  return <div className="site"><div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/><div className="scene-light"/><div className="scene-reflection"/><div className="scene-depth"/><div className="scene-flare"/><canvas className="dust-canvas"/></div>
  <header className="site-header">
