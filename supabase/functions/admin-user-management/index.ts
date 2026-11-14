@@ -154,54 +154,15 @@ Deno.serve(async (req: Request) => {
         return respond(400, { error: "Role aktif tidak valid." });
       }
 
-      const { data: profile, error: profileError } = await admin.from("profiles")
-        .select("user_id,member_id,preferred_role").eq("user_id", targetUserId).maybeSingle();
-      if (profileError) throw profileError;
-      let accountProfile = profile;
-      if (!accountProfile) {
-        const { data: createdProfile, error: createProfileError } = await admin.from("profiles")
-          .insert({ user_id: targetUserId, preferred_role: preferredRole, updated_at: new Date().toISOString() })
-          .select("user_id,member_id,preferred_role").single();
-        if (createProfileError) throw createProfileError;
-        accountProfile = createdProfile;
-      }
-
-      let member: Record<string, unknown> | null = null;
-      if (accountProfile.member_id) {
-        const { data, error } = await admin.from("members")
-          .select("id,role,team_id,character_name").eq("id", accountProfile.member_id).maybeSingle();
-        if (error) throw error;
-        member = data;
-      }
-      if (!member && assignedRole !== null) {
-        return respond(409, { error: "Akun ini belum memiliki karakter/member. Atur preferensi role terlebih dahulu atau tautkan member melalui proses onboarding." });
-      }
-      if (member && member.role === "Owner" && assignedRole !== "Owner" && member.team_id) {
-        return respond(409, { error: "Role Owner tidak dapat dilepas selama member masih menjadi pemilik tim. Selesaikan proses Take Over/perpindahan kepemilikan terlebih dahulu." });
-      }
-      if (member && assignedRole === "Owner" && !member.team_id) {
-        return respond(409, { error: "Role Owner memerlukan tim yang sudah terhubung." });
-      }
-
-      const { error: updateProfileError } = await admin.from("profiles")
-        .update({ preferred_role: preferredRole, updated_at: new Date().toISOString() })
-        .eq("user_id", targetUserId);
-      if (updateProfileError) throw updateProfileError;
-
-      if (member) {
-        const { error: updateMemberError } = await admin.from("members")
-          .update({ role: assignedRole }).eq("id", member.id);
-        if (updateMemberError) {
-          await admin.from("profiles").update({ preferred_role: accountProfile.preferred_role }).eq("user_id", targetUserId);
-          throw updateMemberError;
-        }
-      }
-      return respond(200, {
-        ok: true,
-        targetUserId,
-        preferredRole,
-        assignedRole: member ? assignedRole : null,
+      const { data: result, error: updateError } = await authClient.rpc("admin_update_user_roles", {
+        p_target_user_id: targetUserId,
+        p_preferred_role: preferredRole,
+        p_assigned_role: assignedRole,
       });
+      if (updateError) {
+        return respond(409, { error: updateError.message });
+      }
+      return respond(200, result ?? { ok: true, targetUserId, preferredRole, assignedRole });
     }
 
     return respond(400, { error: "Unknown action." });
