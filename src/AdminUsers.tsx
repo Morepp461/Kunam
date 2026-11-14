@@ -182,7 +182,7 @@ export default function AdminUsers() {
               </div>
               <div className="admin-user-actions">
                 {user.is_admin && <span className="admin-user-admin-badge"><ShieldCheck size={13}/> Admin</span>}
-                <button type="button" className="action" onClick={() => openRoleConfig(user)} disabled={!profile}><Settings2 size={15}/> Konfigurasi Role</button>
+                <button type="button" className="action" onClick={() => openRoleConfig(user)}><Settings2 size={15}/> Konfigurasi Role</button>
               </div>
             </div>
             <div className="admin-user-meta">
