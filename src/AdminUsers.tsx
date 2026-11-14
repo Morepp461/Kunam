@@ -32,7 +32,7 @@ type UserRow = {
     privacy_accepted_at: string | null;
     updated_at: string | null;
   } | null;
-  member: { id: string; member_code: string | null; character_name: string | null; role: string | null; license: string | null; team_id: string | null; balance: number | null; created_at: string } | null;
+  member: { id: string; member_code: string | null; character_name: string | null; role: string | null; license: string | null; team_id: string | null; created_at: string } | null;
   team_name: string | null;
 };
 
