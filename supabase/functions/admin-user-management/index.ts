@@ -157,12 +157,19 @@ Deno.serve(async (req: Request) => {
       const { data: profile, error: profileError } = await admin.from("profiles")
         .select("user_id,member_id,preferred_role").eq("user_id", targetUserId).maybeSingle();
       if (profileError) throw profileError;
-      if (!profile) return respond(404, { error: "Profil akun belum tersedia." });
+      let accountProfile = profile;
+      if (!accountProfile) {
+        const { data: createdProfile, error: createProfileError } = await admin.from("profiles")
+          .insert({ user_id: targetUserId, preferred_role: preferredRole, updated_at: new Date().toISOString() })
+          .select("user_id,member_id,preferred_role").single();
+        if (createProfileError) throw createProfileError;
+        accountProfile = createdProfile;
+      }
 
       let member: Record<string, unknown> | null = null;
-      if (profile.member_id) {
+      if (accountProfile.member_id) {
         const { data, error } = await admin.from("members")
-          .select("id,role,team_id,character_name").eq("id", profile.member_id).maybeSingle();
+          .select("id,role,team_id,character_name").eq("id", accountProfile.member_id).maybeSingle();
         if (error) throw error;
         member = data;
       }
@@ -185,7 +192,7 @@ Deno.serve(async (req: Request) => {
         const { error: updateMemberError } = await admin.from("members")
           .update({ role: assignedRole }).eq("id", member.id);
         if (updateMemberError) {
-          await admin.from("profiles").update({ preferred_role: profile.preferred_role }).eq("user_id", targetUserId);
+          await admin.from("profiles").update({ preferred_role: accountProfile.preferred_role }).eq("user_id", targetUserId);
           throw updateMemberError;
         }
       }
