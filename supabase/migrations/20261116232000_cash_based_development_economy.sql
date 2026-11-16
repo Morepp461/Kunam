@@ -96,6 +96,8 @@ revoke all on function public.member_purchase_development_tokens(numeric)
   from public,anon,authenticated,service_role;
 revoke all on function public.admin_set_development_shop_price(numeric,boolean)
   from public,anon,authenticated,service_role;
+revoke all on function private.award_development_token(text,uuid,uuid,numeric,text,uuid,text,text,uuid)
+  from public,anon,authenticated,service_role;
 
 -- Cash Development payments are internal double-entry transfers to the Development Treasury.
 alter table public.economy_transactions drop constraint if exists economy_transactions_event_type_check;
