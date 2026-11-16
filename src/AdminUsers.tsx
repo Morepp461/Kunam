@@ -65,6 +65,7 @@ export default function AdminUsers() {
   const [selected, setSelected] = useState<UserRow | null>(null);
   const [preferredRole, setPreferredRole] = useState("");
   const [assignedRole, setAssignedRole] = useState("");
+  const [characterName, setCharacterName] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -105,6 +106,7 @@ export default function AdminUsers() {
     setSelected(user);
     setPreferredRole(user.profile?.preferred_role ?? "");
     setAssignedRole(user.member?.role ?? "");
+    setCharacterName(user.member?.character_name ?? user.profile?.driver_nickname ?? user.profile?.web_nickname ?? user.user_metadata.full_name ?? "");
   };
 
   const saveRoles = async () => {
@@ -116,6 +118,7 @@ export default function AdminUsers() {
         targetUserId: selected.user_id,
         preferredRole: preferredRole || null,
         assignedRole: assignedRole || null,
+        characterName: characterName.trim() || null,
       },
     });
     setSaving(false);
@@ -213,7 +216,8 @@ export default function AdminUsers() {
       <section className="workspace-card admin-users-modal" role="dialog" aria-modal="true" aria-labelledby="admin-role-title" onClick={(event) => event.stopPropagation()}>
         <div className="admin-users-modal-heading"><div><span className="section-eyebrow">ROLE MANAGEMENT</span><h2 id="admin-role-title">Konfigurasi Role</h2><p>{selected.email || selected.user_id}</p></div><button type="button" className="admin-users-close" onClick={() => setSelected(null)} disabled={saving} aria-label="Tutup"><X size={19}/></button></div>
         <label>Preferensi role akun<select value={preferredRole} onChange={(event) => setPreferredRole(event.target.value)}>{preferredOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><small>Preferensi ini mencatat pilihan user saat onboarding. Tidak memberikan akses panel.</small></label>
-        <label>Role aktif member<select value={assignedRole} onChange={(event) => setAssignedRole(event.target.value)} disabled={!selected.member}><option value="">Public / Tidak ada role aktif</option>{assignedOptions.filter((option) => option.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><small>{selected.member ? "Role ini menentukan akses panel dan kapabilitas member." : "Akun belum memiliki record member. Hubungkan member melalui proses onboarding sebelum menetapkan role aktif."}</small></label>
+        <label>Role aktif member<select value={assignedRole} onChange={(event) => setAssignedRole(event.target.value)}><option value="">Public / Tidak ada role aktif</option>{assignedOptions.filter((option) => option.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><small>{selected.member ? "Role ini menentukan akses panel dan kapabilitas member." : "Saat role disimpan, sistem akan membuat record member dan menghubungkannya ke akun ini secara otomatis."}</small></label>
+        {!selected.member && assignedRole && <label>Nama karakter (opsional)<input value={characterName} onChange={(event) => setCharacterName(event.target.value)} maxLength={80} placeholder="Nama karakter member"/><small>Jika dikosongkan, sistem memakai nickname profil yang tersedia.</small></label>}
         {selected.member?.role === "Owner" && selected.member.team_id && assignedRole !== "Owner" && <p className="admin-users-warning">Pemilik tim tidak dapat diturunkan rolenya selama tim masih terhubung.</p>}
         <div className="admin-users-modal-actions"><button type="button" className="action" onClick={() => setSelected(null)} disabled={saving}>Batal</button><button type="button" className="action primary" onClick={() => void saveRoles()} disabled={saving}>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button></div>
       </section>
