@@ -26,12 +26,12 @@ export default function DevelopmentShop({session}:{session:Session}){
  const save=async()=>{if(!supabase)return;const n=Number(price);if(!Number.isFinite(n)||n<0){setNotice("Harga token tidak valid.");return;}setSaving(true);const {error}=await supabase.rpc("admin_set_development_shop_price",{p_token_price:n,p_is_active:active});setSaving(false);setNotice(error?.message||"Konfigurasi Shop tersimpan.");if(!error)await load()};
  const rollover=async()=>{if(!supabase||!endingSeason||!nextSeason||endingSeason===nextSeason){setNotice("Pilih season akhir dan season berikutnya yang berbeda.");return;}setSaving(true);const {data,error}=await supabase.rpc("admin_rollover_development_season",{p_ending_season_id:endingSeason,p_next_season_id:nextSeason});setSaving(false);setNotice(error?.message||("Snapshot dan baseline season berhasil dibuat. "+String((data as any)?.snapshot_rows_written||0)+" baris."));};
  const buy=async()=>{if(!supabase)return;const n=Number(quantity);if(!Number.isFinite(n)||n<=0||n>100000000||Math.round(n*100)!==n*100){setNotice("Jumlah token harus lebih dari 0, maksimal 2 angka desimal.");return;}setSaving(true);const {data,error}=await supabase.rpc("member_purchase_development_tokens",{p_quantity:n});setSaving(false);setNotice(error?.message||("Pembelian berhasil: "+n+" "+String((data as any)?.token_type||"token")+"."));if(!error){setQuantity("1");await load()}};
- const money=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
+ const money=(n:number)=>"€ "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
  return <section className="workspace-card development-shop-card">
   <div className="section-title-row"><div><span className="section-eyebrow">CALERIS DEVELOPMENT SHOP</span><h2>Development Token</h2></div><strong>{money(config.token_price)} / token</strong></div>
   <p className="economy-form-hint">Team Owner membeli TDP untuk timnya. Driver membeli DDP untuk atribut pribadinya. Seluruh pembayaran bersumber dari VreeoBank dan diproses atomik bersama ledger development.</p>
   {admin&&<div className="economy-form">
-   <label>Harga per token (¢p)<input type="number" min="0" step="0.01" value={price} onChange={e=>setPrice(e.target.value)}/></label>
+   <label>Harga per token (€)<input type="number" min="0" step="0.01" value={price} onChange={e=>setPrice(e.target.value)}/></label>
    <label className="economy-toggle"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/> Shop aktif</label>
    <button type="button" className="economy-primary-button" disabled={saving} onClick={()=>void save()}>Simpan harga Shop</button>
   </div>}
