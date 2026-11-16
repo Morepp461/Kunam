@@ -55,7 +55,6 @@ update public.caleris_team_valuations set
  history_value=history_value*2000,
  achievements_value=achievements_value*2000,
  financial_health_value=financial_health_value*2000,
- total_valuation=total_valuation*2000,
  base_valuation=base_valuation*2000,
  debt_penalty=debt_penalty*2000,
  overdue_penalty=overdue_penalty*2000;
