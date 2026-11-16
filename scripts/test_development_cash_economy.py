@@ -58,7 +58,7 @@ assert sum(map(int, team_rates.values())) * 50 == 1_375_000_000
 
 ui = (ROOT / "src/DevelopmentTokens.tsx").read_text(encoding="utf-8")
 for fragment in [
-    'paymentMethod:"cash"|"token"',
+    'useState<"cash"|"token">',
     'cash_eur_per_point',
     'paymentMethod}',
     "Race Reward Token",
