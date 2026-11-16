@@ -494,3 +494,9 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 - When the last active `economy_driver_contracts` contract is marked `ended`, a database trigger releases the Driver role and team assignment. Existing pending payroll claims remain payable; open Driver move negotiations are cancelled.
 - An FIA-approved Team Take Over already releases the former Team Owner's `Owner` role and team assignment in the same transaction that settles the sale.
 - Admins can use **Invite menjadi anggota FIA** on a public member profile. The server-side RPC verifies `site_admins`, assigns `FIA`, updates the preferred role, and removes the previous team assignment. A current Team Owner must complete the team sale first; an active Driver Loan must be completed or returned first.
+
+
+## Development Database Hardening
+
+- Keep the season snapshot lookup index consistent across Testing and Production.
+- The team development seeding function is trigger-only and cannot be executed directly by client roles. Migration: `20261116231000_development_snapshot_index_and_seed_trigger_security.sql`.
