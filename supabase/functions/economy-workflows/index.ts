@@ -28,9 +28,9 @@ Deno.serve(async(req:Request)=>{
    if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
   }
   if(action==="upgrade_development_attribute"){
-   const scope=body.scope==="team"?"team":body.scope==="driver"?"driver":"",attributeKey=typeof body.attributeKey==="string"?body.attributeKey:"",newValue=typeof body.newValue==="number"?body.newValue:Number.NaN;
-   if(!scope||!attributeKey||!Number.isFinite(newValue))return respond(400,{error:"Data upgrade atribut tidak valid."});
-   const {data,error}=await admin.rpc("member_upgrade_development_attribute",{p_actor_id:actor,p_scope:scope,p_attribute_key:attributeKey,p_new_value:newValue});
+   const scope=body.scope==="team"?"team":body.scope==="driver"?"driver":"",attributeKey=typeof body.attributeKey==="string"?body.attributeKey:"",newValue=typeof body.newValue==="number"?body.newValue:Number.NaN,paymentMethod=body.paymentMethod==="token"?"token":body.paymentMethod==="cash"?"cash":"";
+   if(!scope||!attributeKey||!paymentMethod||!Number.isFinite(newValue))return respond(400,{error:"Data upgrade Development tidak valid."});
+   const {data,error}=await admin.rpc("member_upgrade_development_attribute",{p_actor_id:actor,p_scope:scope,p_attribute_key:attributeKey,p_new_value:newValue,p_payment_method:paymentMethod});
    if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
   }
   if(action==="team_cash_loan_preview"){

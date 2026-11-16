@@ -36,5 +36,7 @@ jobs:
         run: python3 -B scripts/test_driver_loan_engine.py
       - name: Main Event registration regression checks
         run: python3 -B scripts/test_main_event_registration.py
+      - name: Development cash economy regression checks
+        run: python3 -B scripts/test_development_cash_economy.py
       - name: Registration image optimization regression checks
         run: python3 -B scripts/test_image_optimization.py
