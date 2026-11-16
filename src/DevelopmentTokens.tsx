@@ -9,7 +9,6 @@ type Member={id:string;role:string|null;team_id:string|null;character_name:strin
 type Team={id:string;name:string};
 type CashWallet={id:string;balance:number};
 type Attribute={id:string;key:string;value:number;updated_at:string};
-type Price={key:string;cash_eur_per_point:number};
 type Snapshot={id:string;season_id:string;asset_type:string;snapshot_stage:"season_end"|"season_baseline";attributes:Record<string,number>;created_at:string};
 type Season={id:string;title:string;status:string};
 const DRIVER=[["race_pace","Race Pace"],["qualifying_pace","Qualifying Pace"],["experience","Experience"],["aggression","Aggression"],["defensive_strength","Defensive Strength"],["overtake_skill","Overtake Skill"],["mistake_rate","Mistake Rate"],["tyre_management","Tyre Management"]] as const;
