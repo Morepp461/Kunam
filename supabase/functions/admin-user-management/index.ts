@@ -146,6 +146,8 @@ Deno.serve(async (req: Request) => {
       const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId : "";
       const preferredRole = body.preferredRole === null ? null : String(body.preferredRole ?? "");
       const assignedRole = body.assignedRole === null ? null : String(body.assignedRole ?? "");
+      const characterName = typeof body.characterName === "string" ? body.characterName.trim() : null;
+      if (characterName && characterName.length > 80) return respond(400, { error: "Nama karakter maksimal 80 karakter." });
       if (!/^[0-9a-f-]{36}$/i.test(targetUserId)) return respond(400, { error: "Target user tidak valid." });
       if (preferredRole !== null && !preferredRoles.has(preferredRole)) {
         return respond(400, { error: "Preferensi role tidak valid." });
@@ -158,6 +160,7 @@ Deno.serve(async (req: Request) => {
         p_target_user_id: targetUserId,
         p_preferred_role: preferredRole,
         p_assigned_role: assignedRole,
+        p_character_name: characterName,
       });
       if (updateError) {
         return respond(409, { error: updateError.message });
