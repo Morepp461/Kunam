@@ -40,7 +40,14 @@ const categories: { id: Category; label: string; description: string }[] = [
 const prettyDate = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 const slugify = (value: string) => value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 const humanize = (value: string) => value.replace(/[_-]+/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-const makeField = (): DetailField => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: "", type: "text", value: "" });
+const makeField = (): DetailField => ({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, label: "", type: "number", value: "" });
+
+const categoryGuidance: Record<Category, { title: string; description: string; exampleName: string; exampleValue: string; exampleType: string }> = {
+  license: { title: "Aturan lisensi", description: "Buat parameter aturan lisensi atau poin divisi. Satu parameter berisi nama aturan dan nilai yang berlaku.", exampleName: "Minimum Race Points", exampleValue: "25", exampleType: "Angka" },
+  economy: { title: "Aturan ekonomi tambahan", description: "Buat parameter ekonomi yang memang digunakan modul terkait. Harga token, pajak, biaya upgrade, dan bunga pinjaman diatur melalui Pricing Center, bukan form ini.", exampleName: "Max Counters Per Side", exampleValue: "3", exampleType: "Angka" },
+  roles: { title: "Informasi role", description: "Gunakan untuk menyimpan keterangan atau metadata role. Pengaturan akses panel tetap mengikuti Role Aktif pada halaman Daftar Akun.", exampleName: "Nama role", exampleValue: "Driver", exampleType: "Teks singkat" },
+  regulations: { title: "Ketentuan kompetisi", description: "Gunakan untuk mencatat parameter atau keterangan aturan kompetisi. Tulis nilai yang jelas agar mudah dibaca Admin.", exampleName: "Durasi penalti", exampleValue: "10", exampleType: "Angka" }
+};
 
 function fieldsFromPayload(payload: Record<string, unknown>): DetailField[] {
   return Object.entries(payload ?? {}).map(([label, value], index) => {
@@ -85,6 +92,7 @@ export default function AdminConfiguration({ session }: { session: Session }) {
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
 
   const categoryInfo = categories.find((item) => item.id === category)!;
+  const guidance = categoryGuidance[category];
   const loadRows = useCallback(async () => {
     if (!supabase) { setLoading(false); setMessage({ kind: "error", text: "Koneksi Supabase belum tersedia." }); return; }
     setLoading(true);
@@ -176,20 +184,25 @@ export default function AdminConfiguration({ session }: { session: Session }) {
         {editing ? <form onSubmit={save}>
           <div className="config-panel-heading"><div><span className="config-eyebrow">{selected ? "EDIT ITEM" : "NEW ITEM"}</span><h2>{selected ? "Ubah konfigurasi" : "Buat konfigurasi"}</h2></div><button type="button" className="config-icon-button" onClick={resetEditor} aria-label="Tutup editor"><X size={17}/></button></div>
           <label className="config-field">Nama konfigurasi<input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={160} required placeholder="Contoh: Gold License"/></label>
-          <div className="config-fields-heading"><div><strong>Detail konfigurasi</strong><span>Tambahkan informasi yang ingin diatur. Pilih tipe data yang sesuai.</span></div><button type="button" className="config-add-field" onClick={() => setFields((current) => [...current, makeField()])}><Plus size={15}/> Tambah detail</button></div>
-          {fields.length === 0 ? <div className="config-fields-empty">Belum ada detail. Tekan <strong>Tambah detail</strong> untuk mulai mengisi.</div> :
+          <div className="config-fields-heading"><div><strong>Parameter yang diatur</strong><span>Setiap parameter terdiri dari nama, format nilai, dan nilai yang akan disimpan.</span></div><button type="button" className="config-add-field" onClick={() => setFields((current) => [...current, makeField()])}><Plus size={15}/> Tambah parameter</button></div>
+          <div className="config-form-guide">
+            <strong>{guidance.title}</strong>
+            <p>{guidance.description}</p>
+            <div><span>CONTOH PENGISIAN</span><b>{guidance.exampleName}</b><i>{guidance.exampleType} · {guidance.exampleValue}</i></div>
+          </div>
+          {fields.length === 0 ? <div className="config-fields-empty">Belum ada parameter. Tekan <strong>Tambah parameter</strong>, lalu isi nama aturan dan nilainya.</div> :
             <div className="config-fields-list">{fields.map((field, index) => <div className="config-field-card" key={field.id}>
-              <div className="config-field-card-head"><span>DETAIL {index + 1}</span><button type="button" aria-label={`Hapus detail ${index + 1}`} onClick={() => setFields((current) => current.filter((item) => item.id !== field.id))}><Trash2 size={15}/></button></div>
-              <label className="config-field">Nama detail<input value={field.label} onChange={(e) => updateField(field.id, { label: e.target.value })} maxLength={100} placeholder="Contoh: Gaji minimum (¢p)"/></label>
-              <label className="config-field">Jenis input<select value={field.type} onChange={(e) => { const type = e.target.value as FieldType; updateField(field.id, { type, value: type === "boolean" ? false : String(field.value === true ? "Ya" : field.value === false ? "Tidak" : field.value) }); }}>
-                <option value="text">Teks singkat</option><option value="number">Angka</option><option value="boolean">Ya / Tidak</option><option value="long_text">Teks panjang</option>
-              </select></label>
+              <div className="config-field-card-head"><span>PARAMETER {index + 1}</span><button type="button" aria-label={`Hapus detail ${index + 1}`} onClick={() => setFields((current) => current.filter((item) => item.id !== field.id))}><Trash2 size={15}/></button></div>
+              <label className="config-field">Apa yang ingin diatur?<input value={field.label} onChange={(e) => updateField(field.id, { label: e.target.value })} maxLength={100} placeholder={guidance.exampleName}/><small className="config-field-help">Tulis nama parameternya, bukan nilainya. Contoh: {guidance.exampleName}.</small></label>
+              <label className="config-field">Format nilainya<select value={field.type} onChange={(e) => { const type = e.target.value as FieldType; updateField(field.id, { type, value: type === "boolean" ? false : String(field.value === true ? "Ya" : field.value === false ? "Tidak" : field.value) }); }}>
+                <option value="number">Angka (contoh: 3)</option><option value="text">Teks singkat</option><option value="boolean">Pilihan Ya / Tidak</option><option value="long_text">Keterangan panjang</option>
+              </select><small className="config-field-help">Pilih Angka untuk nominal, jumlah, batas, persentase, atau poin. Pilih Teks untuk nama/keterangan.</small></label>
               {field.type === "boolean" ? <label className="config-boolean-input"><input type="checkbox" checked={Boolean(field.value)} onChange={(e) => updateField(field.id, { value: e.target.checked })}/><span>{field.value ? "Ya" : "Tidak"}</span></label> :
-                field.type === "long_text" ? <label className="config-field">Isi detail<textarea value={String(field.value)} onChange={(e) => updateField(field.id, { value: e.target.value })} rows={4} placeholder="Tulis keterangan lengkap..."/></label> :
-                <label className="config-field">Isi detail<input type={field.type === "number" ? "number" : "text"} step={field.type === "number" ? "any" : undefined} value={String(field.value)} onChange={(e) => updateField(field.id, { value: e.target.value })} placeholder={field.type === "number" ? "Masukkan angka" : "Tulis nilai..."}/></label>}
+                field.type === "long_text" ? <label className="config-field">Nilai parameter<textarea value={String(field.value)} onChange={(e) => updateField(field.id, { value: e.target.value })} rows={4} placeholder="Tulis keterangan lengkap..."/></label> :
+                <label className="config-field">Nilai parameter<input type={field.type === "number" ? "number" : "text"} step={field.type === "number" ? "any" : undefined} value={String(field.value)} onChange={(e) => updateField(field.id, { value: e.target.value })} placeholder={field.type === "number" ? `Contoh: ${guidance.exampleValue}` : "Tulis nilai..."}/><small className="config-field-help">{field.type === "number" ? "Isi angka saja, tanpa satuan atau simbol mata uang." : "Isi teks yang ingin disimpan sebagai nilai parameter."}</small></label>}
             </div>)}</div>}
           <div className="config-field-row"><label className="config-field">Urutan<input type="number" step="1" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}/></label><label className="config-toggle"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)}/> Aktif</label></div>
-          <p className="config-hint">Semua detail dapat ditambah, diubah, atau dihapus kapan saja. Pengaturan tersimpan otomatis ke database saat tombol Simpan ditekan.</p>
+          <p className="config-hint">Parameter dapat ditambah, diubah, atau dihapus. Nilai disimpan saat tombol Simpan ditekan. Parameter hanya memengaruhi proses otomatis jika modul CALERIS terkait memang menggunakannya.</p>
           <div className="config-form-actions"><button type="submit" className="config-primary-button" disabled={saving}><Save size={16}/>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button><button type="button" className="config-secondary-button" onClick={resetEditor}>Batal</button></div>
         </form> : current ? <div>
           <div className="config-panel-heading"><div><span className="config-eyebrow">CONFIGURATION DETAIL</span><h2>{current.title}</h2></div><button type="button" className="config-icon-button" onClick={() => beginEdit(current)} aria-label="Edit konfigurasi"><Pencil size={16}/></button></div>
