@@ -10,12 +10,13 @@ export default function TeamDriverApplications(){
  const [notice,setNotice]=useState("");
  const load=useCallback(async()=>{
   if(!supabase){setNotice("Supabase belum dikonfigurasi.");setLoading(false);return;}
+  const client=supabase;
   setLoading(true);setNotice("");
   const {data,error}=await supabase.rpc("team_list_driver_applications");
   if(error){setNotice(error.message);setRows([]);setLoading(false);return;}
   const list=Array.isArray(data)?data as Application[]:[];
   const withImages=await Promise.all(list.map(async row=>{
-   const {data:signed}=await supabase.storage.from("profile-avatars").createSignedUrl(row.avatar_path,900);
+   const {data:signed}=await client.storage.from("profile-avatars").createSignedUrl(row.avatar_path,900);
    return {...row,avatar_url:signed?.signedUrl||""};
   }));
   setRows(withImages);setLoading(false);
