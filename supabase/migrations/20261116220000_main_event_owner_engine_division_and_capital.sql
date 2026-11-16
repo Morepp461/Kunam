@@ -377,9 +377,9 @@ begin
       set engine_id=excluded.engine_id,assigned_at=now(),assigned_by=excluded.assigned_by;
 
     if v_registration.engine_choice='buy' then
-      update public.caleris_team_engines
-      set engine_id=v_engine_id,assigned_at=now(),assigned_by=v_actor
-      where team_id=v_engine_owner and season_id in (select id from public.license_seasons where status='active');
+      delete from public.caleris_team_engines
+      where team_id=v_engine_owner and engine_id=v_engine_id
+        and season_id in (select id from public.license_seasons where status='active');
     end if;
   end if;
 
