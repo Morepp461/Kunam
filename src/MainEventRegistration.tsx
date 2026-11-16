@@ -75,7 +75,7 @@ export default function MainEventRegistration({ session }: Props) {
   const nextStep=(event:FormEvent)=>{
     event.preventDefault();setNotice("");
     if(!nickname.trim()||nickname.trim().length>32){setNotice("Nickname wajib diisi, maksimal 32 karakter.");return;}
-    if(role==="Driver"&&!avatar){setNotice("Avatar Driver wajib diunggah.");return;}
+    if(!avatar){setNotice("Avatar wajib diunggah untuk seluruh pendaftar.");return;}
     if(role==="Owner"&&!teamLogo){setNotice("Logo tim wajib diunggah.");return;}
     setStep(2);
   };
@@ -83,10 +83,10 @@ export default function MainEventRegistration({ session }: Props) {
     event.preventDefault();if(!supabase)return;setSaving(true);setNotice("");
     try{
       const payload:Row={requested_role:role,nickname:nickname.trim()};
+      payload.avatar_path=await upload("profile-avatars",avatar!);
       if(role==="Driver"){
         if(!number.trim()||!/^[0-9]{1,4}$/.test(number.trim()))throw new Error("Preferensi nomor Driver wajib 1 sampai 4 digit.");
         if(!epithet.trim())throw new Error("Julukan Driver wajib diisi.");
-        payload.avatar_path=await upload("profile-avatars",avatar!);
         payload.driver_number_preference=number.trim();
         payload.preferred_team_id=preferredTeam||null;
         payload.driver_epithet=epithet.trim();
@@ -121,7 +121,7 @@ export default function MainEventRegistration({ session }: Props) {
     <form className="mer-card" onSubmit={step===1?nextStep:submit}>
       {step===1?<><div className="mer-card-heading"><span>STEP 01 / 02</span><h2>Identitas Member</h2><p>Data lokasi diambil langsung dari profil dan tidak dapat diedit di formulir ini.</p></div>
         {field("Nickname",<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} required placeholder="Nickname driver"/>)}
-        {role==="Driver"&&<div className="mer-upload"><div className="mer-image-preview">{avatarPreview?<img src={avatarPreview} alt="Preview avatar Driver"/>:<Flag size={26}/>}</div><div><strong>Avatar Driver · Wajib</strong><p>Driver suit, tanpa background, tampilan setengah badan. PNG/WebP transparan.</p><label className="mer-upload-button"><UploadCloud size={15}/> Upload avatar<input type="file" accept="image/png,image/webp" onChange={onImage(setAvatar)}/></label></div></div>}
+        <div className="mer-upload"><div className="mer-image-preview">{avatarPreview?<img src={avatarPreview} alt="Preview avatar"/>:<Flag size={26}/>}</div><div><strong>Avatar · Wajib</strong><p>Driver suit, tanpa background, tampilan setengah badan. PNG/WebP transparan.</p><label className="mer-upload-button"><UploadCloud size={15}/> Upload avatar<input type="file" accept="image/png,image/webp" onChange={onImage(setAvatar)}/></label></div></div>
         <div className="mer-readonly-grid"><div><span>Nationality</span><strong>{profile.nationality||"Belum tersedia"}</strong></div><div><span>Hometown</span><strong>{profile.hometown||"Belum tersedia"}</strong></div></div>
         {field("Role",<select value={role} onChange={e=>setRole(e.target.value as "Driver"|"Owner")}><option value="Driver">Driver</option><option value="Owner">Team Owner</option></select>,"FIA hanya dapat diberikan melalui undangan khusus Admin.")}
       </>:<><div className="mer-card-heading"><span>STEP 02 / 02</span><h2>{role==="Driver"?"Driver Preferences":"Team Owner Application"}</h2><p>{role==="Driver"?"Preferensi akan diteruskan ke tim pilihan sebagai lamaran Driver.":"Informasi tim akan diperiksa Admin sebelum tim dan wallet dibuat."}</p></div>
