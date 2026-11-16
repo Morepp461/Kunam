@@ -59,7 +59,7 @@ assert "caleris-driver-transfer-window" in transfer_sql
 
 # Admin audit UI must expose the new worker history and explicitly exclude payroll.
 audit_ui = (ROOT / "src" / "AdminEconomyAudit.tsx").read_text(encoding="utf-8")
-for fragment in ["recent_automation_runs", "pending_cash_loan_installments", "Payroll dan sponsorship tetap manual"]:
+for fragment in ["recent_automation_runs", "pending_cash_loan_installments", "Payroll tetap mengikuti pemrosesan round", "sponsorship juga tetap manual"]:
     assert fragment in audit_ui, f"Economy Audit UI missing: {fragment}"
 
 print("Economy automation regression checks passed.")
