@@ -198,7 +198,7 @@ begin
     if coalesce(p_payload->>'driver_number_preference','') !~ '^[0-9]{1,4}$' then
       raise exception 'Preferensi nomor Driver wajib berupa 1 sampai 4 digit.';
     end if;
-    if length(btrim(coalesce(p_payload->>'driver_epithet','')))>60 then raise exception 'Julukan Driver maksimal 60 karakter.'; end if;
+    if length(btrim(coalesce(p_payload->>'driver_epithet','')))<1 or length(btrim(coalesce(p_payload->>'driver_epithet','')))>60 then raise exception 'Julukan Driver wajib diisi, maksimal 60 karakter.'; end if;
     v_team_id:=nullif(p_payload->>'preferred_team_id','')::uuid;
     if v_team_id is not null and not exists(select 1 from public.teams where id=v_team_id) then
       raise exception 'Tim pilihan tidak ditemukan.';
@@ -361,7 +361,7 @@ begin
       raise exception 'Nama tim sudah digunakan atau tidak valid.';
     end if;
     insert into public.teams(name) values(v_registration.team_name) returning id into v_team_id;
-    v_team_logo_url:=concat(rtrim(current_setting('app.settings.supabase_url',true),'/'),'/storage/v1/object/public/team-logos/',v_registration.team_logo_path);
+    v_team_logo_url:=concat('https://',coalesce((nullif(current_setting('request.headers',true),'')::json->>'host'),'asltczqrmoxnayusvjta.supabase.co'),'/storage/v1/object/public/team-logos/',v_registration.team_logo_path);
     insert into public.caleris_team_profiles(
       team_id,logo_url,country_of_origin,base_location,founded_year,history,description,vision,long_term_target,updated_by
     ) values (
@@ -389,7 +389,7 @@ begin
 
   update public.profiles set member_id=v_member_id,driver_nickname=v_registration.nickname,
     avatar_path=case when v_registration.requested_role='Driver' then v_registration.avatar_path else avatar_path end,
-    avatar_url=null,updated_at=now()
+    avatar_url=case when v_registration.requested_role='Driver' then null else avatar_url end,updated_at=now()
   where user_id=v_registration.user_id;
   update public.caleris_member_registrations set status='approved',reviewed_by=v_actor,reviewed_at=now(),
     review_note=nullif(btrim(p_review_note),''),updated_at=now() where id=p_registration_id;
