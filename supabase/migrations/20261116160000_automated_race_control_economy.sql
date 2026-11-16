@@ -557,7 +557,4 @@ begin
  end loop;
  if v_paid<>v_expected_count or v_expected_count=0 then raise exception 'Konfigurasi Prizepool belum mencakup semua posisi berhadiah. Tidak ada pembayaran yang disimpan.';end if;
  return jsonb_build_object('season_division_id',p_season_division_id,'payout_count',v_paid,'status','paid');
-end;$function$
-
-
-commit;
+end;$function$;
