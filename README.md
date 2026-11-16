@@ -486,3 +486,11 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 - Migrations: `20261116220000_main_event_owner_engine_division_and_capital.sql` and `20261116221000_main_event_registration_admin_engine_details.sql`.
 - Legacy registration submission and approval RPCs are no longer executable by authenticated clients; all member submissions and Admin decisions must pass through the capacity-checked and capital-settlement v2 RPCs. Migration: `20261116222000_main_event_registration_v2_only.sql`.
 - Team-owned engines are automatically assigned to each team when a season becomes active, including teams approved before a season exists. Migration: `20261116223000_assign_owned_engines_on_season_activation.sql`.
+
+
+## Member Role Lifecycle and FIA Invitation
+
+- Main Event Registration is visible and accessible only to signed-in, onboarded members whose linked member record has no active role. The database registration RPC continues to enforce the same no-role rule.
+- When the last active `economy_driver_contracts` contract is marked `ended`, a database trigger releases the Driver role and team assignment. Existing pending payroll claims remain payable; open Driver move negotiations are cancelled.
+- An FIA-approved Team Take Over already releases the former Team Owner's `Owner` role and team assignment in the same transaction that settles the sale.
+- Admins can use **Invite menjadi anggota FIA** on a public member profile. The server-side RPC verifies `site_admins`, assigns `FIA`, updates the preferred role, and removes the previous team assignment. A current Team Owner must complete the team sale first; an active Driver Loan must be completed or returned first.

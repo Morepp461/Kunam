@@ -244,6 +244,15 @@ def main():
     assert "admin_get_economy_audit_snapshot" in retry_source
     assert "process_license_round" not in retry_sql, "Payroll must remain tied to round processing, not a scheduler."
 
+    role_lifecycle = ROOT / "supabase/migrations/20261116230000_member_role_lifecycle_and_fia_invites.sql"
+    assert role_lifecycle.is_file(), "Missing member role lifecycle migration"
+    role_sql = role_lifecycle.read_text(encoding="utf-8")
+    for fragment in ["release_driver_role_after_contract_end", "economy_driver_contracts", "status='ended'", "admin_invite_member_to_fia", "site_admins", "role='FIA'", "status='loan_active'", "status='cancelled'"]:
+        assert fragment in role_sql, f"Member role lifecycle migration missing: {fragment}"
+    takeover_sql = (ROOT / "supabase/migrations/20261113040857_team_takeover_driver_contract_closeout.sql").read_text(encoding="utf-8")
+    assert "update public.members set role=null,team_id=null where id=v_seller.id" in takeover_sql, "Team Take Over must release the former Owner role"
+    assert 'panelAccess.member_role===null' in app and 'path="/main-event/registration"' in app, "Main Event Registration must be limited to members without an active role"
+    assert 'admin_invite_member_to_fia' in app and 'Invite menjadi anggota FIA' in app and 'site_admins' in app, "Admin FIA invitation must be present on member profiles"
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
