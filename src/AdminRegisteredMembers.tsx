@@ -14,6 +14,7 @@ export default function AdminRegisteredMembers(){
  const [notes,setNotes]=useState<Record<string,string>>({});
  const load=useCallback(async()=>{
   if(!supabase){setNotice("Supabase belum dikonfigurasi.");setLoading(false);return;}
+  const client=supabase;
   setLoading(true);setNotice("");
   const {data,error}=await supabase.rpc("admin_list_member_registrations");
   if(error){setNotice(error.message);setRows([]);setLoading(false);return;}
@@ -23,7 +24,7 @@ export default function AdminRegisteredMembers(){
    const bucket=row.avatar_path?"profile-avatars":"team-logos";
    if(!path)return {...row,preview_url:""};
    if(bucket==="team-logos"){
-    const {data:publicData}=supabase.storage.from(bucket).getPublicUrl(path);
+    const {data:publicData}=client.storage.from(bucket).getPublicUrl(path);
     return {...row,preview_url:publicData.publicUrl};
    }
    const {data:signedData}=await supabase.storage.from(bucket).createSignedUrl(path,900);
