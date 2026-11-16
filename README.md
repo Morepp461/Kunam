@@ -420,3 +420,18 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - Payout is atomic and idempotent: a missing wallet, invalid schedule, or ledger error rolls back the entire settlement. A division cannot be paid twice.
 - Default schedules: Premio Team 14 positions, Premio Driver 28 positions, Zwei Team 12 positions, Zwei Driver 24 positions.
 - Migration: `20261116120000_season_prizepool_engine.sql`.
+
+
+## Official Race Control · Automated Results & Economy
+
+The FIA Panel now includes **Race Input** for complete batch entry of every active registered Driver in a round. The input captures finishing position, grid position, finish status (Finished / DNF / DNS / DSQ), total race time, fastest lap, Driver of the Day, and every tyre stint (Soft / Medium / Hard / Intermediate / Wet). Pit-stop count is derived from stint count; time gaps are calculated against the winner.
+
+Official classification is submitted through one authenticated database transaction. The server validates the full participant list, unique grid and finishing positions, required Driver of the Day, time formats, and tyre compounds. It then:
+- Calculates Driver standings using the configured race/sprint points schedule and the 2-point pole bonus.
+- Aggregates Team standings from each Driver's race points and the Team recorded for that event.
+- Records the winner, pole sitter, fastest lap, and Driver of the Day.
+- Issues configured DDP/TDP winner and pole rewards through the existing immutable token ledger.
+- Closes the round through the existing License engine, which processes inactivity and the configured Race Period payroll and loan-repayment flow.
+- Builds final Driver and Team standings after the last round; when WDC and prizepool configuration is ready, finalization and prizepool settlement are attempted automatically.
+
+Race scoring defaults currently seeded in `caleris_race_points_rules`: Race P1–P10 follows 25–18–15–12–10–8–6–4–2–1; Sprint P1–P6 follows 6–5–4–3–2–1; pole bonus is 2. These are stored as database configuration rows, not embedded in the input UI. A final-round prizepool remains pending when WDC scoring or payout configuration is incomplete; the race submission itself is retained and is not rolled back by a missing end-of-season setup.

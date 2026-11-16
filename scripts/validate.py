@@ -218,7 +218,21 @@ def main():
     cash_loan_gateway = cash_loan_edge.read_text(encoding="utf-8")
     assert "auth.getUser(jwt)" in cash_loan_gateway and 'rpc("member_cash_loan_preview"' in cash_loan_gateway and 'rpc("member_apply_cash_loan"' in cash_loan_gateway
     assert 'path="/financial-centre"' in app and 'import CashLoanCentre from "./CashLoanCentre"' in app
+    race_control = ROOT / "src/RaceControl.tsx"
+    race_styles = ROOT / "src/race-control.css"
+    race_migration = ROOT / "supabase/migrations/20261116160000_automated_race_control_economy.sql"
+    assert race_control.is_file() and race_styles.is_file() and race_migration.is_file(), "Missing automated race control implementation"
+    race_source = race_control.read_text(encoding="utf-8")
+    race_sql = race_migration.read_text(encoding="utf-8")
+    for fragment in ["grid_position", "finish_time_ms", "fastest_lap_ms", "driver_of_day_member_id", "race-stint-dots", "fia_submit_race_classification"]:
+        assert fragment in race_source or fragment in race_sql, f"Race Control missing: {fragment}"
+    for fragment in ["caleris_race_stints", "caleris_race_points_rules", "process_license_round", "payout_season_prizepool", "fia_record_race_result("]:
+        assert fragment in race_sql, f"Automated race settlement missing: {fragment}"
+    assert 'path="/fia-panel/race-input"' in app and 'import RaceControl from "./RaceControl";' in app
+    assert 'path: "race-input", label: "Race Input"' in (ROOT / "src/PanelPages.tsx").read_text(encoding="utf-8")
+
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
     main()
+
