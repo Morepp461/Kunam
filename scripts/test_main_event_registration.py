@@ -6,6 +6,8 @@ registration = MIGRATIONS / "20261116195000_main_event_member_registration.sql"
 rejection_guard = MIGRATIONS / "20261116200000_main_event_registration_rejection_guard.sql"
 assert registration.is_file(), "Missing Main Event registration migration"
 assert rejection_guard.is_file(), "Missing registration rejection cleanup migration"
+name_guard = MIGRATIONS / "20261116201000_main_event_registration_name_and_payload_guards.sql"
+assert name_guard.is_file(), "Missing registration payload and duplicate team-name guard"
 
 sql = registration.read_text(encoding="utf-8").lower()
 for fragment in [
@@ -33,6 +35,8 @@ for fragment in [
 
 guard = rejection_guard.read_text(encoding="utf-8").lower()
 assert "new.status='rejected'" in guard and "set status='withdrawn'" in guard
+name_sql = name_guard.read_text(encoding="utf-8").lower()
+assert "teams_name_case_insensitive_unique" in name_sql and "v_role is null or v_role not in" in name_sql
 
 form = (ROOT / "src" / "MainEventRegistration.tsx").read_text(encoding="utf-8")
 for fragment in [
