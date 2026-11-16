@@ -20,15 +20,17 @@ export default function AdminRegisteredMembers(){
   if(error){setNotice(error.message);setRows([]);setLoading(false);return;}
   const list=Array.isArray(data)?data as Registration[]:[];
   const signed=await Promise.all(list.map(async row=>{
-   const path=row.avatar_path||row.team_logo_path;
-   const bucket=row.avatar_path?"profile-avatars":"team-logos";
-   if(!path)return {...row,preview_url:""};
-   if(bucket==="team-logos"){
-    const {data:publicData}=client.storage.from(bucket).getPublicUrl(path);
-    return {...row,preview_url:publicData.publicUrl};
+   let avatarUrl="";
+   let teamLogoUrl="";
+   if(row.avatar_path){
+    const {data:signedData}=await client.storage.from("profile-avatars").createSignedUrl(row.avatar_path,900);
+    avatarUrl=signedData?.signedUrl||"";
    }
-   const {data:signedData}=await client.storage.from(bucket).createSignedUrl(path,900);
-   return {...row,preview_url:signedData?.signedUrl||""};
+   if(row.team_logo_path){
+    const {data:publicData}=client.storage.from("team-logos").getPublicUrl(row.team_logo_path);
+    teamLogoUrl=publicData.publicUrl;
+   }
+   return {...row,preview_url:avatarUrl,team_logo_url:teamLogoUrl};
   }));
   setRows(signed);setLoading(false);
  },[]);
