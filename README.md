@@ -408,3 +408,15 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - The rule values are stored in `caleris_inactivity_penalty_rules`; they are not mixed into the generic configuration payload.
 - Each Driver registration is economically penalized once when it first crosses the inactivity threshold. The database trigger runs in the same transaction as round closure, so missing wallets or failed ledger postings roll back the round closure rather than silently skipping a penalty.
 - Migration: `20261116103000_inactivity_economy_penalties.sql`.
+
+
+## Season Prizepool · Final Standings Settlement
+
+- Season Prizepool is a separate end-of-season settlement and does not replace or modify per-race DDP/TDP Race Rewards.
+- Driver prizes are ranked from the Admin-validated `license_final_standings`. Team prizes use a dedicated `license_team_final_standings` table because the repository had no persisted team final standings table.
+- Admin can enter each team's final points and unique final position in **Admin Control → Season Prizepool**. Every team in the matching division must be present before settlement.
+- The Prizepool schedule is editable by division, recipient type, and final position in the same Admin page. Defaults preserve the supplied schedules exactly, including Premio Driver P28 = ¢p18,000.
+- Once a division is finalized, Admin can settle both Driver and Team prizes together. The payout RPC validates complete standings and recipient wallets, posts each payment from VreeoBank through the immutable double-entry economy ledger, and records a payout receipt.
+- Payout is atomic and idempotent: a missing wallet, invalid schedule, or ledger error rolls back the entire settlement. A division cannot be paid twice.
+- Default schedules: Premio Team 14 positions, Premio Driver 28 positions, Zwei Team 12 positions, Zwei Driver 24 positions.
+- Migration: `20261116120000_season_prizepool_engine.sql`.
