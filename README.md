@@ -484,3 +484,5 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 - VreeoBank receives an opening reserve balance of €999,999,999,999.00 EUR for initial capital and settlement funding.
 - Rejected applications can be resubmitted from Stage 1; a pending application remains locked against duplicate submissions.
 - Migrations: `20261116220000_main_event_owner_engine_division_and_capital.sql` and `20261116221000_main_event_registration_admin_engine_details.sql`.
+- Legacy registration submission and approval RPCs are no longer executable by authenticated clients; all member submissions and Admin decisions must pass through the capacity-checked and capital-settlement v2 RPCs. Migration: `20261116222000_main_event_registration_v2_only.sql`.
+- Team-owned engines are automatically assigned to each team when a season becomes active, including teams approved before a season exists. Migration: `20261116223000_assign_owned_engines_on_season_activation.sql`.
