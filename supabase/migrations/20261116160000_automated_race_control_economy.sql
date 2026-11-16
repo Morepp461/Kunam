@@ -225,8 +225,8 @@ begin
 
     select exists(select 1 from public.caleris_configurations where category='license' and config_key='scoring-wdc-'||v_division.division_key and is_active and coalesce(nullif(payload->>'points','')::numeric,0)>0) into v_has_wdc;
     if v_has_wdc and exists(select 1 from public.caleris_prizepool_rules where division_key=v_division.division_key and is_active) then
-      v_finalized:=public.finalize_license_division(v_round.season_division_id);
       begin
+        v_finalized:=public.finalize_license_division(v_round.season_division_id);
         v_payout:=public.payout_season_prizepool(v_round.season_division_id);
       exception when others then
         v_payout:=jsonb_build_object('status','pending_configuration','detail',sqlerrm);
