@@ -53,7 +53,8 @@ export default function MainEventRegistration({ session }: Props) {
     const [p,t,r,e]=await Promise.all([
       supabase.from("profiles").select("member_id,driver_nickname,web_nickname,nationality,hometown,onboarding_completed").eq("user_id",session.user.id).maybeSingle(),
       supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
-      supabase.from("caleris_member_registrations").select("id,requested_role,status,created_at,review_note").eq("user_id",session.user.id).order("created_at",{ascending:false}).limit(1).maybeSingle()
+      supabase.from("caleris_member_registrations").select("id,requested_role,status,created_at,review_note").eq("user_id",session.user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+      supabase.rpc("list_main_event_engine_marketplace")
     ]);
     if(p.error){setNotice(p.error.message);setLoading(false);return;}
     const next=p.data as Profile|null;setProfile(next);
