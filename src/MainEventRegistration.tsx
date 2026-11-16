@@ -9,13 +9,15 @@ import "./main-event-registration.css";
 type Row = Record<string, any>;
 type Props = { session: Session };
 type Profile = { member_id: string | null; driver_nickname: string | null; web_nickname: string | null; nationality: string | null; hometown: string | null; onboarding_completed: boolean };
-type Team = { id: string; name: string; division_key: string | null };\ntype Engine = { id: string; name: string; manufacturer: string | null; asking_price: number; seller_team_name: string };
+type Team = { id: string; name: string; division_key: string | null };
+type Engine = { id: string; name: string; manufacturer: string | null; asking_price: number; seller_team_name: string };
 
 const field = (label: string, child: ReactNode, hint?: string) => <label className="mer-field"><span>{label}</span>{child}{hint && <small>{hint}</small>}</label>;
 
 export default function MainEventRegistration({ session }: Props) {
   const [profile,setProfile]=useState<Profile|null>(null);
-  const [teams,setTeams]=useState<Team[]>([]);\n  const [engines,setEngines]=useState<Engine[]>([]);
+  const [teams,setTeams]=useState<Team[]>([]);
+  const [engines,setEngines]=useState<Engine[]>([]);
   const [step,setStep]=useState(1);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -39,7 +41,11 @@ export default function MainEventRegistration({ session }: Props) {
   const [foundedYear,setFoundedYear]=useState(String(new Date().getFullYear()));
   const [description,setDescription]=useState("");
   const [vision,setVision]=useState("");
-  const [longTermTarget,setLongTermTarget]=useState("");\n  const [initialDivision,setInitialDivision]=useState("premio");\n  const [engineChoice,setEngineChoice]=useState<"new"|"buy">("new");\n  const [requestedEngineName,setRequestedEngineName]=useState("");\n  const [selectedEngineId,setSelectedEngineId]=useState("");
+  const [longTermTarget,setLongTermTarget]=useState("");
+  const [initialDivision,setInitialDivision]=useState("premio");
+  const [engineChoice,setEngineChoice]=useState<"new"|"buy">("new");
+  const [requestedEngineName,setRequestedEngineName]=useState("");
+  const [selectedEngineId,setSelectedEngineId]=useState("");
 
   const load=useCallback(async()=>{
     if(!supabase){setNotice("Supabase belum dikonfigurasi.");setLoading(false);return;}
@@ -53,7 +59,8 @@ export default function MainEventRegistration({ session }: Props) {
     const next=p.data as Profile|null;setProfile(next);
     setNickname(next?.driver_nickname||next?.web_nickname||"");
     if(t.error)setNotice(t.error.message);else setTeams((t.data??[]) as Team[]);
-    if(r.error)setNotice(r.error.message);else setRegistration(r.data as Row|null);\n    if(e.error)setNotice(e.error.message);else setEngines((e.data??[]) as Engine[]);
+    if(r.error)setNotice(r.error.message);else setRegistration(r.data as Row|null);
+    if(e.error)setNotice(e.error.message);else setEngines((e.data??[]) as Engine[]);
     setLoading(false);
   },[session.user.id]);
   useEffect(()=>{void load();},[load]);
@@ -126,7 +133,11 @@ export default function MainEventRegistration({ session }: Props) {
         payload.team_founded_year=foundedYear;
         payload.team_description=description.trim();
         payload.team_vision=vision.trim();
-        payload.team_long_term_target=longTermTarget.trim();\n        payload.initial_division=initialDivision;\n        payload.engine_choice=engineChoice;\n        if(engineChoice==="new"){if(!requestedEngineName.trim())throw new Error("Nama Engine wajib diisi.");payload.requested_engine_name=requestedEngineName.trim();}\n        else{if(!selectedEngineId)throw new Error("Pilih Engine yang ingin dibeli.");payload.selected_engine_id=selectedEngineId;}
+        payload.team_long_term_target=longTermTarget.trim();
+        payload.initial_division=initialDivision;
+        payload.engine_choice=engineChoice;
+        if(engineChoice==="new"){if(!requestedEngineName.trim())throw new Error("Nama Engine wajib diisi.");payload.requested_engine_name=requestedEngineName.trim();}
+        else{if(!selectedEngineId)throw new Error("Pilih Engine yang ingin dibeli.");payload.selected_engine_id=selectedEngineId;}
       }
       const {data,error}=await supabase.rpc("submit_main_event_registration_v2",{p_payload:payload});
       if(error)throw error;
