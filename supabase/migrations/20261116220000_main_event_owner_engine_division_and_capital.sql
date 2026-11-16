@@ -267,7 +267,7 @@ begin
        where r.requested_role='Owner' and r.status='pending'
          and r.initial_division=v_division and r.id<>p_registration_id)
     into v_count;
-    if v_count >= case when v_division='premio' then 12 else 14 end then
+    if (v_division='premio' and v_count>=12) or (v_division='zwei' and v_count>=14) then
       raise exception 'Divisi sudah penuh. Pendaftaran tidak dapat disetujui.';
     end if;
 
