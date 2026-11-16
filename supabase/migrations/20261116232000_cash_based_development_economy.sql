@@ -44,6 +44,13 @@ update public.caleris_team_development_pricing set
   end,
   cash_is_configured=true,updated_at=now();
 
+alter table public.caleris_team_development_pricing
+  add constraint caleris_team_development_cash_price_positive
+  check(cash_eur_per_point>0);
+alter table public.caleris_driver_development_pricing
+  add constraint caleris_driver_development_cash_price_positive
+  check(cash_eur_per_point>0);
+
 alter table public.caleris_driver_development_history
   add column if not exists cash_eur_spent numeric(20,2) not null default 0,
   add column if not exists payment_method text not null default 'token'
