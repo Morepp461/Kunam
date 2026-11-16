@@ -442,3 +442,16 @@ Official classification is submitted through one authenticated database transact
 - Builds final Driver and Team standings after the last round; when WDC and prizepool configuration is ready, finalization and prizepool settlement are attempted automatically.
 
 Race scoring defaults currently seeded in `caleris_race_points_rules`: Race P1–P10 follows 25–18–15–12–10–8–6–4–2–1; Sprint P1–P6 follows 6–5–4–3–2–1; pole bonus is 2. These are stored as database configuration rows, not embedded in the input UI. A final-round prizepool remains pending when WDC scoring or payout configuration is incomplete; the race submission itself is retained and is not rolled back by a missing end-of-season setup.
+
+
+## Economy Engine · Full Settlement Automation
+
+- A database automation cycle runs every five minutes with an advisory lock and immutable run history in `caleris_economy_automation_runs`.
+- Daily reward and all-role race check-in retries remain on the existing five-minute worker. Approved permanent Driver transfers, Driver Loan activation/return, and transfer-window expiry remain on the existing one-minute worker.
+- Cash Loan installments are retried automatically for every eligible Race Period only after all divisions are mapped, all rounds are closed, and every payroll claim for that period has been settled manually. Overdue installments are retried using their original installment amount and idempotency key; a paid installment is never charged twice.
+- When every round in a division is closed, the worker retries WDC finalization and Season Prizepool payout after the required Admin configuration is available. It retries Wealth Tax assessment and collection only after every division in that season is completed. Insufficient wallet balances and incomplete configuration remain visible in the Admin Economy Audit Center and are retried in later cycles.
+- Existing inactivity economy penalties remain transactionally triggered by round closure. Race classification continues to issue configured DDP/TDP rewards through the existing token ledger. Team Take Over settlement remains immediate after FIA approval.
+- **Explicit exclusions:** payroll is not scheduled or retried by automation; Admin retains the existing manual payroll recovery action. Sponsorship progress, expiry, and payouts remain manual and are not included in the automation worker.
+- Admin → Economy Engine → Economy Audit Center now shows retry history, settlement automation history, overdue Cash Loan installments, pending configuration, and settlement errors.
+
+Migration: `20261116190000_economy_full_settlement_automation.sql`.
