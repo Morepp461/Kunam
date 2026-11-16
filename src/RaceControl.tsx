@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {Flag,RefreshCw,Save,Trophy,Plus,Trash2} from "lucide-react";
+import {Flag,RefreshCw,Save,Plus,Trash2} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
 type Round={id:string;round_number:number;title:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division_id:string;license_season_divisions?:{division_name:string;license_seasons?:{title:string}}};
@@ -28,7 +28,6 @@ export default function RaceControl(){
  },[]);
  useEffect(()=>{void refresh()},[refresh]);
  const selected=rounds.find(x=>x.id===roundId);
- const eligible=useMemo(()=>drivers, [drivers]);
  const change=(id:string,patch:Partial<Row>)=>setRows(current=>current.map(row=>row.member_id===id?{...row,...patch}:row));
  const selectRound=async(id:string)=>{
   setRoundId(id);setDotd("");setNotice(null);const round=rounds.find(x=>x.id===id);if(!round)return;
@@ -44,7 +43,7 @@ export default function RaceControl(){
  const save=async()=>{
   if(!supabase||!selected)return;setNotice(null);
   const errors:string[]=[];
-  const payload=rows.map((r,i)=>{
+  const payload=rows.map(r=>{
    const grid=Number(r.grid),position=r.status==="finished"?Number(r.position):null;
    const finish=r.status==="finished"?parseTime(r.finishTime,true):null;
    const fastest=r.fastestLap.trim()?parseTime(r.fastestLap,false):null;
@@ -81,7 +80,7 @@ export default function RaceControl(){
   {selected&&<section className="workspace-card">
    <div className="section-title-row"><div><span className="section-eyebrow">OFFICIAL CLASSIFICATION</span><h2>Race result sheet</h2></div><span className="empty-tag">{finished}/{rows.length} FINISHED</span></div>
    <div className="race-summary"><span><small>FASTEST LAP</small><strong>{fastest?.name||"Belum diinput"}</strong><em>{rows.find(r=>r.name===fastest?.name)?.fastestLap||"—"}</em></span><span><small>POLE</small><strong>{pole?.name||"Grid P1 belum ditentukan"}</strong><em>Grid position 1</em></span><span><small>DRIVER OF THE DAY</small><strong>{rows.find(r=>r.member_id===dotd)?.name||"Belum dipilih"}</strong><em>FIA selection</em></span></div>
-   <label className="race-dotd">Driver of the Day<select value={dotd} onChange={e=>setDotd(e.target.value)}><option value="">Pilih Driver (opsional)</option>{rows.map(r=><option key={r.member_id} value={r.member_id}>{r.name}</option>)}</select></label>
+   <label className="race-dotd">Driver of the Day<select value={dotd} onChange={e=>setDotd(e.target.value)}><option value="">Pilih Driver</option>{rows.map(r=><option key={r.member_id} value={r.member_id}>{r.name}</option>)}</select></label>
    <div className="race-input-table-wrap"><table className="race-input-table"><thead><tr><th>Pos</th><th>Driver / Team</th><th>Grid</th><th>Status</th><th>Time</th><th>Fastest Lap</th><th>Gap</th><th>Stops / Tyre Stints</th></tr></thead><tbody>
     {rows.map(row=><tr key={row.member_id}>
      <td><input className="race-pos-input" type="number" min="1" value={row.position} disabled={row.status!=="finished"} onChange={e=>change(row.member_id,{position:e.target.value})} placeholder="—"/></td>
