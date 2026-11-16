@@ -45,7 +45,8 @@ export default function MainEventRegistration({ session }: Props) {
   const [initialDivision,setInitialDivision]=useState("premio");
   const [engineChoice,setEngineChoice]=useState<"new"|"buy">("new");
   const [requestedEngineName,setRequestedEngineName]=useState("");
-  const [selectedEngineId,setSelectedEngineId]=useState("");\n  const [engineMarketOpen,setEngineMarketOpen]=useState(false);
+  const [selectedEngineId,setSelectedEngineId]=useState("");
+  const [engineMarketOpen,setEngineMarketOpen]=useState(false);
 
   const load=useCallback(async()=>{
     if(!supabase){setNotice("Supabase belum dikonfigurasi.");setLoading(false);return;}
