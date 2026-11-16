@@ -3,6 +3,11 @@
 -- 1 ¢p = EUR 2,000. Apply once through this versioned migration.
 begin;
 
+-- Temporarily remove only the ledger immutability guards inside this atomic,
+-- versioned conversion. They are recreated before commit; all other triggers remain active.
+drop trigger if exists economy_transactions_immutable on public.economy_transactions;
+drop trigger if exists economy_entries_immutable on public.economy_entries;
+
 -- Wallets and immutable accounting ledger.
 update public.economy_wallet_accounts set balance=balance*2000;
 update public.economy_transactions set amount=amount*2000;
@@ -68,6 +73,12 @@ update public.caleris_wealth_tax_assessments_v2 set
  wallet_balance_snapshot=wallet_balance_snapshot*2000,
  tax_amount=tax_amount*2000;
 update public.caleris_wealth_tax_collections_v2 set amount=amount*2000;
+
+-- Restore ledger immutability before the migration commits.
+create trigger economy_transactions_immutable before update or delete on public.economy_transactions
+for each row execute function private.reject_economy_ledger_mutation();
+create trigger economy_entries_immutable before update or delete on public.economy_entries
+for each row execute function private.reject_economy_ledger_mutation();
 
 -- Prevent future accidental use of the legacy currency in the database contract.
 create table if not exists public.caleris_currency_settings (
