@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ArrowLeft,Coins,RefreshCw,Save,ShieldCheck,SlidersHorizontal} from "lucide-react";
+import {ArrowLeft,Coins,RefreshCw,Save,ShieldCheck,SlidersHorizontal,Trophy} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
 import "./admin-pricing.css";
