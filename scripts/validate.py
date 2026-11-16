@@ -253,6 +253,11 @@ def main():
     assert "update public.members set role=null,team_id=null where id=v_seller.id" in takeover_sql, "Team Take Over must release the former Owner role"
     assert 'panelAccess.member_role===null' in app and 'path="/main-event/registration"' in app, "Main Event Registration must be limited to members without an active role"
     assert 'admin_invite_member_to_fia' in app and 'Invite menjadi anggota FIA' in app and 'site_admins' in app, "Admin FIA invitation must be present on member profiles"
+    development_hardening = ROOT / "supabase/migrations/20261116231000_development_snapshot_index_and_seed_trigger_security.sql"
+    assert development_hardening.is_file(), "Missing development database hardening migration"
+    hardening_sql = development_hardening.read_text(encoding="utf-8")
+    assert "caleris_development_season_snapshots_season_idx" in hardening_sql
+    assert "revoke all on function public.seed_team_development_parts()" in hardening_sql
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
