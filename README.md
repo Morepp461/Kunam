@@ -398,3 +398,13 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - **Circuit Pool Input:** FIA/Admin can add a circuit. All specification fields except initial lap record are mandatory. Country uses the same country/flag selector as account profile.
 - **Fastest lap:** FIA race classification now accepts optional `m:ss.mmm` fastest lap input and stores milliseconds on `caleris_race_result_entries.fastest_lap_ms`. Circuit Pool calculates the best time across all race classifications matching circuit name + country, and only a lower time supersedes the record. Existing classifications remain valid with no lap time.
 - **Migration:** `20261113084815_marketplace_circuit_pool.sql` and `20261113085041_transfer_market_public_member_support.sql`. The first adds circuit and job advert schema, safe marketplace views, circuit RLS, Admin job-advert policies, and the fastest-lap RPC extension. The second includes Public members and all teamless Drivers in the global transfer directory, and marks any teamless Driver as Free Agent.
+
+
+## Driver Inactivity Economy Workflow
+
+- The economic inactivity workflow is separate from License Score inactivity points.
+- After a scheduled round is closed, a Driver who has missed the configured number of consecutive scheduled check-ins is marked economically inactive for that season registration.
+- The default dedicated Admin rule is 5 consecutive missed check-ins, a 50% debit from the Driver Wallet, and a ¢p2,000 fine from the Driver's Team Wallet. Both debits are credited to VreeoBank through the immutable double-entry economy ledger.
+- The rule values are stored in `caleris_inactivity_penalty_rules`; they are not mixed into the generic configuration payload.
+- Each Driver registration is economically penalized once when it first crosses the inactivity threshold. The database trigger runs in the same transaction as round closure, so missing wallets or failed ledger postings roll back the round closure rather than silently skipping a penalty.
+- Migration: `20261116103000_inactivity_economy_penalties.sql`.
