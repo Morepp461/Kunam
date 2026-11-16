@@ -121,6 +121,6 @@ export default function AdminEconomyAudit() {
           </article>)}</div>}
       </div>
     </div>
-    <p className="economy-audit-footnote"><ShieldCheck size={15}/> Reward, race check-in, transfer window, angsuran Cash Loan, finalisasi Prizepool, dan Wealth Tax diproses otomatis setiap 5 menit atau saat round disahkan. Angsuran hanya berjalan setelah seluruh payroll Race Period selesai. Payroll dan sponsorship tetap manual.</p>
+    <p className="economy-audit-footnote"><ShieldCheck size={15}/> Reward, race check-in, transfer window, angsuran Cash Loan, finalisasi Prizepool, dan Wealth Tax diproses otomatis setiap 5 menit atau saat round disahkan. Angsuran hanya berjalan setelah seluruh payroll Race Period selesai. Payroll tetap mengikuti pemrosesan round dan tetap manual; sponsorship juga tetap manual.</p>
   </section>;
 }
