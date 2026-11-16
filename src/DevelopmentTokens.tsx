@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {ArrowLeft,RefreshCw,Trophy,Coins,Wallet} from "lucide-react";
+import {ArrowLeft,RefreshCw,Trophy,Wallet} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
