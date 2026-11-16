@@ -97,7 +97,7 @@ for fragment in [
 assert "admin_list_member_registrations_v2" in admin_engine_details.read_text(encoding="utf-8").lower()
 
 engine_market = (ROOT / "src" / "TeamEngineMarket.tsx").read_text(encoding="utf-8")
-for fragment in ['rpc("team_list_owned_engines")', 'rpc("team_set_engine_sale_listing")', "5000000", "25000000"]:
+for fragment in ['rpc("team_list_owned_engines")', 'rpc("team_set_engine_sale_listing",', "5000000", "25000000"]:
     assert fragment in engine_market, f"Team Engine Market is missing: {fragment}"
 
 print("Main Event registration regression checks passed.")
