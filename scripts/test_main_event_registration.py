@@ -8,6 +8,8 @@ assert registration.is_file(), "Missing Main Event registration migration"
 assert rejection_guard.is_file(), "Missing registration rejection cleanup migration"
 name_guard = MIGRATIONS / "20261116201000_main_event_registration_name_and_payload_guards.sql"
 assert name_guard.is_file(), "Missing registration payload and duplicate team-name guard"
+avatar_guard = MIGRATIONS / "20261116202000_main_event_registration_avatar_requirement.sql"
+assert avatar_guard.is_file(), "Missing required avatar migration"
 
 sql = registration.read_text(encoding="utf-8").lower()
 for fragment in [
@@ -36,6 +38,9 @@ for fragment in [
 guard = rejection_guard.read_text(encoding="utf-8").lower()
 assert "new.status='rejected'" in guard and "set status='withdrawn'" in guard
 name_sql = name_guard.read_text(encoding="utf-8").lower()
+avatar_sql = avatar_guard.read_text(encoding="utf-8").lower()
+assert "requested_role='owner'" in avatar_sql and "avatar_path is not null" in avatar_sql
+assert "avatar_path=v_registration.avatar_path" in avatar_sql
 assert "teams_name_case_insensitive_unique" in name_sql and "v_role is null or v_role not in" in name_sql
 
 form = (ROOT / "src" / "MainEventRegistration.tsx").read_text(encoding="utf-8")
