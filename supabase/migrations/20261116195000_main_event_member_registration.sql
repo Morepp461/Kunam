@@ -345,6 +345,7 @@ begin
   if p_decision='reject' then
     update public.caleris_member_registrations set status='rejected',reviewed_by=v_actor,reviewed_at=now(),
       review_note=nullif(btrim(p_review_note),''),updated_at=now() where id=p_registration_id;
+    update public.caleris_team_driver_applications set status='withdrawn' where registration_id=p_registration_id and status='pending';
     return jsonb_build_object('ok',true,'status','rejected');
   end if;
 
