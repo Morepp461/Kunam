@@ -385,8 +385,7 @@ begin
   end loop;
   return jsonb_build_object('season_id',p_season_id,'paid',v_paid,'insufficient_balance',v_insufficient,'skipped',v_skipped);
 end;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.admin_generate_wealth_tax_assessments(p_season_id uuid)
  RETURNS jsonb
