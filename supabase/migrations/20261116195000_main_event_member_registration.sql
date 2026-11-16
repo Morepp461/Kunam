@@ -180,7 +180,7 @@ begin
   end if;
 
   v_role:=p_payload->>'requested_role';
-  if v_role not in ('Driver','Owner') then raise exception 'Role pendaftaran tidak valid.'; end if;
+  if v_role is null or v_role not in ('Driver','Owner') then raise exception 'Role pendaftaran tidak valid.'; end if;
   v_nickname:=nullif(btrim(p_payload->>'nickname'),'');
   if v_nickname is null or length(v_nickname)>32 then raise exception 'Nickname wajib diisi, maksimal 32 karakter.'; end if;
 
@@ -237,8 +237,11 @@ begin
       raise exception 'Tahun berdiri tidak valid.';
     end if;
     if length(btrim(coalesce(p_payload->>'team_description','')))<10
+       or length(btrim(coalesce(p_payload->>'team_description','')))>1500
        or length(btrim(coalesce(p_payload->>'team_vision','')))<5
-       or length(btrim(coalesce(p_payload->>'team_long_term_target','')))<5 then
+       or length(btrim(coalesce(p_payload->>'team_vision','')))>1000
+       or length(btrim(coalesce(p_payload->>'team_long_term_target','')))<5
+       or length(btrim(coalesce(p_payload->>'team_long_term_target','')))>1000 then
       raise exception 'Deskripsi, visi, dan target jangka panjang wajib dilengkapi.';
     end if;
     if exists(select 1 from public.teams where lower(name)=lower(v_team_name)) then
