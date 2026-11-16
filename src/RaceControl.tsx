@@ -2,7 +2,7 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import {Flag,RefreshCw,Save,Trophy,Plus,Trash2} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
-type Round={id:string;round_number:number;title:string;session_type:"race"|"sprint";checkin_closes_at:string;season_division_id:string;license_season_divisions?:{division_name:string;license_seasons?:{title:string}}};
+type Round={id:string;round_number:number;title:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division_id:string;license_season_divisions?:{division_name:string;license_seasons?:{title:string}}};
 type Driver={id:string;character_name:string|null;team_id:string|null;teams?:{name:string}|null};
 type Row={member_id:string;name:string;team_id:string|null;team_name:string;status:"finished"|"dnf"|"dns"|"dsq";position:string;grid:string;finishTime:string;fastestLap:string;stints:string[];note:string};
 const compounds=[["soft","Soft","red"],["medium","Medium","yellow"],["hard","Hard","white"],["intermediate","Intermediate","green"],["wet","Wet","blue"]] as const;
@@ -19,7 +19,7 @@ export default function RaceControl(){
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);
   const [r,m]=await Promise.all([
-   supabase.from("license_rounds").select("id,round_number,title,session_type,checkin_closes_at,season_division_id,license_season_divisions(division_name,license_seasons(title))").neq("status","closed").order("round_number"),
+   supabase.from("license_rounds").select("id,round_number,title,session_type,checkin_closes_at,circuit_name,circuit_country_code,season_division_id,license_season_divisions(division_name,license_seasons(title))").neq("status","closed").order("round_number"),
    supabase.from("members").select("id,character_name,team_id,teams(name)").eq("role","Driver").order("character_name")
   ]);
   const error=r.error||m.error;if(error)setNotice({kind:"error",text:error.message});
@@ -68,17 +68,21 @@ export default function RaceControl(){
   setRoundId("");setRows([]);setDotd("");await refresh();
  };
  const finished=rows.filter(r=>r.status==="finished").length;
+ const winnerTime=Math.min(...rows.filter(r=>r.status==="finished").map(r=>parseTime(r.finishTime,true)??Number.POSITIVE_INFINITY));
+ const fastest=rows.map(r=>({name:r.name,time:parseTime(r.fastestLap,false)})).filter(r=>r.time!==null).sort((a,b)=>(a.time||0)-(b.time||0))[0];
+ const pole=rows.find(r=>Number(r.grid)===1);
  return <section className="workspace race-control">
   <header className="page-heading"><span className="section-eyebrow">FIA PANEL · OFFICIAL RACE CONTROL</span><h1 className="page-title">Race Input</h1><p className="page-description">Masukkan seluruh klasifikasi dari hasil game. Saat disahkan, engine kompetisi dan ekonomi memproses hasilnya dalam satu transaksi.</p></header>
   <section className="workspace-card race-control-toolbar">
    <label>Season · Division · Round<select value={roundId} onChange={e=>void selectRound(e.target.value)}><option value="">Pilih round yang akan disahkan</option>{rounds.map(r=><option key={r.id} value={r.id}>{r.license_season_divisions?.license_seasons?.title||"Season"} · {r.license_season_divisions?.division_name||"Division"} · R{r.round_number} · {r.title} · {r.session_type||"race"}</option>)}</select></label>
    <button className="action" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh</button>
-   {selected&&<p className="race-control-hint"><Flag size={15}/> {selected.title} · {selected.license_season_divisions?.division_name} · Check-in ditutup {new Date(selected.checkin_closes_at).toLocaleString("id-ID")}. Hasil hanya dapat disahkan setelah waktu penutupan.</p>}
+   {selected&&<p className="race-control-hint"><Flag size={15}/> {selected.circuit_country_code||"🏁"} · {selected.circuit_name||selected.title} · {selected.license_season_divisions?.division_name} · Check-in ditutup {new Date(selected.checkin_closes_at).toLocaleString("id-ID")}. Hasil hanya dapat disahkan setelah waktu penutupan.</p>}
   </section>
   {selected&&<section className="workspace-card">
    <div className="section-title-row"><div><span className="section-eyebrow">OFFICIAL CLASSIFICATION</span><h2>Race result sheet</h2></div><span className="empty-tag">{finished}/{rows.length} FINISHED</span></div>
+   <div className="race-summary"><span><small>FASTEST LAP</small><strong>{fastest?.name||"Belum diinput"}</strong><em>{rows.find(r=>r.name===fastest?.name)?.fastestLap||"—"}</em></span><span><small>POLE</small><strong>{pole?.name||"Grid P1 belum ditentukan"}</strong><em>Grid position 1</em></span><span><small>DRIVER OF THE DAY</small><strong>{rows.find(r=>r.member_id===dotd)?.name||"Belum dipilih"}</strong><em>FIA selection</em></span></div>
    <label className="race-dotd">Driver of the Day<select value={dotd} onChange={e=>setDotd(e.target.value)}><option value="">Pilih Driver (opsional)</option>{rows.map(r=><option key={r.member_id} value={r.member_id}>{r.name}</option>)}</select></label>
-   <div className="race-input-table-wrap"><table className="race-input-table"><thead><tr><th>Pos</th><th>Driver / Team</th><th>Grid</th><th>Status</th><th>Time</th><th>Fastest Lap</th><th>Stops / Tyre Stints</th></tr></thead><tbody>
+   <div className="race-input-table-wrap"><table className="race-input-table"><thead><tr><th>Pos</th><th>Driver / Team</th><th>Grid</th><th>Status</th><th>Time</th><th>Fastest Lap</th><th>Gap</th><th>Stops / Tyre Stints</th></tr></thead><tbody>
     {rows.map(row=><tr key={row.member_id}>
      <td><input className="race-pos-input" type="number" min="1" value={row.position} disabled={row.status!=="finished"} onChange={e=>change(row.member_id,{position:e.target.value})} placeholder="—"/></td>
      <td><strong>{row.name}</strong><small>{row.team_name}</small></td>
