@@ -455,3 +455,14 @@ Race scoring defaults currently seeded in `caleris_race_points_rules`: Race P1�
 - Admin → Economy Engine → Economy Audit Center now shows retry history, settlement automation history, overdue Cash Loan installments, pending configuration, and settlement errors.
 
 Migrations: `20261116190000_economy_full_settlement_automation.sql` and `20261116191000_cash_loan_overdue_ordering_guard.sql`.
+
+
+## Main Event Registration · Admin Approval
+
+- Main Event → Registration provides a two-step application for Driver or Team Owner. FIA is excluded from self-registration and remains invite-only through Admin.
+- Step 1 uses the existing profile nationality and hometown as read-only values. The submitted nickname is synchronized to the profile's driver nickname. Driver avatar uploads are restricted to PNG/WebP and reviewed by Admin for the required half-body driver-suit image with transparent background.
+- Driver applications collect a preferred racing number, optional existing team, and driver epithet. Choosing a team creates a pending application in that team's Driver Applications inbox.
+- Team Owner applications collect the proposed team name, transparent PNG/WebP logo, base nation, hometown, founding year, description, vision, and long-term target. A team and its wallets are not created before approval.
+- Admin Control → Registered Member lists the complete submitted forms and supports approval or rejection. Approval atomically creates/assigns the member role and the appropriate wallet(s); Team Owner approval also creates the team profile and Team Wallet. Rejection creates no role, team, or role wallet.
+- Registration submissions, team applications, role assignment, team creation, and wallet creation are protected by RLS and authenticated database RPCs. Member role and wallet state are never written directly by the browser.
+- Migrations: `20261116195000_main_event_member_registration.sql` and `20261116200000_main_event_registration_rejection_guard.sql`, `20261116201000_main_event_registration_name_and_payload_guards.sql`, and `20261116202000_main_event_registration_avatar_requirement.sql`.
