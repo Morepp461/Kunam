@@ -37,6 +37,7 @@ create table if not exists public.caleris_member_registrations (
       and team_logo_path is null)
     or
     (requested_role='Owner'
+      and avatar_path is not null
       and team_name is not null
       and team_logo_path is not null
       and team_base_nation is not null
@@ -224,6 +225,12 @@ begin
     update public.profiles set driver_nickname=v_nickname,preferred_role='Driver',updated_at=now()
     where user_id=v_user_id;
   else
+    v_avatar_path:=nullif(p_payload->>'avatar_path','');
+    if v_avatar_path is null or split_part(v_avatar_path,'/',1)<>v_user_id::text
+       or position('..' in v_avatar_path)>0
+       or not exists(select 1 from storage.objects o where o.bucket_id='profile-avatars' and o.name=v_avatar_path) then
+      raise exception 'Upload avatar Driver Suit yang valid terlebih dahulu.';
+    end if;
     v_team_name:=nullif(btrim(p_payload->>'team_name'),'');
     v_team_logo_path:=nullif(p_payload->>'team_logo_path','');
     if v_team_name is null or length(v_team_name) not between 2 and 60 then raise exception 'Nama tim wajib diisi (2–60 karakter).'; end if;
@@ -248,10 +255,10 @@ begin
       raise exception 'Nama tim sudah digunakan.';
     end if;
     insert into public.caleris_member_registrations(
-      user_id,requested_role,nickname,nationality,hometown,team_name,team_logo_path,
+      user_id,requested_role,nickname,avatar_path,nationality,hometown,team_name,team_logo_path,
       team_base_nation,team_hometown,team_founded_year,team_description,team_vision,team_long_term_target
     ) values (
-      v_user_id,'Owner',v_nickname,v_nationality,v_hometown,v_team_name,v_team_logo_path,
+      v_user_id,'Owner',v_nickname,v_avatar_path,v_nationality,v_hometown,v_team_name,v_team_logo_path,
       nullif(btrim(p_payload->>'team_base_nation'),''),nullif(btrim(p_payload->>'team_hometown'),''),v_year,
       btrim(p_payload->>'team_description'),btrim(p_payload->>'team_vision'),btrim(p_payload->>'team_long_term_target')
     ) returning id into v_registration_id;
@@ -392,8 +399,7 @@ begin
   end if;
 
   update public.profiles set member_id=v_member_id,driver_nickname=v_registration.nickname,
-    avatar_path=case when v_registration.requested_role='Driver' then v_registration.avatar_path else avatar_path end,
-    avatar_url=case when v_registration.requested_role='Driver' then null else avatar_url end,updated_at=now()
+    avatar_path=v_registration.avatar_path,avatar_url=null,updated_at=now()
   where user_id=v_registration.user_id;
   update public.caleris_member_registrations set status='approved',reviewed_by=v_actor,reviewed_at=now(),
     review_note=nullif(btrim(p_review_note),''),updated_at=now() where id=p_registration_id;
