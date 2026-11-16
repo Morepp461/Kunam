@@ -17,6 +17,13 @@ for fragment in [
 ]:
     assert fragment in sql, f"Cash Loan retry missing: {fragment}"
 
+# A later period cannot be charged while an older installment is overdue.
+ordering_migration = MIGRATIONS / "20261116191000_cash_loan_overdue_ordering_guard.sql"
+assert ordering_migration.is_file(), "Missing chronological Cash Loan repayment guard"
+ordering_sql = ordering_migration.read_text(encoding="utf-8").lower()
+for fragment in ["overdue_season.created_at<current_season.created_at", "overdue_period.sort_order<v_period.sort_order", "i.status='overdue'", "continue;"]:
+    assert fragment in ordering_sql, f"Cash Loan installment ordering missing: {fragment}"
+
 # Worker must wait for completed divisions and keep payroll manual.
 for fragment in [
     "private.run_economy_settlement_automation",
