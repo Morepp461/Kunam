@@ -16,6 +16,7 @@ import AdminEconomyEngine from "./AdminEconomyEngine";
 import AdminPricingCenter from "./AdminPricingCenter";
 import AdminOperations from "./AdminOperations";
 import FIAOperations from "./FIAOperations";
+import RaceControl from "./RaceControl";
 import MemberRaceCheckIn from "./MemberRaceCheckIn";
 import TeamAffiliate from "./TeamAffiliate";
 import DriverTransferMarket from "./DriverTransferMarket";
@@ -38,6 +39,7 @@ import "./admin-configuration.css";
 import "./economy-engine.css";
 import "./admin-operations.css";
 import "./fia-operations.css";
+import "./race-control.css";
 import "./member-race-checkin.css";
 import "./team-affiliate.css";
 import "./driver-transfer-market.css";
@@ -131,6 +133,7 @@ function Application(){
   <Route path="/fia-panel/license-engine" element={isAdmin?<Navigate to="/admin/license-engine" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<FIAOperations/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/race-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<RaceControl/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/driver-contracts" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamDriverContracts session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<DevelopmentTokens session={session} asset="TDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/sponsorship" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
