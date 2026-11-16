@@ -27,7 +27,7 @@ export default function AdminRegisteredMembers(){
     const {data:publicData}=client.storage.from(bucket).getPublicUrl(path);
     return {...row,preview_url:publicData.publicUrl};
    }
-   const {data:signedData}=await supabase.storage.from(bucket).createSignedUrl(path,900);
+   const {data:signedData}=await client.storage.from(bucket).createSignedUrl(path,900);
    return {...row,preview_url:signedData?.signedUrl||""};
   }));
   setRows(signed);setLoading(false);
