@@ -12,6 +12,7 @@ for fragment in [
     "private.post_economy_transaction",
     "account_kind='development_shop'",
     "member_purchase_development_tokens(numeric)",
+    "private.award_development_token(text,uuid,uuid,numeric,text,uuid,text,text,uuid)",
     "admin_set_development_shop_price(numeric,boolean)",
     "seed_default_development_race_rewards",
     "values(new.id,3,3,0,0,true)",
