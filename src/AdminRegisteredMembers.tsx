@@ -16,7 +16,7 @@ export default function AdminRegisteredMembers(){
   if(!supabase){setNotice("Supabase belum dikonfigurasi.");setLoading(false);return;}
   const client=supabase;
   setLoading(true);setNotice("");
-  const {data,error}=await supabase.rpc("admin_list_member_registrations");
+  const {data,error}=await supabase.rpc("admin_list_member_registrations_v2");
   if(error){setNotice(error.message);setRows([]);setLoading(false);return;}
   const list=Array.isArray(data)?data as Registration[]:[];
   const signed=await Promise.all(list.map(async row=>{
