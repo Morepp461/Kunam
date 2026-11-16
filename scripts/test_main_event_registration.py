@@ -49,6 +49,8 @@ for fragment in [
     "STEP 02 / 02",
     "nationality",
     "hometown",
+    "if(!avatar)",
+    "Avatar · Wajib",
     "Team Owner",
     "FIA hanya dapat diberikan melalui undangan khusus Admin",
     "driver_number_preference",
