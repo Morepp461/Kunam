@@ -68,7 +68,8 @@ export default function MainEventRegistration({ session }: Props) {
     const file=event.target.files?.[0]??null;
     if(!file){setter(null);return;}
     if(!["image/png","image/webp"].includes(file.type)){setNotice("Gunakan file PNG atau WebP dengan background transparan.");event.target.value="";return;}
-    if(file.size>5*1024*1024){setNotice("Ukuran gambar maksimal 5 MB.");event.target.value="";return;}
+    const maxSize=setter===setAvatar?3*1024*1024:5*1024*1024;
+    if(file.size>maxSize){setNotice(setter===setAvatar?"Ukuran avatar maksimal 3 MB.":"Ukuran logo maksimal 5 MB.");event.target.value="";return;}
     setNotice("");setter(file);
   };
   const nextStep=(event:FormEvent)=>{
