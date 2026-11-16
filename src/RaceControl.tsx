@@ -49,7 +49,7 @@ export default function RaceControl(){
    const finish=r.status==="finished"?parseTime(r.finishTime,true):null;
    const fastest=r.fastestLap.trim()?parseTime(r.fastestLap,false):null;
    if(!Number.isInteger(grid)||grid<1)errors.push(r.name+": grid position tidak valid.");
-   if(r.status==="finished"&&(!Number.isInteger(position)||position!<1||finish===null))errors.push(r.name+": posisi finish dan waktu wajib valid.");
+   if(r.status==="finished"&&(position===null||!Number.isInteger(position)||position<1||finish===null))errors.push(r.name+": posisi finish dan waktu wajib valid.");
    if(r.fastestLap.trim()&&fastest===null)errors.push(r.name+": format fastest lap harus m:ss.mmm.");
    if(!r.stints.length)errors.push(r.name+": minimal satu stint ban wajib dipilih.");
    return {member_id:r.member_id,finish_status:r.status,finishing_position:position,grid_position:grid,finish_time_ms:finish,fastest_lap_ms:fastest,note:r.note||null,stints:r.stints};
@@ -59,7 +59,7 @@ export default function RaceControl(){
   if(new Set(positions).size!==positions.length||!positions.includes(1)){setNotice({kind:"error",text:"Posisi finish harus unik dan mencakup P1."});return;}
   if(new Set(payload.map(x=>x.grid_position)).size!==payload.length||!payload.some(x=>x.grid_position===1)){setNotice({kind:"error",text:"Grid harus unik dan memiliki satu pole sitter di P1."});return;}
   if(!payload.some(x=>x.fastest_lap_ms!==null)){setNotice({kind:"error",text:"Fastest lap minimal harus dicatat untuk satu Driver."});return;}
-  if(dotd&&!payload.some(x=>x.member_id===dotd)){setNotice({kind:"error",text:"Driver of the Day tidak valid."});return;}
+  if(!dotd||!payload.some(x=>x.member_id===dotd)){setNotice({kind:"error",text:"Driver of the Day wajib dipilih dari klasifikasi race."});return;}
   setBusy(true);
   const {data,error}=await supabase.rpc("fia_submit_race_classification",{p_round_id:roundId,p_entries:payload,p_driver_of_day_member_id:dotd||null});
   setBusy(false);
