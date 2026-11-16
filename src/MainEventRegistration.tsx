@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, LoaderCircle, ShieldCheck, UploadCloud } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { formatImageBytes, optimizeImageToWebp } from "./lib/imageOptimization";
 import "./main-event-registration.css";
 
 type Row = Record<string, any>;
@@ -10,7 +11,6 @@ type Props = { session: Session };
 type Profile = { member_id: string | null; driver_nickname: string | null; web_nickname: string | null; nationality: string | null; hometown: string | null; onboarding_completed: boolean };
 type Team = { id: string; name: string; division_key: string | null };
 
-const fileName = (value: string) => value.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-90);
 const field = (label: string, child: ReactNode, hint?: string) => <label className="mer-field"><span>{label}</span>{child}{hint && <small>{hint}</small>}</label>;
 
 export default function MainEventRegistration({ session }: Props) {
@@ -25,6 +25,9 @@ export default function MainEventRegistration({ session }: Props) {
   const [role,setRole]=useState<"Driver"|"Owner">("Driver");
   const [avatar,setAvatar]=useState<File|null>(null);
   const [avatarPreview,setAvatarPreview]=useState("");
+  const [avatarStats,setAvatarStats]=useState<{originalSize:number;compressedSize:number}|null>(null);
+  const [logoStats,setLogoStats]=useState<{originalSize:number;compressedSize:number}|null>(null);
+  const [optimizingImage,setOptimizingImage]=useState<"avatar"|"team-logo"|null>(null);
   const [number,setNumber]=useState("");
   const [preferredTeam,setPreferredTeam]=useState("");
   const [epithet,setEpithet]=useState("");
@@ -59,28 +62,52 @@ export default function MainEventRegistration({ session }: Props) {
 
   const upload=async(bucket:string,file:File)=>{
     if(!supabase)throw new Error("Supabase belum dikonfigurasi.");
-    const path=session.user.id+"/"+Date.now()+"-"+fileName(file.name);
-    const {error}=await supabase.storage.from(bucket).upload(path,file,{upsert:false,contentType:file.type,cacheControl:"3600"});
+    if(file.type!=="image/webp")throw new Error("Upload ditolak: gambar wajib dikonversi ke WebP terlebih dahulu.");
+    const maxBytes=bucket==="profile-avatars"?1024*1024:768*1024;
+    if(file.size>maxBytes)throw new Error("Ukuran WebP melebihi batas penyimpanan.");
+    const uniqueId=typeof crypto!=="undefined"&&"randomUUID" in crypto?crypto.randomUUID():Date.now()+"-"+Math.random().toString(36).slice(2);
+    const path=session.user.id+"/"+bucket+"-"+uniqueId+".webp";
+    const {error}=await supabase.storage.from(bucket).upload(path,file,{upsert:false,contentType:"image/webp",cacheControl:"31536000"});
     if(error)throw error;
     return path;
   };
-  const onImage=(setter:(file:File|null)=>void)=>(event:ChangeEvent<HTMLInputElement>)=>{
-    const file=event.target.files?.[0]??null;
-    if(!file){setter(null);return;}
-    if(!["image/png","image/webp"].includes(file.type)){setNotice("Gunakan file PNG atau WebP dengan background transparan.");event.target.value="";return;}
-    const maxSize=setter===setAvatar?3*1024*1024:5*1024*1024;
-    if(file.size>maxSize){setNotice(setter===setAvatar?"Ukuran avatar maksimal 3 MB.":"Ukuran logo maksimal 5 MB.");event.target.value="";return;}
-    setNotice("");setter(file);
+  const onImage=(kind:"avatar"|"team-logo")=>(event:ChangeEvent<HTMLInputElement>)=>{
+    const input=event.currentTarget;
+    const file=input.files?.[0]??null;
+    input.value="";
+    if(!file){
+      if(kind==="avatar"){setAvatar(null);setAvatarStats(null);}
+      else{setTeamLogo(null);setLogoStats(null);}
+      return;
+    }
+    if(optimizingImage)return;
+    setOptimizingImage(kind);
+    setNotice("");
+    void (async()=>{
+      try{
+        const result=await optimizeImageToWebp(file,kind);
+        const stats={originalSize:result.originalSize,compressedSize:result.compressedSize};
+        if(kind==="avatar"){setAvatar(result.file);setAvatarStats(stats);}
+        else{setTeamLogo(result.file);setLogoStats(stats);}
+        const jpegSource=file.type==="image/jpeg"||/\.jpe?g$/i.test(file.name);
+        setNotice((kind==="avatar"?"Avatar":"Logo tim")+" berhasil dioptimalkan: "+formatImageBytes(stats.originalSize)+" → "+formatImageBytes(stats.compressedSize)+" (WebP)."+(jpegSource?" Catatan: JPG tidak mendukung transparansi, jadi background tidak otomatis terhapus.":""));
+      }catch(error){
+        if(kind==="avatar"){setAvatar(null);setAvatarStats(null);}
+        else{setTeamLogo(null);setLogoStats(null);}
+        setNotice(error instanceof Error?error.message:"Gambar gagal dioptimalkan.");
+      }finally{setOptimizingImage(null);}
+    })();
   };
   const nextStep=(event:FormEvent)=>{
     event.preventDefault();setNotice("");
     if(!nickname.trim()||nickname.trim().length>32){setNotice("Nickname wajib diisi, maksimal 32 karakter.");return;}
-    if(!avatar){setNotice("Avatar wajib diunggah untuk seluruh pendaftar.");return;}
-    if(role==="Owner"&&!teamLogo){setNotice("Logo tim wajib diunggah.");return;}
+    if(optimizingImage){setNotice("Tunggu sampai optimasi gambar selesai.");return;}
+    if(!avatar||avatar.type!=="image/webp"){setNotice("Avatar wajib diunggah dan dikonversi ke WebP.");return;}
+    if(role==="Owner"&&(!teamLogo||teamLogo.type!=="image/webp")){setNotice("Logo tim wajib diunggah dan dikonversi ke WebP.");return;}
     setStep(2);
   };
   const submit=async(event:FormEvent)=>{
-    event.preventDefault();if(!supabase)return;setSaving(true);setNotice("");
+    event.preventDefault();if(!supabase)return;if(optimizingImage){setNotice("Tunggu sampai optimasi gambar selesai.");return;}setSaving(true);setNotice("");
     try{
       const payload:Row={requested_role:role,nickname:nickname.trim()};
       payload.avatar_path=await upload("profile-avatars",avatar!);
@@ -121,7 +148,7 @@ export default function MainEventRegistration({ session }: Props) {
     <form className="mer-card" onSubmit={step===1?nextStep:submit}>
       {step===1?<><div className="mer-card-heading"><span>STEP 01 / 02</span><h2>Identitas Member</h2><p>Data lokasi diambil langsung dari profil dan tidak dapat diedit di formulir ini.</p></div>
         {field("Nickname",<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} required placeholder="Nickname driver"/>)}
-        <div className="mer-upload"><div className="mer-image-preview">{avatarPreview?<img src={avatarPreview} alt="Preview avatar"/>:<Flag size={26}/>}</div><div><strong>Avatar · Wajib</strong><p>Driver suit, tanpa background, tampilan setengah badan. PNG/WebP transparan.</p><label className="mer-upload-button"><UploadCloud size={15}/> Upload avatar<input type="file" accept="image/png,image/webp" onChange={onImage(setAvatar)}/></label></div></div>
+        <div className="mer-upload"><div className="mer-image-preview">{avatarPreview?<img src={avatarPreview} alt="Preview avatar"/>:<Flag size={26}/>}</div><div><strong>Avatar · Wajib</strong><p>Driver suit, tanpa background, tampilan setengah badan. PNG/JPG/WebP akan dikompres menjadi WebP. Transparansi PNG/WebP dipertahankan; JPG tetap memiliki background.</p>{avatarStats&&<small className="mer-image-stats">{formatImageBytes(avatarStats.originalSize)} → {formatImageBytes(avatarStats.compressedSize)} · WebP</small>}<label className="mer-upload-button"><UploadCloud size={15}/> {optimizingImage==="avatar"?"Mengoptimalkan...":"Upload avatar"}<input type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" onChange={onImage("avatar")} disabled={Boolean(optimizingImage)}/></label></div></div>
         <div className="mer-readonly-grid"><div><span>Nationality</span><strong>{profile.nationality||"Belum tersedia"}</strong></div><div><span>Hometown</span><strong>{profile.hometown||"Belum tersedia"}</strong></div></div>
         {field("Role",<select value={role} onChange={e=>setRole(e.target.value as "Driver"|"Owner")}><option value="Driver">Driver</option><option value="Owner">Team Owner</option></select>,"FIA hanya dapat diberikan melalui undangan khusus Admin.")}
       </>:<><div className="mer-card-heading"><span>STEP 02 / 02</span><h2>{role==="Driver"?"Driver Preferences":"Team Owner Application"}</h2><p>{role==="Driver"?"Preferensi akan diteruskan ke tim pilihan sebagai lamaran Driver.":"Informasi tim akan diperiksa Admin sebelum tim dan wallet dibuat."}</p></div>
@@ -131,7 +158,7 @@ export default function MainEventRegistration({ session }: Props) {
           {field("Julukan Driver",<input value={epithet} onChange={e=>setEpithet(e.target.value)} maxLength={60} placeholder="Contoh: Smooth Operator" required/>)}
         </>:<>
           {field("Nama Tim",<input value={teamName} onChange={e=>setTeamName(e.target.value)} maxLength={60} required/>)}
-          <div className="mer-upload"><div className="mer-image-preview">{teamLogoPreview?<img src={teamLogoPreview} alt="Preview logo tim"/>:<Flag size={26}/>}</div><div><strong>Logo Tim · Wajib</strong><p>Tanpa background, format PNG/WebP transparan.</p><label className="mer-upload-button"><UploadCloud size={15}/> Upload logo<input type="file" accept="image/png,image/webp" onChange={onImage(setTeamLogo)}/></label></div></div>
+          <div className="mer-upload"><div className="mer-image-preview">{teamLogoPreview?<img src={teamLogoPreview} alt="Preview logo tim"/>:<Flag size={26}/>}</div><div><strong>Logo Tim · Wajib</strong><p>Tanpa background. PNG/JPG/WebP otomatis dikompres menjadi WebP. Transparansi PNG/WebP dipertahankan; JPG tetap memiliki background.</p>{logoStats&&<small className="mer-image-stats">{formatImageBytes(logoStats.originalSize)} → {formatImageBytes(logoStats.compressedSize)} · WebP</small>}<label className="mer-upload-button"><UploadCloud size={15}/> {optimizingImage==="team-logo"?"Mengoptimalkan...":"Upload logo"}<input type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" onChange={onImage("team-logo")} disabled={Boolean(optimizingImage)}/></label></div></div>
           {field("Base Nation",<input value={baseNation} onChange={e=>setBaseNation(e.target.value)} maxLength={80} placeholder="Negara basis tim" required/>)}
           {field("Hometown",<input value={teamHometown} onChange={e=>setTeamHometown(e.target.value)} maxLength={120} placeholder="Kota basis tim" required/>)}
           {field("Tahun Berdiri",<input type="number" min="1800" max={new Date().getFullYear()+1} value={foundedYear} onChange={e=>setFoundedYear(e.target.value)} required/>)}
@@ -140,7 +167,7 @@ export default function MainEventRegistration({ session }: Props) {
           {field("Target Jangka Panjang",<textarea rows={3} value={longTermTarget} onChange={e=>setLongTermTarget(e.target.value)} maxLength={1000} required/>)}
         </>}
       </>}
-      <div className="mer-actions">{step===2&&<button type="button" className="mer-secondary" onClick={()=>setStep(1)} disabled={saving}><ChevronLeft size={16}/> Kembali</button>}{step===1?<button type="submit" className="mer-primary">Lanjut Tahap 2 <ChevronRight size={16}/></button>:<button type="submit" className="mer-primary" disabled={saving}>{saving?<><LoaderCircle className="mer-spin" size={16}/> Mengirim...</>:<>Kirim Pendaftaran <CheckCircle2 size={16}/></>}</button>}</div>
+      <div className="mer-actions">{step===2&&<button type="button" className="mer-secondary" onClick={()=>setStep(1)} disabled={saving}><ChevronLeft size={16}/> Kembali</button>}{step===1?<button type="submit" className="mer-primary" disabled={Boolean(optimizingImage)}>{optimizingImage?"Mengoptimalkan gambar...":<>Lanjut Tahap 2 <ChevronRight size={16}/></>}</button>:<button type="submit" className="mer-primary" disabled={saving||Boolean(optimizingImage)}>{saving?<><LoaderCircle className="mer-spin" size={16}/> Mengirim...</>:<>Kirim Pendaftaran <CheckCircle2 size={16}/></>}</button>}</div>
     </form>
   </section>;
 }

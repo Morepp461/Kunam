@@ -36,3 +36,5 @@ jobs:
         run: python3 -B scripts/test_driver_loan_engine.py
       - name: Main Event registration regression checks
         run: python3 -B scripts/test_main_event_registration.py
+      - name: Registration image optimization regression checks
+        run: python3 -B scripts/test_image_optimization.py
