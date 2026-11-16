@@ -117,6 +117,24 @@ begin
  if v_team_count=0 or v_team_count<>(select count(*) from public.license_team_final_standings where season_division_id=p_season_division_id) then
   raise exception 'Final standings Team harus memuat seluruh tim pada divisi ini.';
  end if;
+ if exists(select 1 from public.license_final_standings fs
+   left join public.license_season_members sm on sm.season_division_id=fs.season_division_id and sm.member_id=fs.member_id and not sm.is_hiatus
+   where fs.season_division_id=p_season_division_id and sm.id is null) then
+  raise exception 'Final standings Driver memuat peserta yang tidak aktif atau tidak terdaftar.';
+ end if;
+ if (select min(final_position) from public.license_final_standings where season_division_id=p_season_division_id)<>1
+    or (select max(final_position) from public.license_final_standings where season_division_id=p_season_division_id)<>v_driver_count then
+  raise exception 'Posisi final Driver harus berurutan dari P1 tanpa celah.';
+ end if;
+ if (select min(final_position) from public.license_team_final_standings where season_division_id=p_season_division_id)<>1
+    or (select max(final_position) from public.license_team_final_standings where season_division_id=p_season_division_id)<>v_team_count then
+  raise exception 'Posisi final Team harus berurutan dari P1 tanpa celah.';
+ end if;
+ if exists(select 1 from public.license_team_final_standings a
+   join public.license_team_final_standings b on b.season_division_id=a.season_division_id and b.final_position>a.final_position
+   where a.season_division_id=p_season_division_id and a.final_points<b.final_points) then
+  raise exception 'Posisi Team tidak sesuai urutan poin akhir.';
+ end if;
  if exists(select 1 from public.license_team_final_standings ts join public.teams t on t.id=ts.team_id
    where ts.season_division_id=p_season_division_id and t.division_key<>v_division.division_key) then
   raise exception 'Final standings Team memuat tim dari divisi lain.';
