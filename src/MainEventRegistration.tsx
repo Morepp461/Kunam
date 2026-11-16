@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { CheckCircle2, ChevronLeft, ChevronRight, Flag, LoaderCircle, ShieldCheck, UploadCloud } from "lucide-react";
 import { supabase } from "./lib/supabase";
@@ -11,7 +11,7 @@ type Profile = { member_id: string | null; driver_nickname: string | null; web_n
 type Team = { id: string; name: string; division_key: string | null };
 
 const fileName = (value: string) => value.normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(-90);
-const field = (label: string, child: React.ReactNode, hint?: string) => <label className="mer-field"><span>{label}</span>{child}{hint && <small>{hint}</small>}</label>;
+const field = (label: string, child: ReactNode, hint?: string) => <label className="mer-field"><span>{label}</span>{child}{hint && <small>{hint}</small>}</label>;
 
 export default function MainEventRegistration({ session }: Props) {
   const [profile,setProfile]=useState<Profile|null>(null);
