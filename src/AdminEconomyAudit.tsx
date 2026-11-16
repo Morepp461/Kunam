@@ -26,12 +26,31 @@ type RetryRun = {
   checkin_pending: number;
   error: string | null;
 };
+type AutomationRun = {
+  id: string;
+  started_at: string;
+  status: string;
+  repayment_periods_attempted: number;
+  repayments_paid: number;
+  repayments_overdue: number;
+  repayment_periods_waiting: number;
+  divisions_finalized: number;
+  prizepool_divisions_paid: number;
+  wealth_tax_seasons_processed: number;
+  wealth_tax_assessments_paid: number;
+  pending_items: number;
+  details: Array<{ kind?: string; status?: string; error?: string }>;
+  error: string | null;
+};
 type Snapshot = {
   pending_rewards: number;
   pending_member_checkins: number;
   pending_payroll: number;
+  pending_cash_loan_installments: number;
   failed_retry_runs: number;
+  failed_automation_runs: number;
   recent_runs: RetryRun[];
+  recent_automation_runs: AutomationRun[];
   pending_items: PendingItem[];
 };
 const money = (value: number) => "€ " + Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
@@ -51,7 +70,7 @@ export default function AdminEconomyAudit() {
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
 
-  const pendingTotal = (snapshot?.pending_rewards ?? 0) + (snapshot?.pending_member_checkins ?? 0) + (snapshot?.pending_payroll ?? 0);
+  const pendingTotal = (snapshot?.pending_rewards ?? 0) + (snapshot?.pending_member_checkins ?? 0) + (snapshot?.pending_payroll ?? 0) + (snapshot?.pending_cash_loan_installments ?? 0);
   return <section className="economy-panel economy-audit-panel">
     <div className="economy-panel-heading">
       <div><span className="section-eyebrow">MONITORING · IMMUTABLE RUN LOG</span><h2>Economy Audit Center</h2></div>
@@ -62,7 +81,8 @@ export default function AdminEconomyAudit() {
       <article><span>Daily reward</span><strong>{loading ? "—" : snapshot?.pending_rewards ?? 0}</strong></article>
       <article><span>Race check-in</span><strong>{loading ? "—" : snapshot?.pending_member_checkins ?? 0}</strong></article>
       <article><span>Payroll</span><strong>{loading ? "—" : snapshot?.pending_payroll ?? 0}</strong></article>
-      <article><span>Retry gagal</span><strong>{loading ? "—" : snapshot?.failed_retry_runs ?? 0}</strong></article>
+      <article><span>Angsuran overdue</span><strong>{loading ? "—" : snapshot?.pending_cash_loan_installments ?? 0}</strong></article>
+      <article><span>Retry gagal</span><strong>{loading ? "—" : (snapshot?.failed_retry_runs ?? 0) + (snapshot?.failed_automation_runs ?? 0)}</strong></article>
     </div>
     {error && <p className="economy-audit-error"><AlertTriangle size={15}/>{error}</p>}
     <div className="economy-audit-columns">
@@ -87,6 +107,20 @@ export default function AdminEconomyAudit() {
           </article>)}</div>}
       </div>
     </div>
-    <p className="economy-audit-footnote"><ShieldCheck size={15}/> Reward dan race check-in dicoba ulang otomatis setiap 5 menit. Payroll tetap mengikuti pemrosesan round; retry payroll dilakukan melalui kontrol Admin, bukan scheduler.</p>
+    <div className="economy-audit-columns economy-audit-automation">
+      <div>
+        <h3><Activity size={15}/> Riwayat settlement otomatis</h3>
+        {!snapshot?.recent_automation_runs.length && !loading ? <p className="economy-audit-empty">Belum ada siklus settlement otomatis.</p> :
+          <div className="economy-audit-list">{snapshot?.recent_automation_runs.map(run => <article key={run.id}>
+            <div><strong>{run.status === "completed" ? "Selesai" : run.status === "failed" ? "Gagal" : "Perlu perhatian"}</strong><small>{date(run.started_at)}</small></div>
+            <div className="economy-audit-amount"><strong>{run.repayments_paid} angsuran dibayar</strong><small>{run.repayments_overdue} overdue · {run.pending_items} tertunda</small></div>
+            <p>Finalisasi divisi {run.divisions_finalized} · Prizepool {run.prizepool_divisions_paid} · Wealth Tax {run.wealth_tax_assessments_paid} assessment dibayar</p>
+            {run.repayment_periods_waiting > 0 && <p>{run.repayment_periods_waiting} Race Period menunggu seluruh divisi/payroll selesai.</p>}
+            {run.details?.filter(item => item.error).slice(0, 3).map((item, index) => <p className="economy-audit-error" key={index}>{item.kind}: {item.error}</p>)}
+            {run.error && <p className="economy-audit-error">{run.error}</p>}
+          </article>)}</div>}
+      </div>
+    </div>
+    <p className="economy-audit-footnote"><ShieldCheck size={15}/> Reward, race check-in, transfer window, angsuran Cash Loan, finalisasi Prizepool, dan Wealth Tax diproses otomatis setiap 5 menit atau saat round disahkan. Angsuran hanya berjalan setelah seluruh payroll Race Period selesai. Payroll tetap mengikuti pemrosesan round dan tetap manual; sponsorship juga tetap manual.</p>
   </section>;
 }
