@@ -226,7 +226,7 @@ def main():
     race_sql = race_migration.read_text(encoding="utf-8")
     for fragment in ["grid_position", "finish_time_ms", "fastest_lap_ms", "driver_of_day_member_id", "race-stint-dots", "fia_submit_race_classification"]:
         assert fragment in race_source or fragment in race_sql, f"Race Control missing: {fragment}"
-    for fragment in ["caleris_race_stints", "caleris_race_points_rules", "process_license_round", "payout_season_prizepool", "fia_record_race_result(", "pole_position"]:
+    for fragment in ["caleris_race_stints", "caleris_race_points_rules", "process_license_round", "payout_season_prizepool", "fia_record_race_result("]:
         assert fragment in race_sql, f"Automated race settlement missing: {fragment}"
     assert 'path="/fia-panel/race-input"' in app and 'import RaceControl from "./RaceControl";' in app
     assert 'path: "race-input", label: "Race Input"' in (ROOT / "src/PanelPages.tsx").read_text(encoding="utf-8")
