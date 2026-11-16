@@ -475,8 +475,7 @@ begin
   end loop;
   return jsonb_build_object('season_id',p_season_id,'member_assessments_created',v_members,'team_assessments_created',v_teams);
 end;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.payout_season_prizepool(p_season_division_id uuid)
  RETURNS jsonb
