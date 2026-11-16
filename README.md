@@ -500,3 +500,16 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 
 - Keep the season snapshot lookup index consistent across Testing and Production.
 - The team development seeding function is trigger-only and cannot be executed directly by client roles. Migration: `20261116231000_development_snapshot_index_and_seed_trigger_security.sql`.
+
+
+## Development Economy (Cash + Race Rewards)
+
+- Development upgrades are paid directly from the Driver wallet or Team wallet in EUR. The cash debit and Development Treasury credit are recorded as one atomic double-entry economy transaction; no cash is minted or removed from the accounting equation.
+- Every attribute/part has its own Admin-configurable EUR price per +1 point in **Price Configuration**.
+- Recommended baseline rates are based on the current internal currency standard (EUR; legacy rate: €1 = ¢p2,000), initial capital (Driver €10m, Premio Team €800m, Zwei Team €500m), and Testing median annual Driver salary (€262.5m).
+- Full Driver development from 50 to 100 across all eight attributes costs €265m at the recommended baseline. Full Team car development across all sixteen parts costs €1.375bn.
+- DDP/TDP remain available as free Development rewards: 1 token = +1 attribute point. They can only be issued by race rewards and cannot be purchased with wallet cash. The existing P1 baseline is 3 DDP for the winning Driver and 3 TDP for the winning Team; pole rewards default to 0 and remain Admin-configurable per division.
+- Legacy Development Shop purchasing is disabled at both UI and database RPC levels. Remaining shop-only token balances are reversed with audit ledger entries; accounts with race reward entries are preserved.
+- Cash upgrades debit Driver/Team wallets and credit the existing Development Treasury wallet using the `development_upgrade` event type. Token upgrades debit only the DDP/TDP development ledger.
+- Admin manages per-attribute cash prices and per-division race reward values in **Admin → Price Configuration**.
+- Migration: `20261116232000_cash_based_development_economy.sql`.
