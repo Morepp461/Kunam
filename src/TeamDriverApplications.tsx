@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import type { Session } from "@supabase/supabase-js";
 import { LoaderCircle, RefreshCw, Users } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import "./main-event-registration.css";
 
 type Application=Record<string,any>;
-export default function TeamDriverApplications({session}:{session:Session}){
+export default function TeamDriverApplications(){
  const [rows,setRows]=useState<Application[]>([]);
  const [loading,setLoading]=useState(true);
  const [notice,setNotice]=useState("");
