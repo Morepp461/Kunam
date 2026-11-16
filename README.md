@@ -23,6 +23,14 @@
 - Rules page with an admin editor supporting draft and publish states.
 - Admin-managed Discord community invite URL.
 
+### Main Event Registration Image Optimization
+
+- Registration accepts PNG, JPG/JPEG, and WebP source images, then converts them in the browser to WebP before any Supabase Storage upload.
+- Transparent alpha is preserved for driver-suit avatars and team logos; images are resized and quality-adjusted with bounded output sizes.
+- Avatar target: 420 KB (hard cap 900 KB, max dimension 1440 px). Team logo target: 260 KB (hard cap 650 KB, max dimension 1200 px).
+- Supabase Storage accepts only `image/webp` for the registration avatar and team-logo buckets, with server-side bucket size limits of 1 MB and 768 KB respectively. Existing stored legacy files remain readable.
+- The registration form shows original and optimized file sizes before submission.
+
 ### Member Experience and Search
 
 - Member profile and account navigation foundations.
