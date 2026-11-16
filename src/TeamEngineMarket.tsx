@@ -21,7 +21,7 @@ export default function TeamEngineMarket({session}:{session:Session}){
   const {data:m,error:me}=await supabase.from("members").select("team_id,role").eq("id",p.member_id).maybeSingle();
   if(me||m?.role!=="Owner"||!m.team_id){setNotice(me?.message||"Fitur ini hanya tersedia untuk Team Owner.");setLoading(false);return;}
   const [t,e]=await Promise.all([
-   supabase.from("teams").select("id,name").eq("id",m.team_id).maybeSingle(),
+   supabase.from("caleris_team_directory").select("id,name").eq("id",m.team_id).maybeSingle(),
    supabase.rpc("team_list_owned_engines")
   ]);
   if(t.error||e.error){setNotice(t.error?.message||e.error?.message||"Gagal memuat engine.");setLoading(false);return;}
