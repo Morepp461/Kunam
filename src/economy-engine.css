@@ -62,3 +62,26 @@
 @media(max-width:900px){.economy-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.economy-wallet-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:680px){.economy-main-grid{grid-template-columns:1fr}.economy-heading{flex-direction:column}.economy-panel{padding:15px}.economy-form-row{grid-template-columns:1fr}.economy-wallet-grid{grid-template-columns:1fr 1fr}.economy-ledger-row{gap:8px}.economy-ledger-copy span{max-width:52vw}}
 @media(max-width:390px){.economy-summary-grid{grid-template-columns:1fr 1fr;gap:8px}.economy-summary-card{padding:12px}.economy-wallet-grid{grid-template-columns:1fr}.economy-pending-box{align-items:flex-start;flex-direction:column}}
+
+
+.economy-audit-panel{width:100%}
+.economy-audit-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:9px;margin-bottom:18px}
+.economy-audit-summary article{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:6px;background:rgba(255,255,255,.03)}
+.economy-audit-summary span{color:rgba(244,243,239,.48);font-size:10px}
+.economy-audit-summary strong{color:#e7d18a;font:700 22px 'Barlow Condensed',sans-serif}
+.economy-audit-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.economy-audit-columns h3{display:flex;align-items:center;gap:7px;margin:0 0 10px;color:#d8c17b;font:700 13px 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.08em}
+.economy-audit-list{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto}
+.economy-audit-list article{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:5px;background:rgba(255,255,255,.025)}
+.economy-audit-list article>div:first-child,.economy-audit-amount{display:flex;flex-direction:column;gap:4px;min-width:0}
+.economy-audit-list strong{color:#eee9dc;font-size:11px}
+.economy-audit-list small,.economy-audit-list article>small{color:rgba(244,243,239,.43);font-size:9px;overflow-wrap:anywhere}
+.economy-audit-amount{text-align:right}
+.economy-audit-list p{grid-column:1/-1;margin:2px 0 0;color:rgba(244,243,239,.58);font-size:10px;line-height:1.5;overflow-wrap:anywhere}
+.economy-audit-list article>small{grid-column:1/-1}
+.economy-audit-empty{color:rgba(244,243,239,.45);font-size:11px}
+.economy-audit-error{display:flex;align-items:center;gap:7px;color:#e7a08e;font-size:10px;overflow-wrap:anywhere}
+.economy-audit-footnote{display:flex;align-items:flex-start;gap:8px;margin:16px 0 0;color:rgba(244,243,239,.46);font-size:10px;line-height:1.6}
+.economy-audit-footnote svg{flex:none;color:#d8c17b}
+@media(max-width:850px){.economy-audit-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.economy-audit-columns{grid-template-columns:1fr}}
+@media(max-width:560px){.economy-audit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.economy-audit-list article{grid-template-columns:minmax(0,1fr) auto}}

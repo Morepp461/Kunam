@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
 import AdminDevelopmentShopSettings from "./AdminDevelopmentShopSettings";
+import AdminEconomyAudit from "./AdminEconomyAudit";
 
 type WalletAccount = { id: string; account_kind: string; profile_user_id: string | null; member_id: string | null; team_id: string | null; balance: number; is_active: boolean; display_name: string };
 type Transaction = { id: string; event_type: string; amount: number; description: string; created_at: string; source_account_id: string; destination_account_id: string; source_name: string; destination_name: string; is_reversed: boolean };
@@ -227,6 +228,8 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
         </div>
       </section>
     </div>
+
+    <AdminEconomyAudit />
 
     <section className="economy-panel economy-wallet-panel">
       <div className="economy-panel-heading"><div><span className="section-eyebrow">ACCOUNT REGISTRY</span><h2>Wallet registry</h2></div><button className="economy-secondary-button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>

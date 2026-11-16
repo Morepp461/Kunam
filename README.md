@@ -61,6 +61,13 @@
   - `/terms-and-conditions` — Syarat & Ketentuan
 - The legal pages are intentionally empty placeholders until the website is finalized and their content is prepared.
 
+### Economy Retry and Audit
+
+- Pending daily rewards and all-role race check-in rewards are retried automatically every five minutes through a locked, idempotent database worker.
+- Each retry cycle records attempted, paid, pending, and failed outcomes in `caleris_economy_retry_runs`; individual reward claims retain attempt count and last error.
+- The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
+- Payroll remains tied to round processing. Pending payroll is visible in the audit center and remains recoverable through the existing Admin payroll recovery action; it is intentionally excluded from the scheduled retry worker.
+
 ## Supabase
 
 Supabase project schema is managed by the versioned SQL files in `supabase/migrations/`. Keep migrations in sync with the `main` branch and the connected Supabase project.
