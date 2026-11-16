@@ -31,6 +31,7 @@ for fragment in [
     'contentType:"image/webp"',
     'accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"',
     'formatImageBytes(stats.originalSize)',
+    'JPG tidak mendukung transparansi',
 ]:
     assert fragment in component, f"Registration upload is not WebP-safe: {fragment}"
 
