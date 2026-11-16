@@ -200,7 +200,10 @@ begin
     fastest_lap_member_id=v_fastest_driver,fastest_lap_ms=v_fastest_time where round_id=p_round_id;
 
   if not exists(select 1 from public.license_rounds where season_division_id=v_round.season_division_id and status<>'closed') then
-    delete from public.license_final_standings where season_division_id=v_round.season_division_id;\n    delete from public.license_team_final_standings where season_division_id=v_round.season_division_id;\n\n    insert into public.license_final_standings(season_division_id,member_id,final_points,final_position,updated_by)
+    delete from public.license_final_standings where season_division_id=v_round.season_division_id;
+    delete from public.license_team_final_standings where season_division_id=v_round.season_division_id;
+
+    insert into public.license_final_standings(season_division_id,member_id,final_points,final_position,updated_by)
     select v_round.season_division_id,rs.member_id,max(rs.points_total),
       row_number() over(order by max(rs.points_total) desc,rs.member_id)::integer,(select auth.uid())
     from public.license_round_standings rs join public.license_rounds r on r.id=rs.round_id
