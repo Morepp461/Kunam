@@ -42,11 +42,9 @@ export default function AdminPrizepool({session}:{session:Session}){
   if(chosenDivision&&chosenDivision.season_id!==seasonId)setDivisionId("");
  },[seasonId,divisionId]);
  useEffect(()=>{void load()},[load]);
- const activeSeason=seasons.find(x=>x.id===seasonId);
  const seasonDivisions=divisions.filter(x=>x.season_id===seasonId);
  const activeDivision=divisions.find(x=>x.id===divisionId);
  const divisionTeams=useMemo(()=>teams.filter(x=>x.division_key===activeDivision?.division_key),[teams,activeDivision?.division_key]);
- const currentRules=rules.filter(x=>x.division_key===activeDivision?.division_key);
  const loadDivision=useCallback(async()=>{
   if(!supabase||!divisionId){setStandings([]);setPayouts([]);return}
   const [s,p]=await Promise.all([
