@@ -218,11 +218,6 @@ def main():
     cash_loan_gateway = cash_loan_edge.read_text(encoding="utf-8")
     assert "auth.getUser(jwt)" in cash_loan_gateway and 'rpc("member_cash_loan_preview"' in cash_loan_gateway and 'rpc("member_apply_cash_loan"' in cash_loan_gateway
     assert 'path="/financial-centre"' in app and 'import CashLoanCentre from "./CashLoanCentre"' in app
-    print("Caleris QA static checks passed.")
-
-if __name__ == "__main__":
-    main()
-
     race_control = ROOT / "src/RaceControl.tsx"
     race_styles = ROOT / "src/race-control.css"
     race_migration = ROOT / "supabase/migrations/20261116160000_automated_race_control_economy.sql"
@@ -235,3 +230,9 @@ if __name__ == "__main__":
         assert fragment in race_sql, f"Automated race settlement missing: {fragment}"
     assert 'path="/fia-panel/race-input"' in app and 'import RaceControl from "./RaceControl";' in app
     assert 'path: "race-input", label: "Race Input"' in (ROOT / "src/PanelPages.tsx").read_text(encoding="utf-8")
+
+    print("Caleris QA static checks passed.")
+
+if __name__ == "__main__":
+    main()
+
