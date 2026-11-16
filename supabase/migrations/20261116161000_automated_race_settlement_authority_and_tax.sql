@@ -331,7 +331,7 @@ begin
   end loop;
   return jsonb_build_object('season_id',p_season_id,'paid',v_paid,'insufficient_balance',v_insufficient,'skipped',v_skipped);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.admin_generate_wealth_tax_assessments(p_season_id uuid)
  RETURNS jsonb
@@ -421,7 +421,7 @@ begin
   end loop;
   return jsonb_build_object('season_id',p_season_id,'member_assessments_created',v_members,'team_assessments_created',v_teams);
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION public.payout_season_prizepool(p_season_division_id uuid)
  RETURNS jsonb
@@ -503,6 +503,6 @@ begin
  end loop;
  if v_paid<>v_expected_count or v_expected_count=0 then raise exception 'Konfigurasi Prizepool belum mencakup semua posisi berhadiah. Tidak ada pembayaran yang disimpan.';end if;
  return jsonb_build_object('season_division_id',p_season_division_id,'payout_count',v_paid,'status','paid');
-end;$function$
+end;$function$;
 
 commit;
