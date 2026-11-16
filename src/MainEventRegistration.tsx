@@ -89,7 +89,7 @@ export default function MainEventRegistration({ session }: Props) {
         const stats={originalSize:result.originalSize,compressedSize:result.compressedSize};
         if(kind==="avatar"){setAvatar(result.file);setAvatarStats(stats);}
         else{setTeamLogo(result.file);setLogoStats(stats);}
-        const jpegSource=file.type==="image/jpeg"||/\\.jpe?g$/i.test(file.name);
+        const jpegSource=file.type==="image/jpeg"||/\.jpe?g$/i.test(file.name);
         setNotice((kind==="avatar"?"Avatar":"Logo tim")+" berhasil dioptimalkan: "+formatImageBytes(stats.originalSize)+" → "+formatImageBytes(stats.compressedSize)+" (WebP)."+(jpegSource?" Catatan: JPG tidak mendukung transparansi, jadi background tidak otomatis terhapus.":""));
       }catch(error){
         if(kind==="avatar"){setAvatar(null);setAvatarStats(null);}
