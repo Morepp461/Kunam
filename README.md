@@ -404,7 +404,7 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 
 - The economic inactivity workflow is separate from License Score inactivity points.
 - After a scheduled round is closed, a Driver who has missed the configured number of consecutive scheduled check-ins is marked economically inactive for that season registration.
-- The default dedicated Admin rule is 5 consecutive missed check-ins, a 50% debit from the Driver Wallet, and a EUR (€)2,000 fine from the Driver's Team Wallet. Both debits are credited to VreeoBank through the immutable double-entry economy ledger.
+- The default dedicated Admin rule is 5 consecutive missed check-ins, a 50% debit from the Driver Wallet, and a €4,000,000 fine from the Driver's Team Wallet. Both debits are credited to VreeoBank through the immutable double-entry economy ledger.
 - The rule values are stored in `caleris_inactivity_penalty_rules`; they are not mixed into the generic configuration payload.
 - Each Driver registration is economically penalized once when it first crosses the inactivity threshold. The database trigger runs in the same transaction as round closure, so missing wallets or failed ledger postings roll back the round closure rather than silently skipping a penalty.
 - Migration: `20261116103000_inactivity_economy_penalties.sql`.
@@ -415,7 +415,7 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - Season Prizepool is a separate end-of-season settlement and does not replace or modify per-race DDP/TDP Race Rewards.
 - Driver prizes are ranked from the Admin-validated `license_final_standings`. Team prizes use a dedicated `license_team_final_standings` table because the repository had no persisted team final standings table.
 - Admin can enter each team's final points and unique final position in **Admin Control → Season Prizepool**. Every team in the matching division must be present before settlement.
-- The Prizepool schedule is editable by division, recipient type, and final position in the same Admin page. Defaults preserve the supplied schedules exactly, including Premio Driver P28 = EUR (€)18,000.
+- The Prizepool schedule is editable by division, recipient type, and final position in the same Admin page. Defaults preserve the supplied schedules exactly, including Premio Driver P28 = €36,000,000.
 - Once a division is finalized, Admin can settle both Driver and Team prizes together. The payout RPC validates complete standings and recipient wallets, posts each payment from VreeoBank through the immutable double-entry economy ledger, and records a payout receipt.
 - Payout is atomic and idempotent: a missing wallet, invalid schedule, or ledger error rolls back the entire settlement. A division cannot be paid twice.
 - Default schedules: Premio Team 14 positions, Premio Driver 28 positions, Zwei Team 12 positions, Zwei Driver 24 positions.
