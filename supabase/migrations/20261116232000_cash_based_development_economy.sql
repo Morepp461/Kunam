@@ -53,6 +53,35 @@ alter table public.caleris_team_development_part_history
   add column if not exists payment_method text not null default 'token'
     check(payment_method in ('cash','token'));
 
+-- Reverse any remaining legacy shop-only token balance. Accounts with race reward
+-- entries are untouched so earned DDP/TDP are preserved exactly.
+do $function$
+declare
+  v_account record;
+begin
+  for v_account in
+    select a.id,a.balance
+    from public.caleris_development_accounts a
+    where a.balance>0
+      and exists(select 1 from public.caleris_development_ledger l where l.account_id=a.id and l.source_type='shop_purchase')
+      and not exists(select 1 from public.caleris_development_ledger l where l.account_id=a.id and l.source_type in ('race_win','pole_position'))
+  loop
+    insert into public.caleris_development_ledger(
+      account_id,delta,source_type,description,idempotency_key,metadata
+    ) values(
+      v_account.id,-v_account.balance,'reversal',
+      'Reverse legacy Development Token Shop balance; tokens are now race rewards only',
+      'dev-shop-token-reversal:'||v_account.id::text,
+      jsonb_build_object('legacy_shop_balance_reversed',v_account.balance)
+    ) on conflict(idempotency_key) do nothing;
+    update public.caleris_development_accounts
+    set balance=0,updated_at=now()
+    where id=v_account.id
+      and exists(select 1 from public.caleris_development_ledger l where l.idempotency_key='dev-shop-token-reversal:'||v_account.id::text);
+  end loop;
+end;
+$function$;
+
 -- Development token shop is permanently disabled. DDP/TDP are earned from race rewards.
 update public.caleris_development_shop_config
 set token_price=0,is_active=false,updated_at=now();
@@ -236,7 +265,7 @@ declare
   v_tx jsonb;
   v_now timestamptz:=now();
 begin
-  if p_actor_id is null or p_scope not in ('team','driver') or p_payment_method not in ('cash','token') then
+  if p_actor_id is null or p_scope is null or p_scope not in ('team','driver') or p_payment_method is null or p_payment_method not in ('cash','token') then
     raise exception 'Data upgrade Development tidak valid.';
   end if;
   if p_new_value is null or p_new_value<50 or p_new_value>100 or p_new_value<>round(p_new_value,2) then
