@@ -6,6 +6,7 @@ assert migration.is_file(), "Missing cash-based Development migration"
 sql = migration.read_text(encoding="utf-8").lower()
 for fragment in [
     "cash_eur_per_point",
+    "cash_price_positive",
     "cash_is_configured",
     "development_upgrade",
     "private.post_economy_transaction",
