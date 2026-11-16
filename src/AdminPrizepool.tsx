@@ -1,4 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
 import {ArrowLeft,Coins,RefreshCw,Save,ShieldCheck,Trophy} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
@@ -64,7 +65,7 @@ export default function AdminPrizepool({session}:{session:Session}){
   setRules(v=>v.map(x=>x.division_key===rule.division_key&&x.recipient_type===rule.recipient_type&&x.final_position===rule.final_position?{...x,prize_amount:value}:x));
   setNotice({kind:"success",text:"Nilai Prizepool diperbarui."});
  };
- const saveStanding=async(e:React.FormEvent)=>{
+ const saveStanding=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!divisionId||!teamId)return;
   setBusy(true);setNotice(null);
   const {error}=await supabase.from("license_team_final_standings").upsert({season_division_id:divisionId,team_id:teamId,final_points:Number(teamPoints),final_position:Number(teamPosition),updated_by:session.user.id},{onConflict:"season_division_id,team_id"});
