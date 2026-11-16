@@ -231,6 +231,19 @@ def main():
     assert 'path="/fia-panel/race-input"' in app and 'import RaceControl from "./RaceControl";' in app
     assert 'path: "race-input", label: "Race Input"' in (ROOT / "src/PanelPages.tsx").read_text(encoding="utf-8")
 
+
+    retry_migration = ROOT / "supabase/migrations/20261116170000_economy_retry_and_audit_center.sql"
+    retry_ui = ROOT / "src/AdminEconomyAudit.tsx"
+    assert retry_migration.is_file() and retry_ui.is_file(), "Missing Economy Retry and Audit Center"
+    retry_sql = retry_migration.read_text(encoding="utf-8")
+    retry_source = retry_ui.read_text(encoding="utf-8")
+    for fragment in ["retry_pending_economy_rewards", "caleris_economy_retry_runs", "admin_get_economy_audit_snapshot", "caleris-economy-pending-retry"]:
+        assert fragment in retry_sql, f"Economy retry migration missing: {fragment}"
+    for fragment in ["pending_payroll", "recent_runs", "pending_items", "Payroll tetap mengikuti pemrosesan round"]:
+        assert fragment in retry_source, f"Economy Audit Center missing: {fragment}"
+    assert "admin_get_economy_audit_snapshot" in retry_source
+    assert "process_license_round" not in retry_sql, "Payroll must remain tied to round processing, not a scheduler."
+
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
