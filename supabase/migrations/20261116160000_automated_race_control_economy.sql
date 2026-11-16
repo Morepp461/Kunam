@@ -165,7 +165,7 @@ begin
     v_fastest_ms:=nullif(v_entry->>'fastest_lap_ms','')::integer;
     insert into public.caleris_race_result_entries(round_id,member_id,team_id,finish_status,finishing_position,note,fastest_lap_ms,recorded_by,recorded_at,grid_position,finish_time_ms,gap_ms)
     values(p_round_id,v_member_id,v_team_id,v_status,v_position,nullif(v_entry->>'note',''),v_fastest_ms,(select auth.uid()),now(),v_grid,v_finish_ms,
-      case when v_status='finished' then greatest(0,v_finish_ms-(select (x->>'finish_time_ms')::integer from jsonb_array_elements(p_entries) x where x->>'finishing_position'='1' limit 1)) else null end)
+      case when v_status='finished' then greatest(0,v_finish_ms-(select (x->>'finish_time_ms')::integer from jsonb_array_elements(p_entries) as x(value) where x.value->>'finishing_position'='1' limit 1)) else null end)
     on conflict(round_id,member_id) do update set team_id=excluded.team_id,finish_status=excluded.finish_status,finishing_position=excluded.finishing_position,
       note=excluded.note,fastest_lap_ms=excluded.fastest_lap_ms,recorded_by=excluded.recorded_by,recorded_at=now(),
       grid_position=excluded.grid_position,finish_time_ms=excluded.finish_time_ms,gap_ms=excluded.gap_ms;
@@ -200,7 +200,7 @@ begin
     fastest_lap_member_id=v_fastest_driver,fastest_lap_ms=v_fastest_time where round_id=p_round_id;
 
   if not exists(select 1 from public.license_rounds where season_division_id=v_round.season_division_id and status<>'closed') then
-    insert into public.license_final_standings(season_division_id,member_id,final_points,final_position,updated_by)
+    delete from public.license_final_standings where season_division_id=v_round.season_division_id;\n    delete from public.license_team_final_standings where season_division_id=v_round.season_division_id;\n\n    insert into public.license_final_standings(season_division_id,member_id,final_points,final_position,updated_by)
     select v_round.season_division_id,rs.member_id,max(rs.points_total),
       row_number() over(order by max(rs.points_total) desc,rs.member_id)::integer,(select auth.uid())
     from public.license_round_standings rs join public.license_rounds r on r.id=rs.round_id
