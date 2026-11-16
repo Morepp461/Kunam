@@ -154,7 +154,7 @@ The current schema does not allow authenticated users to update `profiles.member
 The Admin Control → Operations Suite workspace is introduced at `/admin/operations`. It provides editable records for:
 
 - **Tax Rules:** Admin-configurable Driver Transfer Tax plus two independent Wealth Tax scopes: Member and Team. Each Wealth Tax scope requires exactly three active tiers and applies the single highest eligible flat rate to the full taxable base (not progressive). No thresholds or rates are preloaded. Admin manually generates and collects Wealth Tax assessments per season through the Economy Engine.
-- **Race Development Rewards:** per-season-division settings for winner and pole-sitter DDP awards and their respective teams' TDP awards. DDP/TDP use separate immutable development-token ledgers and never affect ¢p wallets. Values start at zero and inactive.
+- **Race Development Rewards:** per-season-division settings for winner and pole-sitter DDP awards and their respective teams' TDP awards. DDP/TDP use separate immutable development-token ledgers and never affect EUR (€) wallets. Values start at zero and inactive.
 - **Sponsor Pool:** Admin-managed sponsor records and optional budgets. Sponsor names and commercial terms are not invented or preloaded.
 - **Team Valuation:** Admin-entered component snapshots for assets, development parts, history, achievements, and financial health. Total valuation is the sum of those entered component values; no hidden weights are applied.
 
@@ -305,7 +305,7 @@ Wallet creation is trigger-driven and idempotent. Driver and Team Owner wallets 
 - Assessment snapshots are unique per season and target. Collection is split deterministically across a member's personal wallets, recorded as separate immutable economy transactions, and credited to VreeoBank. Collection checks aggregate available balance first and does not partially debit an assessment or create a negative wallet balance; insufficient assessments remain open for a later collection attempt.
 - The collection detail table records each source wallet and ledger transaction. Both assessment and collection tables have RLS enabled and are readable only by Admin.
 - No threshold values or rates are pre-seeded. Each category must have exactly three active tiers, with strictly increasing rates as thresholds rise. Admin configures both categories before generating an assessment; all threshold and rate values remain editable. Wealth Tax is run manually per season; no automatic offseason schedule is enabled.
-- Race result confirmation continues to distribute **DDP/TDP only** according to the Admin-configured season-division rules. It does not pay ¢p.
+- Race result confirmation continues to distribute **DDP/TDP only** according to the Admin-configured season-division rules. It does not pay EUR (€).
 - Migrations: 20261113034921_wealth_tax_scoped_assessment_ledger.sql, 20261113034952_wealth_tax_admin_gateway_permissions.sql, 20261113035234_wealth_tax_personal_wallet_aggregation_and_lock_order.sql, and 20261113035324_wealth_tax_exact_three_tier_validation.sql. Economy Engine Edge Function is deployed as version 3 with JWT verification enabled.
 
 ### Important boundary
@@ -404,7 +404,7 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 
 - The economic inactivity workflow is separate from License Score inactivity points.
 - After a scheduled round is closed, a Driver who has missed the configured number of consecutive scheduled check-ins is marked economically inactive for that season registration.
-- The default dedicated Admin rule is 5 consecutive missed check-ins, a 50% debit from the Driver Wallet, and a ¢p2,000 fine from the Driver's Team Wallet. Both debits are credited to VreeoBank through the immutable double-entry economy ledger.
+- The default dedicated Admin rule is 5 consecutive missed check-ins, a 50% debit from the Driver Wallet, and a EUR (€)2,000 fine from the Driver's Team Wallet. Both debits are credited to VreeoBank through the immutable double-entry economy ledger.
 - The rule values are stored in `caleris_inactivity_penalty_rules`; they are not mixed into the generic configuration payload.
 - Each Driver registration is economically penalized once when it first crosses the inactivity threshold. The database trigger runs in the same transaction as round closure, so missing wallets or failed ledger postings roll back the round closure rather than silently skipping a penalty.
 - Migration: `20261116103000_inactivity_economy_penalties.sql`.
@@ -415,7 +415,7 @@ Migration: `20261112160305_season_calendar_and_payroll.sql`.
 - Season Prizepool is a separate end-of-season settlement and does not replace or modify per-race DDP/TDP Race Rewards.
 - Driver prizes are ranked from the Admin-validated `license_final_standings`. Team prizes use a dedicated `license_team_final_standings` table because the repository had no persisted team final standings table.
 - Admin can enter each team's final points and unique final position in **Admin Control → Season Prizepool**. Every team in the matching division must be present before settlement.
-- The Prizepool schedule is editable by division, recipient type, and final position in the same Admin page. Defaults preserve the supplied schedules exactly, including Premio Driver P28 = ¢p18,000.
+- The Prizepool schedule is editable by division, recipient type, and final position in the same Admin page. Defaults preserve the supplied schedules exactly, including Premio Driver P28 = EUR (€)18,000.
 - Once a division is finalized, Admin can settle both Driver and Team prizes together. The payout RPC validates complete standings and recipient wallets, posts each payment from VreeoBank through the immutable double-entry economy ledger, and records a payout receipt.
 - Payout is atomic and idempotent: a missing wallet, invalid schedule, or ledger error rolls back the entire settlement. A division cannot be paid twice.
 - Default schedules: Premio Team 14 positions, Premio Driver 28 positions, Zwei Team 12 positions, Zwei Driver 24 positions.
