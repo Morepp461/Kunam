@@ -42,6 +42,7 @@ export const panelGroups: PanelGroup[] = [
     { path: "scout", label: "Scout", description: "Pencarian dan pemantauan driver." },
     { path: "place-job-advert", label: "Place Job Advert", description: "Publikasi lowongan kursi driver." },
     { path: "affiliate-team", label: "Affiliate Team", description: "Daftar, permintaan, dan perjanjian afiliasi." },
+    { path: "engine-market", label: "Engine Market", description: "Kelola penawaran dan harga engine milik tim." },
     { path: "appeal", label: "Appeal", description: "Pengajuan dan riwayat banding tim." }
   ]},
   { path: "fia-panel", label: "FIA PANEL", tabs: [

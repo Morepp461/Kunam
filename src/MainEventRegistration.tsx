@@ -10,12 +10,14 @@ type Row = Record<string, any>;
 type Props = { session: Session };
 type Profile = { member_id: string | null; driver_nickname: string | null; web_nickname: string | null; nationality: string | null; hometown: string | null; onboarding_completed: boolean };
 type Team = { id: string; name: string; division_key: string | null };
+type Engine = { id: string; name: string; manufacturer: string | null; asking_price: number; seller_team_name: string };
 
 const field = (label: string, child: ReactNode, hint?: string) => <label className="mer-field"><span>{label}</span>{child}{hint && <small>{hint}</small>}</label>;
 
 export default function MainEventRegistration({ session }: Props) {
   const [profile,setProfile]=useState<Profile|null>(null);
   const [teams,setTeams]=useState<Team[]>([]);
+  const [engines,setEngines]=useState<Engine[]>([]);
   const [step,setStep]=useState(1);
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -40,20 +42,27 @@ export default function MainEventRegistration({ session }: Props) {
   const [description,setDescription]=useState("");
   const [vision,setVision]=useState("");
   const [longTermTarget,setLongTermTarget]=useState("");
+  const [initialDivision,setInitialDivision]=useState("premio");
+  const [engineChoice,setEngineChoice]=useState<"new"|"buy">("new");
+  const [requestedEngineName,setRequestedEngineName]=useState("");
+  const [selectedEngineId,setSelectedEngineId]=useState("");
+  const [engineMarketOpen,setEngineMarketOpen]=useState(false);
 
   const load=useCallback(async()=>{
     if(!supabase){setNotice("Supabase belum dikonfigurasi.");setLoading(false);return;}
     setLoading(true);setNotice("");
-    const [p,t,r]=await Promise.all([
+    const [p,t,r,e]=await Promise.all([
       supabase.from("profiles").select("member_id,driver_nickname,web_nickname,nationality,hometown,onboarding_completed").eq("user_id",session.user.id).maybeSingle(),
       supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
-      supabase.from("caleris_member_registrations").select("id,requested_role,status,created_at,review_note").eq("user_id",session.user.id).order("created_at",{ascending:false}).limit(1).maybeSingle()
+      supabase.from("caleris_member_registrations").select("id,requested_role,status,created_at,review_note").eq("user_id",session.user.id).order("created_at",{ascending:false}).limit(1).maybeSingle(),
+      supabase.rpc("list_main_event_engine_marketplace")
     ]);
     if(p.error){setNotice(p.error.message);setLoading(false);return;}
     const next=p.data as Profile|null;setProfile(next);
     setNickname(next?.driver_nickname||next?.web_nickname||"");
     if(t.error)setNotice(t.error.message);else setTeams((t.data??[]) as Team[]);
     if(r.error)setNotice(r.error.message);else setRegistration(r.data as Row|null);
+    if(e.error)setNotice(e.error.message);else setEngines((e.data??[]) as Engine[]);
     setLoading(false);
   },[session.user.id]);
   useEffect(()=>{void load();},[load]);
@@ -127,8 +136,12 @@ export default function MainEventRegistration({ session }: Props) {
         payload.team_description=description.trim();
         payload.team_vision=vision.trim();
         payload.team_long_term_target=longTermTarget.trim();
+        payload.initial_division=initialDivision;
+        payload.engine_choice=engineChoice;
+        if(engineChoice==="new"){if(!requestedEngineName.trim())throw new Error("Nama Engine wajib diisi.");payload.requested_engine_name=requestedEngineName.trim();}
+        else{if(!selectedEngineId)throw new Error("Pilih Engine yang ingin dibeli.");payload.selected_engine_id=selectedEngineId;}
       }
-      const {data,error}=await supabase.rpc("submit_main_event_registration",{p_payload:payload});
+      const {data,error}=await supabase.rpc("submit_main_event_registration_v2",{p_payload:payload});
       if(error)throw error;
       setRegistration({id:data.registration_id,requested_role:role,status:"pending",created_at:new Date().toISOString()});
       setNotice("Pendaftaran berhasil dikirim dan menunggu persetujuan Admin.");
@@ -159,6 +172,9 @@ export default function MainEventRegistration({ session }: Props) {
         </>:<>
           {field("Nama Tim",<input value={teamName} onChange={e=>setTeamName(e.target.value)} maxLength={60} required/>)}
           <div className="mer-upload"><div className="mer-image-preview">{teamLogoPreview?<img src={teamLogoPreview} alt="Preview logo tim"/>:<Flag size={26}/>}</div><div><strong>Logo Tim · Wajib</strong><p>Tanpa background. PNG/JPG/WebP otomatis dikompres menjadi WebP. Transparansi PNG/WebP dipertahankan; JPG tetap memiliki background.</p>{logoStats&&<small className="mer-image-stats">{formatImageBytes(logoStats.originalSize)} → {formatImageBytes(logoStats.compressedSize)} · WebP</small>}<label className="mer-upload-button"><UploadCloud size={15}/> {optimizingImage==="team-logo"?"Mengoptimalkan...":"Upload logo"}<input type="file" accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp" onChange={onImage("team-logo")} disabled={Boolean(optimizingImage)}/></label></div></div>
+          {field("Pilih Divisi Awal",<select value={initialDivision} onChange={e=>setInitialDivision(e.target.value)} required><option value="premio">Caleris Premio</option><option value="zwei">Caleris Zwei</option></select>)}
+          <div className="mer-engine-choice"><strong>Engine</strong><p>Pilih membuat engine baru atau membeli engine milik tim lain.</p><div className="mer-engine-options"><label><input type="radio" name="engine-choice" checked={engineChoice==="new"} onChange={()=>setEngineChoice("new")}/> Buat Engine Baru</label><label><input type="radio" name="engine-choice" checked={engineChoice==="buy"} onChange={()=>setEngineChoice("buy")}/> Beli Engine</label></div>
+          {engineChoice==="new"? <>{field("Nama Engine",<input value={requestedEngineName} onChange={e=>setRequestedEngineName(e.target.value)} maxLength={60} placeholder="Nama engine tim" required/>)}<small className="mer-engine-price">Biaya pembuatan: €80.000.000</small></> : <div className="mer-engine-buy"><button type="button" className="mer-secondary" onClick={()=>setEngineMarketOpen(true)}>Pilih Engine dari Tim Lain</button>{selectedEngineId&&<p>Dipilih: <strong>{engines.find(engine=>engine.id===selectedEngineId)?.name||"Engine"}</strong></p>}{engineMarketOpen&&<div className="mer-engine-overlay" role="presentation" onClick={()=>setEngineMarketOpen(false)}><section className="mer-engine-modal" role="dialog" aria-modal="true" aria-label="Daftar engine yang dijual" onClick={e=>e.stopPropagation()}><div className="mer-engine-modal-head"><div><strong>ENGINE MARKET</strong><p>Pilih engine yang ditawarkan tim lain.</p></div><button type="button" className="mer-secondary" onClick={()=>setEngineMarketOpen(false)}>Tutup</button></div>{engines.length===0?<p>Belum ada engine yang ditawarkan tim lain.</p>:engines.map(engine=><label key={engine.id} className={selectedEngineId===engine.id?"selected":""}><input type="radio" name="selected-engine" checked={selectedEngineId===engine.id} onChange={()=>setSelectedEngineId(engine.id)}/><span><strong>{engine.name}</strong><small>{engine.manufacturer||engine.seller_team_name} · Dijual oleh {engine.seller_team_name}</small></span><b>{new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(engine.asking_price)}</b></label>)}</section></div>}</div>}</div>
           {field("Base Nation",<input value={baseNation} onChange={e=>setBaseNation(e.target.value)} maxLength={80} placeholder="Negara basis tim" required/>)}
           {field("Hometown",<input value={teamHometown} onChange={e=>setTeamHometown(e.target.value)} maxLength={120} placeholder="Kota basis tim" required/>)}
           {field("Tahun Berdiri",<input type="number" min="1800" max={new Date().getFullYear()+1} value={foundedYear} onChange={e=>setFoundedYear(e.target.value)} required/>)}

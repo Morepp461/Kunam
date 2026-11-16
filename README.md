@@ -474,3 +474,13 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 - Admin Control → Registered Member lists the complete submitted forms and supports approval or rejection. Approval atomically creates/assigns the member role and the appropriate wallet(s); Team Owner approval also creates the team profile and Team Wallet. Rejection creates no role, team, or role wallet.
 - Registration submissions, team applications, role assignment, team creation, and wallet creation are protected by RLS and authenticated database RPCs. Member role and wallet state are never written directly by the browser.
 - Migrations: `20261116195000_main_event_member_registration.sql` and `20261116200000_main_event_registration_rejection_guard.sql`, `20261116201000_main_event_registration_name_and_payload_guards.sql`, and `20261116202000_main_event_registration_avatar_requirement.sql`.
+
+### Main Event Team Owner Engine & Division Registration
+- Team Owner Stage 2 now requires an initial division (Caleris Premio or Caleris Zwei) and an engine acquisition choice.
+- Division capacity is enforced in authenticated database RPCs and rechecked during Admin approval: Premio supports up to 12 teams and Zwei up to 14. Pending applications reserve a slot; limits are intentionally not exposed in the registration UI.
+- Engine creation costs €80,000,000. Existing team-owned engines can be purchased from the registration engine-market popup. Engine sale prices are controlled by the selling Team Owner and constrained server-side to €5,000,000–€25,000,000.
+- Team Owners manage engine sale listings from Team Panel → Engine Market. Purchase settlement transfers funds from the buyer team wallet to the seller team wallet, then transfers engine ownership atomically.
+- Admin approval creates the Team Owner/member/team profiles and associated wallets, funds the team wallet with €800,000,000 for Premio or €500,000,000 for Zwei, and funds each approved Driver wallet with €10,000,000. New-engine manufacturing is charged to the new team's wallet after initial capital funding.
+- VreeoBank receives an opening reserve balance of €999,999,999,999.00 EUR for initial capital and settlement funding.
+- Rejected applications can be resubmitted from Stage 1; a pending application remains locked against duplicate submissions.
+- Migrations: `20261116220000_main_event_owner_engine_division_and_capital.sql` and `20261116221000_main_event_registration_admin_engine_details.sql`.
