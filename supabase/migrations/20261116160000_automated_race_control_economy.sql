@@ -120,6 +120,7 @@ begin
   if (select count(*) from jsonb_to_recordset(p_entries) as x(member_id uuid,finish_status text,finishing_position integer) where x.finish_status='finished' and x.finishing_position=1)<>1 then
     raise exception 'Posisi P1 hanya boleh dimiliki satu Driver.';
   end if;
+  if p_driver_of_day_member_id is null then raise exception 'Driver of the Day wajib dipilih.'; end if;
   if p_driver_of_day_member_id is not null and not exists (
     select 1 from jsonb_to_recordset(p_entries) as x(member_id uuid) where x.member_id=p_driver_of_day_member_id
   ) then raise exception 'Driver of the Day harus berasal dari klasifikasi race ini.'; end if;
