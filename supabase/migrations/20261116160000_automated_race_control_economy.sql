@@ -10,7 +10,9 @@ alter table public.caleris_race_result_entries
   add column if not exists gap_ms integer check (gap_ms is null or gap_ms >= 0);
 
 alter table public.caleris_race_results
-  add column if not exists driver_of_day_member_id uuid references public.members(id) on delete restrict;
+  add column if not exists driver_of_day_member_id uuid references public.members(id) on delete restrict,
+  add column if not exists fastest_lap_member_id uuid references public.members(id) on delete restrict,
+  add column if not exists fastest_lap_ms integer check (fastest_lap_ms is null or fastest_lap_ms > 0);
 
 create table if not exists public.caleris_race_stints (
   id uuid primary key default gen_random_uuid(),
@@ -194,6 +196,8 @@ begin
 
   v_result:=public.process_license_round(p_round_id);
   perform public.fia_record_race_result(p_round_id,v_winner_id,v_pole_id);
+  update public.caleris_race_results set driver_of_day_member_id=p_driver_of_day_member_id,
+    fastest_lap_member_id=v_fastest_driver,fastest_lap_ms=v_fastest_time where round_id=p_round_id;
 
   if not exists(select 1 from public.license_rounds where season_division_id=v_round.season_division_id and status<>'closed') then
     insert into public.license_final_standings(season_division_id,member_id,final_points,final_position,updated_by)
@@ -205,11 +209,16 @@ begin
     on conflict(season_division_id,member_id) do update set final_points=excluded.final_points,final_position=excluded.final_position,updated_by=excluded.updated_by,updated_at=now();
 
     insert into public.license_team_final_standings(season_division_id,team_id,final_points,final_position,updated_by)
-    select v_round.season_division_id,t.id,coalesce(sum(case when e.finish_status='finished' then coalesce(pr.points,0) else 0 end),0),
-      row_number() over(order by coalesce(sum(case when e.finish_status='finished' then coalesce(pr.points,0) else 0 end),0) desc,t.id)::integer,(select auth.uid())
-    from public.teams t left join public.caleris_race_result_entries e on e.team_id=t.id
-    left join public.license_rounds r on r.id=e.round_id and r.season_division_id=v_round.season_division_id
-    left join public.caleris_race_points_rules pr on pr.session_type=r.session_type and pr.finishing_position=e.finishing_position and pr.is_active
+    select v_round.season_division_id,t.id,coalesce(sum(coalesce(delta.points,0)),0),
+      row_number() over(order by coalesce(sum(coalesce(delta.points,0)),0) desc,t.id)::integer,(select auth.uid())
+    from public.teams t left join (
+      select e.team_id,rs.round_id,rs.member_id,
+        rs.points_total-coalesce((select prior.points_total from public.license_round_standings prior join public.license_rounds pround on pround.id=prior.round_id
+          where prior.member_id=rs.member_id and pround.season_division_id=v_round.season_division_id and pround.round_number<r.round_number
+          order by pround.round_number desc limit 1),0) as points
+      from public.license_round_standings rs join public.license_rounds r on r.id=rs.round_id and r.season_division_id=v_round.season_division_id
+      join public.caleris_race_result_entries e on e.round_id=rs.round_id and e.member_id=rs.member_id
+    ) delta on delta.team_id=t.id
     where lower(t.division_key)=lower(v_division.division_key)
     group by t.id
     on conflict(season_division_id,team_id) do update set final_points=excluded.final_points,final_position=excluded.final_position,updated_by=excluded.updated_by,updated_at=now();
