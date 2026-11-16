@@ -92,6 +92,7 @@ declare
  v_paid integer:=0;
  v_driver_count integer;
  v_team_count integer;
+ v_expected_count integer;
  v_rule_count integer;
 begin
  if not exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())) then
@@ -121,6 +122,17 @@ begin
   raise exception 'Final standings Team memuat tim dari divisi lain.';
  end if;
 
+ select count(*) into v_expected_count from (
+  select fs.final_position,'driver'::text as recipient_type from public.license_final_standings fs
+  join public.caleris_prizepool_rules pr on pr.division_key=v_division.division_key and pr.recipient_type='driver'
+   and pr.final_position=fs.final_position and pr.is_active and pr.prize_amount>0
+  where fs.season_division_id=p_season_division_id
+  union all
+  select ts.final_position,'team'::text from public.license_team_final_standings ts
+  join public.caleris_prizepool_rules pr on pr.division_key=v_division.division_key and pr.recipient_type='team'
+   and pr.final_position=ts.final_position and pr.is_active and pr.prize_amount>0
+  where ts.season_division_id=p_season_division_id
+ ) expected_prizes;
  for v_row in
   select 'driver'::text as recipient_type,fs.member_id as recipient_id,fs.final_position,pr.prize_amount
   from public.license_final_standings fs
@@ -151,8 +163,8 @@ begin
     (v_tx->>'transaction_id')::uuid,(select auth.uid()));
   v_paid:=v_paid+1;
  end loop;
- if v_paid<>(v_driver_count+v_team_count) then
-  raise exception 'Konfigurasi Prizepool belum mencakup semua posisi final. Tidak ada pembayaran yang disimpan.';
+ if v_paid<>v_expected_count or v_expected_count=0 then
+  raise exception 'Konfigurasi Prizepool belum mencakup semua posisi berhadiah. Tidak ada pembayaran yang disimpan.';
  end if;
  return jsonb_build_object('season_division_id',p_season_division_id,'payout_count',v_paid,'status','paid');
 end;
