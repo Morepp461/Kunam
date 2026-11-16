@@ -169,7 +169,7 @@ begin
          and r.initial_division=v_division)
     into v_count;
 
-    if v_count >= case when v_division='premio' then 12 else 14 end then
+    if (v_division='premio' and v_count>=12) or (v_division='zwei' and v_count>=14) then
       raise exception 'Divisi yang dipilih sudah tidak memiliki slot pendaftaran.';
     end if;
 
