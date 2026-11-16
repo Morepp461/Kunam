@@ -454,4 +454,4 @@ Race scoring defaults currently seeded in `caleris_race_points_rules`: Race P1�
 - **Explicit exclusions:** payroll is not scheduled or retried by automation; Admin retains the existing manual payroll recovery action. Sponsorship progress, expiry, and payouts remain manual and are not included in the automation worker.
 - Admin → Economy Engine → Economy Audit Center now shows retry history, settlement automation history, overdue Cash Loan installments, pending configuration, and settlement errors.
 
-Migration: `20261116190000_economy_full_settlement_automation.sql`.
+Migrations: `20261116190000_economy_full_settlement_automation.sql` and `20261116191000_cash_loan_overdue_ordering_guard.sql`.
