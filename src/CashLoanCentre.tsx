@@ -9,7 +9,7 @@ type Rate={tenor_seasons:number;total_interest_rate:number};
 type Preview={member_id:string;team_id?:string;season_id:string;season_title:string;wallet_id:string;season_income:number;max_loan:number;has_open_loan:boolean;race_period_count:number;interest_rates:Rate[]};
 type Loan={id:string;principal:number;tenor_seasons:number;total_interest_rate:number;interest_amount:number;total_due:number;amount_repaid:number;status:string;created_at:string;paid_at:string|null};
 type Installment={id:string;loan_id:string;season_id:string;period_id:string;due_amount:number;status:string;attempted_at:string;paid_at:string|null};
-const money=(v:number)=>"¢p "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
+const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const date=(v:string)=>new Intl.DateTimeFormat("id-ID",{dateStyle:"medium"}).format(new Date(v));
 export default function CashLoanCentre({session}:{session:Session}){
  const [preview,setPreview]=useState<Preview|null>(null),[loans,setLoans]=useState<Loan[]>([]),[installments,setInstallments]=useState<Installment[]>([]),[loanMode,setLoanMode]=useState<"personal"|"team">("personal");
@@ -56,7 +56,7 @@ export default function CashLoanCentre({session}:{session:Session}){
    <div className="cash-loan-layout">
     <section className="workspace-card cash-loan-form-card"><div className="cash-loan-card-heading"><div><span className="section-eyebrow">NEW APPLICATION</span><h2>{loanMode==="team"?"Pinjaman untuk Team Wallet":"Pinjaman pribadi"}</h2></div><Banknote size={22}/></div>
      {preview.has_open_loan?<div className="cash-loan-blocked"><Info/><strong>Masih ada pinjaman berjalan</strong><p>Pengajuan baru tersedia setelah seluruh angsuran pinjaman sebelumnya lunas.</p></div>:<form onSubmit={submit}>
-      <label className="cash-loan-field">Nominal pinjaman (¢p)<input type="number" min="0.01" max={preview.max_loan} step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Masukkan nominal" required/></label>
+      <label className="cash-loan-field">Nominal pinjaman (€)<input type="number" min="0.01" max={preview.max_loan} step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="Masukkan nominal" required/></label>
       <label className="cash-loan-field">Tenor<select value={tenor} onChange={e=>setTenor(e.target.value)}>{[1,2,3,4].map(n=><option key={n} value={n}>{n} Season</option>)}</select></label>
       <div className="cash-loan-estimate"><div><span>Bunga total</span><strong>{selectedRate?.total_interest_rate??0}%</strong></div><div><span>Nominal bunga</span><strong>{money(interest)}</strong></div><div><span>Total pelunasan</span><strong>{money(total)}</strong></div><div><span>Estimasi angsuran</span><strong>{estimatedInstallments} Race Period</strong></div></div>
       <p className="cash-loan-note">Angsuran diproses otomatis pada akhir setiap Race Period setelah payroll. Pinjaman tim dibebankan ke Team Wallet dan kewajibannya tetap melekat pada tim ketika owner berganti. Jika saldo tidak cukup, angsuran dicatat sebagai tunggakan dan akan dicoba kembali pada Race Period berikutnya.</p>

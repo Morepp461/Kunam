@@ -13,7 +13,7 @@ type PayrollClaim = { id: string; amount: number; status: string; created_at: st
 type MemberCheckinClaim = { id: string; member_id: string; reward_amount: number; reward_status: string; checkin_at: string };
 type EventType = "checkin_reward" | "prize" | "bank_reward" | "sponsor_payout" | "bank_funding" | "tax" | "fine" | "transfer" | "admin_adjustment";
 const eventLabels: Record<string, string> = { checkin_reward: "Check-in Reward", prize: "Prize", bank_reward: "Bank Reward", sponsor_payout: "Sponsor Payout", bank_funding: "Bank Funding", tax: "Pajak", fine: "Denda", transfer: "Transfer", admin_adjustment: "Penyesuaian Admin", reversal: "Pembatalan" };
-const money = (value: number) => "¢p " + Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
+const money = (value: number) => "€ " + Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const date = (value: string) => new Intl.DateTimeFormat("id-ID", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
 
 export default function AdminEconomyEngine({ session }: { session: Session }) {
@@ -176,7 +176,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
   return <section className="workspace economy-workspace">
     <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
     <header className="economy-heading">
-      <div><span className="section-eyebrow">ADMIN CONTROL · FINANCIAL CORE</span><h1>Economy Engine</h1><p>Wallet, sumber dana, transaksi, pajak, denda, dan rekonsiliasi ¢p.</p></div>
+      <div><span className="section-eyebrow">ADMIN CONTROL · FINANCIAL CORE</span><h1>Economy Engine</h1><p>Wallet, sumber dana, transaksi, pajak, denda, dan rekonsiliasi €.</p></div>
       <span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span>
     </header>
 
@@ -203,7 +203,7 @@ export default function AdminEconomyEngine({ session }: { session: Session }) {
             <label>Sumber<select value={sourceId} onChange={(event) => setSourceId(event.target.value)} required>{sourceOptions.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}</select></label>
             <label>Tujuan<select value={destinationId} onChange={(event) => setDestinationId(event.target.value)} required>{destinationOptions.map((account) => <option key={account.id} value={account.id}>{accountLabel(account)}</option>)}</select></label>
           </div>
-          <label>Nominal (¢p)<input type="number" min="0.01" max="999999999999999999.99" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Masukkan nominal" required/></label>
+          <label>Nominal (€)<input type="number" min="0.01" max="999999999999999999.99" step="0.01" value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="Masukkan nominal" required/></label>
           <label>Deskripsi<input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={240} placeholder="Contoh: Prize Round 1 · Caleris Premio" required/></label>
           <p className="economy-form-hint">Pajak dan denda otomatis diarahkan ke VreeoBank serta boleh membuat saldo pembayar negatif. Transaksi keluar lainnya wajib memiliki saldo cukup.</p>
           <button className="economy-primary-button" type="submit" disabled={saving || loading || !sourceOptions.length || !destinationOptions.length}><Coins size={16}/>{saving ? "Memproses..." : "Posting transaksi"}</button>

@@ -13,7 +13,7 @@ type Standing={id:string;team_id:string;final_points:number;final_position:numbe
 type Rule={division_key:string;recipient_type:"driver"|"team";final_position:number;prize_amount:number;is_active:boolean};
 type Payout={recipient_type:string;recipient_id:string;final_position:number;prize_amount:number;paid_at:string};
 type Notice={kind:"success"|"error";text:string};
-const money=(v:number)=>"¢p "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
+const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const schedules=[
  {key:"premio",type:"team",label:"Premio · Team",count:14},
  {key:"premio",type:"driver",label:"Premio · Driver",count:28},
@@ -85,8 +85,8 @@ export default function AdminPrizepool({session}:{session:Session}){
   <header className="page-heading"><span className="section-eyebrow">ECONOMY · SEASON SETTLEMENT</span><h1 className="page-title">Season Prizepool</h1><p className="page-description">Hadiah dibayarkan berdasarkan final standings setelah divisi difinalisasi. Ini terpisah dari Race Rewards DDP/TDP.</p></header>
   <section className="workspace-card prizepool-card">
    <div className="section-title-row"><div><span className="section-eyebrow">01 · SCHEDULE</span><h2>Konfigurasi Prizepool</h2></div><Coins size={19}/></div>
-   <p className="license-muted">Nominal hadiah dalam Caleris Pound (¢p). Admin dapat mengubah nilai setiap posisi; nilai bawaan mengikuti daftar Prizepool yang sudah ditetapkan.</p>
-   <div className="prizepool-schedule-grid">{schedules.map(group=><section className="prizepool-schedule" key={group.key+group.type}><h3>{group.label}</h3><div className="prizepool-rank-list">{Array.from({length:group.count},(_,i)=>i+1).map(rank=>{const rule=rules.find(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank);return <label key={rank}><span>P{rank}</span><input aria-label={group.label+" posisi "+rank} type="number" min="0" step="0.01" disabled={!rule||busy} value={rule?.prize_amount??""} onChange={e=>setRules(v=>v.map(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank?{...x,prize_amount:Number(e.target.value)}:x))} onBlur={e=>{if(rule)void updateRule(rule,Number(e.currentTarget.value))}}/><small>¢p</small></label>})}</div></section>)}</div>
+   <p className="license-muted">Nominal hadiah dalam Euro (€). Admin dapat mengubah nilai setiap posisi; nilai bawaan mengikuti daftar Prizepool yang sudah ditetapkan.</p>
+   <div className="prizepool-schedule-grid">{schedules.map(group=><section className="prizepool-schedule" key={group.key+group.type}><h3>{group.label}</h3><div className="prizepool-rank-list">{Array.from({length:group.count},(_,i)=>i+1).map(rank=>{const rule=rules.find(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank);return <label key={rank}><span>P{rank}</span><input aria-label={group.label+" posisi "+rank} type="number" min="0" step="0.01" disabled={!rule||busy} value={rule?.prize_amount??""} onChange={e=>setRules(v=>v.map(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank?{...x,prize_amount:Number(e.target.value)}:x))} onBlur={e=>{if(rule)void updateRule(rule,Number(e.currentTarget.value))}}/><small>€</small></label>})}</div></section>)}</div>
   </section>
   <section className="workspace-card prizepool-card">
    <div className="section-title-row"><div><span className="section-eyebrow">02 · FINAL TEAM STANDINGS</span><h2>Hasil akhir Team</h2></div><Trophy size={19}/></div>

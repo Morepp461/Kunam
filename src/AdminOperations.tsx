@@ -13,7 +13,7 @@ type Sponsor={id:string;name:string;description:string|null;industry:string|null
 type Team={id:string;name:string;division_key:string|null};
 type Valuation={id:string;team_id:string;base_valuation:number|null;team_score:number|null;score_breakdown:Record<string,any>|null;debt_penalty:number;overdue_penalty:number;total_valuation:number;assessed_at:string;team?:{name:string}};
 type Tab="tax"|"prizes"|"sponsors"|"valuation";
-const money=(n:number)=>"¢p "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
+const money=(n:number)=>"€ "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const number=(v:string)=>v.trim()===""?0:Number(v);
 export default function AdminOperations({session}:{session:Session}){
  const [tab,setTab]=useState<Tab>("tax"),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
@@ -140,7 +140,7 @@ export default function AdminOperations({session}:{session:Session}){
      <label>Jenis pajak<select value={taxType} onChange={e=>setTaxType(e.target.value as "wealth"|"driver_transfer")}><option value="wealth">Wealth Tax · saldo wallet</option><option value="driver_transfer">Driver Transfer Tax</option></select></label>
      {taxType==="wealth"&&<label>Kategori Wealth Tax<select value={taxScope} onChange={e=>setTaxScope(e.target.value as "member"|"team")}><option value="member">Member · gabungan wallet personal</option><option value="team">Team · Team Wallet</option></select></label>}
      <label>Nama aturan<input value={taxLabel} onChange={e=>setTaxLabel(e.target.value)} required maxLength={100}/></label>
-     <label>Ambang minimum (¢p)<input type="number" min="0" step="0.01" value={taxMinimum} onChange={e=>setTaxMinimum(e.target.value)} required/></label>
+     <label>Ambang minimum (€)<input type="number" min="0" step="0.01" value={taxMinimum} onChange={e=>setTaxMinimum(e.target.value)} required/></label>
      <label>Tarif flat (%)<input type="number" min="0" max="100" step="0.0001" value={taxRate} onChange={e=>setTaxRate(e.target.value)} required/></label>
      <label className="economy-toggle"><input type="checkbox" checked={taxActive} onChange={e=>setTaxActive(e.target.checked)}/> Aktif</label>
      <p className="economy-form-hint">Tarif flat: sistem memilih satu tarif tertinggi dari ambang yang terlampaui dan menerapkannya ke seluruh saldo. Ambang Member dan Team berdiri sendiri; penagihan tidak menggabungkan wallet tim dengan wallet personal.</p>
@@ -169,7 +169,7 @@ export default function AdminOperations({session}:{session:Session}){
      <label>Pole position · Driver DDP<input type="number" min="0" step="0.01" value={driverPole} onChange={e=>setDriverPole(e.target.value)} required/></label>
      <label>Pole position · Team TDP<input type="number" min="0" step="0.01" value={teamPole} onChange={e=>setTeamPole(e.target.value)} required/></label>
      <label className="economy-toggle"><input type="checkbox" checked={prizeActive} onChange={e=>setPrizeActive(e.target.checked)}/> Aktifkan aturan</label>
-     <p className="economy-form-hint">DDP hanya masuk ke driver pemenang atau pole sitter. TDP masuk ke tim masing-masing. Token terpisah dari saldo ¢p.</p>
+     <p className="economy-form-hint">DDP hanya masuk ke driver pemenang atau pole sitter. TDP masuk ke tim masing-masing. Token terpisah dari saldo €.</p>
      <button className="economy-primary-button" disabled={saving||!divisionId}><Save size={15}/> Simpan aturan hadiah</button>
     </form>
    </section>
@@ -183,7 +183,7 @@ export default function AdminOperations({session}:{session:Session}){
      <label>Nama sponsor<input value={sponsorName} onChange={e=>setSponsorName(e.target.value)} required maxLength={160}/></label>
      <label>Industri<input value={sponsorIndustry} onChange={e=>setSponsorIndustry(e.target.value)} maxLength={100}/></label>
      <label>Deskripsi<textarea value={sponsorDescription} onChange={e=>setSponsorDescription(e.target.value)} rows={3}/></label>
-     <label>Budget sponsor (¢p)<input type="number" min="0" step="0.01" value={sponsorBudget} onChange={e=>setSponsorBudget(e.target.value)} placeholder="Kosongkan jika belum ditentukan"/></label>
+     <label>Budget sponsor (€)<input type="number" min="0" step="0.01" value={sponsorBudget} onChange={e=>setSponsorBudget(e.target.value)} placeholder="Kosongkan jika belum ditentukan"/></label>
      <label className="economy-toggle"><input type="checkbox" checked={sponsorActive} onChange={e=>setSponsorActive(e.target.checked)}/> Aktif di Sponsor Pool</label>
      <div className="ops-actions"><button className="economy-primary-button" disabled={saving}><Save size={15}/> Simpan sponsor</button>{sponsorId&&<button type="button" className="economy-secondary-button" onClick={resetSponsor}>Batal</button>}</div>
     </form>
@@ -196,7 +196,7 @@ export default function AdminOperations({session}:{session:Session}){
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">HYBRID TEAM VALUATION</span><h2>Assess team value</h2></div></div>
     <form className="economy-form" onSubmit={saveValuation}>
      <label>Team<select value={teamId} onChange={e=>setTeamId(e.target.value)} required><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.division_key?" · "+t.division_key:""}</option>)}</select></label>
-     <label>Base valuation (¢p)<input type="number" min="0" step="0.01" value={baseValuation} onChange={e=>setBaseValuation(e.target.value)} required/></label>
+     <label>Base valuation (€)<input type="number" min="0" step="0.01" value={baseValuation} onChange={e=>setBaseValuation(e.target.value)} required/></label>
      <label>Notes<textarea rows={3} value={valuationNote} onChange={e=>setValuationNote(e.target.value)}/></label>
      <p className="economy-form-hint">Admin hanya memasukkan Base Valuation. Sistem menghitung Development Progress 25%, Achievement History 15%, tren dua season 20%, Team Wallet 10%, lisensi driver terbaik 10%, dan Net Cashflow 10%. Bobot 90% dinormalisasi menjadi 100%. Hutang aktif dan tunggakan menjadi penalti. Snapshot historis lama tidak diubah.</p>
      <button className="economy-primary-button" disabled={saving||!teamId||baseValuation.trim()===""}><Save size={15}/> Hitung & simpan valuation</button>
