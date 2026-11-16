@@ -70,7 +70,7 @@ export default function AdminEconomyAudit() {
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
 
-  const pendingTotal = (snapshot?.pending_rewards ?? 0) + (snapshot?.pending_member_checkins ?? 0) + (snapshot?.pending_payroll ?? 0);
+  const pendingTotal = (snapshot?.pending_rewards ?? 0) + (snapshot?.pending_member_checkins ?? 0) + (snapshot?.pending_payroll ?? 0) + (snapshot?.pending_cash_loan_installments ?? 0);
   return <section className="economy-panel economy-audit-panel">
     <div className="economy-panel-heading">
       <div><span className="section-eyebrow">MONITORING · IMMUTABLE RUN LOG</span><h2>Economy Audit Center</h2></div>
