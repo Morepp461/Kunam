@@ -13,9 +13,11 @@ assert avatar_guard.is_file(), "Missing required avatar migration"
 owner_engine = MIGRATIONS / "20261116220000_main_event_owner_engine_division_and_capital.sql"
 admin_engine_details = MIGRATIONS / "20261116221000_main_event_registration_admin_engine_details.sql"
 v2_only = MIGRATIONS / "20261116222000_main_event_registration_v2_only.sql"
+engine_season = MIGRATIONS / "20261116223000_assign_owned_engines_on_season_activation.sql"
 assert owner_engine.is_file(), "Missing Team Owner engine/division migration"
 assert admin_engine_details.is_file(), "Missing Admin engine detail migration"
 assert v2_only.is_file(), "Missing legacy RPC restriction migration"
+assert engine_season.is_file(), "Missing engine season activation migration"
 
 sql = registration.read_text(encoding="utf-8").lower()
 for fragment in [
@@ -100,6 +102,9 @@ assert "admin_list_member_registrations_v2" in admin_engine_details.read_text(en
 v2_only_sql = v2_only.read_text(encoding="utf-8").lower()
 assert "revoke all on function public.submit_main_event_registration(jsonb)" in v2_only_sql
 assert "revoke all on function public.admin_review_member_registration(uuid,text,text)" in v2_only_sql
+engine_season_sql = engine_season.read_text(encoding="utf-8").lower()
+assert "caleris_assign_owned_engines_on_season_activation" in engine_season_sql
+assert "distinct on (e.owner_team_id)" in engine_season_sql
 
 engine_market = (ROOT / "src" / "TeamEngineMarket.tsx").read_text(encoding="utf-8")
 for fragment in ['rpc("team_list_owned_engines")', 'rpc("team_set_engine_sale_listing",', "5000000", "25000000"]:
