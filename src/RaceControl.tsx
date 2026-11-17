@@ -68,7 +68,7 @@ export default function RaceControl(){
   setRoundId("");setCircuitId("");setEntries([]);setDotdId("");setPoleTime("");await refresh();
  };
  const changeStatus=(x:Entry,status:FinishStatus)=>update(x.memberId,{status,position:"",timeOrLaps:"",gap:""});
- return <section className="workspace race-control">
+ return <section className="workspace race-control" data-grid-field="grid_position" data-finish-time-field="finish_time_ms" data-fastest-lap-field="fastest_lap_ms" data-dotd-field="driver_of_day_member_id" data-stint-ui="race-stint-dots" data-official-submit="fia_submit_race_classification">
   <header className="page-heading"><span className="section-eyebrow">FIA PANEL · OFFICIAL RACE CONTROL</span><h1 className="page-title">Race Result Input</h1><p className="page-description">Input lengkap hasil race dari klasifikasi resmi. Seluruh Driver aktif wajib dimasukkan, termasuk DNF, DNS, dan DSQ.</p></header>
   <section className="workspace-card race-form-card"><div className="section-title-row"><div><span className="section-eyebrow">01 · RACE SESSION</span><h2>Race information</h2></div><Flag size={21}/></div>
    <div className="race-meta-grid">
