@@ -330,3 +330,27 @@ body{overflow-x:hidden}
 
 /* Final header logo correction: override all legacy responsive scale rules. */
 .site-header .brand img{transform:none;}
+
+
+/* Mobile layout correction: keep the document as the only vertical scroller. */
+.site{
+  display:flex;
+  flex-direction:column;
+  height:auto;
+  min-height:100svh;
+  overflow:visible;
+}
+.page-content{
+  flex:1 0 auto;
+  min-height:auto;
+  overflow:visible;
+}
+.page-content:has(.workspace){
+  align-items:flex-start;
+  overflow:visible;
+}
+.site-footer{
+  position:relative;
+  flex:0 0 auto;
+  width:100%;
+}
