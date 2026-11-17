@@ -552,7 +552,7 @@ Use the Edge Function URL from the Developer API page. The web deployment remain
 ## Driver Training Centre
 
 - Dedicated Driver-only page at `/driver-panel/training`, linked from the Driver Panel navigation.
-- Eight attribute-specific training programs: Race Pace, Qualifying Pace, Experience, Aggression, Defensive Strength, Overtake Skill, Mistake Rate, and Tyre Management.
+- Sixteen attribute-specific training programs (two distinct schemes per attribute): Race Pace, Qualifying Pace, Experience, Aggression, Defensive Strength, Overtake Skill, Mistake Rate, and Tyre Management.
 - Three intensities per program: Ringan, Normal, and Hard. Each mode defines a server-enforced session timer, success probability, gain/loss amount, and per-program cooldown.
 - A successful session improves the selected attribute. A failed session reduces it; Mistake Rate uses inverse scoring, so successful training lowers it and failure raises it.
 - Training does not spend wallet cash or DDP. Outcomes are resolved server-side only after the timer finishes; one active session per Driver and one cooldown shared across modes for each training program.
