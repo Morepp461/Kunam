@@ -463,3 +463,84 @@ body{overflow-x:hidden}
     min-width:min(140px,calc(100vw - 190px));
   }
 }
+
+
+/* Mobile-only correction: enlarge the brand mark without changing the original controls. */
+@media(max-width:620px){
+  .site-header{
+    height:62px;
+    min-height:62px;
+    padding-left:11px;
+    padding-right:11px;
+    gap:0;
+  }
+  .site-header .nav-toggle{
+    flex:0 0 38px;
+    width:38px;
+    height:38px;
+  }
+  .site-header .brand{
+    flex:0 0 clamp(100px,31vw,125px);
+    width:clamp(100px,31vw,125px);
+    height:48px;
+    margin:0 0 0 10px;
+    overflow:visible;
+  }
+  .site-header .brand img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    object-position:left center;
+    transform:scale(1.65);
+    transform-origin:left center;
+  }
+  .site-header .header-tools{gap:5px}
+  .site-header .global-search{
+    flex:0 0 44px;
+    width:44px;
+    min-width:44px;
+    height:44px;
+  }
+  .site-header .global-search .tire-search-trigger{
+    width:44px;
+    height:44px;
+    min-width:44px;
+    padding:5px;
+  }
+  .site-header .global-search .tire-search-trigger svg{transform:none}
+  .site-header .global-search.is-expanded{
+    flex:0 1 min(280px,calc(100vw - 205px));
+    width:min(280px,calc(100vw - 205px));
+    min-width:min(280px,calc(100vw - 205px));
+  }
+  .site-header .account-avatar-button{
+    display:grid;
+    place-items:center;
+    width:34px;
+    height:38px;
+    padding:2px;
+    border:0;
+    background:transparent;
+  }
+  .site-header .account-avatar-button img{
+    width:30px;
+    height:30px;
+    object-fit:cover;
+    border-radius:50%;
+  }
+  .site-header .account-avatar-button>svg:last-child{display:none}
+}
+@media(max-width:390px){
+  .site-header{padding-left:8px;padding-right:8px}
+  .site-header .brand{
+    flex-basis:98px;
+    width:98px;
+    margin-left:7px;
+  }
+  .site-header .brand img{transform:scale(1.65)}
+  .site-header .global-search.is-expanded{
+    flex-basis:min(280px,calc(100vw - 180px));
+    width:min(280px,calc(100vw - 180px));
+    min-width:min(280px,calc(100vw - 180px));
+  }
+}
