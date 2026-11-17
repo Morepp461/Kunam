@@ -96,7 +96,7 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
      :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>
      :<div className="workspace-card quest-empty">Belum ada Period Quest yang memenuhi kondisi pada periode ini.</div>}
    </section>
-   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward tidak masuk otomatis. Setelah target tercapai, tekan Klaim Reward untuk memindahkan saldo dari VreeoBank ke wallet karakter atau pemilik tim.</p>
+   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward tidak masuk otomatis. Setelah target tercapai, tekan Klaim Reward untuk memindahkan saldo dari VreeoBank ke Driver Wallet atau Owner Wallet karakter. Saldo reward ditransfer dari VreeoBank setelah klaim berhasil.</p>
   </>:null}
   {notice&&<div className="license-notice" role="status">{notice}</div>}
  </section>;
