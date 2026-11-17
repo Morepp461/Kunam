@@ -430,3 +430,28 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
 .shop-modal-total strong{color:#e2c16c;font-size:19px}
 .admin-development-shop-settings .admin-season-rollover{margin-top:22px;padding-top:20px;border-top:1px solid var(--line)}
 @media(max-width:560px){.shop-item-modal{padding:23px 18px}.shop-item-card{min-height:220px}}
+
+
+/* Workspaces use the available viewport width; vertical scrolling belongs to the document. */
+.page-content:has(.workspace){
+ width:100%;
+ min-width:0;
+ align-items:stretch;
+ justify-content:stretch;
+ overflow:visible;
+ padding-inline:clamp(14px,2.2vw,32px);
+}
+.page-content:has(.workspace)>.workspace{
+ width:100%;
+ max-width:none;
+ min-width:0;
+ margin:0;
+}
+.workspace{max-width:none}
+@media(max-width:620px){
+ .page-content:has(.workspace){
+  padding:18px 14px 28px;
+  overflow:visible;
+ }
+ .page-content:has(.workspace)>.workspace{width:100%;max-width:none}
+}
