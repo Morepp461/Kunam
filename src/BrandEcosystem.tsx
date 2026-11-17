@@ -28,7 +28,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [counterId,setCounterId]=useState(""),[counterAmount,setCounterAmount]=useState(""),[counterTerms,setCounterTerms]=useState("");
  const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[budget,setBudget]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState("");
  const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",budget:"0",maxBudget:"",active:true});
- const [repTeam,setRepTeam]=useState(""),[repScore,setRepScore]=useState(""),[repMetrics,setRepMetrics]=useState(""),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
+ const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState(""),[trustMetrics,setTrustMetrics]=useState(""),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
  const [targetContract,setTargetContract]=useState(""),[targetTitle,setTargetTitle]=useState(""),[targetMetric,setTargetMetric]=useState(""),[targetValue,setTargetValue]=useState(""),[targetBonus,setTargetBonus]=useState("");
  const [progressTarget,setProgressTarget]=useState(""),[progressValue,setProgressValue]=useState("");
 
@@ -97,9 +97,9 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const generate=()=>run("generate_team_sponsorship_offers",{p_season_id:seasonId},"AI Sponsor matching selesai dijalankan.");
  const sponsorRespond=(id:string)=>run("sponsor_engine_respond",{p_offer_id:id},"Sponsor engine telah memberikan respons otomatis.");
  const setReputation=async()=>{
-  const score=Number(repScore);if(!Number.isInteger(score)||score<0||score>9999){setNotice("Skor harus 0–9.999.");return;}
   let metrics:Record<string,number>={};try{metrics=repMetrics?JSON.parse(repMetrics):{};}catch{setNotice("Format metrics harus JSON object yang valid.");return;}
-  await run("admin_set_team_reputation",{p_team_id:repTeam,p_score:score,p_metrics:metrics,p_source_event:"admin_adjustment"},"Team Reputation diperbarui.");
+  if(!repMetrics.trim()){setNotice("Metrics Team Reputation wajib diisi.");return;}
+  await run("admin_calculate_team_reputation",{p_team_id:repTeam,p_metrics:metrics,p_source_event:"season_evaluation"},"Team Reputation dihitung dari bobot konfigurasi.");
  };
  const adjustFans=async()=>{
   const delta=Number(fanDelta);if(!Number.isInteger(delta)||delta===0){setNotice("Perubahan populasi harus bilangan bulat selain nol.");return;}
@@ -114,7 +114,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   setProgressValue("");
  };
  const trustEval=async(contractId:string,season:string)=>{
-  const metrics={target_achievement:100,consistency:100,fanbase_growth:100,commercial_exposure:100,partnership_conduct:100};
+  let metrics:Record<string,number>={};try{metrics=trustMetrics?JSON.parse(trustMetrics):{};}catch{setNotice("Format Trust metrics harus JSON object.");return;}
+  if(!trustMetrics.trim()){setNotice("Isi Trust metrics aktual sebelum evaluasi.");return;}
   await run("admin_evaluate_sponsorship_trust",{p_contract_id:contractId,p_season_id:season,p_metrics:metrics},"Evaluasi Trust Score disimpan.");
  };
 
@@ -157,9 +158,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    </article>
    <article className="workspace-card"><span className="section-eyebrow">TEAM REPUTATION</span><h2>Update Reputation</h2>
     <label>Team<select value={repTeam} onChange={e=>setRepTeam(e.target.value)}><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
-    <label>Score (0–9.999)<input type="number" min="0" max="9999" value={repScore} onChange={e=>setRepScore(e.target.value)}/></label>
-    <label>Metrics JSON<input value={repMetrics} onChange={e=>setRepMetrics(e.target.value)} placeholder='{"championship":80,"race_performance":70}'/></label>
-    <button className="action primary" disabled={saving||!repTeam||!repScore} onClick={()=>void setReputation()}>Simpan Team Reputation</button>
+    <label>Metrics JSON<input value={repMetrics} onChange={e=>setRepMetrics(e.target.value)} placeholder='{"championship":80,"race_performance":70,"consistency":65,"driver_reputation":60,"fanbase":50,"commercial_credibility":50}'/></label>
+    <button className="action primary" disabled={saving||!repTeam||!repMetrics} onClick={()=>void setReputation()}>Hitung Team Reputation</button>
    </article>
    <article className="workspace-card"><span className="section-eyebrow">REGIONAL FANBASE</span><h2>Adjust Fan Population</h2>
     <label>Entity<select value={fanEntity} onChange={e=>{setFanEntity(e.target.value);setFanTarget("")}}><option value="team">Team</option><option value="driver">Driver</option></select></label>
@@ -173,6 +173,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    {visibleOffers.map(o=><article className="brand-list-item" key={o.id}><div><strong>{sponsor(o.sponsor_id)} → {teams.find(t=>t.id===o.target_team_id)?.name||"Team"}</strong><span>{money(lastRevision(o.id)?.amount??o.proposed_amount)} · {o.status} · {o.counter_count||0}/3 counters {o.generated_by_engine?"· AI MATCHED":""}</span></div>{o.status==="negotiating"&&lastRevision(o.id)?.actor_kind==="member"&&<button className="action primary" disabled={saving} onClick={()=>void sponsorRespond(o.id)}>AI Sponsor Respond</button>}</article>)}
   </section>
   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CONTRACT OPERATIONS</span><h2>Contracts & Targets</h2></div></div>
+   <label>Trust Score metrics JSON<input value={trustMetrics} onChange={e=>setTrustMetrics(e.target.value)} placeholder='{"target_achievement":75,"consistency":80,"fanbase_growth":60,"commercial_exposure":70,"partnership_conduct":90}'/></label>
    <div className="brand-form-grid"><label>Contract<select value={targetContract} onChange={e=>setTargetContract(e.target.value)}><option value="">Pilih kontrak</option>{visibleContracts.filter(c=>c.status==="active").map(c=><option key={c.id} value={c.id}>{sponsor(c.sponsor_id)} · {money(c.contract_amount)}</option>)}</select></label><label>Target title<input value={targetTitle} onChange={e=>setTargetTitle(e.target.value)}/></label><label>Metric key<input value={targetMetric} onChange={e=>setTargetMetric(e.target.value)}/></label><label>Target value<input type="number" min="1" value={targetValue} onChange={e=>setTargetValue(e.target.value)}/></label><label>Bonus (€)<input type="number" min="0" value={targetBonus} onChange={e=>setTargetBonus(e.target.value)}/></label><button className="action primary" disabled={saving||!targetContract||!targetTitle||!targetMetric||!targetValue||!targetBonus} onClick={()=>void createTarget()}><Target size={15}/> Tambah Target</button></div>
    {targets.filter(t=>visibleContracts.some(c=>c.id===t.contract_id)).map(t=><article className="brand-list-item" key={t.id}><div><strong>{t.title}</strong><span>{t.current_value}/{t.target_value} · Bonus {money(t.bonus_amount)} · {t.status}</span></div><div className="brand-inline"><input type="number" value={progressTarget===t.id?progressValue:""} placeholder="Progress baru" onChange={e=>{setProgressTarget(t.id);setProgressValue(e.target.value)}}/><button className="action" disabled={saving||progressTarget!==t.id||!progressValue} onClick={()=>void updateProgress()}>Update & settle</button></div></article>)}
    {visibleContracts.map(c=><article className="brand-list-item" key={c.id}><div><strong>{sponsor(c.sponsor_id)} · {money(c.annual_contract_amount??c.contract_amount)}</strong><span>{c.duration_seasons} season · Bonus pool {money(c.bonus_pool_paid)}/{money(c.bonus_pool_total)} · {c.renewal_status}</span></div><button className="action" disabled={saving||!seasonId} onClick={()=>void trustEval(c.id,seasonId)}>Evaluate Trust</button></article>)}
