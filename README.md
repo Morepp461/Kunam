@@ -71,7 +71,7 @@
 
 ### Economy Retry and Audit
 
-- Pending daily rewards and all-role race check-in rewards are retried automatically every five minutes through a locked, idempotent database worker.
+- Pending daily rewards, Quest rewards, and all-role race check-in rewards are retried automatically every five minutes through locked, idempotent database workers.
 - Each retry cycle records attempted, paid, pending, and failed outcomes in `caleris_economy_retry_runs`; individual reward claims retain attempt count and last error.
 - The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
 - Payroll remains tied to round processing. Pending payroll is visible in the audit center and remains recoverable through the existing Admin payroll recovery action; it is intentionally excluded from the scheduled retry worker.
@@ -872,5 +872,12 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Team Owner menerima 10% dari profit positif tim langsung ke Team Owner Wallet. Tim dengan profit nol atau negatif tidak menerima pembagian.
 - Pencairan otomatis berjalan melalui database scheduler, memakai ledger transaksi ekonomi yang idempotent dan dapat retry jika VreeoBank atau Team Owner Wallet belum tersedia / saldo Bank belum mencukupi.
 - Pencairan pinjaman (principal) tidak dihitung sebagai pendapatan atau biaya operasional. Semua penerimaan dan pengeluaran operasional yang tercatat pada Team Wallet, termasuk prize, sponsor, payroll, dan development, masuk perhitungan profit.
-- Quest Driver masuk ke Driver Wallet; Quest Team Owner masuk ke Team Owner Wallet. Tidak ada wallet reward terpisah.
+- Quest Driver masuk otomatis ke Driver Wallet; Quest Team Owner masuk otomatis ke Team Owner Wallet saat target tercapai. Tidak ada wallet reward terpisah maupun tombol klaim manual. Jika saldo VreeoBank belum cukup, reward masuk antrean pending dan diproses ulang otomatis.
 - Migration: `20261118010000_team_owner_profit_share.sql`.
+
+
+### Automatic Quest Reward Delivery
+
+- Quest tidak lagi menggunakan klaim manual. Saat target selesai dihitung, reward langsung ditransfer dari VreeoBank ke Driver Wallet atau Team Owner Wallet sesuai role penerima.
+- Jika VreeoBank belum tersedia atau saldonya belum cukup, reward ditandai pending dan diproses ulang oleh Economy Retry worker. Idempotency key mencegah pembayaran ganda.
+- Migration: `20261118020000_automatic_quest_wallet_rewards.sql`.
