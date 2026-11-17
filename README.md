@@ -660,3 +660,11 @@ Brand Ecosystem sekarang berjalan sebagai game engine berbasis event, bukan rang
 Migrations:
 - 20261117400000_sponsor_counter_immediate_decision.sql
 - 20261117410000_sponsor_counter_trigger_result.sql
+
+
+### Sponsor Counter Flexibility Baseline
+
+- Sponsor flexibility is calculated from the latest sponsor-authored offer revision, not the original opening offer.
+- Small incremental counter-offers above the sponsor's latest amount can therefore be accepted within the configured flexibility percentage.
+- Excessive counter-offers and amounts beyond sponsor budget are still rejected immediately.
+- Migration: `20261117420000_sponsor_counter_latest_offer_flexibility.sql`.
