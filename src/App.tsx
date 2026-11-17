@@ -82,7 +82,7 @@ function Application(){
  const refreshProfile=useCallback(async()=>{
   if(!supabase||!session){setProfile(null);setIsAdmin(false);setIsPrimaryOwner(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
   setProfileReady(false);
-  const [profileResult,adminResult]=await Promise.all([
+  const [profileResult,adminResult,ownerResult]=await Promise.all([
    supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",session.user.id).maybeSingle(),
    supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle(),
    supabase.from("caleris_developer_api_owner").select("owner_user_id").eq("singleton",true).maybeSingle()
