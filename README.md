@@ -645,3 +645,4 @@ Brand Ecosystem sekarang berjalan sebagai game engine berbasis event, bukan rang
 - 20261117350000_brand_counter_response_ordering.sql
 - 20261117360000_brand_division_scoped_targets_and_trust.sql
 - 20261117370000_brand_sponsor_counter_budget_guard.sql
+- 20261117380000_brand_revision_monotonic_timestamps.sql
