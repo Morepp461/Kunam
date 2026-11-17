@@ -60,7 +60,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.32;
+        renderer.toneMappingExposure = 1.08;
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
@@ -103,13 +103,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
         const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
-        scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 3.0));
-        const keyLight = new THREE.DirectionalLight(0xfff0d8, 4.2);
+        scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 1.55));
+        const keyLight = new THREE.DirectionalLight(0xfff0d8, 2.35);
         keyLight.position.set(-8, 16, 10);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xf0f5ff, 2.2);
+        const fillLight = new THREE.DirectionalLight(0xf0f5ff, 1.05);
         fillLight.position.set(12, 8, -18);
         scene.add(fillLight);
 
@@ -275,7 +275,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         window.addEventListener("caleris-driver-filter", onFilter);
         const lightCount = Math.max(4, Math.min(8, Math.ceil(drivers.length / 4)));
         for (let i = 0; i < lightCount; i++) {
-          const light = new THREE.SpotLight(0xffe2b6, 125, 25, Math.PI / 5, 0.7, 1.4);
+          const light = new THREE.SpotLight(0xffe2b6, 58, 25, Math.PI / 5, 0.7, 1.4);
           light.position.set((i % 4 - 1.5) * 10.2, 9.5, -Math.floor(i / 4) * 22 - 2);
           light.target.position.set(light.position.x, 0, light.position.z - 1);
           scene.add(light, light.target);
