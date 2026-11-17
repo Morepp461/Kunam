@@ -677,3 +677,17 @@ Migrations:
 - Data bersumber dari `caleris_sponsorship_contracts` dan `caleris_sponsors`; tidak ada daftar sponsor manual atau data dummy.
 - Sponsor yang sudah memiliki kontrak aktif tetap ditampilkan meskipun status sponsor di pool sudah nonaktif, selama kebijakan akses peserta kontrak mengizinkan.
 - Tampilan menggunakan kartu responsif dan menyediakan empty state jika tim belum memiliki sponsor aktif.
+
+
+## Quest Engine
+
+- Daily Quest dipilih secara dinamis dari katalog berdasarkan role dan aktivitas yang tersedia.
+- Period Quest mengikuti periode kalender season aktif. Satu hari menampilkan hingga 3 Daily Quest dan satu periode menampilkan hingga 5 Period Quest.
+- Progress dihitung dari aktivitas database yang sudah ada: Driver Training, Driver Development, Race Check-In, Team Development, Sponsorship, Driver Contracts, Job Advert, dan Affiliate Team.
+- Reward otomatis dibayarkan ke Driver Wallet untuk Driver dan Team Wallet untuk Team Owner/Principal melalui transaksi `bank_reward` dari VreeoBank. Reward yang tertahan karena saldo Bank tidak cukup dapat diproses ulang oleh Admin.
+- Nominal reward default: Easy €250, Normal €500, Hard €1.000, Elite €2.500. Admin dapat mengubahnya melalui Admin Control → Quest Engine. Nilai reward yang sudah terpasang pada assignment tidak berubah ketika konfigurasi diperbarui.
+- Katalog quest tidak menghitung halaman yang hanya bersifat baca-saja sebagai aktivitas. Scout dan daftar aplikasi Driver tidak menghasilkan progress karena tidak memiliki event aksi tersimpan.
+
+## Kalender 12 Periode
+
+Urutan kalender season CALERIS wajib: Pre Season → Race Periode 1 → Break Balancing Periode 1 → Race Periode 2 → Break Balancing Periode 2 → Race Periode 3 → Break Balancing Periode 3 → Race Periode 4 → Break Balancing Periode 4 → Race Periode 5 → End Season → Off Season. Off Season adalah masa transisi menuju season berikutnya.
