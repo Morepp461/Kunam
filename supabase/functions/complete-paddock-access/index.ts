@@ -72,7 +72,7 @@ Deno.serve(async (req: Request) => {
       return respond(400, { error: "Complete all required Paddock Access fields." });
     }
     if (firstName.length > 80 || lastName.length > 80 || nationality.length > 80 || hometown.length > 120) return respond(400, { error: "Profile field is too long." });
-    if (!["FIA", "Team Owner", "Driver"].includes(preferredRole)) {
+    if (!["Team Owner", "Driver"].includes(preferredRole)) {
       return respond(400, { error: "Choose a valid role preference." });
     }
     if (!privacyAccepted) return respond(400, { error: "Privacy consent is required." });
@@ -108,7 +108,27 @@ Deno.serve(async (req: Request) => {
       return respond(500, { error: "Unable to save Paddock Access profile." });
     }
 
-    return respond(200, { success: true });
+    const registrationPayload = body.registrationPayload;
+    if (!registrationPayload || typeof registrationPayload !== "object" || Array.isArray(registrationPayload)) {
+      return respond(400, { error: "Role registration details are required." });
+    }
+    const requestedRole = preferredRole === "Team Owner" ? "Owner" : "Driver";
+    const payload = {
+      ...(registrationPayload as Record<string, unknown>),
+      requested_role: requestedRole,
+      nickname,
+      avatar_path: avatarPath,
+    };
+    const { data: registration, error: registrationError } = await authClient.rpc(
+      "submit_main_event_registration_v2",
+      { p_payload: payload },
+    );
+    if (registrationError || !registration?.registration_id) {
+      console.error("Paddock role registration failed:", registrationError?.message ?? "Missing registration result.");
+      return respond(400, { error: registrationError?.message ?? "Role registration could not be submitted." });
+    }
+
+    return respond(200, { success: true, registration });
   } catch (error) {
     console.error("Paddock Access request failed:", error);
     return respond(500, { error: "Unexpected Paddock Access error." });
