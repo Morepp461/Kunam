@@ -28,7 +28,7 @@ component = form.read_text(encoding="utf-8")
 app = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 for fragment in [
     'optimizeImageToWebp(file,"team-logo")',
-    'file.type!=="image/webp"',
+    'teamLogo.type!=="image/webp"',
     'contentType:"image/webp"',
     'accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"',
     'formatImageBytes(logoStats.originalSize)',
