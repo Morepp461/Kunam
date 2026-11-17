@@ -798,7 +798,7 @@ The FIA Race Input page at `/fia-panel/race-input` is a complete official submis
 - FIA Race Input page: `/fia-panel/race-input`.
 - Driver statistics: Character and Career History.
 - Team statistics: Team Summary.
-- Screenshot-to-CSV draft/revision remains a separate ChatGPT-assisted review stage. The final approved data is entered through the FIA Race Input form; no automatic CSV import or OCR inside the website is claimed.
+- Screenshot-to-CSV remains an optional review workflow. FIA Race Input also supports browser OCR to create an editable draft directly from a screenshot; official submission still requires manual review and confirmation.
 
 
 ## Race OCR & Circuit Layouts
