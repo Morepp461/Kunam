@@ -799,3 +799,12 @@ The FIA Race Input page at `/fia-panel/race-input` is a complete official submis
 - Driver statistics: Character and Career History.
 - Team statistics: Team Summary.
 - Screenshot-to-CSV draft/revision remains a separate ChatGPT-assisted review stage. The final approved data is entered through the FIA Race Input form; no automatic CSV import or OCR inside the website is claimed.
+
+
+## Race OCR & Circuit Layouts
+
+- FIA Race Input supports browser-side OCR from race screenshots using pinned Tesseract.js 6.0.1. OCR creates an editable draft only; it never submits an official result.
+- OCR matches detected Driver names against the active division roster and derives team identity from the member/team database. Driver selection in the editor is a database-backed dropdown; team display follows the selected Driver.
+- All OCR fields remain subject to existing FIA validation and authoritative race submission RPC. OCR text can be inspected when a screenshot needs manual correction.
+- Circuit Pool records store a WEBP layout image in the circuit-layouts Supabase Storage bucket. FIA/Admin uploads are restricted by Storage policies; authenticated users can view layouts in the circuit profile popup.
+- Circuit layout uploads are converted to WEBP in the browser before upload (maximum 4 MB after conversion, 5000 px per side).
