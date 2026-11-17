@@ -44,7 +44,7 @@ function QuestCard({quest,scope,onClaim,claiming}:{quest:Quest;scope:"driver"|"t
    <div className="quest-progress-meta"><span>Progress</span><strong>{Math.min(Number(quest.progress),quest.target).toLocaleString("id-ID")} / {quest.target.toLocaleString("id-ID")}</strong></div>
    <div className="quest-progress-track"><i style={{width:progress+"%"}}/></div>
    <div className="quest-card-bottom"><span className="quest-reward"><Wallet size={14}/>{money(quest.reward_amount)}</span>
-    {quest.reward_status==="paid"?<span className="quest-state paid"><CheckCircle2 size={14}/> Reward masuk wallet</span>
+    {quest.reward_status==="paid"?<span className="quest-state paid"><CheckCircle2 size={14}/> Reward masuk ke wallet aktif</span>
      :quest.reward_status==="pending"?<span className="quest-state pending"><Clock3 size={14}/> Menunggu saldo VreeoBank</span>
      :quest.status==="expired"?<span className="quest-state expired">Periode berakhir</span>
      :done?<span className="quest-state completed"><CheckCircle2 size={14}/> Reward siap diklaim</span>
@@ -85,9 +85,9 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
  const title=scope==="driver"?"Driver Quest":"Team Owner Quest";
  return <section className="workspace quest-workspace">
   <Link className="back-link" to="/dashboard">← Dashboard</Link>
-  <header className="page-heading quest-heading"><div><span className="section-eyebrow">{scope==="driver"?"DRIVER PANEL":"TEAM PANEL"} · QUEST ENGINE</span><h1 className="page-title">{title}</h1><p className="page-description">Selesaikan aktivitas dari fitur yang sudah tersedia untuk memperoleh reward saldo wallet.</p></div><button className="quest-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
+  <header className="page-heading quest-heading"><div><span className="section-eyebrow">{scope==="driver"?"DRIVER PANEL":"TEAM PANEL"} · QUEST ENGINE</span><h1 className="page-title">{title}</h1><p className="page-description">Selesaikan aktivitas dari fitur yang sudah tersedia. Reward langsung dikirim ke wallet sesuai role karakter.</p></div><button className="quest-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
   {loading?<div className="workspace-card quest-empty">Memuat quest dan progress...</div>:error?<div className="workspace-card quest-empty quest-error">{error}</div>:board?<>
-   <div className="quest-wallet-strip"><div><span>Wallet reward</span><strong>{money(board.wallet_balance)}</strong></div><span className="quest-wallet-icon"><Wallet size={21}/></span></div>
+   <div className="quest-wallet-strip"><div><span>Wallet {scope==="driver"?"Driver":"Team Owner"}</span><strong>{money(board.wallet_balance)}</strong></div><span className="quest-wallet-icon"><Wallet size={21}/></span></div>
    <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET HARIAN</span><h2>Daily Quest</h2><p>{new Date(board.date+"T00:00:00").toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p></div><span className="quest-count">{board.daily.length} quest</span></div>
     {board.daily.length?<div className="quest-grid">{board.daily.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>:<div className="workspace-card quest-empty">Belum ada Daily Quest yang memenuhi kondisi aktivitas hari ini.</div>}
    </section>
@@ -96,7 +96,7 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
      :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>
      :<div className="workspace-card quest-empty">Belum ada Period Quest yang memenuhi kondisi pada periode ini.</div>}
    </section>
-   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward tidak masuk otomatis. Setelah target tercapai, tekan Klaim Reward untuk memindahkan saldo dari VreeoBank ke Driver Wallet atau Owner Wallet karakter. Saldo reward ditransfer dari VreeoBank setelah klaim berhasil.</p>
+   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward yang memenuhi syarat langsung masuk ke Driver Wallet atau Team Owner Wallet sesuai role karakter. Jika saldo VreeoBank belum mencukupi, pembayaran akan berstatus pending dan diproses ulang otomatis.</p>
   </>:null}
   {notice&&<div className="license-notice" role="status">{notice}</div>}
  </section>;
