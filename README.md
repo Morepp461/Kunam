@@ -71,7 +71,7 @@
 
 ### Economy Retry and Audit
 
-- Pending daily rewards, Quest rewards, and all-role race check-in rewards are retried automatically every five minutes through locked, idempotent database workers.
+- Pending daily rewards and all-role race check-in rewards are retried automatically every five minutes through locked, idempotent database workers. Quest rewards require an explicit member claim and are excluded from automatic retry.
 - Each retry cycle records attempted, paid, pending, and failed outcomes in `caleris_economy_retry_runs`; individual reward claims retain attempt count and last error.
 - The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
 - Payroll remains tied to round processing. Pending payroll is visible in the audit center and remains recoverable through the existing Admin payroll recovery action; it is intentionally excluded from the scheduled retry worker.
@@ -685,7 +685,7 @@ Migrations:
 - Period Quest mengikuti periode kalender season aktif. Satu hari menampilkan hingga 3 Daily Quest dan satu periode menampilkan hingga 5 Period Quest.
 - Progress dihitung dari aktivitas database yang sudah ada: Driver Training, Driver Development, Race Check-In, Team Development, Sponsorship, Driver Contracts, Job Advert, dan Affiliate Team. Aktivitas sebelum assignment dibuat tidak dihitung, untuk mencegah progress retroaktif.
 - Reward tidak dibayarkan otomatis saat progress selesai atau halaman Quest dibuka. Member harus menekan Klaim Reward setelah target tercapai; pembayaran memakai transaksi `bank_reward` dari VreeoBank langsung ke Driver Wallet atau Team Owner Wallet sesuai role. Jika saldo Bank tidak cukup, member dapat mencoba klaim kembali.
-- Nominal reward saat ini: Easy €100.000, Normal €200.000, Hard €400.000, Elite €750.000. Admin dapat mengubahnya melalui Admin Control → Quest Engine. Assignment yang belum dibayar mengikuti nominal terbaru; transaksi yang sudah dibayar tidak diubah. Nilai reward yang sudah terpasang pada assignment tidak berubah ketika konfigurasi diperbarui.
+- Nominal reward saat ini: Easy €100.000, Normal €200.000, Hard €400.000, Elite €750.000. Admin dapat mengubahnya melalui Admin Control → Quest Engine. Nominal assignment ditetapkan saat quest dibuat; perubahan konfigurasi berlaku untuk assignment baru.
 - Katalog quest tidak menghitung halaman yang hanya bersifat baca-saja sebagai aktivitas. Scout dan daftar aplikasi Driver tidak menghasilkan progress karena tidak memiliki event aksi tersimpan.
 
 ## Kalender 12 Periode
