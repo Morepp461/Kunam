@@ -415,12 +415,11 @@ function Dashboard({session,profile,profileReady}:{session:Session;profile:Accou
         {label:"Team wins",value:String(teamWins),detail:"Kemenangan season aktif",icon:<Trophy/>}
       ]);}
     }else{
-      const walletKind=ownMember.role==="Driver"?"driver":ownMember.role==="Owner"?"team_owner":"public_member";
-      const walletQuery=supabase.from("economy_wallet_directory").select("balance").eq("account_kind",walletKind).eq("is_active",true);
-      const {data:wallet}=walletKind==="public_member"
-        ?await walletQuery.eq("profile_user_id",session.user.id).maybeSingle()
-        :await walletQuery.eq("member_id",ownMember.id).maybeSingle();
-      const balance=Number(wallet?.balance||0);
+      const [{data:roleWallets},{data:publicWallet}]=await Promise.all([
+        supabase.from("economy_wallet_accounts").select("balance").eq("member_id",ownMember.id).in("account_kind",["driver","team_owner"]).eq("is_active",true),
+        supabase.from("economy_wallet_accounts").select("balance").eq("account_kind","public_member").eq("profile_user_id",session.user.id).eq("is_active",true).maybeSingle()
+      ]);
+      const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0);
       if(active){setStatsScope("STATISTIK AKUN");setStatCards([{label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},{label:"Account balance",value:"¢p "+balance.toLocaleString("id-ID"),detail:"Total saldo wallet pribadi",icon:<Wallet/>},{label:"Role",value:ownMember.role||"Member",detail:"Role akun saat ini",icon:<Users/>},{label:"Team",value:ownMember.team_id?"Terhubung":"Independent",detail:"Status afiliasi tim",icon:<Flag/>}]);}
     }
     if(active)setStatsLoading(false);
@@ -461,8 +460,11 @@ function ProfilePage({session,profile,profileReady}:{session:Session;profile:Acc
     setReputation(reputationQ.data?{score:Number(reputationQ.data.score),band:String(reputationQ.data.band)}:null);
    }else{setFanTotal(0);setReputation(null);}
    if(memberData){
-    const walletKind=memberData.role==="Driver"?"driver":memberData.role==="Owner"?"team_owner":null;
-    if(walletKind){const {data:w,error:walletError}=await supabase.from("economy_wallet_directory").select("balance").eq("account_kind",walletKind).eq("member_id",memberData.id).maybeSingle();if(!active)return;if(walletError)toast("error","Wallet karakter gagal dimuat",walletError.message);nextWallets[walletKind]=w?Number(w.balance):null;nextWallets.public_member=w?Number(w.balance):null;}
+    const {data:roleWalletRows,error:roleWalletError}=await supabase.from("economy_wallet_directory").select("account_kind,balance").eq("member_id",memberData.id).in("account_kind",["driver","team_owner"]).eq("is_active",true);
+    if(!active)return;
+    if(roleWalletError)toast("error","Wallet karakter gagal dimuat",roleWalletError.message);
+    for(const walletRow of roleWalletRows||[]){if(walletRow.account_kind==="driver"||walletRow.account_kind==="team_owner")nextWallets[walletRow.account_kind]=Number(walletRow.balance||0);}
+    nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0);
     if(memberData.team_id){
      const [{data:t},{data:teamWallet,error:teamWalletError},{data:c,error:contractError}]=await Promise.all([
       supabase.from("teams").select("id,name").eq("id",memberData.team_id).maybeSingle(),
@@ -479,7 +481,7 @@ function ProfilePage({session,profile,profileReady}:{session:Session;profile:Acc
  const webName=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
  const info=(label:string,value:ReactNode)=><div className="profile-info-item"><span>{label}</span><strong>{value||"Belum tersedia"}</strong></div>;
  const balanceText=(value:number|null)=>value===null?"Belum tersedia":"¢p "+Number(value).toLocaleString("id-ID");
- const characterWallet=member?.role==="Driver"?wallets.driver:member?.role==="Owner"?wallets.team_owner:wallets.public_member;
+ const characterWallet=wallets.public_member;
  return <section className="workspace"><Link className="back-link" to="/dashboard"><ChevronLeft size={16}/> Dashboard</Link><PageHeading eyebrow="Member identity" title="My Profile" description="Informasi akun dan identitas karakter Caleris Masters."/><div className="profile-hero-card"><div className="profile-avatar-large">{avatar?<img src={avatar} alt="Foto profil"/>:<UserCircle size={54}/>}</div><div className="profile-hero-copy"><span className="section-eyebrow">ACCOUNT PROFILE</span><h2>{webName}</h2><p>{session.user.email||"Email tidak tersedia"}</p><span className="profile-role-pill">{profile?.account_status==="admin"?"Administrator":profile?.account_status==="active"?"Member aktif":profile?.account_status==="suspended"?"Suspended":"Public"}</span></div><Link className="action profile-edit-action" to="/account/settings"><Settings size={16}/> Edit akun</Link><Link className="action profile-edit-action" to={"/member/"+profile?.public_member_id}><ArrowUpRight size={16}/> Profil publik</Link></div><div className="profile-sections"><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">ACCOUNT</span><h2>Informasi akun</h2></div></div><div className="profile-info-grid">{info("Nama depan",profile?.first_name)}{info("Nama belakang",profile?.last_name)}{info("Nickname web",webName)}{info("Nickname driver",profile?.driver_nickname)}{info("Preferensi role",profile?.preferred_role)}{info("Status akun",profile?.account_status==="admin"?"Administrator":profile?.account_status==="active"?"Member aktif":profile?.account_status==="suspended"?"Suspended":"Public")}{info("Email",session.user.email)}{info("Member ID",profile?.public_member_id)}{info("Saldo member publik",busy?"Memuat...":balanceText(wallets.public_member))}</div></div><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CHARACTER</span><h2>Informasi karakter</h2></div></div>{busy?<p className="muted">Memuat informasi karakter dan wallet...</p>:!member?<EmptyPanel icon={<Users/>} title="Belum terhubung ke member" body="Wallet member publik tetap tersedia. Data karakter dan wallet Driver/Owner akan tampil setelah akun ditautkan ke member oleh administrator."/>:<div className="profile-info-grid">{info("Nickname driver",profile?.driver_nickname||member.character_name)}{info("Role",member.role)}{info("Tim",team?.name)}{info("License",member.license)}{info("Total fans",member.role==="Driver"?fanTotal.toLocaleString("id-ID"):"—")}{info("Reputasi",member.role==="Driver"?(reputation?reputation.score.toLocaleString("id-ID")+" · "+reputation.band:"Belum dihitung"):"—")}{info("Saldo karakter",balanceText(characterWallet))}{info("Saldo tim",balanceText(wallets.team))}</div>}</div><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CONTRACT</span><h2>Detail kontrak</h2></div><FileText size={19}/></div>{busy?<p className="muted">Memuat kontrak...</p>:!contract?<EmptyPanel icon={<FileText/>} title="Belum ada kontrak aktif" body="Detail durasi, gaji, target, dan klausul pelepasan akan ditampilkan ketika kontrak tersedia."/>:<div className="profile-info-grid">{info("Durasi",contract.duration_label)}{info("Mulai",contract.starts_on)}{info("Berakhir",contract.ends_on)}{info("Gaji",contract.salary===null?"Belum tersedia":"¢p "+Number(contract.salary).toLocaleString("id-ID"))}{info("Target",contract.target?JSON.stringify(contract.target):"Tidak ditentukan")}{info("Klausul pelepasan",contract.release_clause===null?"Tidak ditentukan":"¢p "+Number(contract.release_clause).toLocaleString("id-ID"))}</div>}</div></div></section>;
 }
 type PublicMemberProfileData={public_member_id:string;display_name:string;first_name:string|null;last_name:string|null;web_nickname:string|null;driver_nickname:string|null;avatar_url:string|null};
