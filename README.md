@@ -691,3 +691,13 @@ Migrations:
 ## Kalender 12 Periode
 
 Urutan kalender season CALERIS wajib: Pre Season → Race Periode 1 → Break Balancing Periode 1 → Race Periode 2 → Break Balancing Periode 2 → Race Periode 3 → Break Balancing Periode 3 → Race Periode 4 → Break Balancing Periode 4 → Race Periode 5 → End Season → Off Season. Off Season adalah masa transisi menuju season berikutnya.
+
+
+## Race Result Image Review and Statistics
+
+- FIA Race Input documents the screenshot-assisted workflow: upload the official race-result image in the CALERIS ChatGPT conversation, review the extracted draft, correct any errors, and explicitly confirm before database entry.
+- The review stage is read-only. Official race entry continues through the existing secured `fia_submit_race_classification` workflow, preserving round sequencing, participant validation, scoring, race rewards, and downstream settlement.
+- Driver career statistics are derived from official race result entries and published standings: points, wins, poles, podiums, fastest laps, Driver of the Day, completed races, gained positions, average finishing position, points per completed race, and DNF.
+- Team statistics are derived from the team snapshot recorded on each race entry and official team standings: points, wins, poles, podiums, fastest laps, gained positions, completed races, and DNF.
+- No statistic is manually editable by Admin. Corrections must be made to the underlying official race result and reflected in the derived statistics.
+- Existing database tables and the official race submission RPC are reused; no new statistic input table or parallel scoring engine is introduced.
