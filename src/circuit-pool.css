@@ -75,3 +75,51 @@
  .circuit-admin-list .s5-table-wrap{max-height:55svh}
 }
 @media(max-width:360px){.circuit-pool{--circuit-gutter:10px}.circuit-input-grid{grid-template-columns:1fr}}
+
+
+/* Circuit Pool mobile scroll and modal layering correction. */
+.site:has(.circuit-pool){
+  display:flex;
+  flex-direction:column;
+  height:auto;
+  min-height:100svh;
+  overflow:visible;
+}
+.page-content:has(>.circuit-pool){
+  flex:1 0 auto;
+  min-height:auto;
+  height:auto;
+  overflow:visible;
+  align-items:flex-start;
+  z-index:20;
+  padding:clamp(16px,2.5vw,36px);
+  scrollbar-gutter:auto;
+}
+.site:has(.circuit-pool)>.site-footer{
+  position:relative;
+  z-index:10;
+  flex:0 0 auto;
+}
+.circuit-modal-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:1200;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  -webkit-overflow-scrolling:touch;
+}
+.circuit-modal{
+  max-height:calc(100svh - 2 * clamp(8px,2vw,24px));
+  overflow-x:hidden;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  touch-action:pan-y;
+  -webkit-overflow-scrolling:touch;
+}
+@media(max-width:560px){
+  .page-content:has(>.circuit-pool){padding:14px 0 24px}
+  .circuit-modal-backdrop{display:flex;align-items:flex-start;justify-content:center;padding:8px}
+  .circuit-modal{flex:0 0 auto;width:100%;margin:auto 0;max-height:calc(100svh - 16px);overflow-y:auto}
+}
