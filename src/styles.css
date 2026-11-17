@@ -310,3 +310,19 @@ body{overflow-x:hidden}
  .site{grid-template-rows:auto minmax(min-content,1fr) auto}
  .page-content{min-height:0}
 }
+
+
+/* Regression correction: preserve the original header logo scale and keep the footer after content. */
+.brand img{transform:none}
+.site{
+  height:auto;
+  min-height:100svh;
+  grid-template-rows:auto minmax(max-content,1fr) auto;
+  overflow:visible;
+}
+.page-content{min-height:max-content}
+.site-footer{position:relative}
+@media(max-width:620px){
+  .brand img{transform:none}
+  .page-content:has(.workspace){min-height:max-content;overflow:visible}
+}
