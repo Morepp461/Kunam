@@ -133,6 +133,7 @@ for fragment in [
 
 matrix = (ROOT / "src/DevelopmentPricingMatrix.tsx").read_text(encoding="utf-8")
 for fragment in [
+    "Harga Berdasarkan Lisensi & Divisi",
     "caleris_driver_development_tier_pricing",
     "caleris_team_development_division_pricing",
     "caleris_development_license_tier_mapping",
