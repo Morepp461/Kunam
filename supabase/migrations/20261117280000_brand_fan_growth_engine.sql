@@ -10,9 +10,9 @@ create table if not exists public.caleris_fan_growth_events (
  growth_rate_percent numeric(8,4) not null,
  created_at timestamptz not null default now(),
  check((entity_kind='team' and team_id is not null and member_id is null)
-   or (entity_kind='driver' and member_id is not null and team_id is null)),
- unique(round_id,entity_kind,team_id,member_id,region_key)
+   or (entity_kind='driver' and member_id is not null and team_id is null))
 );
+cREATE UNIQUE INDEX IF NOT EXISTS caleris_fan_growth_events_identity_idx ON public.caleris_fan_growth_events(round_id,entity_kind,coalesce(team_id,'00000000-0000-0000-0000-000000000000'::uuid),coalesce(member_id,'00000000-0000-0000-0000-000000000000'::uuid),region_key);
 alter table public.caleris_fan_growth_events enable row level security;
 revoke all on public.caleris_fan_growth_events from public,anon,authenticated;
 grant select on public.caleris_fan_growth_events to authenticated;
@@ -42,7 +42,7 @@ begin
    if v_delta<=0 then continue; end if;
    insert into public.caleris_fan_growth_events(round_id,entity_kind,team_id,region_key,population_delta,growth_rate_percent)
    values(p_round_id,'team',v_team.team_id,v_fan.region_key,v_delta,v_rate)
-   on conflict(round_id,entity_kind,team_id,member_id,region_key) do nothing returning id into v_event;
+   on conflict do nothing returning id into v_event;
    if v_event is not null then
     update public.caleris_fan_populations set population=population+v_delta,updated_at=now() where id=v_fan.id;
     insert into public.caleris_fan_population_history(entity_kind,team_id,region_key,population_delta,source_event,metadata)
