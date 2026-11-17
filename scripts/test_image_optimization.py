@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 helper = ROOT / "src" / "lib" / "imageOptimization.ts"
-form = ROOT / "src" / "MainEventRegistration.tsx"
+form = ROOT / "src" / "PaddockRoleDetails.tsx"
 migration = ROOT / "supabase" / "migrations" / "20261116210000_registration_webp_storage_policy.sql"
 assert helper.is_file(), "Missing browser-side image optimization helper"
 assert migration.is_file(), "Missing WebP-only Storage migration"
@@ -25,15 +25,17 @@ for fragment in [
     assert fragment in source, f"Image optimizer is missing: {fragment}"
 
 component = form.read_text(encoding="utf-8")
+app = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 for fragment in [
-    'optimizeImageToWebp(file,kind)',
-    'file.type!=="image/webp"',
+    'optimizeImageToWebp(file,"team-logo")',
+    'teamLogo.type!=="image/webp"',
     'contentType:"image/webp"',
     'accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"',
-    'formatImageBytes(stats.originalSize)',
-    'JPG tidak mendukung transparansi',
+    'formatImageBytes(logoStats.originalSize)',
 ]:
-    assert fragment in component, f"Registration upload is not WebP-safe: {fragment}"
+    assert fragment in component, f"Team logo upload is not WebP-safe: {fragment}"
+for fragment in ['optimizeImageToWebp(croppedAvatar,"avatar")','contentType:"image/webp"']:
+    assert fragment in app, f"Paddock Access avatar upload is not WebP-safe: {fragment}"
 
 sql = migration.read_text(encoding="utf-8").lower()
 assert "allowed_mime_types=array['image/webp']" in sql

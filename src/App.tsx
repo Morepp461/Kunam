@@ -1,6 +1,6 @@
 import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
-import type {ChangeEvent,FormEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
+import type {ChangeEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
 import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate,useParams} from "react-router-dom";
 import {Activity,ArrowUpRight,ShoppingBag,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,SlidersHorizontal,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText,Menu,Trophy,Coins} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
@@ -33,7 +33,8 @@ import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
 import {CircuitPool,CircuitPoolInput} from "./CircuitPool";
 import JobSearch from "./JobSearch";
-import MainEventRegistration from "./MainEventRegistration";
+import PaddockRoleDetails from "./PaddockRoleDetails";
+import { optimizeImageToWebp } from "./lib/imageOptimization";
 import AdminRegisteredMembers from "./AdminRegisteredMembers";
 import DeveloperAPI from "./DeveloperAPI";
 import TeamDriverApplications from "./TeamDriverApplications";
@@ -124,7 +125,7 @@ function Application(){
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
  return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess}><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
-  <Route path="/paddock-access" element={session?(needsPaddockAccess?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to="/dashboard" replace/>):<Navigate to="/" replace/>}/>
+  <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/financial-centre" element={session&&!needsPaddockAccess?<CashLoanCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -158,7 +159,7 @@ function Application(){
    <Route path="/main-event/job-search" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<JobSearch/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/take-over" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<TeamTakeoverMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/transfer-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<DriverTransferMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/main-event/registration" element={session&&!needsPaddockAccess&&(isAdmin||(panelAccess.main_event&&panelAccess.member_role===null))?<MainEventRegistration session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/main-event/registration" element={session&&!isAdmin&&panelAccess.member_role===null?<Navigate to="/paddock-access" replace/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/team-panel/driver-registration" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Owner")?<TeamDriverApplications/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/*" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/*" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -182,8 +183,8 @@ function Shell({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,p
  const avatar=profile?.avatar_url||session?.user.user_metadata?.avatar_url||session?.user.user_metadata?.picture||"";
  const nickname=profile?.web_nickname||session?.user.user_metadata?.full_name||session?.user.user_metadata?.name||session?.user.email?.split("@")[0]||"Member";
  const navigationGroups=session?[
-  {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},{to:"/shop",label:"Shop",description:"Beli Development Token dan item resmi.",icon:<ShoppingBag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
-  ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.filter(tab=>(isAdmin||tab.path!=="registration"||panelAccess.member_role===null)&&(!(group.path==="team-panel"&&["driver-registration","engine-market"].includes(tab.path))||isAdmin||panelAccess.member_role==="Owner")).map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
+  {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},...(!isAdmin&&panelAccess.member_role===null?[{to:"/paddock-access",label:"Paddock Access",description:"Lengkapi profil dan pengajuan role dalam satu formulir.",icon:<Flag size={17}/>}]:[]),{to:"/shop",label:"Shop",description:"Beli Development Token dan item resmi.",icon:<ShoppingBag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
+  ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.filter(tab=>tab.path!=="registration"&&(!(group.path==="team-panel"&&["driver-registration","engine-market"].includes(tab.path))||isAdmin||panelAccess.member_role==="Owner")).map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
   {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
   ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/prizepool",label:"Season Prizepool",description:"Atur hadiah akhir musim dan proses pembayaran dari VreeoBank.",icon:<Coins size={17}/>},{to:"/admin/license-engine",label:"License Scoring Engine",description:"Kelola season, check-in, standings, dan validasi WDC.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/users",label:"Daftar Akun",description:"Seluruh akun, profil, dan konfigurasi role member.",icon:<Users size={17}/>},{to:"/admin/registered-members",label:"Registered Member",description:"Review formulir registrasi Main Event dan aktivasi role.",icon:<ClipboardList size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>},...(isPrimaryOwner?[{to:"/admin/developer-api",label:"Developer API & MCP",description:"API key dan koneksi integrasi eksternal.",icon:<Shield size={17}/>}]:[])]}]:[])
  ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];
@@ -251,7 +252,7 @@ function Home(){
 function PageHeading({eyebrow,title,description}:{eyebrow:string;title:string;description:string}){return <div className="page-heading"><p className="kicker">{eyebrow}</p><h1 className="page-title">{title}</h1><p className="page-description">{description}</p></div>}
 function EmptyPanel({icon,title,body}:{icon:ReactNode;title:string;body:string}){return <div className="empty-panel">{icon}<strong>{title}</strong><p>{body}</p></div>}
 
-const PADDOCK_ROLES=["FIA","Team Owner","Driver"] as const;
+const PADDOCK_ROLES=["Driver","Team Owner"] as const;
 const CALENDAR_MONTHS=["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 const CALENDAR_DAYS=["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
 function PaddockRolePicker({value,onChange}:{value:string;onChange:(value:string)=>void}){
@@ -279,13 +280,15 @@ function PaddockDatePicker({value,onChange,max}:{value:string;onChange:(value:st
  return <div className={"settings-field paddock-picker-field"+(open?" is-open":"")}><span>Tanggal lahir</span><div className="paddock-picker-wrap"><button type="button" className={"paddock-select-trigger paddock-date-trigger"+(open?" is-open":"")} aria-haspopup="dialog" aria-expanded={open} onClick={toggle}><span>{formatted}</span><CalendarDays size={18}/></button>{open&&calendar}</div></div>;
 }
 function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Promise<void>}){
- const {toast,loading}=useUI();const navigate=useNavigate();
+ const {toast,loading}=useUI();
  const [avatarFile,setAvatarFile]=useState<File|null>(null),[avatarPreview,setAvatarPreview]=useState(""),[avatarEditing,setAvatarEditing]=useState(false),[cropX,setCropX]=useState(50),[cropY,setCropY]=useState(50);
  const originalAvatarFileRef=useRef<File|null>(null);
  const [firstName,setFirstName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState(""),[nationality,setNationality]=useState(""),[hometown,setHometown]=useState("");
  const [privacyAccepted,setPrivacyAccepted]=useState(false),[saving,setSaving]=useState(false);
+ const [registration,setRegistration]=useState<Record<string,any>|null>(null);
  const [errors,setErrors]=useState<Record<string,string>>({});
  const avatarStageRef=useRef<HTMLDivElement|null>(null),avatarImageRef=useRef<HTMLImageElement|null>(null),avatarDragRef=useRef<{x:number;y:number;cropX:number;cropY:number}|null>(null);
+ useEffect(()=>{if(!supabase)return;let active=true;supabase.from("caleris_member_registrations").select("id,requested_role,status,created_at,review_note").eq("user_id",session.user.id).order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data,error})=>{if(!active)return;if(error)toast("error","Status pengajuan gagal dimuat",error.message);setRegistration(data as Record<string,any>|null)});return()=>{active=false}},[session.user.id,toast]);
  const today=new Date();const maxDate=new Date(today.getFullYear()-13,today.getMonth(),today.getDate());const maxDob=`${maxDate.getFullYear()}-${String(maxDate.getMonth()+1).padStart(2,"0")}-${String(maxDate.getDate()).padStart(2,"0")}`;
  const chooseAvatar=(e:ChangeEvent<HTMLInputElement>)=>{const file=e.target.files?.[0];if(!file)return;if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>3*1024*1024){setErrors(v=>({...v,avatar:"Gunakan JPG, PNG, atau WEBP maksimal 3 MB."}));e.target.value="";return;}if(avatarPreview)URL.revokeObjectURL(avatarPreview);originalAvatarFileRef.current=file;setAvatarFile(file);setAvatarPreview(URL.createObjectURL(file));setAvatarEditing(true);setCropX(50);setCropY(50);setErrors(v=>({...v,avatar:""}));e.target.value="";};
  const beginAvatarDrag=(e:ReactPointerEvent<HTMLDivElement>)=>{if(!avatarFile)return;e.currentTarget.setPointerCapture(e.pointerId);avatarDragRef.current={x:e.clientX,y:e.clientY,cropX,cropY};};
@@ -293,13 +296,13 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
  const finishAvatarDrag=()=>{avatarDragRef.current=null;};
  const createCroppedAvatar=async(file:File)=>{const image=new Image(),url=URL.createObjectURL(file);image.src=url;try{await new Promise<void>((resolve,reject)=>{image.onload=()=>resolve();image.onerror=()=>reject(new Error("Foto tidak dapat dibaca."))});const side=Math.min(image.naturalWidth,image.naturalHeight),sx=(image.naturalWidth-side)*(cropX/100),sy=(image.naturalHeight-side)*(cropY/100);const canvas=document.createElement("canvas");canvas.width=640;canvas.height=640;const context=canvas.getContext("2d");if(!context)throw new Error("Browser tidak mendukung pemrosesan foto.");context.drawImage(image,sx,sy,side,side,0,0,640,640);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(result=>result?resolve(result):reject(new Error("Foto gagal diproses.")),file.type,.92));return new File([blob],"caleris-profile."+(file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg"),{type:file.type});}finally{URL.revokeObjectURL(url)}};
  const confirmAvatarCrop=async()=>{if(!avatarFile)return;try{const cropped=await createCroppedAvatar(avatarFile);const preview=URL.createObjectURL(cropped);if(avatarPreview)URL.revokeObjectURL(avatarPreview);setAvatarFile(cropped);setAvatarPreview(preview);setCropX(50);setCropY(50);setAvatarEditing(false);finishAvatarDrag();}catch(error){toast("error","Foto gagal diproses",error instanceof Error?error.message:"Coba pilih foto lain.")}};
- const submit=async(e:FormEvent<HTMLFormElement>)=>{
-  e.preventDefault();const next:Record<string,string>={};
+ const submit=async(registrationPayload:Record<string,unknown>)=>{
+  const next:Record<string,string>={};
   if(!avatarFile)next.avatar="Foto profil harus dipilih.";
   if(!dateOfBirth)next.dateOfBirth="Tanggal lahir harus diisi.";
    if(!nationality)next.nationality="Nationality wajib dipilih.";
    if(!hometown)next.hometown="Hometown wajib dipilih.";
-  else if(dateOfBirth>maxDob)next.dateOfBirth="Paddock Access hanya tersedia mulai usia 13 tahun.";
+  if(dateOfBirth&&dateOfBirth>maxDob)next.dateOfBirth="Paddock Access hanya tersedia mulai usia 13 tahun.";
   if(!nickname.trim())next.nickname="Nickname harus diisi.";
   if(nickname.trim().length>32)next.nickname="Nickname maksimal 32 karakter.";
   if(!preferredRole)next.preferredRole="Pilih preferensi role.";
@@ -309,18 +312,19 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   setSaving(true);loading(true);
   try{
    const croppedAvatar=await createCroppedAvatar(avatarFile!);
-   const ext=croppedAvatar.name.split(".").pop()?.toLowerCase()||"jpg";
-   const path=`${session.user.id}/paddock-${crypto.randomUUID()}.${ext}`;
-   const {error:uploadError}=await supabase.storage.from("profile-avatars").upload(path,croppedAvatar,{upsert:false,contentType:croppedAvatar.type});
+   const optimizedAvatar=await optimizeImageToWebp(croppedAvatar,"avatar");
+   const path=`${session.user.id}/paddock-${crypto.randomUUID()}.webp`;
+   const {error:uploadError}=await supabase.storage.from("profile-avatars").upload(path,optimizedAvatar.file,{upsert:false,contentType:"image/webp"});
    if(uploadError)throw new Error(uploadError.message);
-   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,nationality,hometown,privacyAccepted}});
+   const {data,error}=await supabase.functions.invoke("complete-paddock-access",{body:{avatarPath:path,firstName,lastName:"",dateOfBirth,nickname,preferredRole,nationality,hometown,privacyAccepted,registrationPayload:{...registrationPayload,requested_role:preferredRole==="Team Owner"?"Owner":"Driver",nickname:nickname.trim(),avatar_path:path}}});
    if(error)throw new Error(error.message);
    if(!data?.success)throw new Error(data?.error||"Paddock Access gagal disimpan.");
-   await onComplete();toast("success","Paddock Access disetujui","Profil akun berhasil dibuat.");navigate("/dashboard",{replace:true});
+   await onComplete();setRegistration({id:data.registration?.registration_id,requested_role:preferredRole==="Team Owner"?"Owner":"Driver",status:"pending",created_at:new Date().toISOString()});toast("success","Pengajuan terkirim","Profil dan pengajuan role berhasil dikirim untuk review Admin.");
   }catch(error){const message=error instanceof Error?error.message:"Terjadi kesalahan.";toast("error","Pendaftaran gagal",message);}
   finally{loading(false);setSaving(false);}
  };
- return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Paddock Access</h1><p className="page-description">Lengkapi identitas untuk membuka akses ke paddock Caleris Masters.</p></div><form className="paddock-access-form" onSubmit={submit} noValidate>
+ if(registration?.status==="pending")return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Pengajuan Terkirim</h1><p className="page-description">Pendaftaran role dan profilmu sedang diperiksa Admin.</p></div><div className="mer-panel"><Shield/><h2>Menunggu Persetujuan</h2><p>Role akan aktif setelah Admin menyetujui pengajuan.</p><span className="mer-status">PENDING REVIEW</span></div></div></section>;
+ return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Paddock Access</h1><p className="page-description">Lengkapi identitas dan detail role dalam satu proses pendaftaran.</p></div><div className="paddock-access-form">
   <div className="paddock-avatar-field"><div className="paddock-avatar-preview">{avatarPreview?<img src={avatarPreview} alt="Preview foto profil"/>:<Camera size={28}/>}</div><div className="paddock-avatar-copy"><strong>Foto profil</strong><small>JPG, PNG, WEBP · Maksimal 3 MB</small><div className="paddock-avatar-actions"><label className="action upload-button">Pilih foto<input type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseAvatar}/></label>{avatarPreview&&!avatarEditing&&<button type="button" className="action avatar-edit-button" onClick={()=>{const original=originalAvatarFileRef.current;if(!original)return;if(avatarPreview)URL.revokeObjectURL(avatarPreview);setAvatarFile(original);setAvatarPreview(URL.createObjectURL(original));setCropX(50);setCropY(50);setAvatarEditing(true);}}>Edit foto</button>}</div>{errors.avatar&&<small className="field-error">{errors.avatar}</small>}</div></div>
   {avatarPreview&&avatarEditing&&<div className="avatar-inline-crop"><span>GESER FOTO UNTUK MENGATUR POSISI</span><div ref={avatarStageRef} className="avatar-inline-stage" onPointerDown={beginAvatarDrag} onPointerMove={moveAvatarDrag} onPointerUp={finishAvatarDrag} onPointerCancel={finishAvatarDrag}><img ref={avatarImageRef} src={avatarPreview} alt="Geser foto profil" draggable={false} style={{objectPosition:cropX+"% "+cropY+"%"}}/></div><button type="button" className="action primary avatar-confirm-button" onClick={confirmAvatarCrop}>Konfirmasi posisi foto</button></div>}
   <div className="paddock-name-fields"><label className="settings-field">Nama panggilan<input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} autoComplete="nickname" placeholder="Nama panggilan"/></label></div>
@@ -328,10 +332,11 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
    <LocationSelectors nationality={nationality} hometown={hometown} onNationalityChange={setNationality} onHometownChange={setHometown} errors={{nationality:errors.nationality,hometown:errors.hometown}}/>
   <label className="settings-field">Caleris Nickname<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} autoComplete="nickname" placeholder="Caleris Nickname"/>{errors.nickname&&<small className="field-error">{errors.nickname}</small>}</label>
   <PaddockRolePicker value={preferredRole} onChange={setPreferredRole}/>{errors.preferredRole&&<small className="field-error">{errors.preferredRole}</small>}
+  {registration?.status==="rejected"&&<div className="mer-notice">Pengajuan sebelumnya ditolak. {registration.review_note?`Catatan Admin: ${registration.review_note}`:"Kamu dapat mengirim pengajuan baru."}</div>}
   <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setErrors(v=>({...v,privacy:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
   {errors.privacy&&<small className="field-error">{errors.privacy}</small>}
-    <button className="action primary paddock-submit" type="submit" disabled={saving}>{saving?"Memproses akses...":"Submit Paddock Access"}</button>
- </form></div></section>;
+  {preferredRole&&<PaddockRoleDetails role={preferredRole==="Team Owner"?"Team Owner":"Driver"} saving={saving} onSubmit={submit}/>}
+ </div></div></section>;
 }
 function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
   const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);

@@ -12,7 +12,6 @@ type PanelGroup = { path: string; label: string; tabs: PanelTab[] };
 export const panelGroups: PanelGroup[] = [
   { path: "main-event", label: "MAIN EVENT", tabs: [
     { path: "global", label: "Global", description: "Overview seluruh kompetisi Caleris Masters." },
-    { path: "registration", label: "Registration", description: "Formulir pendaftaran resmi Main Event." },
     { path: "caleris-premio", label: "Caleris Premio", description: "Data dan statistik khusus divisi Premio." },
     { path: "caleris-zwei", label: "Caleris Zwei", description: "Data dan statistik khusus divisi Zwei." },
     { path: "transfer-market", label: "Transfer Market", description: "Daftar driver dan informasi nilai pasar." },

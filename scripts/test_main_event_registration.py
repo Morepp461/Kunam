@@ -51,25 +51,18 @@ assert "requested_role='owner'" in avatar_sql and "avatar_path is not null" in a
 assert "avatar_path=v_registration.avatar_path" in avatar_sql
 assert "teams_name_case_insensitive_unique" in name_sql and "v_role is null or v_role not in" in name_sql
 
-form = (ROOT / "src" / "MainEventRegistration.tsx").read_text(encoding="utf-8")
+form = (ROOT / "src" / "PaddockRoleDetails.tsx").read_text(encoding="utf-8")
 for fragment in [
-    "STEP 01 / 02",
     "STEP 02 / 02",
-    "nationality",
-    "hometown",
-    "avatar.type!==\"image/webp\"",
-    "optimizeImageToWebp",
-    "Avatar · Wajib",
-    "Team Owner",
-    "FIA hanya dapat diberikan melalui undangan khusus Admin",
     "driver_number_preference",
     "preferred_team_id",
     "driver_epithet",
     "team_base_nation",
     "team_long_term_target",
-    'rpc("submit_main_event_registration_v2"',
+    "optimizeImageToWebp",
+    "list_main_event_engine_marketplace",
 ]:
-    assert fragment in form, f"Main Event registration form is missing: {fragment}"
+    assert fragment in form, f"Role-specific Paddock Access form is missing: {fragment}"
 
 admin = (ROOT / "src" / "AdminRegisteredMembers.tsx").read_text(encoding="utf-8")
 for fragment in ['rpc("admin_list_member_registrations_v2")', 'rpc("admin_review_main_event_registration_v2"', '"approve"', '"reject"', "team_vision", "team_long_term_target"]:
@@ -83,7 +76,6 @@ for route in ['/main-event/registration', '/admin/registered-members', '/team-pa
     assert route in app, f"Missing registration route: {route}"
 
 navigation = (ROOT / "src" / "PanelPages.tsx").read_text(encoding="utf-8")
-assert 'path: "registration", label: "Registration"' in navigation
 assert 'path: "engine-market", label: "Engine Market"' in navigation
 
 
