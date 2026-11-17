@@ -855,3 +855,12 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Raised the Circuit Pool content stacking layer so the circuit detail modal is not covered by the footer.
 - Kept modal content independently vertically scrollable on touch devices.
 - Frontend-only; no dependency or database changes.
+
+
+### Quest manual claims and circuit record holder
+
+- Quest progress updates no longer pay rewards as a side effect of opening or refreshing the Quest page.
+- Completed quests require an explicit member claim; wallet transfers are handled by an authenticated, ownership-checked database RPC and remain idempotent through the existing quest transaction key.
+- Quest cards link to their relevant feature pages (Development, Training, Sponsorship, Place Job Advert, contracts, and affiliations).
+- Circuit Pool displays the lap-record holder. FIA/Admin can enter a driver name for a manually seeded initial lap record; faster times entered through official race classifications automatically become the record holder from the race-result driver.
+- Includes a Supabase migration for both testing and production. No dependency changes.
