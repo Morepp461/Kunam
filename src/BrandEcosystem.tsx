@@ -6,7 +6,7 @@ import {supabase} from "./lib/supabase";
 import "./brand-ecosystem.css";
 
 type Member={id:string;role:string|null;team_id:string|null;character_name:string|null};
-type Sponsor={id:string;name:string;industry:string|null;tier_key:string|null;available_budget:number|null;flexibility_percent:number;is_active:boolean};
+type Sponsor={id:string;name:string;industry:string|null;tier_key:string|null;source_code?:string|null;available_budget:number|null;flexibility_percent:number;is_active:boolean};
 type Season={id:string;title:string;starts_on:string;status:string};
 type Team={id:string;name:string};
 type Offer={id:string;sponsor_id:string;target_team_id:string|null;target_kind:string;season_id:string;proposed_amount:number;status:string;terms:Record<string,unknown>;expires_at:string|null;counter_count:number;generated_by_engine:boolean};
@@ -44,7 +44,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    if(mode!=="admin"&&!current){setNotice("Akun belum terhubung ke member.");setLoading(false);return;}
    if(mode==="team"&&current?.role!=="Owner"){setNotice("Halaman sponsorship hanya dapat diakses Team Owner.");setLoading(false);return;}
    const [s,se,t,m,o,r,c,ta,tr,rt,rd,fa]=await Promise.all([
-    supabase.from("caleris_sponsors").select("id,name,industry,tier_key,available_budget,flexibility_percent,is_active").eq("is_active",true).order("name"),
+    supabase.from("caleris_sponsors").select("id,name,industry,tier_key,source_code,available_budget,flexibility_percent,is_active").eq("is_active",true).order("name"),
     supabase.from("license_seasons").select("id,title,starts_on,status").order("starts_on",{ascending:false}),
     supabase.from("teams").select("id,name").order("name"),
     supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
