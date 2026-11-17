@@ -66,14 +66,22 @@ begin
     select id into v_target_wallet
     from public.economy_wallet_accounts
     where account_kind='public_member' and profile_user_id=v_user_id and is_active;
-  else
+  elsif v_target_kind='driver' then
     insert into public.economy_wallet_accounts(account_kind,member_id,is_active)
-    values(v_target_kind,p_member_id,true)
-    on conflict(member_id) where account_kind=v_target_kind
+    values('driver',p_member_id,true)
+    on conflict(member_id) where account_kind='driver'
     do update set is_active=true,updated_at=now();
     select id into v_target_wallet
     from public.economy_wallet_accounts
-    where account_kind=v_target_kind and member_id=p_member_id and is_active;
+    where account_kind='driver' and member_id=p_member_id and is_active;
+  else
+    insert into public.economy_wallet_accounts(account_kind,member_id,is_active)
+    values('team_owner',p_member_id,true)
+    on conflict(member_id) where account_kind='team_owner'
+    do update set is_active=true,updated_at=now();
+    select id into v_target_wallet
+    from public.economy_wallet_accounts
+    where account_kind='team_owner' and member_id=p_member_id and is_active;
   end if;
 
   if v_target_wallet is null then
