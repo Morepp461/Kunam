@@ -1,8 +1,0 @@
-begin;
-create index if not exists caleris_driver_development_tier_pricing_updated_by_idx
-  on public.caleris_driver_development_tier_pricing(updated_by);
-create index if not exists caleris_team_development_division_pricing_updated_by_idx
-  on public.caleris_team_development_division_pricing(updated_by);
-create index if not exists caleris_development_license_tier_mapping_updated_by_idx
-  on public.caleris_development_license_tier_mapping(updated_by);
-commit;
