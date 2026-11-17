@@ -772,9 +772,30 @@ The CSV records one compound per stint in chronological order. The number of pit
 - Existing race-result tables, standings, and the secured `fia_submit_race_classification` workflow are reused. No parallel scoring engine or manually editable statistics table is introduced.
 - Official submission must retain round sequencing, participant validation, scoring, race rewards, idempotency, and downstream settlement. A corrected official result must update derived totals without double-counting a previously published race.
 
+### FIA Race Input form
+
+The FIA Race Input page at `/fia-panel/race-input` is a complete official submission form, not a screenshot instruction page.
+
+- Round selector only offers the next eligible, unclosed round after its check-in window has ended. The selected round supplies season, division, and Race/Sprint session type; server-side sequencing and eligibility checks remain authoritative.
+- Circuit is selected from the existing Circuit Pool. The selected circuit name and country code are saved as the round's official circuit snapshot.
+- Every active Driver registered in the selected season division is loaded automatically. The form requires one classification row for each registered Driver; the browser cannot add or omit participants.
+- Per-Driver fields: race number, nationality/country, flag, grid position, finish status (Finished/DNF), finishing position, race time or laps behind, gap, fastest-lap time, and an ordered list of tyre stints.
+- Tyre stint controls support Soft, Medium, Hard, Intermediate, and Wet. Each stint is stored separately and in sequence; it is not reduced to a pit-stop count.
+- Pole sitter is derived from grid position 1, with the pole lap time entered separately. Fastest-lap driver/time are derived from the single fastest-lap entry. Driver of the Day is selected from the registered race participants.
+- Race time accepts `h:mm:ss.mmm` or `m:ss.mmm`; lap times accept `m:ss.mmm`; gap is stored in milliseconds and DNF laps behind is stored as a separate integer.
+- Client validation checks complete participant coverage, unique grid and race numbers, continuous finishing positions, valid time formats, one fastest-lap entry, Pole, Driver of the Day, and at least one tyre stint per participant. The official database RPC repeats authoritative validation.
+- Submission calls `fia_submit_race_classification_v2`, which stores the additional screenshot/CSV snapshots in the same transaction and delegates scoring, round processing, race rewards, standings, and season settlement to the existing secured `fia_submit_race_classification` engine. It does not create a parallel scoring pipeline.
+- The new wrapper is authenticated-only and verifies FIA/Admin authorization. The original race submission protections remain in force, including complete roster coverage, round sequencing, unique grid positions, finishing classification, and idempotent settlement.
+
+### Race Input database migration
+
+- `20261118100000_complete_race_input_snapshots.sql` adds race-level pole lap time and per-entry race number, nationality, flag, and DNF laps-behind snapshots. It introduces the secured `fia_submit_race_classification_v2` wrapper.
+- Applied and schema-verified in both Testing and Production Supabase projects.
+- No manual statistic fields are added. Driver and Team statistics remain derived from the official race records and standings.
+
 ### Related implementation
 
-- FIA Race Input page: `/fia-panel/punishment-input`.
+- FIA Race Input page: `/fia-panel/race-input`.
 - Driver statistics: Character and Career History.
 - Team statistics: Team Summary.
-- No new database migration is required for the CSV review format itself; it is a pre-submission interchange format. Database writes continue through the existing official race workflow.
+- Screenshot-to-CSV draft/revision remains a separate ChatGPT-assisted review stage. The final approved data is entered through the FIA Race Input form; no automatic CSV import or OCR inside the website is claimed.
