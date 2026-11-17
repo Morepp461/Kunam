@@ -14,7 +14,6 @@ const modeNames:Record<string,string>={light:"Ringan",normal:"Normal",hard:"Hard
 const modeColors:Record<string,string>={light:"light",normal:"normal",hard:"hard"};
 const fmt=(seconds:number)=>{const h=Math.floor(seconds/3600),m=Math.floor(seconds%3600/60),s=seconds%60;return h? h+"j "+m+"m":m?m+"m "+s+"d":s+" detik"};
 const dateTime=(value:string)=>new Date(value).toLocaleString("id-ID",{dateStyle:"medium",timeStyle:"short"});
-const money=(value:number)=>"€ "+Number(value||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 
 export default function DriverTraining({session}:{session:Session}){
  const [memberId,setMemberId]=useState<string|null>(null),[memberName,setMemberName]=useState("Driver");
