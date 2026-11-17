@@ -1,4 +1,4 @@
-import {ClipboardCheck,ImagePlus,ShieldCheck,Table2} from "lucide-react";
+import {ImagePlus,ShieldCheck,Table2} from "lucide-react";
 
 export default function RaceControl(){
  return <section className="workspace race-control">
