@@ -1,8 +1,9 @@
 begin;
 alter table public.caleris_circuits add column if not exists image_url text;
 create or replace view public.caleris_circuit_pool with (security_barrier=true) as
-select c.id,c.name,c.country_code,c.image_url,c.total_laps,c.avg_track_temp_c,c.drs_zones,c.straights,c.low_speed_corners,c.high_speed_corners,c.grip_level,
- least(c.initial_lap_record_ms,(select min(e.fastest_lap_ms) from public.license_rounds r join public.caleris_race_result_entries e on e.round_id=r.id where lower(trim(r.circuit_name))=lower(trim(c.name)) and r.circuit_country_code=c.country_code and e.fastest_lap_ms is not null)) as lap_record_ms
+select c.id,c.name,c.country_code,c.total_laps,c.avg_track_temp_c,c.drs_zones,c.straights,c.low_speed_corners,c.high_speed_corners,c.grip_level,
+ least(c.initial_lap_record_ms,(select min(e.fastest_lap_ms) from public.license_rounds r join public.caleris_race_result_entries e on e.round_id=r.id where lower(trim(r.circuit_name))=lower(trim(c.name)) and r.circuit_country_code=c.country_code and e.fastest_lap_ms is not null)) as lap_record_ms,
+ c.image_url
 from public.caleris_circuits c;
 revoke all on public.caleris_circuit_pool from public,anon,authenticated,service_role;
 grant select on public.caleris_circuit_pool to authenticated;
