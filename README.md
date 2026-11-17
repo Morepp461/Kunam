@@ -808,3 +808,12 @@ The FIA Race Input page at `/fia-panel/race-input` is a complete official submis
 - All OCR fields remain subject to existing FIA validation and authoritative race submission RPC. OCR text can be inspected when a screenshot needs manual correction.
 - Circuit Pool records store a WEBP layout image in the circuit-layouts Supabase Storage bucket. FIA/Admin uploads are restricted by Storage policies; authenticated users can view layouts in the circuit profile popup.
 - Circuit layout uploads are converted to WEBP in the browser before upload (maximum 4 MB after conversion, 5000 px per side).
+
+
+### Circuit Pool Management
+
+- FIA Circuit Pool Input displays every saved circuit and its complete stored specifications, including layout image availability and the effective lap record.
+- FIA/Admin can edit an existing circuit's name, country, lap count, track temperature, DRS zones, straights, corner counts, grip level, initial lap record, and optional replacement layout image.
+- Replacing a layout image converts the new upload to WEBP, stores it in Supabase Storage, updates the circuit record, and then removes the superseded image.
+- Circuit Pool subscribes to Supabase Realtime changes on `caleris_circuits`; insertions and edits appear on the public-facing Circuit Pool page without manual refresh.
+- Migration: `20261118120000_circuit_pool_realtime.sql`.
