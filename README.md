@@ -833,3 +833,14 @@ Untuk menjaga tampilan Circuit Pool konsisten dan memudahkan pengeditan desain, 
 - Ukuran frame adalah acuan desain, bukan ukuran layar wajib. Layout tetap fluid pada ukuran di antaranya.
 - Modal detail sirkuit dan tabel directory memiliki aturan responsive khusus; data tidak boleh terpotong atau memaksa seluruh halaman melebar.
 - Maksimum lebar konten desktop adalah 1200 px.
+
+
+### Single Fluid Design Canvas
+
+Circuit Pool menggunakan **satu desain/layout yang sama** untuk desktop, tablet, dan mobile. Tidak ada pergantian tabel menjadi kartu atau versi desain terpisah.
+
+- Acuan master design: lebar kanvas 1440 px. Implementasi web memakai lebar fluid 100% dengan batas konten 1200 px.
+- Tidak perlu membuat frame desain terpisah untuk tiap device. Buat satu master design, lalu gunakan constraint kiri/kanan, max-width, auto-layout, dan komponen yang dapat menyusut.
+- Padding dan tipografi memakai skala fluid; ruang kosong horizontal tidak dipertahankan sebagai kolom kosong.
+- Breakpoint hanya mengatur kepadatan, jarak, dan jumlah kolom form/detail. Struktur dan urutan konten utama tetap sama.
+- Tabel administrasi yang memiliki banyak kolom tetap satu tabel dan dapat digeser horizontal, bukan diubah menjadi desain kartu.

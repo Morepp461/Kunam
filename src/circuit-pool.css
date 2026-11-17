@@ -7,100 +7,71 @@
 .circuit-admin-list{margin-bottom:18px}.circuit-admin-table{min-width:1120px}.circuit-admin-table td{white-space:nowrap}.circuit-edit-button{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.circuit-admin-list .s5-table-wrap{max-height:560px;overflow:auto}
 
 
-/* CIRCUIT POOL RESPONSIVE SYSTEM
-   Design frames: Desktop 1440x900, Tablet 768x1024, Mobile 390x844.
-   Content canvas: max 1200px. Gutters: 32 / 24 / 16px.
-   Breakpoints: mobile <=767px, tablet 768-1023px, desktop >=1024px.
-*/
-.circuit-pool{
-  --circuit-content-max:1200px;
-  --circuit-gutter:32px;
-  width:min(calc(100% - (var(--circuit-gutter) * 2)),var(--circuit-content-max));
-  max-width:var(--circuit-content-max);
-  margin-inline:auto;
-}
-.page-content:has(>.circuit-pool){
-  align-items:flex-start;
-  justify-content:center;
-  padding:clamp(28px,4vw,56px) 24px 44px;
-}
-.circuit-pool .page-heading{width:100%;max-width:var(--circuit-content-max);margin:0 auto 28px}
-.circuit-pool .page-title{font-size:clamp(30px,3.2vw,44px);line-height:1.12;letter-spacing:-.025em}
-.circuit-pool .page-description{max-width:760px;font-size:14px;line-height:1.75}
-.circuit-pool .workspace-card{width:100%;min-width:0;padding:clamp(20px,2.4vw,30px);border-radius:10px}
-.circuit-pool .section-title-row{margin:0 0 18px}
-.circuit-directory-table-wrap{width:100%;overflow-x:auto;overscroll-behavior-x:contain}
-.circuit-directory-table{width:100%;min-width:0;table-layout:fixed}
-.circuit-directory-table th,.circuit-directory-table td{padding:14px 12px;vertical-align:middle}
-.circuit-directory-table th:nth-child(1){width:22%}
-.circuit-directory-table th:nth-child(2){width:42%}
-.circuit-directory-table th:nth-child(3){width:16%}
-.circuit-directory-table th:nth-child(4){width:20%}
-.circuit-directory-table td{overflow-wrap:anywhere}
-.circuit-name-button{max-width:100%;overflow-wrap:anywhere}
-.circuit-modal-backdrop{z-index:1200;overflow-y:auto;overscroll-behavior:contain;padding:24px}
-.circuit-modal{width:min(100%,760px);max-height:min(88dvh,900px);padding:clamp(20px,3vw,32px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
-.circuit-modal-head button{display:grid;place-items:center;flex:none;width:44px;height:44px;min-width:44px;min-height:44px}
-.circuit-layout-image{width:100%;height:auto;max-height:clamp(230px,32vw,360px);aspect-ratio:16/9;object-fit:contain}
-.circuit-detail-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-.circuit-detail-grid>div{min-width:0;padding:14px}
-.circuit-detail-grid strong{overflow-wrap:anywhere}
-.circuit-input-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.circuit-admin-list .s5-table-wrap{max-width:100%;overscroll-behavior-x:contain}
-.circuit-admin-table{min-width:1120px}
-.circuit-layout-preview{display:block;width:100%;max-height:320px;object-fit:contain}
 
-@media (min-width:768px) and (max-width:1023px){
- .circuit-pool{--circuit-gutter:24px}
- .page-content:has(>.circuit-pool){padding:32px 24px 40px}
+/* SINGLE FLUID CANVAS: same component structure at every viewport width. */
+.site:has(.circuit-pool){min-height:100svh;height:100svh;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden}
+.page-content:has(>.circuit-pool){min-height:0;min-width:0;overflow-x:hidden;overflow-y:auto;align-items:flex-start;justify-content:center;padding:clamp(16px,2.5vw,36px);scrollbar-gutter:stable}
+.circuit-pool{--circuit-gutter:clamp(12px,2.2vw,32px);width:min(calc(100% - 2 * var(--circuit-gutter)),1200px);max-width:1200px;min-width:0;margin-inline:auto;padding:0}
+.circuit-pool .page-heading{width:100%;margin:0 auto clamp(16px,2vw,28px)}
+.circuit-pool .page-title{font-size:clamp(25px,3vw,44px);line-height:1.12;letter-spacing:-.025em}
+.circuit-pool .page-description{max-width:760px;font-size:clamp(12px,.98vw,14px);line-height:1.7}
+.circuit-pool .workspace-card{width:100%;min-width:0;max-width:100%;padding:clamp(14px,2vw,30px);border-radius:10px}
+.circuit-pool .section-title-row{margin:0 0 clamp(12px,1.4vw,18px)}
+.circuit-directory-table-wrap,.circuit-admin-list .s5-table-wrap{width:100%;max-width:100%;min-width:0;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin}
+.circuit-directory-table{width:100%;min-width:0;table-layout:fixed}
+.circuit-directory-table th,.circuit-directory-table td{padding:clamp(7px,1vw,14px) clamp(5px,.85vw,12px);vertical-align:middle;overflow-wrap:anywhere}
+.circuit-directory-table th:nth-child(1){width:23%}
+.circuit-directory-table th:nth-child(2){width:39%}
+.circuit-directory-table th:nth-child(3){width:14%}
+.circuit-directory-table th:nth-child(4){width:24%}
+.circuit-directory-table td{white-space:normal}
+.circuit-name-button{max-width:100%;font-size:inherit;overflow-wrap:anywhere}
+.circuit-modal-backdrop{z-index:1200;overflow-y:auto;overscroll-behavior:contain;padding:clamp(8px,2vw,24px)}
+.circuit-modal{width:min(100%,760px);max-height:calc(100svh - 2 * clamp(8px,2vw,24px));padding:clamp(14px,2.4vw,32px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.circuit-modal-head button{display:grid;place-items:center;flex:none;width:clamp(38px,3.2vw,44px);height:clamp(38px,3.2vw,44px)}
+.circuit-layout-image{display:block;width:100%;height:auto;max-height:clamp(180px,32vw,360px);aspect-ratio:16/9;object-fit:contain}
+.circuit-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:clamp(6px,1vw,12px)}
+.circuit-detail-grid>div{min-width:0;padding:clamp(8px,1.2vw,14px)}
+.circuit-detail-grid small,.circuit-detail-grid strong{overflow-wrap:anywhere}
+.circuit-input-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,1.3vw,16px)}
+.circuit-input-form,.circuit-input-form>*{min-width:0}
+.circuit-input-form .s5-field input,.circuit-input-form .s5-field select{width:100%;max-width:100%;box-sizing:border-box}
+.circuit-admin-table{width:100%;min-width:1040px}
+.circuit-admin-table td{white-space:nowrap}
+.circuit-layout-preview{display:block;width:100%;max-height:320px;object-fit:contain}
+@media(max-width:900px){
  .circuit-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
  .circuit-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
-@media (max-width:767px){
- .circuit-pool{--circuit-gutter:0px;width:100%;padding:0;max-width:100%}
- .page-content:has(>.circuit-pool){padding:22px 16px 32px}
- .circuit-pool .page-heading{margin-bottom:20px}
- .circuit-pool .page-title{font-size:clamp(27px,7vw,34px);margin-bottom:9px}
- .circuit-pool .page-description{font-size:12px;line-height:1.65}
- .circuit-pool .workspace-card{padding:17px;border-radius:9px}
- .circuit-pool .section-title-row{align-items:center;gap:10px;margin-bottom:14px}
- .circuit-pool .section-title-row h2{font-size:18px}
- .circuit-pool .economy-secondary-button{min-height:40px;padding-inline:11px}
- .circuit-directory-table-wrap{overflow:visible}
- .circuit-directory-table,.circuit-directory-table tbody{display:block;width:100%}
- .circuit-directory-table thead{display:none}
- .circuit-directory-table tbody{display:grid;gap:10px}
- .circuit-directory-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px;padding:10px 12px;border:1px solid rgba(198,163,58,.2);border-radius:8px;background:rgba(255,255,255,.025)}
- .circuit-directory-table tbody td{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0;padding:9px 2px;border:0;white-space:normal;font-size:12px}
- .circuit-directory-table tbody td::before{color:#9da0a2;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase}
- .circuit-directory-table tbody td:nth-child(1)::before{content:"NEGARA"}
- .circuit-directory-table tbody td:nth-child(2)::before{content:"NAMA CIRCUIT"}
- .circuit-directory-table tbody td:nth-child(3)::before{content:"TOTAL LAP"}
- .circuit-directory-table tbody td:nth-child(4)::before{content:"LAP RECORD"}
- .circuit-directory-table tbody td:nth-child(2){grid-column:1/-1;grid-row:1}
- .circuit-directory-table tbody td:nth-child(1){grid-column:1;grid-row:2}
- .circuit-directory-table tbody td:nth-child(3){grid-column:2;grid-row:2}
- .circuit-directory-table tbody td:nth-child(4){grid-column:1/-1;grid-row:3;border-top:1px solid rgba(198,163,58,.12)}
- .circuit-directory-table .circuit-name-button{font-size:14px;line-height:1.4}
- .circuit-modal-backdrop{align-items:center;padding:12px}
- .circuit-modal{width:100%;max-height:calc(100dvh - 24px);padding:17px;border-radius:13px}
- .circuit-modal-head{gap:10px;margin-bottom:15px}
- .circuit-modal-head h2{font-size:clamp(20px,6vw,25px);line-height:1.2;overflow-wrap:anywhere}
- .circuit-modal-head button{width:42px;height:42px;min-width:42px;min-height:42px}
- .circuit-layout-image{max-height:240px;aspect-ratio:4/3;margin-bottom:13px}
- .circuit-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
- .circuit-detail-grid>div{padding:11px;gap:5px}
- .circuit-detail-grid small{font-size:10px;line-height:1.35}
- .circuit-detail-grid strong{font-size:14px}
- .circuit-record-note{font-size:11px;line-height:1.55;margin-top:13px}
- .circuit-input-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
- .circuit-admin-list .s5-table-wrap{max-height:460px}
- .circuit-admin-table{min-width:1120px}
-}
-@media (max-width:380px){
- .page-content:has(>.circuit-pool){padding-inline:12px}
- .circuit-pool .workspace-card{padding:14px}
- .circuit-input-grid{grid-template-columns:1fr}
+@media(max-width:560px){
+ .site:has(.circuit-pool){grid-template-rows:62px minmax(0,1fr) auto}
+ .page-content:has(>.circuit-pool){padding:14px 0 24px;scrollbar-gutter:auto}
+ .circuit-pool{--circuit-gutter:12px;width:calc(100% - 2 * var(--circuit-gutter))}
+ .circuit-pool .page-heading{margin-bottom:14px}
+ .circuit-pool .page-title{font-size:clamp(24px,7vw,32px);margin-bottom:8px}
+ .circuit-pool .page-description{font-size:12px;line-height:1.55}
+ .circuit-pool .workspace-card{padding:13px;border-radius:8px}
+ .circuit-pool .section-title-row{gap:8px;margin-bottom:10px}
+ .circuit-pool .section-title-row h2{font-size:17px}
+ .circuit-pool .economy-secondary-button{min-height:36px;padding:0 9px;font-size:11px}
+ .circuit-directory-table th,.circuit-directory-table td{padding:7px 4px;font-size:10px;line-height:1.35}
+ .circuit-directory-table th:nth-child(1){width:23%}
+ .circuit-directory-table th:nth-child(2){width:37%}
+ .circuit-directory-table th:nth-child(3){width:15%}
+ .circuit-directory-table th:nth-child(4){width:25%}
+ .circuit-name-button{font-size:10px;line-height:1.35}
  .circuit-modal-backdrop{padding:8px}
- .circuit-modal{max-height:calc(100dvh - 16px);padding:14px}
+ .circuit-modal{max-height:calc(100svh - 16px);padding:13px;border-radius:12px}
+ .circuit-modal-head{gap:8px;margin-bottom:12px}
+ .circuit-modal-head h2{font-size:clamp(18px,5.5vw,24px);line-height:1.2}
+ .circuit-layout-image{max-height:210px;aspect-ratio:16/9;margin-bottom:10px}
+ .circuit-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .circuit-detail-grid>div{padding:9px;gap:5px}
+ .circuit-detail-grid small{font-size:9px;line-height:1.3}
+ .circuit-detail-grid strong{font-size:13px}
+ .circuit-record-note{font-size:10px;line-height:1.5;margin-top:10px}
+ .circuit-input-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .circuit-admin-table{min-width:1040px}
+ .circuit-admin-list .s5-table-wrap{max-height:55svh}
 }
+@media(max-width:360px){.circuit-pool{--circuit-gutter:10px}.circuit-input-grid{grid-template-columns:1fr}}
