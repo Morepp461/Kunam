@@ -1,5 +1,4 @@
 import {useCallback,useEffect,useState} from "react";
-import type {Session} from "@supabase/supabase-js";
 import {ArrowLeft,Coins,RefreshCw,Save,Wallet} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
@@ -10,8 +9,8 @@ type Counts={role_scope:string;quest_type:string;total:number};
 const labels:Record<Difficulty,string>={easy:"Easy",normal:"Normal",hard:"Hard",elite:"Elite"};
 const order:Difficulty[]=["easy","normal","hard","elite"];
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
-export default function AdminQuestEngine({session}:{session:Session}){
- const [rows,setRows]=useState<Reward[]>([]),[amounts,setAmounts]=useState<Record<Difficulty,string>>({easy:"250",normal:"500",hard:"1000",elite:"2500"});
+export default function AdminQuestEngine(){
+ const [amounts,setAmounts]=useState<Record<Difficulty,string>>({easy:"250",normal:"500",hard:"1000",elite:"2500"});
  const [counts,setCounts]=useState<Counts[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[processing,setProcessing]=useState(false);
  const [notice,setNotice]=useState("");
  const load=useCallback(async()=>{
@@ -22,7 +21,7 @@ export default function AdminQuestEngine({session}:{session:Session}){
    supabase.from("caleris_quest_catalog").select("role_scope,quest_type,is_active").eq("is_active",true)
   ]);
   const err=r.error||c.error;if(err){setNotice(err.message);setLoading(false);return;}
-  const rewards=(r.data||[]) as Reward[];setRows(rewards);
+  const rewards=(r.data||[]) as Reward[];
   setAmounts(Object.fromEntries(rewards.map(x=>[x.difficulty,String(x.reward_amount)])) as Record<Difficulty,string>);
   const map=new Map<string,number>();for(const x of c.data||[]){const key=x.role_scope+":"+x.quest_type;map.set(key,(map.get(key)||0)+1);}
   setCounts(Array.from(map.entries()).map(([key,total])=>({role_scope:key.split(":")[0],quest_type:key.split(":")[1],total})));
