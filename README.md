@@ -868,7 +868,7 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 
 ## Team Owner Profit Share
 
-- Setiap End Season, setelah seluruh division selesai dan seluruh prizepool season berhasil dibayarkan, sistem menghitung net cashflow setiap Team Wallet selama tanggal season.
+- Setiap End Season, setelah End Season berakhir (atau tanggal akhir season jika kalender legacy belum memiliki periode End Season), seluruh division selesai, dan seluruh prizepool season berhasil dibayarkan, sistem menghitung net cashflow setiap Team Wallet selama tanggal season.
 - Team Owner menerima 10% dari profit positif tim langsung ke Team Owner Wallet. Tim dengan profit nol atau negatif tidak menerima pembagian.
 - Pencairan otomatis berjalan melalui database scheduler, memakai ledger transaksi ekonomi yang idempotent dan dapat retry jika VreeoBank atau Team Owner Wallet belum tersedia / saldo Bank belum mencukupi.
 - Pencairan pinjaman (principal) tidak dihitung sebagai pendapatan atau biaya operasional. Semua penerimaan dan pengeluaran operasional yang tercatat pada Team Wallet, termasuk prize, sponsor, payroll, dan development, masuk perhitungan profit.
