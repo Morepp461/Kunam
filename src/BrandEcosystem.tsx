@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ArrowLeft,RefreshCw,Handshake,Coins,Target,Globe2,Plus,CheckCircle2} from "lucide-react";
+import {ArrowLeft,RefreshCw,Handshake,Coins,Target,Globe2,Plus,CheckCircle2,X} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -57,7 +57,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     supabase.from("license_seasons").select("id,title,starts_on,status").order("starts_on",{ascending:false}),
     supabase.from("teams").select("id,name").order("name"),
     supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
-    supabase.from("caleris_sponsorship_offers").select("*").order("created_at",{ascending:false}),
+    supabase.from("caleris_sponsorship_offers").select("*").order("created_at",{ascending:false}).order("id",{ascending:false}),
     supabase.from("caleris_sponsorship_offer_revisions").select("*").order("created_at",{ascending:false}).order("id",{ascending:false}),
     supabase.from("caleris_sponsorship_contracts").select("*").order("started_at",{ascending:false}),
     supabase.from("caleris_sponsorship_targets").select("*").order("created_at",{ascending:false}),
@@ -101,9 +101,26 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const driverFans=fans.filter(f=>f.entity_kind==="driver"&&f.member_id===member?.id);
  const totalFans=(rows:Fan[])=>rows.reduce((sum,f)=>sum+Number(f.population||0),0);
  const respond=async(id:string,action:"accept"|"reject"|"counter")=>{
-  const amount=Number(counterAmount);if(action==="counter"&&(!Number.isFinite(amount)||amount<0||Math.round(amount*100)!==amount*100)){setNotice("Nominal counter-offer tidak valid.");return;}
-  await run("owner_respond_sponsorship_offer",{p_offer_id:id,p_action:action,p_amount:action==="counter"?amount:null,p_terms:{summary:counterTerms.trim()}} ,action==="accept"?"Kontrak sponsorship diterima.":action==="reject"?"Offer ditolak.":"Counter-offer dikirim ke sponsor engine.");
-  setCounterId("");setCounterAmount("");setCounterTerms("");
+  const amount=Number(counterAmount);
+  if(action==="counter"&&(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)!==amount*100)){setNotice("Nominal counter harus lebih dari nol dan maksimal dua desimal.");return;}
+  if(!supabase)return;
+  setSaving(true);setNotice("");
+  const {data,error}=await supabase.rpc("owner_respond_sponsorship_offer",{p_offer_id:id,p_action:action,p_amount:action==="counter"?amount:null,p_terms:{summary:counterTerms.trim()}});
+  if(error){setSaving(false);setNotice(error.message);return;}
+  const [o,r,co,ta]=await Promise.all([
+   supabase.from("caleris_sponsorship_offers").select("*").eq("id",id).maybeSingle(),
+   supabase.from("caleris_sponsorship_offer_revisions").select("*").eq("offer_id",id).order("created_at").order("id"),
+   action==="accept"?supabase.from("caleris_sponsorship_contracts").select("*").order("started_at",{ascending:false}):Promise.resolve({data:contracts,error:null}),
+   action==="accept"?supabase.from("caleris_sponsorship_targets").select("*").order("created_at",{ascending:false}):Promise.resolve({data:targets,error:null})
+  ]);
+  const issue=o.error||r.error||co.error||ta.error;
+  if(issue){setSaving(false);setNotice(issue.message);return;}
+  if(o.data)setOffers(current=>current.map(item=>item.id===id?o.data as Offer:item));
+  setRevisions(current=>[...current.filter(item=>item.offer_id!==id),...((r.data||[]) as Revision[])]);
+  if(action==="accept"){setContracts((co.data||[]) as Contract[]);setTargets((ta.data||[]) as Target[]);}
+  const result=data as {status?:string;counter_count?:number}|null;
+  setSaving(false);setCounterId("");setCounterAmount("");setCounterTerms("");
+  setNotice(action==="counter"?(result?.status==="rejected"?"Sponsor langsung menolak counter di luar batas fleksibilitas.":"Counter diproses otomatis oleh Sponsor Engine.") : action==="accept"?"Kontrak sponsorship diterima.":"Offer ditolak.");
  };
  const createSponsor=async()=>{
   const result=await run("admin_upsert_brand_sponsor",{p_id:null,p_name:sponsorName,p_industry:industry,p_tier_key:tierKey||null,p_budget:Number(budget),p_flexibility:Number(flex),p_region_scope:"regional",p_logo_url:null,p_description:null},"Sponsor dibuat.");
@@ -245,6 +262,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
   <header className="page-heading"><span className="section-eyebrow">BRAND ECOSYSTEM · {mode==="team"?"TEAM OWNER":"DRIVER PROFILE"}</span><h1 className="page-title">{mode==="team"?"Team Sponsorship":"Reputation & Fans"}</h1><p className="page-description">{mode==="team"?"Negosiasi sponsor dilakukan Team Owner. Kontrak, bonus, target, dan settlement tercatat otomatis.":"Reputasi dan fan population driver ditampilkan sebagai agregat regional."}</p></header>
   {notice&&<div className="license-notice" role="status">{notice}</div>}
+  {counterId&&<div className="brand-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!saving)setCounterId("");}}><section className="brand-counter-modal" role="dialog" aria-modal="true" aria-labelledby="brand-counter-title"><header><div><span className="section-eyebrow">SPONSOR NEGOTIATION</span><h2 id="brand-counter-title">Ajukan Counter</h2></div><button className="brand-modal-close" aria-label="Tutup popup" disabled={saving} onClick={()=>setCounterId("")}><X size={19}/></button></header><p className="brand-card-help">Sponsor akan langsung memproses nominal ini. Penawaran yang melewati batas fleksibilitas sponsor akan ditolak, bukan dibalas dengan counter baru.</p><label>Nominal Counter (€)<input autoFocus type="number" min="0.01" step="0.01" value={counterAmount} onChange={e=>setCounterAmount(e.target.value)} placeholder="Masukkan nominal counter"/></label><label>Catatan / Ketentuan (opsional)<textarea rows={3} value={counterTerms} onChange={e=>setCounterTerms(e.target.value)} placeholder="Tambahkan catatan untuk sponsor"/></label><footer><button className="action" disabled={saving} onClick={()=>setCounterId("")}>Batal</button><button className="action primary" disabled={saving||!counterAmount||Number(counterAmount)<=0} onClick={()=>void respond(counterId,"counter")}>{saving?"Memproses...":"Kirim Counter"}</button></footer></section></div>}
   <div className="brand-stats">
    <article><span>{mode==="team"?"TEAM REPUTATION":"DRIVER REPUTATION"}</span><strong>{reputation?num(reputation.score):"—"}</strong><small>{reputation?.band||"Belum dinilai"}</small></article>
    <article><span>FAN POPULATION</span><strong>{num(totalFans(fansFor))}</strong><small>Agregat regional</small></article>
@@ -254,7 +272,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   {mode==="team"&&<>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">SPONSOR OFFERS</span><h2>Penawaran Masuk</h2></div><button className="economy-secondary-button" onClick={()=>void refresh()}><RefreshCw size={15}/> Refresh</button></div>
     {visibleOffers.length===0?<p className="muted">Belum ada sponsor offer untuk tim ini.</p>:visibleOffers.map(o=>{const latest=lastRevision(o.id);const timeline=revisions.filter(r=>r.offer_id===o.id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));return <article className="brand-list-item" key={o.id}><div><strong>{sponsor(o.sponsor_id)}</strong><span>{money(latest?.amount??o.proposed_amount)} · {o.status} · {o.counter_count||0}/3 counter Owner</span><p>{String(latest?.terms?.summary||o.terms?.summary||"Ketentuan sponsor")}</p><div className="brand-revision-timeline">{timeline.map((r,i)=><span key={o.id+"-"+i}><b>{r.actor_kind==="member"?"Team Owner":"Sponsor"}</b> · {money(Number(r.amount))} · {r.response==="countered"?"Counter":r.response==="accepted"?"Menerima":r.response==="rejected"?"Menolak":"Penawaran"}</span>)}</div>{o.status==="negotiating"&&latest?.actor_kind==="member"&&<small className="brand-config-hint">Sponsor sedang memproses counter secara otomatis.</small>}</div>{o.status==="offered"&&latest?.actor_kind==="admin"&&<div className="brand-inline"><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"accept")}><CheckCircle2 size={14}/> Accept</button><button className="action" disabled={saving} onClick={()=>{setCounterId(o.id);setCounterAmount(String(latest.amount));}}>Counter</button><button className="action" disabled={saving} onClick={()=>void respond(o.id,"reject")}>Reject</button></div>}
-     {counterId===o.id&&<div className="brand-counter"><label>Counter amount (€)<input type="number" min="0" value={counterAmount} onChange={e=>setCounterAmount(e.target.value)}/></label><label>Terms<textarea rows={2} value={counterTerms} onChange={e=>setCounterTerms(e.target.value)}/></label><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"counter")}>Kirim counter</button></div>}
+     
     </article>})}
    </section>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CONTRACTS & TARGETS</span><h2>Partnership Portfolio</h2></div><Handshake size={18}/></div>

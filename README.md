@@ -646,3 +646,17 @@ Brand Ecosystem sekarang berjalan sebagai game engine berbasis event, bukan rang
 - 20261117360000_brand_division_scoped_targets_and_trust.sql
 - 20261117370000_brand_sponsor_counter_budget_guard.sql
 - 20261117380000_brand_revision_monotonic_timestamps.sql
+
+
+### Sponsor Counter UX & Decision Rules
+
+- Counter Team Owner dibuka melalui popup modal, bukan form inline di dalam kartu sponsor.
+- Sponsor Engine memutuskan counter secara sinkron pada transaksi perubahan status offer; tidak ada tombol AI Sponsor Respond/manual.
+- Counter yang melampaui nominal awal ditambah fleksibilitas sponsor langsung ditolak. Counter yang melampaui budget sponsor juga langsung ditolak.
+- Counter yang masih dalam batas fleksibilitas dan budget diterima sebagai penawaran final sponsor.
+- UI hanya memperbarui offer dan riwayat revisi terkait setelah counter; kartu sponsor tetap pada posisi semula tanpa full-page refresh.
+- Riwayat counter diurutkan berdasarkan timestamp revisi dan ID agar urutan percakapan konsisten.
+
+Migrations:
+- 20261117400000_sponsor_counter_immediate_decision.sql
+- 20261117410000_sponsor_counter_trigger_result.sql
