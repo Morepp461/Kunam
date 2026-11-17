@@ -1,7 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 
-const OWNER_USER_ID = "cf35c0be-f660-49ab-a56f-9a3080b8252d";
 const ALLOWED_SCOPES = ["circuits:read", "seasons:read", "teams:read", "drivers:read", "rounds:read"] as const;
 type Scope = typeof ALLOWED_SCOPES[number];
 
@@ -45,10 +44,12 @@ async function authenticate(req: Request, requiredScope?: Scope) {
   if (!/^cm_live_[A-Za-z0-9_-]{40,}$/.test(token)) return { error: "API key missing or invalid.", status: 401 } as const;
   const db = serviceClient();
   const hash = await sha256(token);
+  const { data: owner, error: ownerError } = await db.from("caleris_developer_api_owner").select("owner_user_id").eq("singleton", true).maybeSingle();
+  if (ownerError || !owner?.owner_user_id) return { error: "Developer API owner is not configured.", status: 503 } as const;
   const { data: key, error } = await db.from("caleris_api_keys")
     .select("id,owner_user_id,scopes,expires_at,revoked_at")
     .eq("key_hash", hash).maybeSingle();
-  if (error || !key || key.owner_user_id !== OWNER_USER_ID || key.revoked_at ||
+  if (error || !key || key.owner_user_id !== owner.owner_user_id || key.revoked_at ||
       (key.expires_at && new Date(key.expires_at).getTime() <= Date.now())) {
     return { error: "API key is invalid, expired, or revoked.", status: 401 } as const;
   }
