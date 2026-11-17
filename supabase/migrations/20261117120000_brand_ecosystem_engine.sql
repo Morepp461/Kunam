@@ -178,7 +178,7 @@ create or replace function public.owner_respond_sponsorship_offer(
  p_offer_id uuid,p_action text,p_amount numeric default null,p_terms jsonb default '{}'::jsonb
 ) returns jsonb language plpgsql security definer set search_path='' as $$
 declare v_member public.members%rowtype;v_offer public.caleris_sponsorship_offers%rowtype;v_last public.caleris_sponsorship_offer_revisions%rowtype;
- v_count integer;v_contract uuid;
+ v_count integer;v_contract uuid;v_duration integer;v_season record;v_index integer:=0;v_bonus numeric;
 begin
  select m.* into v_member from public.profiles p join public.members m on m.id=p.member_id where p.user_id=(select auth.uid());
  if not found or v_member.role<>'Owner' then raise exception 'Hanya Team Owner yang dapat bernegosiasi.'; end if;
@@ -201,12 +201,20 @@ begin
    select * into v_last from public.caleris_sponsorship_offer_revisions where offer_id=v_offer.id order by created_at desc,id desc limit 1;
    if v_last.actor_kind<>'admin' then raise exception 'Sponsor belum memberikan penawaran final.'; end if;
    v_contract:=private.create_sponsorship_contract_from_offer(v_offer.id);
-   update public.caleris_sponsorship_contracts set duration_seasons=greatest(1,least(5,coalesce(nullif(v_last.terms->>'duration_seasons','')::integer,1))),
-    annual_contract_amount=v_last.amount,bonus_pool_total=round(v_last.amount*coalesce((select (config_value->>'value')::numeric from public.caleris_brand_ecosystem_config where config_key='bonus_pool_percent'),50)/100,2)
-    where id=v_contract;
-   insert into public.caleris_sponsorship_payment_schedule(contract_id,season_id,amount,due_at)
-   values(v_contract,v_offer.season_id,v_last.amount,now()) on conflict(contract_id,season_id) do nothing;
-   return jsonb_build_object('status','accepted','contract_id',v_contract);
+   v_duration:=greatest(1,least(5,coalesce(nullif(v_last.terms->>'duration_seasons','')::integer,1)));
+   v_bonus:=round(v_last.amount*coalesce((select (config_value->>'value')::numeric from public.caleris_brand_ecosystem_config where config_key='bonus_pool_percent'),50)/100,2);
+   update public.caleris_sponsorship_contracts set duration_seasons=v_duration,
+    annual_contract_amount=v_last.amount,bonus_pool_total=v_bonus where id=v_contract;
+   for v_season in select id,starts_on from public.license_seasons
+     where starts_on >= (select starts_on from public.license_seasons where id=v_offer.season_id)
+     order by starts_on asc limit v_duration
+   loop
+     v_index:=v_index+1;
+     insert into public.caleris_sponsorship_payment_schedule(contract_id,season_id,amount,due_at)
+     values(v_contract,v_season.id,v_last.amount,case when v_index=1 then now() else (v_season.starts_on::timestamp at time zone 'UTC') end)
+     on conflict(contract_id,season_id) do nothing;
+   end loop;
+   return jsonb_build_object('status','accepted','contract_id',v_contract,'duration_seasons',v_duration,'bonus_pool',v_bonus);
  elsif p_action='reject' then
    select * into v_last from public.caleris_sponsorship_offer_revisions where offer_id=v_offer.id order by created_at desc,id desc limit 1;
    if v_last.actor_kind<>'admin' then raise exception 'Menunggu respons sponsor.'; end if;
@@ -257,14 +265,14 @@ begin
   where not exists(select 1 from public.caleris_sponsorship_contracts c where c.target_kind='team' and c.target_team_id=t.id and c.status='active' and c.season_id=p_season_id)
  loop
   for v_sponsor in
-   select s.* from public.caleris_sponsors s join public.caleris_sponsor_tier_rules tr on tr.tier_key=s.tier_key and tr.is_active
+   select s.*,tr.minimum_budget as tier_minimum_budget from public.caleris_sponsors s join public.caleris_sponsor_tier_rules tr on tr.tier_key=s.tier_key and tr.is_active
    where s.is_active and s.available_budget is not null and s.available_budget>=tr.minimum_budget
     and v_team.score>=tr.minimum_team_reputation and v_team.fans>=tr.minimum_fan_population
     and (tr.maximum_budget is null or s.available_budget<=tr.maximum_budget)
     and not exists(select 1 from public.caleris_sponsorship_offers o where o.sponsor_id=s.id and o.target_team_id=v_team.id and o.season_id=p_season_id and o.status in ('offered','negotiating','accepted'))
     and not exists(select 1 from public.caleris_sponsorship_contracts c where c.sponsor_id=s.id and c.target_team_id=v_team.id and c.season_id=p_season_id and c.status='active')
   loop
-   v_amount:=least(v_sponsor.available_budget,greatest(v_sponsor.minimum_budget,coalesce(v_sponsor.minimum_budget,0)));
+   v_amount:=least(v_sponsor.available_budget,v_sponsor.tier_minimum_budget);
    insert into public.caleris_sponsorship_offers(sponsor_id,target_kind,target_team_id,season_id,proposed_amount,terms,status,expires_at,created_by,generated_by_engine)
    values(v_sponsor.id,'team',v_team.id,p_season_id,v_amount,jsonb_build_object('tier',v_sponsor.tier_key,'duration_seasons',1),'offered',now()+interval '7 days',(select auth.uid()),true)
    returning id into v_offer;
