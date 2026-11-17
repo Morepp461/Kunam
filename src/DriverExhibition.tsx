@@ -69,8 +69,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         host.appendChild(renderer.domElement);
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x080a0d);
-        scene.fog = new THREE.FogExp2(0x080a0d, 0.012);
+        scene.background = new THREE.Color(0xd9d3c8);
+        scene.fog = new THREE.FogExp2(0xd9d3c8, 0.0035);
         const camera = new THREE.PerspectiveCamera(56, host.clientWidth / host.clientHeight, 0.1, 180);
         camera.position.set(0, 3.8, 15);
         let yaw = 0;
@@ -85,6 +85,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const disposableGeometries: Three.BufferGeometry[] = [];
         const disposableMaterials: Three.Material[] = [];
         const textures: Three.Texture[] = [];
+        const driverMotions: Array<{ figure: Three.Group; phase: number; speed: number; style: number; head?: Three.Bone; spine?: Three.Bone; leftArm?: Three.Bone; rightArm?: Three.Bone; base?: { head?: Three.Euler; spine?: Three.Euler; leftArm?: Three.Euler; rightArm?: Three.Euler } }> = [];
 
         const material = (color: number, roughness = 0.62, metalness = 0.12) => {
           const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -106,21 +107,21 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const sphere = (parent: Three.Object3D, pos: [number, number, number], scale: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.SphereGeometry(1, 20, 14), mat, parent, pos, scale);
 
-        scene.add(new THREE.HemisphereLight(0xdce5ef, 0x34302a, 2.15));
-        const keyLight = new THREE.DirectionalLight(0xffead0, 3.1);
+        scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 3.0));
+        const keyLight = new THREE.DirectionalLight(0xfff0d8, 4.2);
         keyLight.position.set(-8, 16, 10);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xa9c6e5, 1.45);
+        const fillLight = new THREE.DirectionalLight(0xf0f5ff, 2.2);
         fillLight.position.set(12, 8, -18);
         scene.add(fillLight);
 
-        const floorMat = material(0x292d32, 0.3, 0.48);
-        const wallMat = material(0x252a30, 0.72, 0.3);
-        const darkMetal = material(0x454a50, 0.36, 0.68);
+        const floorMat = material(0xc9c3b8, 0.2, 0.18);
+        const wallMat = material(0xe4ded2, 0.58, 0.08);
+        const darkMetal = material(0x77736b, 0.28, 0.72);
         const redMetal = material(0x8e2932, 0.34, 0.55);
-        const goldMetal = material(0xb49a61, 0.3, 0.62);
+        const goldMetal = material(0xc4a66a, 0.22, 0.72);
         const floor = mesh(new THREE.PlaneGeometry(100, 150), floorMat, scene, [0, 0, -35]);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = !mobile;
@@ -245,23 +246,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             });
             figure.add(human);
 
-            const suitBlack = material(0x171b20, 0.82, 0.08);
-            const calerisRed = material(0x9e2631, 0.58, 0.12);
-            const calerisGold = material(0xb69a5e, 0.38, 0.62);
-            box(figure, [0.42, 0.16, 0.035], [0, 1.42, 0.255], calerisRed);
-            box(figure, [0.045, 0.62, 0.028], [-0.18, 1.31, 0.26], calerisGold);
-            box(figure, [0.045, 0.62, 0.028], [0.18, 1.31, 0.26], calerisRed);
-            box(figure, [0.28, 0.055, 0.025], [0, 1.55, 0.27], calerisGold);
-            box(figure, [0.24, 0.11, 0.03], [0, 0.88, 0.205], suitBlack);
-            for (const side of [-1, 1]) {
-              const sleeve = mesh(new THREE.CapsuleGeometry(0.095, 0.32, 6, 12), suitBlack, figure, [side * 0.29, 1.34, 0]);
-              sleeve.rotation.z = side * -0.12;
-              const trouser = mesh(new THREE.CapsuleGeometry(0.105, 0.55, 6, 12), suitBlack, figure, [side * 0.13, 0.48, 0]);
-              trouser.rotation.z = side * 0.025;
-              box(figure, [0.16, 0.075, 0.04], [side * 0.27, 1.62, 0.04], calerisRed);
-              box(figure, [0.13, 0.07, 0.035], [side * 0.105, 0.79, 0.205], calerisGold);
-              box(figure, [0.13, 0.12, 0.16], [side * 0.19, 0.12, 0.04], suitBlack);
-            }
+            // Keep the original human silhouette and fitted garment mesh; no rigid add-on panels.
             const numberCanvas = document.createElement("canvas");
             numberCanvas.width = 256;
             numberCanvas.height = 128;
@@ -321,6 +306,18 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             sphere(figure, [0.88, 0.72, 0.2], [0.17, 0.09, 0.06], visor);
   
           }
+          const motion: (typeof driverMotions)[number] = { figure, phase: (index * 2.399) % (Math.PI * 2), speed: 0.72 + (index % 5) * 0.13, style: index % 4 };
+          figure.traverse((obj) => {
+            if (!(obj as Three.Bone).isBone) return;
+            const bone = obj as Three.Bone;
+            const name = bone.name.toLowerCase();
+            if (/head|neck/.test(name) && !motion.head) motion.head = bone;
+            else if (/spine|chest|upperchest/.test(name) && !motion.spine) motion.spine = bone;
+            else if (/left.*arm|arm.*left|upperarm_l|mixamorigleftarm/.test(name) && !motion.leftArm) motion.leftArm = bone;
+            else if (/right.*arm|arm.*right|upperarm_r|mixamorigrightarm/.test(name) && !motion.rightArm) motion.rightArm = bone;
+          });
+          motion.base = { head: motion.head?.rotation.clone(), spine: motion.spine?.rotation.clone(), leftArm: motion.leftArm?.rotation.clone(), rightArm: motion.rightArm?.rotation.clone() };
+          driverMotions.push(motion);
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
@@ -503,6 +500,18 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           frame = requestAnimationFrame(animate);
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
+          const seconds = time / 1000;
+          driverMotions.forEach((motion) => {
+            const t = seconds * motion.speed + motion.phase;
+            const breath = Math.sin(t * 1.35);
+            motion.figure.position.y = breath * 0.018;
+            motion.figure.rotation.y = Math.sin(t * 0.43) * (motion.style === 1 ? 0.075 : 0.045);
+            motion.figure.rotation.z = Math.sin(t * 0.7 + 0.8) * 0.012;
+            if (motion.head && motion.base?.head) motion.head.rotation.set(motion.base.head.x + Math.sin(t * 0.58) * 0.055, motion.base.head.y + Math.sin(t * 0.31 + motion.style) * 0.16, motion.base.head.z + Math.sin(t * 0.42) * 0.025);
+            if (motion.spine && motion.base?.spine) motion.spine.rotation.set(motion.base.spine.x + breath * 0.018, motion.base.spine.y, motion.base.spine.z + Math.sin(t * 0.52) * 0.018);
+            if (motion.leftArm && motion.base?.leftArm) motion.leftArm.rotation.set(motion.base.leftArm.x + Math.sin(t * 0.38) * (motion.style === 2 ? 0.11 : 0.035), motion.base.leftArm.y, motion.base.leftArm.z + Math.sin(t * 0.61) * 0.035);
+            if (motion.rightArm && motion.base?.rightArm) motion.rightArm.rotation.set(motion.base.rightArm.x + Math.sin(t * 0.34 + 1) * (motion.style === 3 ? 0.1 : 0.032), motion.base.rightArm.y, motion.base.rightArm.z - Math.sin(t * 0.57) * 0.03);
+          });
           yaw += (targetYaw - yaw) * Math.min(1, delta * 7);
           pitch += (targetPitch - pitch) * Math.min(1, delta * 7);
           const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
