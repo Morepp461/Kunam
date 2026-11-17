@@ -5,8 +5,8 @@ import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 
 type Account={id:string;asset_type:"DDP"|"TDP";balance:number;member_id:string|null;team_id:string|null};
-type Member={id:string;role:string|null;team_id:string|null;character_name:string|null};
-type Team={id:string;name:string};
+type Member={id:string;role:string|null;team_id:string|null;character_name:string|null;license:string|null};
+type Team={id:string;name:string;division_key:string|null};
 type CashWallet={id:string;balance:number};
 type Attribute={id:string;key:string;value:number;updated_at:string};
 type Snapshot={id:string;season_id:string;asset_type:string;snapshot_stage:"season_end"|"season_baseline";attributes:Record<string,number>;created_at:string};
@@ -27,14 +27,14 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
   setLoading(true);setNotice("");
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe||!p?.member_id){setNotice(pe?.message||"Akun belum terhubung ke member.");setLoading(false);return;}
-  const {data:m,error:me}=await supabase.from("members").select("id,role,team_id,character_name").eq("id",p.member_id).maybeSingle();
+  const {data:m,error:me}=await supabase.from("members").select("id,role,team_id,character_name,license").eq("id",p.member_id).maybeSingle();
   if(me||!m){setNotice(me?.message||"Member tidak ditemukan.");setLoading(false);return;}
   setMember(m as Member);
   let ownerId=m.id;
   let teamData:Team|null=null;
   if(asset==="TDP"){
    if(!m.team_id){setTeam(null);setAccount(null);setCashWallet(null);setAttributes([]);setLoading(false);setNotice("Member belum memiliki tim untuk mengelola Development mobil.");return;}
-   const {data:t,error:te}=await supabase.from("teams").select("id,name").eq("id",m.team_id).maybeSingle();
+   const {data:t,error:te}=await supabase.from("teams").select("id,name,division_key").eq("id",m.team_id).maybeSingle();
    if(te){setNotice(te.message);setLoading(false);return;}
    teamData=t as Team|null;setTeam(teamData);ownerId=m.team_id;
   }else setTeam(null);
@@ -47,8 +47,8 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
    :supabase.from("economy_wallet_accounts").select("id,balance").eq("account_kind","team").eq("team_id",ownerId).eq("is_active",true).maybeSingle();
   const devAccountQuery=supabase.from("caleris_development_accounts").select("id,asset_type,balance,member_id,team_id").eq("asset_type",asset).eq(asset==="DDP"?"member_id":"team_id",ownerId).maybeSingle();
   const priceQuery=asset==="DDP"
-   ?supabase.from("caleris_driver_development_pricing").select("attribute_key,cash_eur_per_point").eq("cash_is_configured",true)
-   :supabase.from("caleris_team_development_pricing").select("part_key,cash_eur_per_point").eq("cash_is_configured",true);
+   ?supabase.from("caleris_driver_development_tier_pricing").select("attribute_key,cash_eur_per_point").eq("license_tier",String(m.license||"").trim().toLowerCase()).eq("is_configured",true)
+   :supabase.from("caleris_team_development_division_pricing").select("part_key,cash_eur_per_point").eq("division_key",String(teamData?.division_key||"").trim().toLowerCase()).eq("is_configured",true);
   const [{data:a,error:ae},{data:w,error:we},{data:rows,error:re},{data:priceRows,error:priceError},{data:ss,error:se},{data:seasonRows,error:sre}]=await Promise.all([
    devAccountQuery,cashWalletQuery,
    supabase.from(attrTable).select("id,current_value,updated_at,"+keyColumn).eq(ownerColumn,ownerId).order(keyColumn),
@@ -87,7 +87,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const latestBaseline=history.find(s=>s.snapshot_stage==="season_baseline");
  return <section className="workspace development-token-workspace">
   <div className="development-page-actions"><Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link></div>
-  <header className="page-heading"><span className="section-eyebrow">DEVELOPMENT ECONOMY</span><h1 className="page-title">{asset==="DDP"?"Driver Development":"Team Car Development"}</h1><p className="page-description">{asset==="DDP"?"Development delapan atribut pribadi Driver.":"Development enam belas part mobil milik tim."} Upgrade utama menggunakan saldo wallet; token hanya untuk development gratis dari race reward.</p></header>
+  <header className="page-heading"><span className="section-eyebrow">DEVELOPMENT ECONOMY</span><h1 className="page-title">{asset==="DDP"?"Driver Development":"Team Car Development"}</h1><p className="page-description">{asset==="DDP"?"Development delapan atribut pribadi Driver. Tier harga: "+(member?.license||"belum ditetapkan")+".":"Development enam belas part mobil milik tim. Divisi: "+(team?.division_key||"belum ditetapkan")+"."} Upgrade utama menggunakan saldo wallet; token hanya untuk development gratis dari race reward.</p></header>
   {loading?<div className="workspace-card">Memuat data Development...</div>:<>
    <div className="development-balance-grid">
     <article className="development-token-hero"><div><span className="section-eyebrow">WALLET CASH</span><strong>{money(cashBalance)}</strong><small>{asset==="DDP"?member?.character_name||"Driver":team?.name||"Team"}</small></div><span className="development-token-icon"><Wallet size={27}/></span></article>
