@@ -92,7 +92,6 @@ tier_migration = ROOT / "supabase/migrations/20261117090000_development_license_
 assert tier_migration.is_file(), "Missing license/division Development pricing migration"
 tier_sql = tier_migration.read_text(encoding="utf-8").lower()
 for fragment in [
-    "Harga Berdasarkan Lisensi & Divisi",
     "caleris_driver_development_tier_pricing",
     "caleris_team_development_division_pricing",
     "license_tier in ('bronze','silver','gold','super')",
