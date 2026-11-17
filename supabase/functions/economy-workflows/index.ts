@@ -33,6 +33,18 @@ Deno.serve(async(req:Request)=>{
    const {data,error}=await admin.rpc("member_upgrade_development_attribute",{p_actor_id:actor,p_scope:scope,p_attribute_key:attributeKey,p_new_value:newValue,p_payment_method:paymentMethod});
    if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
   }
+  if(action==="start_driver_training"){
+   const trainingKey=typeof body.trainingKey==="string"?body.trainingKey:"",modeKey=typeof body.modeKey==="string"?body.modeKey:"";
+   if(!/^[a-z_]{3,48}$/.test(trainingKey)||!["light","normal","hard"].includes(modeKey))return respond(400,{error:"Pilihan latihan tidak valid."});
+   const {data,error}=await admin.rpc("member_start_driver_training",{p_actor_id:actor,p_training_key:trainingKey,p_mode_key:modeKey});
+   if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
+  }
+  if(action==="complete_driver_training"){
+   const attemptId=typeof body.attemptId==="string"?body.attemptId:"";
+   if(!/^[0-9a-f-]{36}$/i.test(attemptId))return respond(400,{error:"Sesi latihan tidak valid."});
+   const {data,error}=await admin.rpc("member_complete_driver_training",{p_actor_id:actor,p_attempt_id:attemptId});
+   if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
+  }
   if(action==="team_cash_loan_preview"){
    const {data,error}=await admin.rpc("member_team_cash_loan_preview",{p_actor_id:actor});if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
   }
