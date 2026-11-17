@@ -14,3 +14,5 @@
 .brand-trust-inputs>strong{font-size:13px;color:var(--text)}
 .brand-config-group .brand-config-hint{margin:0 0 10px}
 @media(max-width:460px){.brand-metric-grid{grid-template-columns:1fr}}
+
+.brand-revision-timeline{display:grid;gap:5px;margin-top:9px;padding:9px 11px;border-left:2px solid var(--gold);background:rgba(255,255,255,.025);border-radius:0 8px 8px 0}.brand-revision-timeline span{font-size:11px;letter-spacing:0;color:var(--muted)}.brand-revision-timeline b{color:var(--text);font-weight:700}.brand-stats article{min-width:0}.brand-ecosystem h2 svg{display:inline-block;vertical-align:middle;margin-right:5px;color:var(--gold)}

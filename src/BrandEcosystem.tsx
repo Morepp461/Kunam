@@ -58,7 +58,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     supabase.from("teams").select("id,name").order("name"),
     supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
     supabase.from("caleris_sponsorship_offers").select("*").order("created_at",{ascending:false}),
-    supabase.from("caleris_sponsorship_offer_revisions").select("*").order("created_at",{ascending:false}),
+    supabase.from("caleris_sponsorship_offer_revisions").select("*").order("created_at",{ascending:false}).order("id",{ascending:false}),
     supabase.from("caleris_sponsorship_contracts").select("*").order("started_at",{ascending:false}),
     supabase.from("caleris_sponsorship_targets").select("*").order("created_at",{ascending:false}),
     supabase.from("caleris_sponsor_tier_rules").select("*").order("tier_key"),
@@ -94,7 +94,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   if(error){setNotice(error.message);return null;}setNotice(success);await refresh();return data;
  };
  const sponsor=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
- const lastRevision=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>b.created_at.localeCompare(a.created_at))[0];
+ const lastRevision=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id))[0];
  const visibleOffers=mode==="admin"?offers.filter(o=>o.target_kind==="team"):offers.filter(o=>o.target_kind==="team"&&o.target_team_id===member?.team_id);
  const visibleContracts=mode==="admin"?contracts.filter(c=>c.target_kind==="team"):contracts.filter(c=>c.target_kind==="team"&&c.target_team_id===member?.team_id);
  const teamFans=fans.filter(f=>f.entity_kind==="team"&&f.team_id===(mode==="admin"?repTeam:member?.team_id));
@@ -253,7 +253,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   </div>
   {mode==="team"&&<>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">SPONSOR OFFERS</span><h2>Penawaran Masuk</h2></div><button className="economy-secondary-button" onClick={()=>void refresh()}><RefreshCw size={15}/> Refresh</button></div>
-    {visibleOffers.length===0?<p className="muted">Belum ada sponsor offer untuk tim ini.</p>:visibleOffers.map(o=>{const latest=lastRevision(o.id);return <article className="brand-list-item" key={o.id}><div><strong>{sponsor(o.sponsor_id)}</strong><span>{money(latest?.amount??o.proposed_amount)} · {o.status} · {o.counter_count||0}/3 counters</span><p>{String(latest?.terms?.summary||o.terms?.summary||"Ketentuan sponsor")}</p></div>{o.status==="offered"&&latest?.actor_kind==="admin"&&<div className="brand-inline"><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"accept")}><CheckCircle2 size={14}/> Accept</button><button className="action" disabled={saving} onClick={()=>{setCounterId(o.id);setCounterAmount(String(latest.amount));}}>Counter</button><button className="action" disabled={saving} onClick={()=>void respond(o.id,"reject")}>Reject</button></div>}
+    {visibleOffers.length===0?<p className="muted">Belum ada sponsor offer untuk tim ini.</p>:visibleOffers.map(o=>{const latest=lastRevision(o.id);const timeline=revisions.filter(r=>r.offer_id===o.id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));return <article className="brand-list-item" key={o.id}><div><strong>{sponsor(o.sponsor_id)}</strong><span>{money(latest?.amount??o.proposed_amount)} · {o.status} · {o.counter_count||0}/3 counter Owner</span><p>{String(latest?.terms?.summary||o.terms?.summary||"Ketentuan sponsor")}</p><div className="brand-revision-timeline">{timeline.map((r,i)=><span key={o.id+"-"+i}><b>{r.actor_kind==="member"?"Team Owner":"Sponsor"}</b> · {money(Number(r.amount))} · {r.response==="countered"?"Counter":r.response==="accepted"?"Menerima":r.response==="rejected"?"Menolak":"Penawaran"}</span>)}</div>{o.status==="negotiating"&&latest?.actor_kind==="member"&&<small className="brand-config-hint">Sponsor sedang memproses counter secara otomatis.</small>}</div>{o.status==="offered"&&latest?.actor_kind==="admin"&&<div className="brand-inline"><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"accept")}><CheckCircle2 size={14}/> Accept</button><button className="action" disabled={saving} onClick={()=>{setCounterId(o.id);setCounterAmount(String(latest.amount));}}>Counter</button><button className="action" disabled={saving} onClick={()=>void respond(o.id,"reject")}>Reject</button></div>}
      {counterId===o.id&&<div className="brand-counter"><label>Counter amount (€)<input type="number" min="0" value={counterAmount} onChange={e=>setCounterAmount(e.target.value)}/></label><label>Terms<textarea rows={2} value={counterTerms} onChange={e=>setCounterTerms(e.target.value)}/></label><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"counter")}>Kirim counter</button></div>}
     </article>})}
    </section>
