@@ -5,7 +5,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Gamepad2,
 import "./driver-exhibition.css";
 
 type DriverRow = Record<string, any>;
-type Props = { drivers: DriverRow[]; scope: string };
+type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
 const teamColor = (name: string) => {
@@ -20,12 +20,13 @@ const numberFor = (name: string, index: number) => {
   return String(11 + Math.abs(hash + index * 7) % 88).padStart(2, "0");
 };
 
-export default function DriverExhibition({ drivers, scope }: Props) {
+export default function DriverExhibition({ drivers, gallery = drivers, scope }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneCardRef = useRef<HTMLDivElement>(null);
   const stickPointerRef = useRef<number | null>(null);
   const [stickPosition, setStickPosition] = useState({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const apiRef = useRef<SceneApi | null>(null);
   const [selected, setSelected] = useState<DriverRow | null>(null);
   const [query, setQuery] = useState("");
@@ -173,25 +174,6 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           return mat;
         };
 
-        // CC0 high-detail human base mesh (Grab3D, man-base-character).
-        // License: https://grab3d.com/models/characters/man-base-character/ (CC0 1.0).
-        // The source garment is recolored and finished with Caleris racing-suit panels.
-        let cc0HumanScene: Three.Group | null = null;
-        let cloneHuman: ((source: Three.Object3D) => Three.Object3D) | null = null;
-        try {
-          const [{ GLTFLoader }, skeletonUtils] = await Promise.all([
-            import("three/examples/jsm/loaders/GLTFLoader.js"),
-            import("three/examples/jsm/utils/SkeletonUtils.js"),
-          ]);
-          const loader = new GLTFLoader();
-          const gltf = await loader.loadAsync("https://grab3d.com/dl/man-base-character/man-base-character.glb");
-          if (disposed) return;
-          cc0HumanScene = gltf.scene;
-          cloneHuman = skeletonUtils.clone;
-        } catch (assetError) {
-          console.warn("CC0 driver model could not be loaded; using local fallback figure.", assetError);
-        }
-
         const createDriver = (driver: DriverRow, index: number) => {
           const root = new THREE.Group();
           const column = index % 4;
@@ -217,108 +199,42 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           plaque.rotation.x = -0.08;
           const figure = new THREE.Group();
           root.add(figure);
-          if (cc0HumanScene && cloneHuman) {
-            const human = cloneHuman(cc0HumanScene) as Three.Group;
-            human.scale.setScalar(1.34);
-            human.position.set(0, 0.35, 0);
-            human.traverse((obj) => {
-              const part = obj as Three.Mesh;
-              if (!part.isMesh) return;
-              part.castShadow = !mobile;
-              part.receiveShadow = false;
-              const bounds = new THREE.Box3().setFromObject(part);
-              const centerY = ((bounds.min.y + bounds.max.y) * 0.5 - 0.35) / 1.34;
-              const sourceMaterials = Array.isArray(part.material) ? part.material : [part.material];
-              const adapted = sourceMaterials.map((source) => {
-                const mat = source.clone();
-                const label = (source.name || part.name || "").toLowerCase();
-                const isSkin = /skin|face|eye|teeth|hair|brow|mouth/.test(label) || centerY > 1.48 || centerY < 0.28;
-                if (!isSkin && centerY > 0.38 && centerY < 1.58) {
-                  (mat as Three.MeshStandardMaterial).color?.set(centerY > 0.9 ? 0x191d22 : 0x24282e);
-                  if ("roughness" in mat) (mat as Three.MeshStandardMaterial).roughness = 0.78;
-                  if ("metalness" in mat) (mat as Three.MeshStandardMaterial).metalness = 0.08;
-                }
-                return mat;
-              });
-              part.material = Array.isArray(part.material) ? adapted : adapted[0];
-            });
-            figure.add(human);
-
-            const suitBlack = material(0x171b20, 0.82, 0.08);
-            const calerisRed = material(0x9e2631, 0.58, 0.12);
-            const calerisGold = material(0xb69a5e, 0.38, 0.62);
-            box(figure, [0.42, 0.16, 0.035], [0, 1.42, 0.255], calerisRed);
-            box(figure, [0.045, 0.62, 0.028], [-0.18, 1.31, 0.26], calerisGold);
-            box(figure, [0.045, 0.62, 0.028], [0.18, 1.31, 0.26], calerisRed);
-            box(figure, [0.28, 0.055, 0.025], [0, 1.55, 0.27], calerisGold);
-            box(figure, [0.24, 0.11, 0.03], [0, 0.88, 0.205], suitBlack);
-            for (const side of [-1, 1]) {
-              const sleeve = mesh(new THREE.CapsuleGeometry(0.095, 0.32, 6, 12), suitBlack, figure, [side * 0.29, 1.34, 0]);
-              sleeve.rotation.z = side * -0.12;
-              const trouser = mesh(new THREE.CapsuleGeometry(0.105, 0.55, 6, 12), suitBlack, figure, [side * 0.13, 0.48, 0]);
-              trouser.rotation.z = side * 0.025;
-              box(figure, [0.16, 0.075, 0.04], [side * 0.27, 1.62, 0.04], calerisRed);
-              box(figure, [0.13, 0.07, 0.035], [side * 0.105, 0.79, 0.205], calerisGold);
-              box(figure, [0.13, 0.12, 0.16], [side * 0.19, 0.12, 0.04], suitBlack);
-            }
-            const numberCanvas = document.createElement("canvas");
-            numberCanvas.width = 256;
-            numberCanvas.height = 128;
-            const numberCtx = numberCanvas.getContext("2d");
-            if (numberCtx) {
-              numberCtx.fillStyle = "#f4f0e6";
-              numberCtx.font = "900 88px Arial";
-              numberCtx.textAlign = "center";
-              numberCtx.textBaseline = "middle";
-              numberCtx.fillText(numberFor(driver.character_name || "Driver", index), 128, 66);
-            }
-            const numberTexture = new THREE.CanvasTexture(numberCanvas);
-            numberTexture.colorSpace = THREE.SRGBColorSpace;
-            textures.push(numberTexture);
-            const numberMaterial = new THREE.MeshBasicMaterial({ map: numberTexture, transparent: true, side: THREE.DoubleSide });
-            disposableMaterials.push(numberMaterial);
-            mesh(new THREE.PlaneGeometry(0.3, 0.15), numberMaterial, figure, [0, 1.25, 0.286]);
-          } else {
-            // Anatomical driver silhouette: exposed human face, neck, shoulders and fitted race suit.
-            const pelvis = mesh(new THREE.SphereGeometry(0.34, 32, 24), suit, figure, [0, 0.78, 0]);
-            pelvis.scale.set(1.05, 0.75, 0.8);
-            const torso = mesh(new THREE.CapsuleGeometry(0.34, 0.72, 8, 24), suit, figure, [0, 1.38, 0]);
-            torso.scale.set(1.28, 1.05, 0.82);
-            sphere(figure, [0, 1.84, 0], [0.48, 0.28, 0.38], suit);
-            cylinder(figure, 0.12, 0.14, 0.24, [0, 1.99, 0], skin);
-            // Tailored suit seams and front zip.
-            box(figure, [0.035, 0.68, 0.018], [0, 1.42, 0.31], trim);
-            box(figure, [0.32, 0.055, 0.035], [0, 1.64, 0.34], goldMetal);
-            box(figure, [0.34, 0.08, 0.04], [0, 1.17, 0.32], redMetal);
-            for (const side of [-1, 1]) {
-              const arm = mesh(new THREE.CapsuleGeometry(0.135, 0.62, 8, 18), suit, figure, [side * 0.53, 1.35, 0]);
-              arm.rotation.z = side * -0.18;
-              sphere(figure, [side * 0.65, 0.91, 0.015], [0.135, 0.16, 0.13], glove);
-              const leg = mesh(new THREE.CapsuleGeometry(0.16, 0.66, 8, 18), suit, figure, [side * 0.2, 0.48, 0]);
-              leg.rotation.z = side * 0.035;
-              box(figure, [0.29, 0.17, 0.48], [side * 0.2, 0.1, 0.13], boot);
-              // Gloves, cuff rings and knee reinforcement.
-              cylinder(figure, 0.14, 0.14, 0.09, [side * 0.65, 0.82, 0.015], goldMetal);
-              box(figure, [0.26, 0.19, 0.035], [side * 0.2, 0.47, 0.15], trim);
-            }
-            // Real human head with jaw, ears, eyes, nose, mouth and hair rather than a helmet-shaped capsule.
-            sphere(figure, [0, 2.28, 0], [0.235, 0.31, 0.22], skin);
-            sphere(figure, [0, 2.16, 0.055], [0.19, 0.16, 0.19], skinLight);
-            for (const side of [-1, 1]) {
-              sphere(figure, [side * 0.235, 2.29, 0], [0.055, 0.09, 0.065], skin);
-              sphere(figure, [side * 0.09, 2.32, 0.187], [0.052, 0.035, 0.025], eyeWhite);
-              sphere(figure, [side * 0.09, 2.32, 0.208], [0.022, 0.025, 0.012], iris);
-              sphere(figure, [side * 0.09, 2.38, 0.184], [0.062, 0.018, 0.025], hair);
-            }
-            sphere(figure, [0, 2.25, 0.218], [0.045, 0.075, 0.045], skinLight);
-            sphere(figure, [0, 2.105, 0.205], [0.075, 0.018, 0.018], visor);
-            sphere(figure, [0, 2.49, -0.005], [0.238, 0.13, 0.225], hair);
-            sphere(figure, [0, 2.42, -0.105], [0.22, 0.12, 0.16], hair);
-            // Helmet carried at the driver's side as a separate race accessory.
-            const helmetShell = material(0xd8d5cc, 0.24, 0.56);
-            sphere(figure, [0.88, 0.72, 0.02], [0.22, 0.25, 0.22], helmetShell);
-            sphere(figure, [0.88, 0.72, 0.2], [0.17, 0.09, 0.06], visor);
-  
+          const frameMat = material(0xb69a5e, 0.28, 0.72);
+          const backingMat = material(0x101317, 0.48, 0.35);
+          box(figure, [1.55, 2.25, 0.12], [0, 1.52, 0.02], frameMat);
+          box(figure, [1.39, 2.09, 0.035], [0, 1.52, 0.095], backingMat);
+          const portraitCanvas = document.createElement("canvas");
+          portraitCanvas.width = 512;
+          portraitCanvas.height = 768;
+          const portraitCtx = portraitCanvas.getContext("2d");
+          if (portraitCtx) {
+            const gradient = portraitCtx.createLinearGradient(0, 0, 512, 768);
+            gradient.addColorStop(0, "#34383c"); gradient.addColorStop(1, "#111519");
+            portraitCtx.fillStyle = gradient; portraitCtx.fillRect(0, 0, 512, 768);
+            portraitCtx.fillStyle = "#a52a34"; portraitCtx.fillRect(0, 0, 16, 768);
+            portraitCtx.fillStyle = "#e7d6a1"; portraitCtx.font = "700 34px Arial";
+            portraitCtx.fillText("CALERIS MASTERS", 42, 62);
+            portraitCtx.fillStyle = "#f5f0e5"; portraitCtx.font = "900 52px Arial";
+            portraitCtx.fillText(String(driver.character_name || "DRIVER").toUpperCase().slice(0, 18), 42, 690);
+            portraitCtx.fillStyle = "#c7b276"; portraitCtx.font = "700 28px Arial";
+            portraitCtx.fillText(String(driver.team?.name || "TEAM OWNER").toUpperCase().slice(0, 24), 42, 735);
+          }
+          const portraitTexture = new THREE.CanvasTexture(portraitCanvas);
+          portraitTexture.colorSpace = THREE.SRGBColorSpace;
+          const portraitMaterial = new THREE.MeshBasicMaterial({ map: portraitTexture, side: THREE.DoubleSide });
+          textures.push(portraitTexture); disposableMaterials.push(portraitMaterial);
+          const portrait = mesh(new THREE.PlaneGeometry(1.34, 2.04), portraitMaterial, figure, [0, 1.52, 0.12]);
+          const avatarUrl = typeof driver.avatar_url === "string" ? driver.avatar_url : "";
+          if (avatarUrl) {
+            new THREE.TextureLoader().load(avatarUrl, (texture) => {
+              if (disposed) { texture.dispose(); return; }
+              texture.colorSpace = THREE.SRGBColorSpace;
+              texture.anisotropy = renderer?.capabilities.getMaxAnisotropy() || 1;
+              portraitTexture.dispose();
+              portrait.material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
+              textures.push(texture);
+              disposableMaterials.push(portrait.material as Three.Material);
+            }, undefined, (error) => console.warn("Avatar portrait failed to load", error));
           }
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
@@ -345,6 +261,64 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           light.position.set((i % 4 - 1.5) * 10.2, 9.5, -Math.floor(i / 4) * 22 - 2);
           light.target.position.set(light.position.x, 0, light.position.z - 1);
           scene.add(light, light.target);
+        }
+
+        // Premium paddock wall: framed driver and team-owner portraits, motorsport memorabilia and brand plaques.
+        const galleryItems = gallery.filter((item) => item && (item.character_name || item.name));
+        const photoFrame = (item: DriverRow, index: number) => {
+          const side = index % 2 === 0 ? -1 : 1;
+          const row = Math.floor(index / 2);
+          const z = 1 - row * 7.2;
+          if (z < -82) return;
+          const frame = new THREE.Group();
+          frame.position.set(side * 22.72, 4.3, z);
+          frame.rotation.y = side < 0 ? Math.PI / 2 : -Math.PI / 2;
+          scene.add(frame);
+          box(frame, [2.2, 2.85, 0.16], [0, 0, 0], goldMetal);
+          box(frame, [2.02, 2.67, 0.06], [0, 0, 0.1], darkMetal);
+          const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 680;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            const grad = ctx.createLinearGradient(0, 0, 0, 680); grad.addColorStop(0, "#3c4147"); grad.addColorStop(1, "#101317");
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 680);
+            ctx.fillStyle = "#a52a34"; ctx.fillRect(0, 0, 14, 680);
+            ctx.fillStyle = "#d9c28a"; ctx.font = "700 25px Arial"; ctx.fillText(item.role === "Owner" ? "TEAM PRINCIPAL" : "CALERIS DRIVER", 34, 48);
+            ctx.fillStyle = "#f4f0e8"; ctx.font = "900 37px Arial"; ctx.fillText(String(item.character_name || item.name || "MEMBER").toUpperCase().slice(0, 22), 34, 625);
+            ctx.fillStyle = "#d9c28a"; ctx.font = "700 22px Arial"; ctx.fillText(String(item.team?.name || "CALERIS MASTERS").toUpperCase().slice(0, 26), 34, 660);
+          }
+          const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; textures.push(tex);
+          const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }); disposableMaterials.push(mat);
+          const image = mesh(new THREE.PlaneGeometry(1.92, 2.55), mat, frame, [0, 0, 0.145]);
+          if (item.avatar_url) new THREE.TextureLoader().load(item.avatar_url, (loaded) => {
+            if (disposed) { loaded.dispose(); return; }
+            loaded.colorSpace = THREE.SRGBColorSpace; image.material = new THREE.MeshBasicMaterial({ map: loaded, side: THREE.DoubleSide });
+            textures.push(loaded); disposableMaterials.push(image.material as Three.Material);
+          });
+        };
+        galleryItems.forEach(photoFrame);
+        const wallSign = (text: string, sub: string, position: [number, number, number], width: number) => {
+          const canvas = document.createElement("canvas"); canvas.width = 1024; canvas.height = 256;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.fillStyle = "#0c1014"; ctx.fillRect(0, 0, 1024, 256);
+            ctx.strokeStyle = "#b79b60"; ctx.lineWidth = 8; ctx.strokeRect(8, 8, 1008, 240);
+            ctx.fillStyle = "#b32c36"; ctx.fillRect(8, 8, 18, 240);
+            ctx.fillStyle = "#f3eee2"; ctx.font = "900 74px Arial"; ctx.fillText(text, 54, 125);
+            ctx.fillStyle = "#c9b77f"; ctx.font = "700 30px Arial"; ctx.fillText(sub, 58, 190);
+          }
+          const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; textures.push(tex);
+          const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }); disposableMaterials.push(mat);
+          mesh(new THREE.PlaneGeometry(width, width * 0.25), mat, scene, position);
+        };
+        wallSign("CALERIS MASTERS", "OFFICIAL MOTORSPORT CHAMPIONSHIP", [0, 8.5, -46.9], 15);
+        wallSign("VREEO", "OFFICIAL PARTNER", [-23.0, 8.2, -28], 7);
+        wallSign("VREEO × CALERIS", "RACE. PRECISION. LEGACY.", [23.0, 8.2, -52], 8);
+        for (let z = -8; z >= -78; z -= 18) {
+          const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.16, 12, 28), darkMetal);
+          tyre.position.set(-22.8, 2.1, z); tyre.rotation.y = Math.PI / 2; scene.add(tyre);
+          const rim = new THREE.Mesh(new THREE.TorusGeometry(0.29, 0.045, 8, 24), goldMetal);
+          rim.position.copy(tyre.position); rim.rotation.copy(tyre.rotation); scene.add(rim);
+          disposableGeometries.push(tyre.geometry, rim.geometry);
         }
 
         const raycaster = new THREE.Raycaster();
@@ -533,25 +507,30 @@ export default function DriverExhibition({ drivers, scope }: Props) {
   };
   const resetStick = () => { stickPointerRef.current = null; setStickPosition({ x: 0, y: 0 }); apiRef.current?.stick(0, 0); };
   useEffect(() => {
-    const sync = () => setIsFullscreen(document.fullscreenElement === sceneCardRef.current);
+    const sync = () => { const native = document.fullscreenElement === sceneCardRef.current; setIsFullscreen(native || fullscreenFallback); };
     document.addEventListener("fullscreenchange", sync);
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
   const toggleFullscreen = async () => {
     const node = sceneCardRef.current;
     if (!node) return;
-    try { if (document.fullscreenElement === node) await document.exitFullscreen(); else if (node.requestFullscreen) await node.requestFullscreen(); } catch { /* Fullscreen can be unavailable in embedded browsers. */ }
+    if (document.fullscreenElement === node) { await document.exitFullscreen(); return; }
+    if (fullscreenFallback) { setFullscreenFallback(false); setIsFullscreen(false); return; }
+    try {
+      if (node.requestFullscreen) { await node.requestFullscreen(); return; }
+    } catch { /* Embedded Android browsers may reject the native API. */ }
+    setFullscreenFallback(true); setIsFullscreen(true);
   };
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
 
   return <section className="driver-exhibition">
-    <div className="driver-exhibition-scene" ref={sceneCardRef}>
+    <div className={`driver-exhibition-scene${fullscreenFallback ? " driver-exhibition-fullscreen-fallback" : ""}`} ref={sceneCardRef}>
       <div className="driver-exhibition-webgl" ref={mountRef} />
       {sceneError && <div className="driver-scene-fallback"><strong>3D VIEW UNAVAILABLE</strong><span>{sceneError}</span><p>Gunakan browser/perangkat dengan dukungan WebGL untuk menjelajahi Driver Exhibition.</p></div>}
       <div className="driver-exhibition-vignette" />
       <header className="driver-exhibition-top">
         <div className="driver-exhibition-brand"><span>CALERIS MASTERS</span><strong>DRIVER EXHIBITION</strong></div>
-        <div className="driver-exhibition-top-actions"><div className="driver-exhibition-count"><span>REGISTERED DRIVERS</span><strong>{filteredDrivers.length.toString().padStart(2, "0")} <small>/ {drivers.length.toString().padStart(2, "0")}</small></strong></div><button className="driver-fullscreen-button" onClick={toggleFullscreen} aria-label={isFullscreen ? "Exit fullscreen" : "Open fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>{isFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button></div>
+        <div className="driver-exhibition-top-actions"><div className="driver-exhibition-count"><span>REGISTERED DRIVERS</span><strong>{filteredDrivers.length.toString().padStart(2, "0")} <small>/ {drivers.length.toString().padStart(2, "0")}</small></strong></div><button type="button" className="driver-fullscreen-button" onClick={(event) => { event.stopPropagation(); void toggleFullscreen(); }} style={{ pointerEvents: "auto", touchAction: "manipulation" }} aria-label={isFullscreen ? "Exit fullscreen" : "Open fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>{isFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button></div>
       </header>
       <div className="driver-exhibition-heading">
         <span>THE PEOPLE BEHIND THE GRID · {scopeLabel}</span>
