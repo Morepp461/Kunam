@@ -557,3 +557,46 @@ Use the Edge Function URL from the Developer API page. The web deployment remain
 - A successful session improves the selected attribute. A failed session reduces it; Mistake Rate uses inverse scoring, so successful training lowers it and failure raises it.
 - Training does not spend wallet cash or DDP. Outcomes are resolved server-side only after the timer finishes; one active session per Driver and one cooldown shared across modes for each training program.
 - Session attempts, result rolls, attribute deltas, and cooldown timestamps are stored in Supabase with owner-only read access. Client-side writes are not granted.
+
+
+## Brand Ecosystem
+
+Brand Ecosystem introduces team-only sponsorship partnerships, sponsor-tier matching, weighted Team/Driver Reputation, regional fan population, sponsor trust evaluation, seasonal payment schedules, and achievement bonuses.
+
+- **Sponsorship:** new offers target teams only. Team Owner is the authorized negotiator, with a maximum of three counter-offers. Historical driver sponsorship rows remain intact but cannot be accepted into new contracts.
+- **AI Sponsor matching:** Admin configures sponsor tiers, reputation/fan thresholds, sponsor budget and each sponsor's offer amount band. Matching can generate offers for multiple eligible teams per sponsor.
+- **Negotiation:** the sponsor engine responds to Team Owner counters using each sponsor's configured flexibility and available budget.
+- **Contracts:** accepted contracts carry a season duration, annual value, and aggregate bonus pool. The bonus pool percentage is configurable; the initial default is 50%.
+- **Settlement:** seasonal payments and earned target bonuses use the Sponsor Source wallet and private.post_economy_transaction. A pg_cron job checks due payments and eligible bonuses every 15 minutes. Insufficient sponsor budget or Sponsor Source balance prevents settlement rather than minting funds.
+- **Reputation:** Admin enters sourced metric values; weighted scores are calculated from editable weights in caleris_brand_ecosystem_config.
+- **Fans:** population is stored as regional aggregates, not individual fan records. Admin adjustments are recorded in a population history ledger. Configurable race-result growth applies once per published round to regional team and driver populations. Sponsorship performance targets for points, podiums, wins, and finish rate recalculate automatically when a round is published. Driver fan populations remain attached to the driver across team transfers, with transfer snapshots recorded without duplicating fan counts.
+- **Trust and renewal:** Admin evaluates five 0–100 metrics using configurable weights. Renewal bands are Premium (90+), Standard (80–89), Conditional (60–79), and Terminated (below 60).
+
+### Brand Ecosystem migrations
+
+- 20261117120000_brand_ecosystem_engine.sql
+- 20261117130000_brand_ecosystem_operations.sql
+- 20261117140000_brand_ecosystem_integrity.sql
+- 20261117150000_brand_sponsor_offer_bands.sql
+- 20261117160000_brand_ecosystem_engine_hardening.sql
+- 20261117170000_brand_ecosystem_settlement_scheduler.sql
+- 20261117180000_seed_brand_sponsor_pool_v1_1.sql
+- 20261117190000_brand_ecosystem_seasonal_targets_and_matching.sql
+- 20261117200000_brand_sponsor_budget_admin.sql
+- 20261117210000_brand_sponsorship_race_target_automation.sql
+- 20261117220000_brand_contract_commitment_guard.sql
+- 20261117230000_brand_custom_sponsor_matching.sql
+- 20261117240000_brand_config_validation.sql
+- 20261117250000_brand_fan_transfer_history.sql
+- 20261117260000_brand_fan_transfer_rls_fix.sql
+- 20261117270000_brand_negotiation_terms_guard.sql
+- 20261117280000_brand_fan_growth_engine.sql
+- 20261117290000_brand_fan_growth_config_validation.sql
+- 20261117300000_brand_fan_growth_idempotency_fix.sql
+- 20261117280000_brand_fan_growth_engine.sql
+- 20261117290000_brand_fan_growth_config_validation.sql
+- 20261117300000_brand_fan_growth_idempotency_fix.sql
+- 20261117280000_brand_fan_growth_engine.sql
+- 20261117290000_brand_fan_growth_config_validation.sql
+
+The 100 fictional sponsors, including the 20 Indonesia-based entries, are seeded from Pool Sponsor v1.1. Tier reputation thresholds, contract ranges, season durations, focus targets, and division probabilities are seeded from that source. Sponsor budgets start at 1.5× the listed annual amount multiplied by contract duration to cover the agreed annual payment plus 50% seasonal bonus pool; Admin can increase or adjust each budget subject to outstanding commitments.
