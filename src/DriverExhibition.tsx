@@ -180,16 +180,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const row = Math.floor(index / 4);
           root.position.set((column - 1.5) * 10.2, 0, -row * 11.2 - 1);
           root.userData.driverId = driver.id;
-          const suit = material(teamColor(driver.team?.name || "Caleris"), 0.76, 0.04);
           const trim = material(0x20242a, 0.52, 0.28);
-          const skin = material(0xb98261, 0.82, 0.02);
-          const skinLight = material(0xd19a78, 0.82, 0.01);
-          const hair = material(0x211b18, 0.88, 0.01);
-          const eyeWhite = material(0xe7e3dc, 0.36, 0.02);
-          const iris = material(0x44382c, 0.3, 0.02);
-          const visor = material(0x171a1e, 0.4, 0.15);
-          const glove = material(0x171a1e, 0.82, 0.02);
-          const boot = material(0x101216, 0.74, 0.12);
           const podium = new THREE.Group();
           root.add(podium);
           cylinder(podium, 1.1, 1.25, 0.32, [0, 0.16, 0], darkMetal);
