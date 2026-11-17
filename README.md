@@ -548,3 +548,12 @@ Use the Edge Function URL from the Developer API page. The web deployment remain
 - Selecting a role reveals the former Registration Step 2 fields inline: Driver number/team preference/epithet, or Team Owner team profile/logo/division/engine selection.
 - A single final submission saves the profile and submits the matching registration through submit_main_event_registration_v2. The existing Admin Registered Member queue reads the same registration records and continues to handle ACC/reject, including initial wallet/team/engine processing on approval.
 - Pending applications show their review status in Paddock Access. Rejected applications can be resubmitted from the same page.
+
+## Driver Training Centre
+
+- Dedicated Driver-only page at `/driver-panel/training`, linked from the Driver Panel navigation.
+- Eight attribute-specific training programs: Race Pace, Qualifying Pace, Experience, Aggression, Defensive Strength, Overtake Skill, Mistake Rate, and Tyre Management.
+- Three intensities per program: Ringan, Normal, and Hard. Each mode defines a server-enforced session timer, success probability, gain/loss amount, and per-program cooldown.
+- A successful session improves the selected attribute. A failed session reduces it; Mistake Rate uses inverse scoring, so successful training lowers it and failure raises it.
+- Training does not spend wallet cash or DDP. Outcomes are resolved server-side only after the timer finishes; one active session per Driver and one cooldown shared across modes for each training program.
+- Session attempts, result rolls, attribute deltas, and cooldown timestamps are stored in Supabase with owner-only read access. Client-side writes are not granted.

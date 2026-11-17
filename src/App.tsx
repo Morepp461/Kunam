@@ -25,6 +25,7 @@ import TeamTakeoverMarket from "./TeamTakeoverMarket";
 import AdminSponsorship from "./AdminSponsorship";
 import SponsorshipCentre from "./SponsorshipCentre";
 import DevelopmentTokens from "./DevelopmentTokens";
+import DriverTraining from "./DriverTraining";
 import ShopPage from "./ShopPage";
 import AdminTestPersonas from "./AdminTestPersonas";
 import AdminUsers from "./AdminUsers";
@@ -53,6 +54,7 @@ import "./team-takeover-market.css";
 import "./admin-sponsorship.css";
 import "./sponsorship-centre.css";
 import "./development-tokens.css";
+import "./driver-training.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 import "./admin-users.css";
@@ -147,6 +149,7 @@ function Application(){
   <Route path="/team-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<DevelopmentTokens session={session} asset="TDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/sponsorship" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<DevelopmentTokens session={session} asset="DDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/driver-panel/training" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Driver"?<DriverTraining session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/sponsorship" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/affiliate-team" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamAffiliate session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/engine-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamEngineMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -184,7 +187,7 @@ function Shell({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,p
  const nickname=profile?.web_nickname||session?.user.user_metadata?.full_name||session?.user.user_metadata?.name||session?.user.email?.split("@")[0]||"Member";
  const navigationGroups=session?[
   {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},...(!isAdmin&&panelAccess.member_role===null?[{to:"/paddock-access",label:"Paddock Access",description:"Lengkapi profil dan pengajuan role dalam satu formulir.",icon:<Flag size={17}/>}]:[]),{to:"/shop",label:"Shop",description:"Beli Development Token dan item resmi.",icon:<ShoppingBag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
-  ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.filter(tab=>tab.path!=="registration"&&(!(group.path==="team-panel"&&["driver-registration","engine-market"].includes(tab.path))||isAdmin||panelAccess.member_role==="Owner")).map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
+  ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.filter(tab=>tab.path!=="registration"&&(tab.path!=="training"||panelAccess.member_role==="Driver")&&(!(group.path==="team-panel"&&["driver-registration","engine-market"].includes(tab.path))||isAdmin||panelAccess.member_role==="Owner")).map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
   {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
   ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/prizepool",label:"Season Prizepool",description:"Atur hadiah akhir musim dan proses pembayaran dari VreeoBank.",icon:<Coins size={17}/>},{to:"/admin/license-engine",label:"License Scoring Engine",description:"Kelola season, check-in, standings, dan validasi WDC.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/users",label:"Daftar Akun",description:"Seluruh akun, profil, dan konfigurasi role member.",icon:<Users size={17}/>},{to:"/admin/registered-members",label:"Registered Member",description:"Review formulir registrasi Main Event dan aktivasi role.",icon:<ClipboardList size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>},...(isPrimaryOwner?[{to:"/admin/developer-api",label:"Developer API & MCP",description:"API key dan koneksi integrasi eksternal.",icon:<Shield size={17}/>}]:[])]}]:[])
  ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];

@@ -25,6 +25,7 @@ export const panelGroups: PanelGroup[] = [
     { path: "daily-checkin", label: "Race Check-in", description: "Kehadiran per round; poin lisensi hanya untuk Driver." },
     { path: "character", label: "Character", description: "Profil karakter dan kontrak driver." },
     { path: "development", label: "Development", description: "Pengembangan delapan atribut driver." },
+    { path: "training", label: "Training", description: "Program latihan atribut Driver dengan tingkat kesulitan dan cooldown." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
     { path: "quest", label: "Quest", description: "Daily quest dan weekly quest." },
     { path: "career-history", label: "Career History", description: "Rekam jejak karier dan statistik." },
