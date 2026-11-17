@@ -448,6 +448,6 @@ export default function DriverExhibition({ drivers, scope }: Props) {
       </aside>}
       <div className="driver-exhibition-footer"><span>CALERIS MASTERS · OFFICIAL DRIVER REGISTER</span><span>3D PADDOCK EXPERIENCE</span></div>
     </div>
-    {filteredDrivers.length === 0 && <div className="driver-no-results">No drivers match your search.</div>}
+    {filteredDrivers.length === 0 && <div className="driver-no-results">{drivers.length === 0 ? "No drivers are registered in this division yet." : "No drivers match your search."}</div>}
   </section>;
 }
