@@ -4,7 +4,6 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./lib/supabase";
 import "./developer-api.css";
 
-const OWNER_USER_ID = "cf35c0be-f660-49ab-a56f-9a3080b8252d";
 const SCOPE_OPTIONS = [
   ["circuits:read", "Circuit database"],
   ["seasons:read", "Season calendar"],
@@ -36,15 +35,24 @@ export default function DeveloperAPI({ session }: { session: Session }) {
   const [newSecret, setNewSecret] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [ownerId, setOwnerId] = useState<string | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/caleris-integrations`;
   const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "YOUR_SUPABASE_PUBLISHABLE_KEY";
 
   const load = useCallback(async () => {
-    if (!supabase || session.user.id !== OWNER_USER_ID) { setError("Akses developer ditolak."); setLoading(false); return; }
+    if (!supabase) { setError("Supabase belum dikonfigurasi."); setLoading(false); return; }
     setLoading(true); setError("");
+    const { data: owner, error: ownerError } = await supabase.from("caleris_developer_api_owner").select("owner_user_id").eq("singleton", true).maybeSingle();
+    if (ownerError) { setError(ownerError.message); setIsOwner(false); setLoading(false); return; }
+    const resolvedOwnerId = owner?.owner_user_id ?? null;
+    setOwnerId(resolvedOwnerId);
+    const allowed = resolvedOwnerId === session.user.id;
+    setIsOwner(allowed);
+    if (!allowed || !resolvedOwnerId) { setKeys([]); setLoading(false); return; }
     const { data, error: loadError } = await supabase.from("caleris_api_keys")
       .select("id,name,key_prefix,scopes,expires_at,last_used_at,revoked_at,created_at")
-      .eq("owner_user_id", OWNER_USER_ID).order("created_at", { ascending: false });
+      .eq("owner_user_id", resolvedOwnerId).order("created_at", { ascending: false });
     if (loadError) setError(loadError.message);
     setKeys((data || []) as ApiKey[]);
     setLoading(false);
@@ -55,7 +63,7 @@ export default function DeveloperAPI({ session }: { session: Session }) {
   const activeCount = useMemo(() => keys.filter((key) => !key.revoked_at && (!key.expires_at || new Date(key.expires_at).getTime() > Date.now())).length, [keys]);
 
   const createKey = async () => {
-    if (!supabase || session.user.id !== OWNER_USER_ID) return;
+    if (!supabase || !isOwner || !ownerId || ownerId !== session.user.id) return;
     const cleanName = name.trim();
     if (!cleanName || cleanName.length > 80 || scopes.length === 0) { setError("Isi nama integrasi dan pilih minimal satu izin."); return; }
     setCreating(true); setError(""); setNewSecret("");
@@ -64,7 +72,7 @@ export default function DeveloperAPI({ session }: { session: Session }) {
     const keyHash = await digest(secret);
     const expiresAt = expires === "never" ? null : new Date(Date.now() + Number(expires) * 86400000).toISOString();
     const { error: insertError } = await supabase.from("caleris_api_keys").insert({
-      owner_user_id: OWNER_USER_ID, name: cleanName, key_hash: keyHash,
+      owner_user_id: ownerId, name: cleanName, key_hash: keyHash,
       key_prefix: secret.slice(0, 18) + "…", scopes, expires_at: expiresAt,
     });
     setCreating(false);
@@ -82,7 +90,7 @@ export default function DeveloperAPI({ session }: { session: Session }) {
     await navigator.clipboard.writeText(value); setCopied(true); window.setTimeout(() => setCopied(false), 1800);
   };
 
-  if (session.user.id !== OWNER_USER_ID) return <section className="workspace"><div className="developer-api-denied"><ShieldCheck/><h1>Akses ditolak</h1><p>Developer API hanya tersedia untuk pemilik CALERIS MASTERS.</p></div></section>;
+  if (!loading && !isOwner) return <section className="workspace"><div className="developer-api-denied"><ShieldCheck/><h1>Akses ditolak</h1><p>Developer API hanya tersedia untuk pemilik CALERIS MASTERS.</p></div></section>;
 
   return <section className="workspace developer-api-page">
     <header className="developer-api-heading"><div><span className="section-eyebrow">OWNER CONTROL · INTEGRATION GATEWAY</span><h1>Developer API & MCP</h1><p>Kelola koneksi aplikasi eksternal dan AI ke data resmi CALERIS MASTERS.</p></div><button className="economy-secondary-button" onClick={() => void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
