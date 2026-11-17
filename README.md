@@ -684,7 +684,7 @@ Migrations:
 - Daily Quest dipilih secara dinamis dari katalog berdasarkan role dan aktivitas yang tersedia.
 - Period Quest mengikuti periode kalender season aktif. Satu hari menampilkan hingga 3 Daily Quest dan satu periode menampilkan hingga 5 Period Quest.
 - Progress dihitung dari aktivitas database yang sudah ada: Driver Training, Driver Development, Race Check-In, Team Development, Sponsorship, Driver Contracts, Job Advert, dan Affiliate Team.
-- Reward otomatis dibayarkan ke Driver Wallet untuk Driver dan Team Wallet untuk Team Owner/Principal melalui transaksi `bank_reward` dari VreeoBank. Reward yang tertahan karena saldo Bank tidak cukup dapat diproses ulang oleh Admin.
+- Reward otomatis dibayarkan ke Driver Wallet untuk Driver dan Owner Wallet untuk Team Owner melalui transaksi `bank_reward` dari VreeoBank. Reward yang tertahan karena saldo Bank tidak cukup dapat diproses ulang oleh Admin.
 - Nominal reward default: Easy €250, Normal €500, Hard €1.000, Elite €2.500. Admin dapat mengubahnya melalui Admin Control → Quest Engine. Nilai reward yang sudah terpasang pada assignment tidak berubah ketika konfigurasi diperbarui.
 - Katalog quest tidak menghitung halaman yang hanya bersifat baca-saja sebagai aktivitas. Scout dan daftar aplikasi Driver tidak menghasilkan progress karena tidak memiliki event aksi tersimpan.
 
