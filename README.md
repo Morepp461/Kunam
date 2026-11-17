@@ -71,7 +71,7 @@
 
 ### Economy Retry and Audit
 
-- Pending daily rewards and all-role race check-in rewards are retried automatically every five minutes through a locked, idempotent database worker.
+- Pending daily rewards, Quest rewards, and all-role race check-in rewards are retried automatically every five minutes through locked, idempotent database workers.
 - Each retry cycle records attempted, paid, pending, and failed outcomes in `caleris_economy_retry_runs`; individual reward claims retain attempt count and last error.
 - The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
 - Payroll remains tied to round processing. Pending payroll is visible in the audit center and remains recoverable through the existing Admin payroll recovery action; it is intentionally excluded from the scheduled retry worker.
