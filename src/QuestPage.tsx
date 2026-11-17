@@ -59,7 +59,7 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
      :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q}/>)}</div>
      :<div className="workspace-card quest-empty">Belum ada Period Quest yang memenuhi kondisi pada periode ini.</div>}
    </section>
-   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward otomatis dikirim ke wallet Driver atau wallet Tim melalui VreeoBank setelah target tercapai. Jika saldo VreeoBank belum mencukupi, reward akan menunggu dan diproses ulang.</p>
+   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward otomatis dikirim ke Driver Wallet atau Owner Wallet melalui VreeoBank setelah target tercapai. Jika saldo VreeoBank belum mencukupi, reward akan menunggu dan diproses ulang.</p>
   </>:null}
  </section>;
 }
