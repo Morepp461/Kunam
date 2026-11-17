@@ -80,7 +80,7 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
    </section>
    <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET PERIODE</span><h2>Period Quest</h2>{board.period&&<p><CalendarDays size={14}/>{board.period.title} · {board.period.starts_on} – {board.period.ends_on}</p>}</div><span className="quest-count">{board.period_quests.length} quest</span></div>
     {!board.period?<div className="workspace-card quest-empty">Belum ada periode season yang aktif. Period Quest akan mengikuti kalender 12 periode CALERIS.</div>
-     :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>
+     :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q} scope={scope}/>)}</div>
      :<div className="workspace-card quest-empty">Belum ada Period Quest yang memenuhi kondisi pada periode ini.</div>}
    </section>
    <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward yang memenuhi syarat langsung masuk ke Driver Wallet atau Team Owner Wallet sesuai role karakter. Jika saldo VreeoBank belum mencukupi, pembayaran akan berstatus pending dan diproses ulang otomatis.</p>
