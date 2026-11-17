@@ -241,6 +241,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           character.scene.scale.setScalar(1);
           character.scene.position.set(0, 0, 0);
           figure.add(character.scene);
+          character.scene.traverse((obj) => { obj.userData.araCharacterModel = true; });
           const mixer = new THREE.AnimationMixer(character.scene);
           character.playSequence(mixer, animationRoutines[index % animationRoutines.length], { fade: 0.55, repeat: true });
           mixer.setTime((index % animationRoutines.length) * 0.73);
@@ -473,6 +474,9 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           window.removeEventListener("caleris-driver-filter", onFilter);
           resizeObserver?.disconnect();
           cancelAnimationFrame(frame);
+          scene.traverse((obj) => {
+            if ((obj as Three.Mesh).isMesh && !obj.userData.araCharacterModel) (obj as Three.Mesh).geometry.dispose();
+          });
           driverMotions.forEach((motion) => motion.character.dispose());
           disposableGeometries.forEach((g) => g.dispose());
           disposableMaterials.forEach((m) => m.dispose());
