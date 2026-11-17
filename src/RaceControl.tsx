@@ -6,10 +6,10 @@ import {supabase} from "./lib/supabase";
 type Round={id:string;round_number:number;title:string;season_division_id:string;status:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division?:{division_name:string;license_seasons?:{title:string}}};
 type Member={id:string;character_name:string|null;role:string|null;team_id:string|null;nationality:string|null};
 type Team={id:string;name:string};type Circuit={id:string;name:string;country_code:string};type Registration={member_id:string;season_division_id:string};
-type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";type FinishStatus="finished"|"dnf"|"dns"|"dsq";
+type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";type FinishStatus="finished"|"dnf";
 type Entry={memberId:string;driverName:string;teamName:string;driverNumber:string;country:string;flag:string;gridPosition:string;status:FinishStatus;position:string;timeOrLaps:string;gap:string;fastestLap:string;stints:Tyre[]};
 const TYRES:{value:Tyre;label:string}[]=[{value:"soft",label:"Soft"},{value:"medium",label:"Medium"},{value:"hard",label:"Hard"},{value:"intermediate",label:"Intermediate"},{value:"wet",label:"Wet"}];
-const draft=(m:Member,team:string):Entry=>({memberId:m.id,driverName:m.character_name||"Driver",teamName:team,driverNumber:"",country:m.nationality||"",flag:"",gridPosition:"",status:"finished",position:"",timeOrLaps:"",gap:"",fastestLap:"",stints:["soft"]});
+const draft=(m:Member,team:string):Entry=>({memberId:m.id,driverName:m.character_name||"Driver",teamName:team,driverNumber:"",country:m.nationality||"",flag:"",gridPosition:"",status:"finished",position:"",timeOrLaps:"",gap:"",fastestLap:"",stints:[]});
 const parseRaceTime=(raw:string):number|null=>{const v=raw.trim().replace(",",".");let m=v.match(/^(\d{1,3}):(\d{2}):(\d{2})\.(\d{3})$/);if(m)return +m[1]*3600000+ +m[2]*60000+ +m[3]*1000+ +m[4];m=v.match(/^(\d{1,3}):(\d{2})\.(\d{3})$/);return m?+m[1]*60000+ +m[2]*1000+ +m[3]:null};
 const parseLap=(raw:string):number|null=>{const m=raw.trim().replace(",",".").match(/^(\d{1,3}):(\d{2})\.(\d{3})$/);return m?+m[1]*60000+ +m[2]*1000+ +m[3]:null};
 const parseGap=(raw:string):number|null=>{const v=raw.trim().replace(/^\+/,"").replace(",","." );if(!v||/^(winner|—|--|-)$/i.test(v))return 0;if(/laps?/i.test(v))return null;const m=v.match(/^(\d{1,6})(?:\.(\d{1,3}))?$/);return m?Math.round(Number(v)*1000):null};
@@ -49,10 +49,10 @@ export default function RaceControl(){
   if(entries.some(x=>!/^[0-9]+$/.test(x.gridPosition)||+x.gridPosition<1)||new Set(entries.map(x=>x.gridPosition)).size!==entries.length){fail("Grid position semua Driver wajib diisi dan tidak boleh duplikat.");return}
   const finished=entries.filter(x=>x.status==="finished"),positions=finished.map(x=>+x.position).sort((a,b)=>a-b);
   if(!finished.length||finished.some(x=>!/^[0-9]+$/.test(x.position)||+x.position<1)||positions.some((p,i)=>p!==i+1)){fail("Finishing position wajib berurutan mulai P1 tanpa celah atau duplikat.");return}
-  if(entries.some(x=>x.status!=="finished"&&x.position.trim())){fail("Driver DNF/DNS/DSQ tidak boleh memiliki finishing position.");return}
+  if(entries.some(x=>x.status==="dnf"&&x.position.trim())){fail("Driver DNF/DNS/DSQ tidak boleh memiliki finishing position.");return}
   if(entries.some(x=>x.status==="finished"&&!parseRaceTime(x.timeOrLaps))){fail("Race time wajib memakai format h:mm:ss.mmm atau m:ss.mmm.");return}
   if(entries.some(x=>x.status==="dnf"&&parseLaps(x.timeOrLaps)===null)){fail("Data DNF wajib mencantumkan laps behind, contoh +11 Laps.");return}
-  if(entries.some(x=>!x.gap.trim()||(x.status==="finished"&&parseGap(x.gap)===null))){fail("Gap wajib diisi: detik untuk finisher atau +11 Laps untuk DNF.");return}
+  if(entries.some(x=>(x.status==="finished"&&!x.gap.trim())||(x.status==="finished"&&parseGap(x.gap)===null)||(x.status==="dnf"&&!x.gap.trim()))){fail("Gap wajib diisi: detik untuk finisher atau +11 Laps untuk DNF.");return}
   if(entries.some(x=>!x.stints.length)){fail("Setiap Driver wajib memiliki minimal satu stint ban.");return}
   if(entries.some(x=>x.fastestLap.trim()&&!parseLap(x.fastestLap))){fail("Fastest lap harus memakai format m:ss.mmm.");return}
   const fastestEntries=entries.filter(x=>x.fastestLap.trim());if(fastestEntries.length!==1){fail("Isi fastest lap untuk tepat satu Driver.");return}
@@ -89,7 +89,7 @@ export default function RaceControl(){
       <td><input aria-label={`Nomor mobil ${x.driverName}`} type="number" min="1" value={x.driverNumber} onChange={e=>update(x.memberId,{driverNumber:e.target.value})} placeholder="No." required/></td>
       <td><div className="race-country-fields"><input aria-label={`Negara ${x.driverName}`} value={x.country} onChange={e=>update(x.memberId,{country:e.target.value})} placeholder="Country" required/><input aria-label={`Flag ${x.driverName}`} value={x.flag} onChange={e=>update(x.memberId,{flag:e.target.value})} placeholder="🇮🇩" maxLength={8} required/></div></td>
       <td><input className="race-pos-input" aria-label={`Grid ${x.driverName}`} type="number" min="1" value={x.gridPosition} onChange={e=>update(x.memberId,{gridPosition:e.target.value})} required/></td>
-      <td><select aria-label={`Status ${x.driverName}`} value={x.status} onChange={e=>changeStatus(x,e.target.value as FinishStatus)}><option value="finished">Finished</option><option value="dnf">DNF</option><option value="dns">DNS</option><option value="dsq">DSQ</option></select></td>
+      <td><select aria-label={`Status ${x.driverName}`} value={x.status} onChange={e=>changeStatus(x,e.target.value as FinishStatus)}><option value="finished">Finished</option><option value="dnf">DNF</option></select></td>
       <td>{x.status==="finished"?<input className="race-pos-input" aria-label={`Posisi ${x.driverName}`} type="number" min="1" value={x.position} onChange={e=>update(x.memberId,{position:e.target.value})} required/>:<span className="race-status-label">{x.status.toUpperCase()}</span>}</td>
       <td><input className="race-time-input" aria-label={`Race time / laps behind ${x.driverName}`} value={x.timeOrLaps} onChange={e=>update(x.memberId,{timeOrLaps:e.target.value})} placeholder={x.status==="finished"?"1:40:22.061":"+11 Laps"} required/></td>
       <td><input className="race-gap-input" aria-label={`Gap ${x.driverName}`} value={x.gap} onChange={e=>update(x.memberId,{gap:e.target.value})} placeholder={x.status==="finished"?"+0.184":"+11 Laps"} required/></td>
@@ -110,7 +110,7 @@ export default function RaceControl(){
     </div>
     <p className="race-control-hint"><Timer size={16}/> Pole / fastest lap: m:ss.mmm. Race time: h:mm:ss.mmm atau m:ss.mmm. Gap dalam detik, contoh +3.381; DNF gunakan +11 Laps.</p>
    </section>
-   <section className="race-submit-bar"><div><strong>{entries.length} Driver</strong><small>{entries.filter(x=>x.status==="finished").length} Classified · {entries.filter(x=>x.status==="dnf").length} DNF · {entries.filter(x=>x.status==="dns").length} DNS · {entries.filter(x=>x.status==="dsq").length} DSQ</small></div><button className="economy-primary-button race-submit" type="submit" disabled={saving||loading||!circuit||!entries.length}><Save size={16}/>{saving?"Mengesahkan race...":"Validate & Submit Official Result"}</button></section>
+   <section className="race-submit-bar"><div><strong>{entries.length} Driver</strong><small>{entries.filter(x=>x.status==="finished").length} Classified · {entries.filter(x=>x.status==="dnf").length} DNF</small></div><button className="economy-primary-button race-submit" type="submit" disabled={saving||loading||!circuit||!entries.length}><Save size={16}/>{saving?"Mengesahkan race...":"Validate & Submit Official Result"}</button></section>
   </form>}
   {!round&&<section className="workspace-card race-empty-state"><Trophy size={28}/><h2>{loading?"Memuat round...":"Tidak ada round yang siap diinput"}</h2><p>Round muncul setelah check-in berakhir, belum ditutup, dan round sebelumnya pada divisi yang sama sudah selesai.</p><button className="economy-secondary-button" type="button" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh round</button></section>}
   {notice&&<div className={`race-notice ${notice.kind}`} role="status">{notice.kind==="success"?<CheckCircle2 size={17}/>:<AlertTriangle size={17}/>}<span>{notice.text}</span></div>}
