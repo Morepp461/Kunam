@@ -3,3 +3,14 @@
 .brand-config-group{padding:10px 0;border-top:1px solid var(--line)}.brand-config-group>strong{display:block;margin-bottom:8px;color:var(--text);font-size:12px}.brand-config-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.brand-config-grid label{min-width:0!important;margin:0!important;text-transform:capitalize}@media(max-width:600px){.brand-config-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .brand-config-hint{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+
+
+/* Guided Brand Ecosystem admin forms */
+.brand-card-help{margin:6px 0 14px;color:var(--muted);font-size:12px;line-height:1.65}
+.brand-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+.brand-metric-grid label{min-width:0;margin:0!important}
+.brand-metric-grid input{font-variant-numeric:tabular-nums}
+.brand-trust-inputs{padding:12px;margin:12px 0;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.018)}
+.brand-trust-inputs>strong{font-size:13px;color:var(--text)}
+.brand-config-group .brand-config-hint{margin:0 0 10px}
+@media(max-width:460px){.brand-metric-grid{grid-template-columns:1fr}}
