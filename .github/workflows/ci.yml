@@ -38,5 +38,7 @@ jobs:
         run: python3 -B scripts/test_main_event_registration.py
       - name: Development cash economy regression checks
         run: python3 -B scripts/test_development_cash_economy.py
+      - name: Developer API and MCP security regression checks
+        run: python3 -B scripts/test_developer_api_security.py
       - name: Registration image optimization regression checks
         run: python3 -B scripts/test_image_optimization.py
