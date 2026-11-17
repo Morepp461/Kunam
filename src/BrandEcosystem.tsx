@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ArrowLeft,RefreshCw,Handshake,Users,Trophy,Coins,Target,Newspaper,Star,Globe2,Plus,CheckCircle2} from "lucide-react";
+import {ArrowLeft,RefreshCw,Handshake,Coins,Target,Globe2,Plus,CheckCircle2} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
