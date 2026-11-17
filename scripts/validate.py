@@ -72,6 +72,15 @@ def main():
     for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
         assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    character_wallet_migration = ROOT / "supabase/migrations/20261118140000_permanent_character_wallet_and_identity.sql"
+    assert character_wallet_migration.is_file(), "Missing permanent character wallet migration"
+    character_wallet_sql = character_wallet_migration.read_text(encoding="utf-8")
+    for fragment in ["guard_permanent_profile_character", "consolidate_member_character_wallets", "zz_members_character_wallet_sync", "zz_profiles_character_wallet_sync", "private.post_economy_transaction", "'transfer'", "profiles_permanent_character_link"]:
+        assert fragment in character_wallet_sql, f"Permanent character wallet migration missing: {fragment}"
+    assert "nextWallets.public_member=w?Number(w.balance):null" in app, "Public Member balance must mirror the canonical character wallet"
+    assert 'member?.role==="Owner"?wallets.team_owner:wallets.public_member' in app, "FIA/no-role character balance must fall back to the permanent Public Member wallet"
+    assert 'const walletKind=ownMember.role==="Driver"?"driver":ownMember.role==="Owner"?"team_owner":"public_member"' in app, "Dashboard must read the current canonical character wallet"
+    assert 'path="/profile"' in app
     assert 'import Stage5Panel from "./Stage5Panel";' in app
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app
     assert 'path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?' in app
