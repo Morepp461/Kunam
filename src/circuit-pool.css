@@ -5,3 +5,102 @@
 .circuit-layout-image{display:block;width:100%;max-height:300px;object-fit:contain;background:#0b0c0e;border:1px solid var(--line);border-radius:12px;margin:0 0 18px}.circuit-layout-preview{width:100%;max-height:280px;object-fit:contain;background:#0b0c0e;border:1px solid var(--line);border-radius:10px;margin:10px 0}
 
 .circuit-admin-list{margin-bottom:18px}.circuit-admin-table{min-width:1120px}.circuit-admin-table td{white-space:nowrap}.circuit-edit-button{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.circuit-admin-list .s5-table-wrap{max-height:560px;overflow:auto}
+
+
+/* CIRCUIT POOL RESPONSIVE SYSTEM
+   Design frames: Desktop 1440x900, Tablet 768x1024, Mobile 390x844.
+   Content canvas: max 1200px. Gutters: 32 / 24 / 16px.
+   Breakpoints: mobile <=767px, tablet 768-1023px, desktop >=1024px.
+*/
+.circuit-pool{
+  --circuit-content-max:1200px;
+  --circuit-gutter:32px;
+  width:min(calc(100% - (var(--circuit-gutter) * 2)),var(--circuit-content-max));
+  max-width:var(--circuit-content-max);
+  margin-inline:auto;
+}
+.page-content:has(>.circuit-pool){
+  align-items:flex-start;
+  justify-content:center;
+  padding:clamp(28px,4vw,56px) 24px 44px;
+}
+.circuit-pool .page-heading{width:100%;max-width:var(--circuit-content-max);margin:0 auto 28px}
+.circuit-pool .page-title{font-size:clamp(30px,3.2vw,44px);line-height:1.12;letter-spacing:-.025em}
+.circuit-pool .page-description{max-width:760px;font-size:14px;line-height:1.75}
+.circuit-pool .workspace-card{width:100%;min-width:0;padding:clamp(20px,2.4vw,30px);border-radius:10px}
+.circuit-pool .section-title-row{margin:0 0 18px}
+.circuit-directory-table-wrap{width:100%;overflow-x:auto;overscroll-behavior-x:contain}
+.circuit-directory-table{width:100%;min-width:0;table-layout:fixed}
+.circuit-directory-table th,.circuit-directory-table td{padding:14px 12px;vertical-align:middle}
+.circuit-directory-table th:nth-child(1){width:22%}
+.circuit-directory-table th:nth-child(2){width:42%}
+.circuit-directory-table th:nth-child(3){width:16%}
+.circuit-directory-table th:nth-child(4){width:20%}
+.circuit-directory-table td{overflow-wrap:anywhere}
+.circuit-name-button{max-width:100%;overflow-wrap:anywhere}
+.circuit-modal-backdrop{z-index:1200;overflow-y:auto;overscroll-behavior:contain;padding:24px}
+.circuit-modal{width:min(100%,760px);max-height:min(88dvh,900px);padding:clamp(20px,3vw,32px);overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.circuit-modal-head button{display:grid;place-items:center;flex:none;width:44px;height:44px;min-width:44px;min-height:44px}
+.circuit-layout-image{width:100%;height:auto;max-height:clamp(230px,32vw,360px);aspect-ratio:16/9;object-fit:contain}
+.circuit-detail-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.circuit-detail-grid>div{min-width:0;padding:14px}
+.circuit-detail-grid strong{overflow-wrap:anywhere}
+.circuit-input-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.circuit-admin-list .s5-table-wrap{max-width:100%;overscroll-behavior-x:contain}
+.circuit-admin-table{min-width:1120px}
+.circuit-layout-preview{display:block;width:100%;max-height:320px;object-fit:contain}
+
+@media (min-width:768px) and (max-width:1023px){
+ .circuit-pool{--circuit-gutter:24px}
+ .page-content:has(>.circuit-pool){padding:32px 24px 40px}
+ .circuit-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .circuit-input-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:767px){
+ .circuit-pool{--circuit-gutter:0px;width:100%;padding:0;max-width:100%}
+ .page-content:has(>.circuit-pool){padding:22px 16px 32px}
+ .circuit-pool .page-heading{margin-bottom:20px}
+ .circuit-pool .page-title{font-size:clamp(27px,7vw,34px);margin-bottom:9px}
+ .circuit-pool .page-description{font-size:12px;line-height:1.65}
+ .circuit-pool .workspace-card{padding:17px;border-radius:9px}
+ .circuit-pool .section-title-row{align-items:center;gap:10px;margin-bottom:14px}
+ .circuit-pool .section-title-row h2{font-size:18px}
+ .circuit-pool .economy-secondary-button{min-height:40px;padding-inline:11px}
+ .circuit-directory-table-wrap{overflow:visible}
+ .circuit-directory-table,.circuit-directory-table tbody{display:block;width:100%}
+ .circuit-directory-table thead{display:none}
+ .circuit-directory-table tbody{display:grid;gap:10px}
+ .circuit-directory-table tbody tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 12px;padding:10px 12px;border:1px solid rgba(198,163,58,.2);border-radius:8px;background:rgba(255,255,255,.025)}
+ .circuit-directory-table tbody td{display:flex;flex-direction:column;justify-content:center;gap:5px;min-width:0;padding:9px 2px;border:0;white-space:normal;font-size:12px}
+ .circuit-directory-table tbody td::before{color:#9da0a2;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-transform:uppercase}
+ .circuit-directory-table tbody td:nth-child(1)::before{content:"NEGARA"}
+ .circuit-directory-table tbody td:nth-child(2)::before{content:"NAMA CIRCUIT"}
+ .circuit-directory-table tbody td:nth-child(3)::before{content:"TOTAL LAP"}
+ .circuit-directory-table tbody td:nth-child(4)::before{content:"LAP RECORD"}
+ .circuit-directory-table tbody td:nth-child(2){grid-column:1/-1;grid-row:1}
+ .circuit-directory-table tbody td:nth-child(1){grid-column:1;grid-row:2}
+ .circuit-directory-table tbody td:nth-child(3){grid-column:2;grid-row:2}
+ .circuit-directory-table tbody td:nth-child(4){grid-column:1/-1;grid-row:3;border-top:1px solid rgba(198,163,58,.12)}
+ .circuit-directory-table .circuit-name-button{font-size:14px;line-height:1.4}
+ .circuit-modal-backdrop{align-items:center;padding:12px}
+ .circuit-modal{width:100%;max-height:calc(100dvh - 24px);padding:17px;border-radius:13px}
+ .circuit-modal-head{gap:10px;margin-bottom:15px}
+ .circuit-modal-head h2{font-size:clamp(20px,6vw,25px);line-height:1.2;overflow-wrap:anywhere}
+ .circuit-modal-head button{width:42px;height:42px;min-width:42px;min-height:42px}
+ .circuit-layout-image{max-height:240px;aspect-ratio:4/3;margin-bottom:13px}
+ .circuit-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .circuit-detail-grid>div{padding:11px;gap:5px}
+ .circuit-detail-grid small{font-size:10px;line-height:1.35}
+ .circuit-detail-grid strong{font-size:14px}
+ .circuit-record-note{font-size:11px;line-height:1.55;margin-top:13px}
+ .circuit-input-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+ .circuit-admin-list .s5-table-wrap{max-height:460px}
+ .circuit-admin-table{min-width:1120px}
+}
+@media (max-width:380px){
+ .page-content:has(>.circuit-pool){padding-inline:12px}
+ .circuit-pool .workspace-card{padding:14px}
+ .circuit-input-grid{grid-template-columns:1fr}
+ .circuit-modal-backdrop{padding:8px}
+ .circuit-modal{max-height:calc(100dvh - 16px);padding:14px}
+}
