@@ -221,21 +221,20 @@ export default function DriverExhibition({ drivers, scope }: Props) {
             const human = cloneHuman(cc0HumanScene) as Three.Group;
             human.scale.setScalar(1.34);
             human.position.set(0, 0.35, 0);
-            human.rotation.y = Math.PI;
             human.traverse((obj) => {
               const part = obj as Three.Mesh;
               if (!part.isMesh) return;
               part.castShadow = !mobile;
               part.receiveShadow = false;
               const bounds = new THREE.Box3().setFromObject(part);
-              const centerY = (bounds.min.y + bounds.max.y) * 0.5;
+              const centerY = ((bounds.min.y + bounds.max.y) * 0.5 - 0.35) / 1.34;
               const sourceMaterials = Array.isArray(part.material) ? part.material : [part.material];
               const adapted = sourceMaterials.map((source) => {
                 const mat = source.clone();
                 const label = (source.name || part.name || "").toLowerCase();
                 const isSkin = /skin|face|eye|teeth|hair|brow|mouth/.test(label) || centerY > 1.48 || centerY < 0.28;
                 if (!isSkin && centerY > 0.38 && centerY < 1.58) {
-                  mat.color?.set(centerY > 0.9 ? 0x191d22 : 0x24282e);
+                  (mat as Three.MeshStandardMaterial).color?.set(centerY > 0.9 ? 0x191d22 : 0x24282e);
                   if ("roughness" in mat) (mat as Three.MeshStandardMaterial).roughness = 0.78;
                   if ("metalness" in mat) (mat as Three.MeshStandardMaterial).metalness = 0.08;
                 }
@@ -254,6 +253,10 @@ export default function DriverExhibition({ drivers, scope }: Props) {
             box(figure, [0.28, 0.055, 0.025], [0, 1.55, 0.27], calerisGold);
             box(figure, [0.24, 0.11, 0.03], [0, 0.88, 0.205], suitBlack);
             for (const side of [-1, 1]) {
+              const sleeve = mesh(new THREE.CapsuleGeometry(0.095, 0.32, 6, 12), suitBlack, figure, [side * 0.29, 1.34, 0]);
+              sleeve.rotation.z = side * -0.12;
+              const trouser = mesh(new THREE.CapsuleGeometry(0.105, 0.55, 6, 12), suitBlack, figure, [side * 0.13, 0.48, 0]);
+              trouser.rotation.z = side * 0.025;
               box(figure, [0.16, 0.075, 0.04], [side * 0.27, 1.62, 0.04], calerisRed);
               box(figure, [0.13, 0.07, 0.035], [side * 0.105, 0.79, 0.205], calerisGold);
               box(figure, [0.13, 0.12, 0.16], [side * 0.19, 0.12, 0.04], suitBlack);
