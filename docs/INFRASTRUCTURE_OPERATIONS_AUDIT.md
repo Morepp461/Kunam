@@ -4,7 +4,7 @@ Audit date: 2026-11-17
 
 ## Environment routing
 
-The Vercel project `caler is_masters_newgen` (project ID `prj_DiXd5IGTwypIVHK3zOVaxbAnvfEi`) must use separate Supabase targets:
+The Vercel project `caleris_masters_newgen` (project ID `prj_DiXd5IGTwypIVHK3zOVaxbAnvfEi`) must use separate Supabase targets:
 
 | Vercel target | Supabase project | Project ref |
 | --- | --- | --- |
@@ -42,4 +42,4 @@ These findings require object-by-object review. Do not blanket-revoke authentica
 
 ## Deployment and CI
 
-The latest production deployment before the environment correction was built from `main` commit `7977f05871b7255ad495541ef0c5fc9b8cf6adc3` and was READY. A new deployment is required to embed the corrected production Supabase target.
+The latest production deployment before the environment correction was built from `main` commit `7977f05871b7255ad495541ef0c5fc9b8cf6adc3` and was READY. A new Production deployment is required to embed the corrected Supabase target.
