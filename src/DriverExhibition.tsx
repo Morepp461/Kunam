@@ -26,6 +26,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const stickPointerRef = useRef<number | null>(null);
   const [stickPosition, setStickPosition] = useState({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const apiRef = useRef<SceneApi | null>(null);
   const [selected, setSelected] = useState<DriverRow | null>(null);
   const [query, setQuery] = useState("");
@@ -591,25 +592,28 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   };
   const resetStick = () => { stickPointerRef.current = null; setStickPosition({ x: 0, y: 0 }); apiRef.current?.stick(0, 0); };
   useEffect(() => {
-    const sync = () => setIsFullscreen(document.fullscreenElement === sceneCardRef.current);
+    const sync = () => { const native = document.fullscreenElement === sceneCardRef.current; setIsFullscreen(native || fullscreenFallback); };
     document.addEventListener("fullscreenchange", sync);
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
   const toggleFullscreen = async () => {
     const node = sceneCardRef.current;
     if (!node) return;
-    try { if (document.fullscreenElement === node) await document.exitFullscreen(); else if (node.requestFullscreen) await node.requestFullscreen(); } catch { /* Fullscreen can be unavailable in embedded browsers. */ }
+    if (document.fullscreenElement === node) { await document.exitFullscreen(); return; }
+    if (fullscreenFallback) { setFullscreenFallback(false); setIsFullscreen(false); return; }
+    try { if (node.requestFullscreen) { await node.requestFullscreen(); return; } } catch { /* Embedded Android browsers may reject native fullscreen. */ }
+    setFullscreenFallback(true); setIsFullscreen(true);
   };
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
 
   return <section className="driver-exhibition">
-    <div className="driver-exhibition-scene" ref={sceneCardRef}>
+    <div className={`driver-exhibition-scene${fullscreenFallback ? " driver-exhibition-fullscreen-fallback" : ""}`} ref={sceneCardRef}>
       <div className="driver-exhibition-webgl" ref={mountRef} />
       {sceneError && <div className="driver-scene-fallback"><strong>3D VIEW UNAVAILABLE</strong><span>{sceneError}</span><p>Gunakan browser/perangkat dengan dukungan WebGL untuk menjelajahi Driver Exhibition.</p></div>}
       <div className="driver-exhibition-vignette" />
       <header className="driver-exhibition-top">
         <div className="driver-exhibition-brand"><span>CALERIS MASTERS</span><strong>DRIVER EXHIBITION</strong></div>
-        <div className="driver-exhibition-top-actions"><div className="driver-exhibition-count"><span>REGISTERED DRIVERS</span><strong>{filteredDrivers.length.toString().padStart(2, "0")} <small>/ {drivers.length.toString().padStart(2, "0")}</small></strong></div><button className="driver-fullscreen-button" onClick={toggleFullscreen} aria-label={isFullscreen ? "Exit fullscreen" : "Open fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>{isFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button></div>
+        <div className="driver-exhibition-top-actions"><div className="driver-exhibition-count"><span>REGISTERED DRIVERS</span><strong>{filteredDrivers.length.toString().padStart(2, "0")} <small>/ {drivers.length.toString().padStart(2, "0")}</small></strong></div><button type="button" className="driver-fullscreen-button" onClick={(event) => { event.stopPropagation(); void toggleFullscreen(); }} style={{ pointerEvents: "auto", touchAction: "manipulation" }} aria-label={isFullscreen ? "Exit fullscreen" : "Open fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>{isFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button></div>
       </header>
       <div className="driver-exhibition-heading">
         <span>THE PEOPLE BEHIND THE GRID · {scopeLabel}</span>
