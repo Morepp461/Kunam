@@ -154,14 +154,12 @@ begin
     select w.id into v_wallet_id
     from public.economy_wallet_accounts w
     where w.account_kind='driver' and w.member_id=v_assignment.member_id and w.is_active
-    for update;
   elsif v_role_scope='team_owner' then
     select w.id into v_wallet_id
     from public.economy_wallet_accounts w
     where w.account_kind='team_owner' and w.member_id=v_assignment.member_id and w.is_active
-    for update;
   else
-    raise exception 'Role penerima reward tidak valid.';
+    raise exception 'Role penerima reward tidak valid.'/;
   end if;
 
   if v_wallet_id is null then
@@ -171,7 +169,6 @@ begin
   select w.id into v_bank_id
   from public.economy_wallet_accounts w
   where w.account_kind='vreeo_bank' and w.is_active
-  for update;
 
   if v_bank_id is null then
     update public.caleris_quest_assignments
