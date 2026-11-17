@@ -409,4 +409,90 @@ revoke all on function public.member_claim_quest_reward(uuid) from public,anon,a
 revoke all on function public.admin_process_pending_quest_rewards() from public,anon,service_role;
 grant execute on function public.admin_process_pending_quest_rewards() to authenticated;
 
+
+create or replace function private.retry_pending_quest_wallet_rewards()
+returns jsonb
+language plpgsql
+security definer
+set search_path=''
+as $function$
+declare
+ v_actor_id uuid;
+ v_bank_id uuid;
+ v_assignment record;
+ v_wallet_id uuid;
+ v_tx jsonb;
+ v_paid integer:=0;
+ v_pending integer:=0;
+begin
+ if not pg_try_advisory_xact_lock(hashtextextended('caleris-pending-quest-wallet-rewards',0)) then
+  return jsonb_build_object('status','already_running');
+ end if;
+ select user_id into v_actor_id from public.site_admins order by user_id limit 1;
+ select id into v_bank_id from public.economy_wallet_accounts
+ where account_kind='vreeo_bank' and is_active order by created_at limit 1;
+
+ for v_assignment in
+  select a.id,a.member_id,a.reward_amount,c.role_scope,c.quest_key,c.title,c.difficulty
+  from public.caleris_quest_assignments a
+  join public.caleris_quest_catalog c on c.id=a.quest_id
+  where a.status='completed' and a.reward_status='pending'
+  order by a.created_at,a.id
+  for update of a skip locked
+ loop
+  v_wallet_id:=null;
+  if v_assignment.role_scope='driver' then
+   select id into v_wallet_id from public.economy_wallet_accounts
+   where account_kind='driver' and member_id=v_assignment.member_id and is_active;
+  elsif v_assignment.role_scope='team_owner' then
+   select id into v_wallet_id from public.economy_wallet_accounts
+   where account_kind='team_owner' and member_id=v_assignment.member_id and is_active;
+  end if;
+
+  if v_bank_id is null or v_wallet_id is null then
+   v_pending:=v_pending+1;
+   continue;
+  end if;
+
+  v_tx:=private.post_economy_transaction(
+   v_bank_id,v_wallet_id,v_assignment.reward_amount,'bank_reward',
+   'Quest reward: '||v_assignment.title,
+   'quest-reward:'||v_assignment.id::text,
+   v_actor_id,
+   jsonb_build_object('quest_assignment_id',v_assignment.id,
+    'quest_key',v_assignment.quest_key,'role_scope',v_assignment.role_scope,
+    'difficulty',v_assignment.difficulty,'source','quest_engine'),
+   null,true
+  );
+
+  if v_tx is null then
+   v_pending:=v_pending+1;
+   continue;
+  end if;
+
+  update public.caleris_quest_assignments
+  set reward_status='paid',reward_transaction_id=(v_tx->>'transaction_id')::uuid,
+      paid_at=coalesce(paid_at,now())
+  where id=v_assignment.id and reward_status='pending';
+  v_paid:=v_paid+1;
+ end loop;
+
+ return jsonb_build_object('status','completed','paid',v_paid,'pending',v_pending);
+end;
+$function$;
+
+revoke all on function private.retry_pending_quest_wallet_rewards() from public,anon,authenticated,service_role;
+
+do $schedule$
+declare v_job bigint;
+begin
+ select jobid into v_job from cron.job where jobname='caleris-quest-wallet-reward-retry';
+ if v_job is not null then perform cron.unschedule(v_job); end if;
+ perform cron.schedule(
+  'caleris-quest-wallet-reward-retry','*/5 * * * *',
+  'select private.retry_pending_quest_wallet_rewards();'
+ );
+end;
+$schedule$;
+
 commit;
