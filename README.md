@@ -684,7 +684,7 @@ Migrations:
 - Daily Quest dipilih secara dinamis dari katalog berdasarkan role dan aktivitas yang tersedia.
 - Period Quest mengikuti periode kalender season aktif. Satu hari menampilkan hingga 3 Daily Quest dan satu periode menampilkan hingga 5 Period Quest.
 - Progress dihitung dari aktivitas database yang sudah ada: Driver Training, Driver Development, Race Check-In, Team Development, Sponsorship, Driver Contracts, Job Advert, dan Affiliate Team. Aktivitas sebelum assignment dibuat tidak dihitung, untuk mencegah progress retroaktif.
-- Reward otomatis dibayarkan ke Driver Wallet untuk Driver dan Owner Wallet untuk Team Owner melalui transaksi `bank_reward` dari VreeoBank. Reward yang tertahan karena saldo Bank tidak cukup dapat diproses ulang oleh Admin.
+- Reward tidak dibayarkan otomatis saat progress selesai atau halaman Quest dibuka. Member harus menekan Klaim Reward setelah target tercapai; pembayaran memakai transaksi `bank_reward` dari VreeoBank langsung ke Driver Wallet atau Team Owner Wallet sesuai role. Jika saldo Bank tidak cukup, member dapat mencoba klaim kembali.
 - Nominal reward saat ini: Easy €100.000, Normal €200.000, Hard €400.000, Elite €750.000. Admin dapat mengubahnya melalui Admin Control → Quest Engine. Assignment yang belum dibayar mengikuti nominal terbaru; transaksi yang sudah dibayar tidak diubah. Nilai reward yang sudah terpasang pada assignment tidak berubah ketika konfigurasi diperbarui.
 - Katalog quest tidak menghitung halaman yang hanya bersifat baca-saja sebagai aktivitas. Scout dan daftar aplikasi Driver tidak menghasilkan progress karena tidak memiliki event aksi tersimpan.
 
@@ -872,12 +872,16 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Team Owner menerima 10% dari profit positif tim langsung ke Team Owner Wallet. Tim dengan profit nol atau negatif tidak menerima pembagian.
 - Pencairan otomatis berjalan melalui database scheduler, memakai ledger transaksi ekonomi yang idempotent dan dapat retry jika VreeoBank atau Team Owner Wallet belum tersedia / saldo Bank belum mencukupi.
 - Pencairan pinjaman (principal) tidak dihitung sebagai pendapatan atau biaya operasional. Semua penerimaan dan pengeluaran operasional yang tercatat pada Team Wallet, termasuk prize, sponsor, payroll, dan development, masuk perhitungan profit.
-- Quest Driver masuk otomatis ke Driver Wallet; Quest Team Owner masuk otomatis ke Team Owner Wallet saat target tercapai. Tidak ada wallet reward terpisah maupun tombol klaim manual. Jika saldo VreeoBank belum cukup, reward masuk antrean pending dan diproses ulang otomatis.
+- Quest Driver dibayarkan ke Driver Wallet; Quest Team Owner dibayarkan ke Team Owner Wallet. Tidak ada wallet reward perantara. Reward hanya dibayar setelah member menekan Klaim Reward pada quest yang selesai. Jika saldo VreeoBank belum cukup, klaim berstatus pending dan member dapat mencoba kembali.
 - Migration: `20261118010000_team_owner_profit_share.sql`.
 
 
-### Automatic Quest Reward Delivery
+### Manual Quest Reward Claim
 
-- Quest tidak lagi menggunakan klaim manual. Saat target selesai dihitung, reward langsung ditransfer dari VreeoBank ke Driver Wallet atau Team Owner Wallet sesuai role penerima.
-- Jika VreeoBank belum tersedia atau saldonya belum cukup, reward ditandai pending dan diproses ulang oleh Economy Retry worker. Idempotency key mencegah pembayaran ganda.
-- Migration: `20261118020000_automatic_quest_wallet_rewards.sql`.
+- `member_get_quest_board()` hanya menghitung dan menyimpan progress serta status completed. Membuka atau me-refresh halaman Quest tidak memindahkan saldo.
+- Tombol Klaim Reward hanya muncul untuk quest berstatus completed yang belum dibayar. Klaim memakai `member_claim_quest_reward()` dengan pemeriksaan kepemilikan assignment, row lock, dan idempotency key.
+- Driver menerima pembayaran langsung ke Driver Wallet (`account_kind='driver'`). Team Owner menerima pembayaran langsung ke Team Owner Wallet (`account_kind='team_owner'`), bukan Team Wallet atau wallet perantara.
+- Jika VreeoBank tidak tersedia atau saldonya tidak cukup, status klaim menjadi pending. Tidak ada cron retry atau pemrosesan otomatis; member dapat menekan Coba Klaim Lagi.
+- Admin Quest Engine hanya mengelola nominal reward. Tidak ada aksi Admin untuk membayar reward yang belum diklaim.
+- Nominal aktif: Easy €100.000, Normal €200.000, Hard €400.000, Elite €750.000. Admin dapat mengubahnya melalui Admin Control → Quest Engine.
+- Migration: `20261118130000_quest_manual_member_claims.sql`.
