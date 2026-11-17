@@ -530,12 +530,12 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 
 The owner-only integration gateway is available at `/admin/developer-api`.
 
-- Only the primary owner account bootstrapped in `site_admins` can access the dashboard or create/revoke keys. Admin role membership alone does not grant access.
+- Only the environment-specific primary owner seeded into `caleris_developer_api_owner` from the bootstrap administrator can access the dashboard or create/revoke keys. Admin role membership alone does not grant access.
 - API keys use the `cm_live_` prefix, are generated with cryptographic randomness, shown once, and stored only as SHA-256 hashes. Revocation takes effect on the next request.
 - Keys have independent read scopes: `circuits:read`, `seasons:read`, `teams:read`, `drivers:read`, and `rounds:read`.
 - REST endpoints are read-only: `GET /v1/circuits`, `/v1/seasons`, `/v1/teams`, `/v1/drivers`, and `/v1/rounds`.
 - MCP uses Streamable HTTP at `POST /mcp` and exposes matching read-only tools: `list_circuits`, `list_seasons`, `list_teams`, `list_drivers`, and `list_rounds`.
-- All calls require `Authorization: Bearer <Caleris API Key>`. The gateway does not expose arbitrary SQL, wallet balances, private profile data, or mutation tools.
-- The gateway runs as a Supabase Edge Function. Its API-key auth is validated inside the function, while Supabase service credentials remain server-side.
+- All calls require `Authorization: Bearer <Caleris API Key>` and the Supabase project publishable key in the `apikey` header. The gateway does not expose arbitrary SQL, wallet balances, private profile data, or mutation tools.
+- The gateway runs as a Supabase Edge Function. Its API-key auth is validated inside the function, while Supabase service credentials remain server-side. API key hashes and owner policies are migrated to both Testing and Production; each database retains its own primary owner identity.
 
 Use the Edge Function URL from the Developer API page. The web deployment remains configured to use the Testing Supabase environment as previously requested; database schema migrations for this feature must be applied to both Testing and Production, while runtime secrets and deployed Edge Functions are configured per project.
