@@ -846,3 +846,12 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Workspace pages do not create an independent vertical scroll container; the document is the single vertical scroller on mobile and desktop.
 - The footer cannot overlay or consume the workspace's viewport-sized grid track.
 - Frontend-only correction; no dependency changes or database migration.
+
+
+### Circuit Pool mobile scrolling and modal correction
+
+- Removed the fixed viewport-height/hidden-overflow canvas behavior from Circuit Pool pages.
+- Restored normal document scrolling so the full directory and footer remain reachable.
+- Raised the Circuit Pool content stacking layer so the circuit detail modal is not covered by the footer.
+- Kept modal content independently vertically scrollable on touch devices.
+- Frontend-only; no dependency or database changes.
