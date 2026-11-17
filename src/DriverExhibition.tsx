@@ -9,12 +9,6 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
-const teamColor = (name: string) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  const palette = [0x9d2630, 0x9e8a56, 0x566a78, 0x6b3438, 0x9a633d, 0x56634f, 0x77716a, 0x314b68];
-  return palette[Math.abs(hash) % palette.length];
-};
 const numberFor = (name: string, index: number) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 33 + name.charCodeAt(i)) | 0;
@@ -33,6 +27,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [query, setQuery] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [sceneError, setSceneError] = useState("");
+  const [sceneLoading, setSceneLoading] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(0);
   const selectedRef = useRef<DriverRow | null>(null);
   const visibleIdsRef = useRef<Set<string>>(new Set());
   const filteredDrivers = useMemo(() => drivers.filter((d) => {
@@ -51,6 +47,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     const host = mountRef.current;
     if (!host) return;
     setSceneError("");
+    setSceneLoading(drivers.length > 0);
+    setLoadingCount(0);
 
     const boot = async () => {
       try {
@@ -105,9 +103,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
         const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
-        const sphere = (parent: Three.Object3D, pos: [number, number, number], scale: [number, number, number], mat: Three.Material) =>
-          mesh(new THREE.SphereGeometry(1, 20, 14), mat, parent, pos, scale);
-
         scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 3.0));
         const keyLight = new THREE.DirectionalLight(0xfff0d8, 4.2);
         keyLight.position.set(-8, 16, 10);
@@ -262,7 +257,15 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           selectable.push(root);
         };
 
-        for (const [index, driver] of drivers.entries()) await createDriver(driver, index);
+        for (const [index, driver] of drivers.entries()) {
+          try { await createDriver(driver, index); }
+          catch (error) {
+            console.error("Could not build realistic driver model:", driver.character_name, error);
+            setSceneError("Sebagian model 3D tidak berhasil dimuat. Periksa koneksi lalu muat ulang halaman.");
+          }
+          if (!disposed) setLoadingCount(index + 1);
+        }
+        if (!disposed) setSceneLoading(false);
 
         driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
         const onFilter = (event: Event) => {
@@ -433,7 +436,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           frame = requestAnimationFrame(animate);
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
-          const seconds = time / 1000;
           driverMotions.forEach((motion) => {
             motion.mixer.update(delta);
             motion.character.update(delta);
@@ -480,12 +482,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           apiRef.current = null;
         };
       } catch (error) {
-        if (!disposed) setSceneError(error instanceof Error ? error.message : "WebGL tidak tersedia pada perangkat ini.");
+        if (!disposed) { setSceneLoading(false); setSceneError(error instanceof Error ? error.message : "WebGL tidak tersedia pada perangkat ini."); }
       }
     };
     void boot();
     return () => {
       disposed = true;
+      setSceneLoading(false);
       cancelAnimationFrame(frame);
       cleanup?.();
     };
@@ -539,6 +542,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   return <section className="driver-exhibition">
     <div className={`driver-exhibition-scene${fullscreenFallback ? " driver-exhibition-fullscreen-fallback" : ""}`} ref={sceneCardRef}>
       <div className="driver-exhibition-webgl" ref={mountRef} />
+      {sceneLoading && <div className="driver-scene-loading"><strong>BUILDING DRIVER MODELS</strong><span>{loadingCount} / {drivers.length} · REALISTIC 3D CHARACTERS</span><div><i style={{ width: `${drivers.length ? loadingCount / drivers.length * 100 : 0}%` }}/></div></div>}
       {sceneError && <div className="driver-scene-fallback"><strong>3D VIEW UNAVAILABLE</strong><span>{sceneError}</span><p>Gunakan browser/perangkat dengan dukungan WebGL untuk menjelajahi Driver Exhibition.</p></div>}
       <div className="driver-exhibition-vignette" />
       <header className="driver-exhibition-top">
