@@ -3,3 +3,5 @@
 .circuit-layout-image{display:block;width:100%;max-height:300px;object-fit:contain;background:#0b0c0e;border:1px solid var(--line);border-radius:12px;margin:0 0 18px}.circuit-layout-preview{width:100%;max-height:280px;object-fit:contain;background:#0b0c0e;border:1px solid var(--line);border-radius:10px;margin:10px 0}
 
 .circuit-layout-image{display:block;width:100%;max-height:300px;object-fit:contain;background:#0b0c0e;border:1px solid var(--line);border-radius:12px;margin:0 0 18px}.circuit-layout-preview{width:100%;max-height:280px;object-fit:contain;background:#0b0c0e;border:1px solid var(--line);border-radius:10px;margin:10px 0}
+
+.circuit-admin-list{margin-bottom:18px}.circuit-admin-table{min-width:1120px}.circuit-admin-table td{white-space:nowrap}.circuit-edit-button{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}.circuit-admin-list .s5-table-wrap{max-height:560px;overflow:auto}
