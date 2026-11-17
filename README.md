@@ -838,3 +838,11 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Grid shell memakai tinggi berbasis konten agar footer tetap setelah seluruh konten workspace.
 - Workspace content tidak dipaksa menjadi area dengan tinggi viewport dan tidak memakai scroll vertikal internal global.
 - Perubahan ini frontend-only; tidak ada migrasi database atau perubahan dependency.
+
+
+### Mobile content and footer flow correction
+
+- The application shell uses a vertical flex layout so page content grows naturally and the footer remains after it in document flow.
+- Workspace pages do not create an independent vertical scroll container; the document is the single vertical scroller on mobile and desktop.
+- The footer cannot overlay or consume the workspace's viewport-sized grid track.
+- Frontend-only correction; no dependency changes or database migration.
