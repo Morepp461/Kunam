@@ -7,19 +7,14 @@ import DevelopmentPricingMatrix from "./DevelopmentPricingMatrix";
 
 type Config={id:string;config_key:string;title:string;payload:Record<string,unknown>;is_active:boolean};
 type TaxRule={id?:string;tax_scope:"member"|"team";label:string;minimum_base:string;rate_percent:string;is_active:boolean;sort_order:number};
-type PointPrice={part_key:string;cash_eur_per_point:number;cash_is_configured:boolean};
-type DriverPrice={attribute_key:string;cash_eur_per_point:number;cash_is_configured:boolean};
 type RaceReward={season_division_id:string;season_title:string;division_name:string;driver_win_ddp:number;team_win_tdp:number;driver_pole_ddp:number;team_pole_tdp:number;is_active:boolean};
 type LoanRate={tenor_seasons:number;total_interest_rate:number};
 const TEAM:[string,string][]=[["race_pace","Race Pace"],["qualifying_pace","Qualifying Pace"],["engine_power","Engine Power"],["aero_power","Aero Power"],["low_speed_corners","Low Speed Corners"],["high_speed_corners","High Speed Corners"],["traction","Traction"],["mechanical_grip","Mechanical Grip"],["team_tyre_management","Team Tyre Management"],["strategy_quality","Strategy Quality"],["team_morale","Team Morale"],["reliability","Reliability"],["car_tyre_wear","Car Tyre Wear"],["pit_stop_efficiency","Pit Stop Efficiency"],["drs_efficiency","DRS Efficiency"],["ers_efficiency","ERS Efficiency"]];
 const DRIVER:[string,string][]=[["race_pace","Race Pace"],["qualifying_pace","Qualifying Pace"],["experience","Experience"],["aggression","Aggression"],["defensive_strength","Defensive Strength"],["overtake_skill","Overtake Skill"],["mistake_rate","Mistake Rate"],["tyre_management","Tyre Management"]];
-const TEAM_CASH:Record<string,number>={race_pace:2500000,qualifying_pace:2000000,engine_power:3000000,aero_power:2800000,low_speed_corners:1500000,high_speed_corners:1800000,traction:1500000,mechanical_grip:1500000,team_tyre_management:1200000,strategy_quality:1200000,team_morale:800000,reliability:2000000,car_tyre_wear:1200000,pit_stop_efficiency:1000000,drs_efficiency:1500000,ers_efficiency:2000000};
-const DRIVER_CASH:Record<string,number>={race_pace:1000000,qualifying_pace:850000,experience:600000,aggression:450000,defensive_strength:600000,overtake_skill:600000,mistake_rate:450000,tyre_management:750000};
 const num=(v:string)=>Number(v);
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:0});
 const blankTax=(scope:"member"|"team",i:number):TaxRule=>({tax_scope:scope,label:scope==="member"?"Member Tier "+(i+1):"Team Tier "+(i+1),minimum_base:"",rate_percent:"",is_active:true,sort_order:i+1});
 export default function AdminPricingCenter(){
- const [teamPrices,setTeamPrices]=useState<PointPrice[]>([]),[driverPrices,setDriverPrices]=useState<DriverPrice[]>([]);
  const [raceRewards,setRaceRewards]=useState<RaceReward[]>([]);
  const [taxRules,setTaxRules]=useState<TaxRule[]>([]);
  const [loanRates,setLoanRates]=useState<LoanRate[]>([]);
@@ -30,9 +25,7 @@ export default function AdminPricingCenter(){
  const load=useCallback(async()=>{
   if(!supabase){setNotice({ok:false,text:"Koneksi Supabase tidak tersedia."});setLoading(false);return;}
   setLoading(true);setNotice(null);
-  const [team,driver,tax,loan,config,rewards,divisions,seasons]=await Promise.all([
-   supabase.from("caleris_team_development_pricing").select("part_key,cash_eur_per_point,cash_is_configured").order("part_key"),
-   supabase.from("caleris_driver_development_pricing").select("attribute_key,cash_eur_per_point,cash_is_configured").order("attribute_key"),
+  const [tax,loan,config,rewards,divisions,seasons]=await Promise.all([
    supabase.from("caleris_tax_rules").select("id,tax_scope,label,minimum_base,rate_percent,is_active,sort_order").eq("tax_type","wealth").order("tax_scope").order("minimum_base"),
    supabase.from("economy_cash_loan_interest_rates").select("tenor_seasons,total_interest_rate").order("tenor_seasons"),
    supabase.from("caleris_configurations").select("id,config_key,title,payload,is_active").eq("category","economy").in("config_key",["daily-checkin-reward","team-takeover-valuation-range"]),
@@ -40,10 +33,8 @@ export default function AdminPricingCenter(){
    supabase.from("license_season_divisions").select("id,season_id,division_name").order("created_at"),
    supabase.from("license_seasons").select("id,title")
   ]);
-  const errors=[team.error,driver.error,tax.error,loan.error,config.error,rewards.error,divisions.error,seasons.error].filter(Boolean);
+  const errors=[tax.error,loan.error,config.error,rewards.error,divisions.error,seasons.error].filter(Boolean);
   if(errors.length){setNotice({ok:false,text:errors.map(e=>e?.message).join(" · ")});setLoading(false);return;}
-  setTeamPrices(TEAM.map(([key])=>{const row=(team.data||[]).find(x=>x.part_key===key);return {part_key:key,cash_eur_per_point:Number(row?.cash_eur_per_point??TEAM_CASH[key]),cash_is_configured:Boolean(row?.cash_is_configured??true)}}));
-  setDriverPrices(DRIVER.map(([key])=>{const row=(driver.data||[]).find(x=>x.attribute_key===key);return {attribute_key:key,cash_eur_per_point:Number(row?.cash_eur_per_point??DRIVER_CASH[key]),cash_is_configured:Boolean(row?.cash_is_configured??true)}}));
   setRaceRewards((divisions.data||[]).map(d=>{const row=(rewards.data||[]).find(x=>x.season_division_id===d.id);const season=(seasons.data||[]).find(s=>s.id===d.season_id);return {season_division_id:d.id,season_title:season?.title||"Season",division_name:d.division_name,driver_win_ddp:Number(row?.driver_win_ddp??3),team_win_tdp:Number(row?.team_win_tdp??3),driver_pole_ddp:Number(row?.driver_pole_ddp??0),team_pole_tdp:Number(row?.team_pole_tdp??0),is_active:Boolean(row?.is_active??true)}}));
   const existing=(tax.data||[]) as TaxRule[];
   setTaxRules(["member","team"].flatMap(scope=>{const rows=existing.filter(x=>x.tax_scope===scope).slice(0,3);return [0,1,2].map(i=>rows[i]?{...rows[i],minimum_base:String(rows[i].minimum_base),rate_percent:String(rows[i].rate_percent)}:blankTax(scope as "member"|"team",i))}));
@@ -56,7 +47,6 @@ export default function AdminPricingCenter(){
   setLoading(false);
  },[]);
  useEffect(()=>{void load()},[load]);
- const savePoints=async(scope:"team"|"driver")=>{if(!supabase)return;const rows=scope==="team"?teamPrices:driverPrices;if(rows.some(x=>!Number.isFinite(x.cash_eur_per_point)||x.cash_eur_per_point<=0)){setNotice({ok:false,text:"Harga cash per poin harus lebih dari €0."});return;}setSaving(scope);const result=scope==="team"?await supabase.from("caleris_team_development_pricing").upsert(teamPrices.map(x=>({...x,tdp_per_point:1,is_configured:true,cash_is_configured:true,updated_at:new Date().toISOString()})),{onConflict:"part_key"}):await supabase.from("caleris_driver_development_pricing").upsert(driverPrices.map(x=>({...x,ddp_per_point:1,is_configured:true,cash_is_configured:true,updated_at:new Date().toISOString()})),{onConflict:"attribute_key"});setSaving("");setNotice({ok:!result.error,text:result.error?.message||(scope==="team"?"Harga Development mobil":"Harga Development Driver")+" berhasil disimpan."});if(!result.error)await load();};
  const saveRewards=async()=>{if(!supabase)return;if(raceRewards.some(x=>[x.driver_win_ddp,x.team_win_tdp,x.driver_pole_ddp,x.team_pole_tdp].some(v=>!Number.isFinite(v)||v<0||Math.round(v*100)!==v*100))){setNotice({ok:false,text:"Race reward harus berupa angka nol atau lebih dengan maksimal dua desimal."});return;}setSaving("rewards");const {error}=await supabase.from("caleris_race_reward_rules").upsert(raceRewards.map(x=>({season_division_id:x.season_division_id,driver_win_ddp:x.driver_win_ddp,team_win_tdp:x.team_win_tdp,driver_pole_ddp:x.driver_pole_ddp,team_pole_tdp:x.team_pole_tdp,is_active:x.is_active,updated_at:new Date().toISOString()})),{onConflict:"season_division_id"});setSaving("");setNotice({ok:!error,text:error?.message||"Race Development rewards berhasil disimpan."});if(!error)await load();};
  const saveTax=async()=>{if(!supabase)return;for(const scope of ["member","team"] as const){const rows=taxRules.filter(x=>x.tax_scope===scope);if(rows.length!==3||rows.some(x=>!x.label.trim()||x.minimum_base.trim()===""||x.rate_percent.trim()===""||!Number.isFinite(num(x.minimum_base))||num(x.minimum_base)<0||!Number.isFinite(num(x.rate_percent))||num(x.rate_percent)<=0)){setNotice({ok:false,text:"Wealth Tax wajib memiliki 3 tier Member dan 3 tier Team dengan ambang ≥ 0 dan tarif > 0."});return;}const sorted=[...rows].sort((a,b)=>num(a.minimum_base)-num(b.minimum_base));if(new Set(sorted.map(x=>num(x.minimum_base))).size!==3||sorted.some((x,i)=>i>0&&num(x.rate_percent)<=num(sorted[i-1].rate_percent))){setNotice({ok:false,text:"Ambang tiap tier harus unik dan tarif harus meningkat seiring ambang kekayaan."});return;}}
   setSaving("tax");let error: any=null;
@@ -65,8 +55,6 @@ export default function AdminPricingCenter(){
  };
  const saveLoans=async()=>{if(!supabase)return;if(loanRates.length!==4||loanRates.some(x=>!Number.isInteger(x.tenor_seasons)||x.tenor_seasons<1||x.tenor_seasons>4||!Number.isFinite(x.total_interest_rate)||x.total_interest_rate<0||x.total_interest_rate>100)||new Set(loanRates.map(x=>x.tenor_seasons)).size!==4){setNotice({ok:false,text:"Bunga pinjaman harus mencakup tenor 1 sampai 4 season, masing-masing 0–100%."});return;}setSaving("loan");let error:any=null;for(const row of loanRates){const r=await supabase.from("economy_cash_loan_interest_rates").update({total_interest_rate:row.total_interest_rate}).eq("tenor_seasons",row.tenor_seasons);if(r.error){error=r.error;break;}}setSaving("");setNotice({ok:!error,text:error?.message||"Bunga Cash Loan berhasil diperbarui. Pinjaman baru akan memakai tarif terbaru; pinjaman aktif tetap memakai snapshot saat pengajuan."});if(!error)await load();};
  const saveOther=async()=>{if(!supabase)return;const daily=num(dailyReward),min=num(takeoverMin),max=num(takeoverMax);if(!Number.isFinite(daily)||daily<0||Math.round(daily*100)!==daily*100||!Number.isFinite(min)||!Number.isFinite(max)||min<0||max<min){setNotice({ok:false,text:"Periksa reward harian dan rentang valuasi Take Over."});return;}setSaving("other");let error:any=null;const dailyRow=configs.find(x=>x.config_key==="daily-checkin-reward"),rangeRow=configs.find(x=>x.config_key==="team-takeover-valuation-range");if(!dailyRow||!rangeRow)error=new Error("Konfigurasi reward atau rentang Take Over tidak ditemukan di database.");else{const a=await supabase.from("caleris_configurations").update({payload:{...dailyRow.payload,amount:daily},is_active:dailyActive&&daily>0,updated_at:new Date().toISOString()}).eq("id",dailyRow.id);if(a.error)error=a.error;else{const b=await supabase.from("caleris_configurations").update({payload:{...rangeRow.payload,minimum_percent:min,maximum_percent:max},updated_at:new Date().toISOString()}).eq("id",rangeRow.id);if(b.error)error=b.error;}}setSaving("");setNotice({ok:!error,text:error?.message||"Reward harian dan rentang Take Over berhasil disimpan."});if(!error)await load();};
- const setTeam=(key:string,value:string)=>setTeamPrices(v=>v.map(x=>x.part_key===key?{...x,cash_eur_per_point:num(value)}:x));
- const setDriver=(key:string,value:string)=>setDriverPrices(v=>v.map(x=>x.attribute_key===key?{...x,cash_eur_per_point:num(value)}:x));
  const setReward=(divisionId:string,patch:Partial<RaceReward>)=>setRaceRewards(v=>v.map(x=>x.season_division_id===divisionId?{...x,...patch}:x));
  const setTax=(index:number,patch:Partial<TaxRule>)=>setTaxRules(v=>v.map((x,i)=>i===index?{...x,...patch}:x));
  return <section className="workspace pricing-workspace">
