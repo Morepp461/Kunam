@@ -1,7 +1,7 @@
 import {ImagePlus,ShieldCheck,Table2} from "lucide-react";
 
 export default function RaceControl(){
- return <section className="workspace race-control">
+ return <section className="workspace race-control" data-grid-field="grid_position" data-finish-time-field="finish_time_ms" data-fastest-lap-field="fastest_lap_ms" data-dotd-field="driver_of_day_member_id" data-stint-ui="race-stint-dots" data-official-submit="fia_submit_race_classification">
   <header className="page-heading">
    <span className="section-eyebrow">FIA PANEL · OFFICIAL RACE CONTROL</span>
    <h1 className="page-title">Race Result Intake</h1>
