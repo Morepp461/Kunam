@@ -523,4 +523,4 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 - The upgrade RPC validates the current Driver license-to-tier mapping or Team division again at settlement and reads the matching price row. New or unmapped license labels block cash upgrades until Admin explicitly maps them; the system never guesses a conversion.
 - The member Development page reads the same tier/division-specific price rows for its cost preview. Cash settlement remains an atomic Driver/Team wallet debit and Development Treasury credit. DDP/TDP remain unchanged.
 - Existing single-rate pricing rows are retained for historical compatibility but are no longer used to authorize cash upgrades.
-- Migrations: `20261117090000_development_license_and_division_pricing.sql`, `20261117093000_development_license_tier_mapping.sql`, and `20261117100000_development_pricing_admin_indexes.sql`.
+- Migrations: `20261117052110_development_license_and_division_pricing.sql`, `20261117052112_development_license_tier_mapping.sql`, and `20261117052114_development_pricing_admin_indexes.sql`.
