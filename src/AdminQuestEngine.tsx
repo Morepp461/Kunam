@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ArrowLeft,Coins,RefreshCw,Save,Wallet} from "lucide-react";
+import {ArrowLeft,Coins,Save} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
 
@@ -10,8 +10,8 @@ const labels:Record<Difficulty,string>={easy:"Easy",normal:"Normal",hard:"Hard",
 const order:Difficulty[]=["easy","normal","hard","elite"];
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 export default function AdminQuestEngine(){
- const [amounts,setAmounts]=useState<Record<Difficulty,string>>({easy:"250",normal:"500",hard:"1000",elite:"2500"});
- const [counts,setCounts]=useState<Counts[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[processing,setProcessing]=useState(false);
+ const [amounts,setAmounts]=useState<Record<Difficulty,string>>({easy:"100000",normal:"200000",hard:"400000",elite:"750000"});
+ const [counts,setCounts]=useState<Counts[]>([]),[loading,setLoading]=useState(true),[saving,setSaving]=useState(false);
  const [notice,setNotice]=useState("");
  const load=useCallback(async()=>{
   if(!supabase){setLoading(false);setNotice("Koneksi Supabase belum tersedia.");return;}
@@ -38,23 +38,14 @@ export default function AdminQuestEngine(){
   if(error){setNotice(error.message);return;}
   setNotice("Nominal reward berhasil diperbarui ("+Number(data?.updated||0)+" tingkat). Assignment yang sudah terbentuk tetap memakai nominal saat assignment dibuat.");await load();
  };
- const processPending=async()=>{
-  if(!supabase)return;setProcessing(true);setNotice("");
-  const {data,error}=await supabase.rpc("admin_process_pending_quest_rewards");
-  setProcessing(false);
-  if(error){setNotice(error.message);return;}
-  setNotice("Pemrosesan selesai. Dibayar: "+Number(data?.paid||0)+" · Menunggu: "+Number(data?.pending||0));
-  await load();
- };
  return <section className="workspace admin-quest-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={15}/> Dashboard</Link>
-  <header className="page-heading"><span className="section-eyebrow">ADMIN CONTROL · ECONOMY</span><h1 className="page-title">Quest Engine</h1><p className="page-description">Kelola nominal reward berdasarkan tingkat kesulitan dan proses reward yang menunggu pendanaan VreeoBank.</p></header>
+  <header className="page-heading"><span className="section-eyebrow">ADMIN CONTROL · ECONOMY</span><h1 className="page-title">Quest Engine</h1><p className="page-description">Kelola nominal reward berdasarkan tingkat kesulitan. Pembayaran hanya dilakukan setelah member menekan tombol Klaim Reward pada Quest yang selesai.</p></header>
   <div className="admin-quest-summary">{counts.map(x=><article key={x.role_scope+":"+x.quest_type}><span>{x.role_scope==="driver"?"Driver":"Team Owner"} · {x.quest_type==="daily"?"Daily":"Period"}</span><strong>{x.total} quest</strong></article>)}</div>
   <section className="workspace-card admin-quest-card"><div className="section-title-row"><div><span className="section-eyebrow">REWARD CONFIGURATION</span><h2>Nominal berdasarkan kesulitan</h2></div><Coins size={19}/></div>
    {loading?<p>Memuat konfigurasi...</p>:<div className="admin-quest-reward-list">{order.map(difficulty=><label className="admin-quest-reward-row" key={difficulty}><span><strong>{labels[difficulty]}</strong><small>Reward per quest selesai</small></span><div><span>€</span><input type="number" min="0.01" step="0.01" value={amounts[difficulty]} onChange={e=>setAmounts(v=>({...v,[difficulty]:e.target.value}))}/></div><b>{money(Number(amounts[difficulty]||0))}</b></label>)}</div>}
    <button className="admin-quest-save" disabled={loading||saving} onClick={()=>void save()}><Save size={15}/>{saving?"Menyimpan...":"Simpan nominal reward"}</button>
   </section>
-  <section className="workspace-card admin-quest-card"><div className="section-title-row"><div><span className="section-eyebrow">VREEOBANK SETTLEMENT</span><h2>Reward tertunda</h2></div><Wallet size={19}/></div><p>Reward yang sudah selesai tetapi belum terbayar akan dicoba ulang dari saldo VreeoBank.</p><button className="admin-quest-save secondary" disabled={processing} onClick={()=>void processPending()}><RefreshCw size={15}/>{processing?"Memproses...":"Proses reward tertunda"}</button></section>
   {notice&&<div className="license-notice" role="status">{notice}</div>}
  </section>;
 }
