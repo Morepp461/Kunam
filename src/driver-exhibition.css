@@ -44,3 +44,21 @@
   .driver-joystick-base{width:88px;height:88px}
   .driver-exhibition-scene:has(.driver-selected-panel){height:84svh}
 }
+
+
+/* Premium paddock gallery and reliable mobile fullscreen */
+.driver-exhibition-top-actions{pointer-events:auto;position:relative;z-index:8}
+.driver-fullscreen-button{position:relative;z-index:9;pointer-events:auto;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.driver-exhibition-top{pointer-events:none}
+.driver-exhibition-fullscreen-fallback{position:fixed!important;inset:0!important;z-index:99999!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;border:0!important;border-radius:0!important}
+.driver-exhibition-fullscreen-fallback .driver-exhibition-webgl{height:100dvh}
+.driver-exhibition-fullscreen-fallback .driver-exhibition-top-actions{pointer-events:auto}
+.driver-exhibition-fullscreen-fallback .driver-fullscreen-button{pointer-events:auto}
+.driver-exhibition-scene{background:radial-gradient(ellipse at 50% 0%,#3a3430 0%,#1b2025 48%,#090c10 100%);box-shadow:0 30px 100px #000b,inset 0 0 0 1px #c3a66a35}
+.driver-exhibition-webgl{background:linear-gradient(145deg,#363b40,#171b20)}
+.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(4,6,9,.42),rgba(4,6,9,.08) 42%,transparent 76%),linear-gradient(0deg,rgba(4,6,9,.52),transparent 34%,rgba(4,6,9,.06));}
+@media(max-width:760px){
+  .driver-exhibition-top-actions{gap:6px}
+  .driver-fullscreen-button{width:38px;height:38px;min-width:38px;min-height:38px}
+  .driver-exhibition-fullscreen-fallback .driver-exhibition-controls{bottom:max(60px,env(safe-area-inset-bottom))}
+}

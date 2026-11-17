@@ -56,7 +56,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       supabase.from("profiles").select("user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown").eq("user_id", session.user.id).maybeSingle(),
       supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }),
       supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
-      supabase.from("caleris_member_directory").select("id,character_name,role,license,team_id").order("character_name"),
+      supabase.from("caleris_member_directory").select("id,character_name,role,license,team_id,avatar_path").order("character_name"),
       supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,status"),
       supabase.from("license_rounds").select("id,season_division_id,round_number,title,circuit_name,circuit_country_code,status,processed_at").order("round_number"),
       supabase.from("license_round_standings").select("id,round_id,member_id,points_total"),
@@ -163,7 +163,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     return map;
   }, [data.roundPoints, data.finalStandings, data.activeDivisions, scopedRoundIds]);
   const driverRows = useMemo(() => members.filter((m: Row) => m.role === "Driver" && inDivision(m.team_id)).map((m: Row) => ({
-    ...m, points: roundPoints.get(m.id) || 0, team: teamOf(m.team_id), profile: teamProfile(m.team_id),
+    ...m, avatar_url: m.avatar_path && supabase ? supabase.storage.from("profile-avatars").getPublicUrl(m.avatar_path).data.publicUrl : null, points: roundPoints.get(m.id) || 0, team: teamOf(m.team_id), profile: teamProfile(m.team_id),
     wins: (data.raceResults || []).filter((r: Row) => r.winner_member_id === m.id && (data.activeRoundIds || []).includes(r.round_id)).length,
     poles: (data.raceResults || []).filter((r: Row) => r.pole_member_id === m.id && (data.activeRoundIds || []).includes(r.round_id)).length,
     finishes: (data.resultEntries || []).filter((r: Row) => r.member_id === m.id && r.finish_status === "finished" && (data.activeRoundIds || []).includes(r.round_id)).length,
@@ -366,7 +366,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     const resultsDetail = detail === "results";
     const driverListDetail = detail === "driver-list";
     const teamListDetail = detail === "team-list";
-    if (driverListDetail) return <section className="workspace s5-workspace">{heading("MAIN EVENT · " + scope, data.activeSeason?.title || "Caleris Masters", "Jelajahi seluruh driver Caleris Masters dalam 3D exhibition hall.")}<DriverExhibition drivers={driverRows} scope={tab}/></section>;
+    if (driverListDetail) return <section className="workspace s5-workspace">{heading("MAIN EVENT · " + scope, data.activeSeason?.title || "Caleris Masters", "Jelajahi seluruh driver Caleris Masters dalam 3D exhibition hall.")}<DriverExhibition drivers={driverRows} gallery={members.filter((m: Row) => (m.role === "Driver" || m.role === "Owner") && inDivision(m.team_id)).map((m: Row) => ({ ...m, avatar_url: m.avatar_path && supabase ? supabase.storage.from("profile-avatars").getPublicUrl(m.avatar_path).data.publicUrl : null, team: teamOf(m.team_id) }))} scope={tab}/></section>;
     return <section className="workspace s5-workspace">{heading("MAIN EVENT · "+scope, data.activeSeason?.title||"Caleris Masters", "Klasemen, statistik, jadwal, dan performa resmi "+scope.toLowerCase()+".")}<div className="s5-main-tabs"><Link to={"/main-event/"+tab+"/driver-ranking"}>Driver Ranking</Link><Link to={"/main-event/"+tab+"/rookie-of-the-season"}>Rookie of the Season</Link><Link to={"/main-event/"+tab+"/team-ranking"}>Team Ranking</Link><Link to={"/main-event/"+tab+"/engine-ranking"}>Engine Ranking</Link><Link to={"/main-event/"+tab+"/statistic"}>Statistics</Link><Link to={"/main-event/"+tab+"/comparison"}>Comparison</Link><Link to={"/main-event/"+tab+"/calendar"}>Schedule</Link><Link to={"/main-event/"+tab+"/results"}>Results</Link><Link to={"/main-event/"+tab+"/driver-list"}>Driver List</Link><Link to={"/main-event/"+tab+"/team-list"}>Team List</Link></div>
       {(!detail||driverDetail)&&<Card title="Driver Ranking" eyebrow="OFFICIAL CHAMPIONSHIP STANDINGS"><Table headers={["POS","DRIVER","TEAM / LOGO","POINTS"]} rows={standingsRows}/></Card>}
       {(!detail||rookieDetail)&&<Card title="Rookie of the Season" eyebrow="BEST-PLACED DEBUTANT"><div className="s5-rookie">{currentRookie?<><Medal/><div><span>{(data.finalStandings||[]).some((standing: Row)=>(data.activeDivisions||[]).some((division: Row)=>division.id===standing.season_division_id))?"ROOKIE OF THE SEASON":"PROVISIONAL ROOKIE LEADER"}</span><h3>{currentRookie.character_name}</h3><p>{currentRookie.team?.name||"Independent"} · {currentRookie.points} points</p></div></>:<Empty>Belum ada debutant yang memenuhi kriteria pada season ini.</Empty>}</div></Card>}
