@@ -113,14 +113,14 @@ tier_prices = {
     "gold": [350000,450000,450000,350000,450000,600000,750000,550000],
     "super": [500000,650000,650000,500000,650000,850000,1000000,800000],
 }
-assert [sum(values)*50 for values in tier_prices.values()] == [87_500_000,136_250_000,200_000_000,280_000_000]
+assert [sum(values)*50 for values in tier_prices.values()] == [87_500_000,131_250_000,197_500_000,280_000_000]
 for tier, values in tier_prices.items():
     assert f"('{tier}','aggression',{values[0]})" in tier_sql
 
-team_division_totals = {"zwei": 8_700_000, "premio": 14_500_000}
+team_division_totals = {"zwei": 8_250_000, "premio": 13_750_000}
 for division,total in team_division_totals.items():
     assert f"('{division}','race_pace'" in tier_sql
-    assert total*50 in [435_000_000,725_000_000]
+    assert total*50 in [412_500_000,687_500_000]
 
 matrix = (ROOT / "src/DevelopmentPricingMatrix.tsx").read_text(encoding="utf-8")
 for fragment in [
