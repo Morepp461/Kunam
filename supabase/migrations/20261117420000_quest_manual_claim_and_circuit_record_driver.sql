@@ -47,7 +47,7 @@ do $migration$
 declare
   v_source text;
   v_old_block text := $old$
-      if v_assignment.reward_status<>'paid' then
+if v_assignment.reward_status<>'paid' then
         if v_bank_id is null then
           update public.caleris_quest_assignments set reward_status='pending' where id=v_assignment.id;
         else
