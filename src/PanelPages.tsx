@@ -27,7 +27,7 @@ export const panelGroups: PanelGroup[] = [
     { path: "development", label: "Development", description: "Pengembangan delapan atribut driver." },
     { path: "training", label: "Training", description: "Program latihan atribut Driver dengan tingkat kesulitan dan cooldown." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
-    { path: "quest", label: "Quest", description: "Daily quest dan weekly quest." },
+    { path: "quest", label: "Quest", description: "Daily Quest dan Period Quest dengan reward saldo wallet." },
     { path: "career-history", label: "Career History", description: "Rekam jejak karier dan statistik." },
     { path: "financial-centre", label: "Financial Centre", description: "Arus keuangan karakter driver." },
     { path: "appeal", label: "Appeal", description: "Pengajuan banding atas sanksi FIA." }
@@ -38,7 +38,7 @@ export const panelGroups: PanelGroup[] = [
     { path: "development", label: "Development", description: "Pengembangan enam belas atribut mobil." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target tim." },
     { path: "driver-registration", label: "Driver Registration", description: "Formulir registrasi driver untuk FIA dan Admin." },
-    { path: "quest", label: "Quest", description: "Daily quest dan weekly quest tim." },
+    { path: "quest", label: "Quest", description: "Daily Quest dan Period Quest tim dengan reward saldo wallet." },
     { path: "scout", label: "Scout", description: "Pencarian dan pemantauan driver." },
     { path: "place-job-advert", label: "Place Job Advert", description: "Publikasi lowongan kursi driver." },
     { path: "affiliate-team", label: "Affiliate Team", description: "Daftar, permintaan, dan perjanjian afiliasi." },
@@ -127,14 +127,14 @@ export default function PanelPage() {
   if(group.path==="driver-panel"){
     if(tab.path==="development")return <section className="workspace"><AttributePage title="Driver Development" attributes={driverAttributes}/></section>;
     if(tab.path==="character")return <section className="workspace"><Heading eyebrow="Driver Panel" title={title} description={tab.description}/><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">DRIVER IDENTITY</span><h2>Character Profile</h2><EmptyPanel title="Profil driver belum terhubung" body="Identitas, lisensi, tim, divisi, dan statistik karakter akan ditampilkan di sini."/></div><div className="workspace-card"><span className="section-eyebrow">CONTRACT</span><h2>Contract Overview</h2><EmptyPanel title="Belum ada data kontrak" body="Durasi, gaji, target, klausul pelepasan, dan status kontrak akan ditampilkan di sini."/></div></div></section>;
-    const descriptions:Record<string,string>={sponsorship:"Sponsor aktif, penawaran brand lain, nilai kerja sama, serta progress target sponsor.",quest:"Daftar daily quest dan weekly quest untuk memperoleh DDP maupun €.", "career-history":"Riwayat season, tim, posisi klasemen, front row, pole rate, sprint win rate, dan race win rate.","financial-centre":"Ringkasan pemasukan, pengeluaran, saldo, dan riwayat transaksi driver."};
+    const descriptions:Record<string,string>={sponsorship:"Sponsor aktif, penawaran brand lain, nilai kerja sama, serta progress target sponsor.",quest:"Daily Quest dan Period Quest dengan reward saldo wallet Driver.", "career-history":"Riwayat season, tim, posisi klasemen, front row, pole rate, sprint win rate, dan race win rate.","financial-centre":"Ringkasan pemasukan, pengeluaran, saldo, dan riwayat transaksi driver."};
     return <section className="workspace"><Heading eyebrow="Driver Panel" title={title} description={tab.description}/><EmptyPanel title={title+" belum diaktifkan"} body={descriptions[tab.path]||tab.description}/></section>;
   }
   if(group.path==="team-panel"){
     if(tab.path==="development")return <section className="workspace"><AttributePage title="Team Car Development" attributes={carAttributes}/></section>;
     if(tab.path==="team-summary")return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">TEAM IDENTITY</span><h2>Team Profile</h2><EmptyPanel title="Profil tim belum terhubung" body="Nama, logo, engine, divisi, dan profil tim akan tampil di sini."/></div><div className="workspace-card"><span className="section-eyebrow">DRIVER LINE-UP</span><h2>Driver Statistics</h2><EmptyPanel title="Line-up belum tersedia" body="Profil dan statistik kedua driver akan ditampilkan di sini."/></div></div><div className="workspace-card panel-season-note"><span className="section-eyebrow">SEASON TIMELINE</span><h2>Season Period Configuration</h2><p>Off season, pre season, race periods, balancing breaks, dan end season akan mengikuti konfigurasi periode aktif. Jumlah kalender per race period serta durasi setiap fase tidak ditetapkan secara hardcode.</p><span className="empty-tag">CONFIGURATION-DRIVEN</span></div></section>;
     if(tab.path==="place-job-advert")return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><EmptyPanel title="Job advert form belum diaktifkan" body="Team owner nantinya dapat membuat lowongan untuk kursi kosong atau kursi yang akan kosong, lalu meninjau lamaran di halaman ini."/></section>;
-    const copy:Record<string,string>={sponsorship:"Daftar sponsor tim, penawaran brand, target, dan progress pencapaian.", "driver-registration":"Form pendaftaran driver yang akan dikirim untuk peninjauan FIA dan Admin.",quest:"Daily quest dan weekly quest untuk mendapatkan DDP maupun €.",scout:"Pencarian driver tim lain berdasarkan lisensi, atribut, performa, dan status kontrak.","affiliate-team":"Daftar affiliate, request masuk/keluar, serta detail perjanjian setiap tim.",appeal:"Pengajuan banding, hasil keputusan FIA, dan riwayat banding tim."};
+    const copy:Record<string,string>={sponsorship:"Daftar sponsor tim, penawaran brand, target, dan progress pencapaian.", "driver-registration":"Form pendaftaran driver yang akan dikirim untuk peninjauan FIA dan Admin.",quest:"Daily Quest dan Period Quest dengan reward saldo wallet tim.",scout:"Pencarian driver tim lain berdasarkan lisensi, atribut, performa, dan status kontrak.","affiliate-team":"Daftar affiliate, request masuk/keluar, serta detail perjanjian setiap tim.",appeal:"Pengajuan banding, hasil keputusan FIA, dan riwayat banding tim."};
     return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><EmptyPanel title={title+" belum diaktifkan"} body={copy[tab.path]||tab.description}/></section>;
   }
   if(group.path==="fia-panel"){
