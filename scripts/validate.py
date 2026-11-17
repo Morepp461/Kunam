@@ -191,9 +191,28 @@ def main():
     contracts_source = contracts_component.read_text(encoding="utf-8")
     for fragment in ["season_calendar_periods", "season_period_rounds", "economy_driver_contracts", "economy_payroll_claims", "fia_create_season_calendar", "payroll_for_period_round", "admin_process_pending_economy_payroll", "is_caleris_fia_or_admin"]:
         assert fragment in calendar_sql, f"Season calendar/payroll migration missing: {fragment}"
-    for fragment in ["Off Season", "Pre Season", "Race Period", "Break Race Period", "End Season", "Reschedule", "3–5 round", "fia_create_season_calendar"]:
+    for fragment in ["Off Season", "Pre Season", "Race Periode", "Break Balancing Periode", "End Season", "Reschedule", "3–5 round", "fia_create_season_calendar", "PERIOD_SEQUENCE"]:
         assert fragment in calendar_source, f"Season calendar UI missing: {fragment}"
     assert "annual_salary" in contracts_source and "economy_driver_contracts" in contracts_source
+
+    quest_page = ROOT / "src/QuestPage.tsx"
+    quest_admin = ROOT / "src/AdminQuestEngine.tsx"
+    quest_styles = ROOT / "src/quest-engine.css"
+    quest_admin_styles = ROOT / "src/admin-quest-engine.css"
+    quest_migrations = sorted((ROOT / "supabase/migrations").glob("*_quest_*.sql"))
+    assert quest_page.is_file() and quest_admin.is_file() and quest_styles.is_file() and quest_admin_styles.is_file(), "Missing Quest Engine UI"
+    assert len(quest_migrations) >= 7, "Missing Quest Engine database migrations"
+    quest_source = quest_page.read_text(encoding="utf-8")
+    quest_admin_source = quest_admin.read_text(encoding="utf-8")
+    quest_sql = "\\n".join(path.read_text(encoding="utf-8") for path in quest_migrations)
+    for fragment in ["member_get_quest_board", "Daily Quest", "Period Quest", "reward_status", "VreeoBank", "Driver Wallet", "Owner Wallet"]:
+        assert fragment in quest_source, f"Quest board missing: {fragment}"
+    for fragment in ["admin_update_quest_reward_amounts", "admin_process_pending_quest_rewards", "Nominal berdasarkan kesulitan"]:
+        assert fragment in quest_admin_source, f"Quest Admin missing: {fragment}"
+    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "admin_process_pending_quest_rewards", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='team_owner'", "PERIOD_SEQUENCE"]:
+        assert fragment in quest_sql or fragment in calendar_source, f"Quest Engine migration missing: {fragment}"
+    assert 'path="/driver-panel/quest"' in app and 'path="/team-panel/quest"' in app and 'path="/admin/quest-engine"' in app
+    assert "Quest Engine" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "payroll" in edge_source and "process_payroll_pending" in edge_source
     assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
     assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app

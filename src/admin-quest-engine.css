@@ -1,0 +1,16 @@
+.admin-quest-workspace{display:grid;gap:18px}
+.admin-quest-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.admin-quest-summary article{display:grid;gap:7px;padding:14px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:12px;background:rgba(255,255,255,.025)}
+.admin-quest-summary span{font-size:11px;color:var(--muted,#aaa);text-transform:uppercase;letter-spacing:.06em}.admin-quest-summary strong{font-size:20px}
+.admin-quest-card{display:grid;gap:16px}
+.admin-quest-card>p{margin:0;color:var(--muted,#aaa);font-size:13px;line-height:1.55}
+.admin-quest-reward-list{display:grid;gap:0}
+.admin-quest-reward-row{display:grid;grid-template-columns:1fr minmax(120px,190px) 120px;align-items:center;gap:14px;padding:13px 0;border-bottom:1px solid var(--line,rgba(255,255,255,.1))}
+.admin-quest-reward-row>span{display:grid;gap:4px}.admin-quest-reward-row strong{font-size:14px}.admin-quest-reward-row small{font-size:11px;color:var(--muted,#aaa)}
+.admin-quest-reward-row>div{display:flex;align-items:center;gap:8px;border:1px solid var(--line,rgba(255,255,255,.15));border-radius:9px;padding:0 10px}
+.admin-quest-reward-row input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:inherit;padding:10px 0;font:inherit;font-variant-numeric:tabular-nums}
+.admin-quest-reward-row>b{text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+.admin-quest-save{display:inline-flex;align-items:center;justify-content:center;gap:8px;justify-self:start;padding:10px 14px;border:1px solid rgba(157,47,54,.55);border-radius:9px;background:rgba(150,36,44,.16);color:inherit;font:inherit;cursor:pointer}
+.admin-quest-save.secondary{border-color:var(--line,rgba(255,255,255,.16));background:rgba(255,255,255,.04)}
+.admin-quest-save:disabled{opacity:.55;cursor:wait}
+@media(max-width:650px){.admin-quest-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-quest-reward-row{grid-template-columns:1fr minmax(105px,145px);gap:8px}.admin-quest-reward-row>b{grid-column:2;text-align:left}}

@@ -1,0 +1,25 @@
+.quest-workspace{display:grid;gap:22px}
+.quest-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.quest-refresh{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:10px;background:rgba(255,255,255,.045);color:inherit;font:inherit;cursor:pointer}
+.quest-refresh:disabled{opacity:.55;cursor:wait}
+.quest-wallet-strip{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:14px;background:linear-gradient(110deg,rgba(150,28,38,.16),rgba(255,255,255,.025))}
+.quest-wallet-strip div{display:grid;gap:5px}.quest-wallet-strip div span{font-size:12px;color:var(--muted,#aaa)}.quest-wallet-strip strong{font-size:24px;letter-spacing:.02em}
+.quest-wallet-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:rgba(160,34,44,.18);color:#e4b0a8}
+.quest-section{display:grid;gap:14px}
+.quest-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.quest-section-heading h2{margin:4px 0;font-size:23px}.quest-section-heading p{margin:0;color:var(--muted,#aaa);font-size:13px;display:flex;align-items:center;gap:7px}
+.quest-count{font-size:12px;color:var(--muted,#aaa);border:1px solid var(--line,rgba(255,255,255,.14));padding:6px 10px;border-radius:99px;white-space:nowrap}
+.quest-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.quest-card{min-width:0;display:flex;flex-direction:column;gap:14px;padding:17px;border:1px solid var(--line,rgba(255,255,255,.13));border-radius:14px;background:rgba(17,19,23,.78)}
+.quest-card.is-complete{border-color:rgba(183,142,91,.4)}
+.quest-card-top,.quest-card-bottom,.quest-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.quest-category{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted,#aaa)}
+.quest-difficulty{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:99px;padding:5px 8px;background:rgba(255,255,255,.07);color:#d6d6d6}
+.quest-difficulty.easy{color:#b8d5bd;background:rgba(80,135,88,.13)}.quest-difficulty.normal{color:#d8c6a4;background:rgba(160,124,72,.14)}.quest-difficulty.hard{color:#e0a49d;background:rgba(155,52,48,.16)}.quest-difficulty.elite{color:#d9b9e8;background:rgba(120,76,144,.17)}
+.quest-card-copy h3{font-size:17px;margin:0 0 6px}.quest-card-copy p{font-size:13px;line-height:1.55;color:var(--muted,#aaa);margin:0;min-height:38px}
+.quest-progress-meta{font-size:12px;color:var(--muted,#aaa)}.quest-progress-meta strong{font-variant-numeric:tabular-nums;color:var(--text,#eee)}
+.quest-progress-track{height:7px;border-radius:99px;overflow:hidden;background:rgba(255,255,255,.09)}.quest-progress-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8f2730,#c18b62);transition:width .2s ease}
+.quest-reward{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:#e3c39a}.quest-state{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted,#aaa);text-align:right}.quest-state.paid,.quest-state.completed{color:#a8c8ae}.quest-state.pending{color:#dfbd83}.quest-state.expired{color:#999}
+.quest-empty{padding:20px;border:1px dashed var(--line,rgba(255,255,255,.16));border-radius:12px;color:var(--muted,#aaa);font-size:13px}.quest-error{color:#e2a19a}
+.quest-footnote{font-size:12px;line-height:1.6;color:var(--muted,#aaa);margin:0}
+@media(max-width:680px){.quest-heading{align-items:flex-start;flex-direction:column}.quest-refresh{align-self:flex-start}.quest-grid{grid-template-columns:1fr}.quest-section-heading{align-items:flex-start}.quest-card-copy p{min-height:0}}
