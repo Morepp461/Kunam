@@ -354,3 +354,112 @@ body{overflow-x:hidden}
   flex:0 0 auto;
   width:100%;
 }
+
+
+/* Final responsive header balance: larger controls on desktop, clearer brand on mobile. */
+.site-header{
+  min-height:76px;
+  height:76px;
+  padding-left:clamp(20px,3vw,42px);
+  padding-right:clamp(20px,3vw,42px);
+  gap:clamp(14px,2vw,26px);
+}
+.site-header .nav-toggle{
+  flex:0 0 50px;
+  width:50px;
+  height:50px;
+  display:grid;
+  place-items:center;
+}
+.site-header .nav-toggle svg{width:27px;height:27px}
+.site-header .brand{
+  flex:0 0 200px;
+  width:200px;
+  height:64px;
+  min-width:0;
+  margin:0;
+  overflow:visible;
+}
+.site-header .brand img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:left center;
+  transform:scale(1.55);
+  transform-origin:left center;
+}
+.site-header .header-tools{gap:clamp(10px,1.5vw,18px);min-width:0}
+.site-header .global-search{flex:0 0 44px;width:44px;min-width:44px;height:44px}
+.site-header .global-search .tire-search-trigger{width:44px;height:44px;min-width:44px;padding:2px}
+.site-header .global-search .tire-search-trigger svg{transform:scale(1.18)}
+.site-header .global-search.is-expanded{flex:0 1 min(320px,38vw);width:min(320px,38vw);min-width:min(220px,25vw)}
+.site-header .account-menu-wrap{flex:0 0 auto;margin-left:0}
+.site-header .account-avatar-button{
+  display:grid;
+  place-items:center;
+  width:50px;
+  height:50px;
+  padding:3px;
+  border:1px solid rgba(198,163,58,.32);
+  border-radius:50%;
+  background:rgba(4,7,10,.35);
+}
+.site-header .account-avatar-button img{width:42px;height:42px;object-fit:cover;border-radius:50%}
+.site-header .account-avatar-button>svg:first-child{width:28px;height:28px}
+.site-header .account-avatar-button>svg:last-child{display:none}
+@media(max-width:620px){
+  .site-header{
+    height:68px;
+    min-height:68px;
+    padding-left:12px;
+    padding-right:12px;
+    gap:8px;
+  }
+  .site-header .nav-toggle{
+    flex:0 0 42px;
+    width:42px;
+    height:42px;
+  }
+  .site-header .nav-toggle svg{width:26px;height:26px}
+  .site-header .brand{
+    flex:0 0 clamp(138px,36vw,158px);
+    width:clamp(138px,36vw,158px);
+    height:54px;
+    margin:0 0 0 2px;
+    overflow:visible;
+  }
+  .site-header .brand img{
+    transform:scale(1.65);
+    transform-origin:left center;
+  }
+  .site-header .header-tools{gap:4px}
+  .site-header .global-search{flex:0 0 44px;width:44px;min-width:44px;height:44px}
+  .site-header .global-search.is-expanded{
+    flex:0 1 min(280px,calc(100vw - 210px));
+    width:min(280px,calc(100vw - 210px));
+    min-width:min(150px,calc(100vw - 210px));
+  }
+  .site-header .account-avatar-button{
+    width:42px;
+    height:42px;
+    border:0;
+    background:transparent;
+  }
+  .site-header .account-avatar-button img{width:38px;height:38px}
+  .site-header .search-results{top:calc(100% + 8px)}
+}
+@media(max-width:390px){
+  .site-header{padding-left:9px;padding-right:9px;gap:5px}
+  .site-header .nav-toggle{flex-basis:38px;width:38px;height:40px}
+  .site-header .brand{
+    flex-basis:clamp(126px,35vw,140px);
+    width:clamp(126px,35vw,140px);
+    margin-left:1px;
+  }
+  .site-header .brand img{transform:scale(1.55)}
+  .site-header .global-search.is-expanded{
+    flex-basis:min(250px,calc(100vw - 190px));
+    width:min(250px,calc(100vw - 190px));
+    min-width:min(140px,calc(100vw - 190px));
+  }
+}
