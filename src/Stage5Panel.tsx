@@ -50,7 +50,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     if (!supabase) { setNotice("Supabase belum dikonfigurasi."); setLoading(false); return; }
     setLoading(true);
     setNotice("");
-    const [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ, fanPopulationsQ, driverReputationQ] = await Promise.all([
+    const [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ, fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ] = await Promise.all([
       supabase.from("profiles").select("user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown").eq("user_id", session.user.id).maybeSingle(),
       supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }),
       supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
