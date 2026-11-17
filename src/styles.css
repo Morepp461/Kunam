@@ -326,3 +326,7 @@ body{overflow-x:hidden}
   .brand img{transform:none}
   .page-content:has(.workspace){min-height:max-content;overflow:visible}
 }
+
+
+/* Final header logo correction: override all legacy responsive scale rules. */
+.site-header .brand img{transform:none;}
