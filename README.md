@@ -517,10 +517,10 @@ Migrations: `20261116190000_economy_full_settlement_automation.sql` and `2026111
 
 ### Tiered Development Cash Pricing
 
-- Driver cash prices are selected from the Driver's assigned license tier: Bronze, Silver, Gold, or Super. Each of the eight Driver attributes has an independently editable EUR price per +1 point.
+- Driver cash prices are selected from a tier mapping configured by Admin for each existing Driver license label. The mapped tier is Bronze, Silver, Gold, or Super; each of the eight Driver attributes has an independently editable EUR price per +1 point.
 - Team cash prices are selected from the Team's assigned division: Caleris Zwei or Caleris Premio. Each of the sixteen car parts has an independently editable EUR price per +1 point.
-- Admin manages all 64 Driver rates and 32 Team rates in **Admin → Price Configuration**. Database RLS permits authenticated reads and Admin-only writes.
-- The upgrade RPC validates the current Driver license or Team division again at settlement and reads the matching price row. Missing or unsupported classification blocks cash upgrades instead of silently applying a wrong tier.
+- Admin manages 32 Driver rates and 32 Team rates in **Admin → Price Configuration**. Database RLS permits authenticated reads and Admin-only writes.
+- The upgrade RPC validates the current Driver license-to-tier mapping or Team division again at settlement and reads the matching price row. New or unmapped license labels block cash upgrades until Admin explicitly maps them; the system never guesses a conversion.
 - The member Development page reads the same tier/division-specific price rows for its cost preview. Cash settlement remains an atomic Driver/Team wallet debit and Development Treasury credit. DDP/TDP remain unchanged.
 - Existing single-rate pricing rows are retained for historical compatibility but are no longer used to authorize cash upgrades.
-- Migration: `20261117090000_development_license_and_division_pricing.sql`.
+- Migrations: `20261117090000_development_license_and_division_pricing.sql` and `20261117093000_development_license_tier_mapping.sql`.
