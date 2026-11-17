@@ -184,7 +184,7 @@ begin
       select id from first_pick union all select id from fill_pick
     )
     insert into public.caleris_quest_assignments(quest_id,member_id,team_id,season_id,assignment_scope,scope_key,starts_at,ends_at,reward_amount)
-    select e.id,v_member.id,v_member.team_id,v_season_id,'daily',v_day::text,v_day_start,v_day_end,e.reward_amount
+    select e.id,v_member.id,v_member.team_id,v_season_id,'daily',v_day::text,v_now,v_day_end,e.reward_amount
     from eligible e join chosen x on x.id=e.id
     on conflict(member_id,quest_id,assignment_scope,scope_key) do nothing;
   end if;
@@ -292,7 +292,7 @@ begin
       select id from first_pick union all select id from fill_pick
     )
     insert into public.caleris_quest_assignments(quest_id,member_id,team_id,season_id,period_id,assignment_scope,scope_key,starts_at,ends_at,reward_amount)
-    select e.id,v_member.id,v_member.team_id,v_period.season_id,v_period.id,'period',v_period.id::text,v_period_start,v_period_end,e.reward_amount
+    select e.id,v_member.id,v_member.team_id,v_period.season_id,v_period.id,'period',v_period.id::text,greatest(v_period_start,v_now),v_period_end,e.reward_amount
     from eligible e join chosen x on x.id=e.id
     on conflict(member_id,quest_id,assignment_scope,scope_key) do nothing;
   end if;
