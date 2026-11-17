@@ -14,8 +14,7 @@ const tools = [
 ] as const;
 
 const allowedOrigin = (origin: string) =>
-  !origin || origin === "https://calerismastersnewgen-mu.vercel.app" ||
-  /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+  !origin || origin === "https://calerismastersnewgen-mu.vercel.app";
 
 function json(body: unknown, status = 200, extra: HeadersInit = {}) {
   return new Response(JSON.stringify(body), {
