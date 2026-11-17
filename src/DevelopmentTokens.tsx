@@ -51,7 +51,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
   if(asset==="DDP"&&m.license){
    const {data:mapping,error:mappingError}=await supabase.from("caleris_development_license_tier_mapping").select("license_tier").eq("license_label",m.license.trim()).eq("is_active",true).maybeSingle();
    if(mappingError){setNotice(mappingError.message);setLoading(false);return;}
-   const normalizedLicense=String(m.license||"").trim().toLowerCase().replace(/[_-]+/g," ").replace(/\\s+/g," ");
+   const normalizedLicense=String(m.license||"").trim().toLowerCase().replace(/[_-]+/g," ").replace(/\s+/g," ");
    const inferredTier=normalizedLicense.includes("super")?"super":normalizedLicense==="gold"||normalizedLicense.includes("gold")?"gold":normalizedLicense==="silver"||normalizedLicense.includes("silver")?"silver":normalizedLicense==="bronze"||normalizedLicense.includes("bronze")?"bronze":null;
    mappedDriverTier=mapping?.license_tier||inferredTier||"bronze";
   }
