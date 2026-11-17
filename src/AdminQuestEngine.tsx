@@ -31,13 +31,13 @@ export default function AdminQuestEngine({session}:{session:Session}){
  useEffect(()=>{void load()},[load]);
  const save=async()=>{
   if(!supabase)return;
-  for(const difficulty of order){const value=Number(amounts[difficulty]);if(!Number.isFinite(value)||value<=0||Math.round(value*100)!==value*100){setNotice("Nominal setiap tingkat kesulitan harus lebih besar dari nol dan maksimal dua desimal.");return;}}
+  const rewards=order.map(difficulty=>({difficulty,reward_amount:Number(amounts[difficulty])}));
+  for(const item of rewards){if(!Number.isFinite(item.reward_amount)||item.reward_amount<=0||Math.round(item.reward_amount*100)!==item.reward_amount*100){setNotice("Nominal setiap tingkat kesulitan harus lebih besar dari nol dan maksimal dua desimal.");return;}}
   setSaving(true);setNotice("");
-  for(const difficulty of order){
-   const {error}=await supabase.from("caleris_quest_difficulty_rewards").update({reward_amount:Number(amounts[difficulty]),updated_by:session.user.id,updated_at:new Date().toISOString()}).eq("difficulty",difficulty);
-   if(error){setSaving(false);setNotice(error.message);return;}
-  }
-  setSaving(false);setNotice("Nominal reward berhasil diperbarui. Assignment yang sudah terbentuk tetap memakai nominal saat assignment dibuat.");await load();
+  const {data,error}=await supabase.rpc("admin_update_quest_reward_amounts",{p_rewards:rewards});
+  setSaving(false);
+  if(error){setNotice(error.message);return;}
+  setNotice("Nominal reward berhasil diperbarui ("+Number(data?.updated||0)+" tingkat). Assignment yang sudah terbentuk tetap memakai nominal saat assignment dibuat.");await load();
  };
  const processPending=async()=>{
   if(!supabase)return;setProcessing(true);setNotice("");
