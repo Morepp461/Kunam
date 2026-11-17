@@ -48,12 +48,16 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
    :supabase.from("economy_wallet_accounts").select("id,balance").eq("account_kind","team").eq("team_id",ownerId).eq("is_active",true).maybeSingle();
   const devAccountQuery=supabase.from("caleris_development_accounts").select("id,asset_type,balance,member_id,team_id").eq("asset_type",asset).eq(asset==="DDP"?"member_id":"team_id",ownerId).maybeSingle();
   let mappedDriverTier:string|null=null;
-  if(asset==="DDP"&&m.license){
-   const {data:mapping,error:mappingError}=await supabase.from("caleris_development_license_tier_mapping").select("license_tier").eq("license_label",m.license.trim()).eq("is_active",true).maybeSingle();
-   if(mappingError){setNotice(mappingError.message);setLoading(false);return;}
-   const normalizedLicense=String(m.license||"").trim().toLowerCase().replace(/[_-]+/g," ").replace(/\s+/g," ");
-   const inferredTier=normalizedLicense.includes("super")?"super":normalizedLicense==="gold"||normalizedLicense.includes("gold")?"gold":normalizedLicense==="silver"||normalizedLicense.includes("silver")?"silver":normalizedLicense==="bronze"||normalizedLicense.includes("bronze")?"bronze":null;
-   mappedDriverTier=mapping?.license_tier||inferredTier||"bronze";
+  if(asset==="DDP"){
+   if(m.license){
+    const {data:mapping,error:mappingError}=await supabase.from("caleris_development_license_tier_mapping").select("license_tier").eq("license_label",m.license.trim()).eq("is_active",true).maybeSingle();
+    if(mappingError){setNotice(mappingError.message);setLoading(false);return;}
+    const normalizedLicense=String(m.license).trim().toLowerCase().replace(/[_-]+/g," ").replace(/\s+/g," ");
+    const inferredTier=normalizedLicense.includes("super")?"super":normalizedLicense.includes("gold")?"gold":normalizedLicense.includes("silver")?"silver":normalizedLicense.includes("bronze")?"bronze":null;
+    mappedDriverTier=mapping?.license_tier||inferredTier||"bronze";
+   }else{
+    mappedDriverTier="bronze";
+   }
   }
   setDriverPriceTier(mappedDriverTier);
   const priceQuery=asset==="DDP"
