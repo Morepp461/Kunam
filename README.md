@@ -614,3 +614,32 @@ Target otomatis yang tersedia: raihan poin per race, podium per race, kemenangan
 - 20261117320000_brand_fan_inactivity_and_config.sql
 
 The 100 fictional sponsors, including the 20 Indonesia-based entries, are seeded from Pool Sponsor v1.1. Tier reputation thresholds, contract ranges, season durations, focus targets, and division probabilities are seeded from that source. Sponsor budgets start at 1.5× the listed annual amount multiplied by contract duration to cover the agreed annual payment plus 50% seasonal bonus pool; Admin can increase or adjust each budget subject to outstanding commitments.
+
+
+## Brand Ecosystem Automation
+
+Brand Ecosystem sekarang berjalan sebagai game engine berbasis event, bukan rangkaian tombol Admin.
+
+- Saat hasil race dipublikasikan, reputasi Driver dan Team dihitung ulang dari standings, hasil race, konsistensi, pengalaman, dan fanbase.
+- Fan Population untuk Team dan Driver diinisialisasi otomatis saat dibutuhkan. Baseline awal: Premio 20.000 fans/team, Zwei 8.000 fans/team, Driver Premio 1.500 fans, Driver Zwei 750 fans (default 1.000 jika divisi belum ditentukan). Populasi yang sudah ada tidak ditimpa.
+- Fan growth/decline, inactivity, sponsor target progress, dan sponsor matching dipicu oleh publikasi hasil race.
+- Sponsor matching dibatasi maksimal 3 penawaran aktif per tim per season.
+- Counter Team Owner langsung direspons Sponsor Engine. Sponsor menerima counter jika masih dalam batas fleksibilitas dan budget; jika tidak, sponsor membalas dengan angka baru selama batas 3 counter belum tercapai, atau menolak.
+- Sponsor Trust dievaluasi otomatis saat divisi menyelesaikan season.
+- Pembayaran kontrak dan bonus target berjalan melalui Sponsor Source dan Economy Ledger oleh scheduler Supabase setiap 15 menit.
+- Admin Brand Ecosystem menjadi halaman monitoring. Tidak ada lagi tombol manual untuk menghitung reputasi, mengubah fans, menjalankan sponsor response, atau memproses settlement.
+
+### Alur Counter Sponsor
+
+1. Sponsor mengirim penawaran awal.
+2. Team Owner memilih Accept, Reject, atau Counter.
+3. Saat Counter dikirim, Sponsor Engine otomatis memeriksa fleksibilitas sponsor dan ketersediaan budget.
+4. Sponsor dapat menerima nominal, mengirim counter baru, atau menolak.
+5. Jika Sponsor mengirim counter, Team Owner mendapat giliran berikutnya. Maksimal tiga counter dari Team Owner.
+6. Jika Team Owner menerima, kontrak dan jadwal pembayaran dibuat otomatis.
+
+### Migrations
+
+- 20261117330000_brand_ecosystem_full_automation.sql
+- 20261117340000_brand_sponsor_offer_cap.sql
+- 20261117350000_brand_counter_response_ordering.sql
