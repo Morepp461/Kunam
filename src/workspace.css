@@ -455,3 +455,14 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
  }
  .page-content:has(.workspace)>.workspace{width:100%;max-width:none}
 }
+
+
+/* Content must determine page height so the footer cannot cover the last workspace section. */
+.page-content:has(.workspace){
+  min-height:max-content;
+  overflow:visible;
+}
+.page-content:has(.workspace)>.workspace{
+  flex:0 0 auto;
+  min-height:max-content;
+}
