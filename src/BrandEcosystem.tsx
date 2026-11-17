@@ -36,6 +36,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [driverWeights,setDriverWeights]=useState<Record<string,string>>({championship:"25",race_performance:"25",consistency:"15",experience:"10",fan_popularity:"15",professional_record:"10"});
  const [trustWeights,setTrustWeights]=useState<Record<string,string>>({target_achievement:"45",consistency:"20",fanbase_growth:"15",commercial_exposure:"10",partnership_conduct:"10"});
  const [bonusPercent,setBonusPercent]=useState("50");
+ const [fanGrowth,setFanGrowth]=useState({base:"0",win:"2",podium:"1.5",points:"1",finish:"0.5"});
  const [divisionProb,setDivisionProb]=useState({premioT1:"50",premioT2:"40",premioT3:"10",zweiT1:"25",zweiT2:"50",zweiT3:"25"});
 
  const refresh=useCallback(async()=>{
@@ -73,6 +74,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    if(cfg.driver_reputation_weights)setDriverWeights(Object.fromEntries(Object.entries(cfg.driver_reputation_weights).map(([k,v])=>[k,String(v)])));
    if(cfg.sponsor_trust_weights)setTrustWeights(Object.fromEntries(Object.entries(cfg.sponsor_trust_weights).map(([k,v])=>[k,String(v)])));
    if(cfg.bonus_pool_percent?.value!==undefined)setBonusPercent(String(cfg.bonus_pool_percent.value));
+   if(cfg.fan_growth_config)setFanGrowth({base:String(cfg.fan_growth_config.base_growth_percent??0),win:String(cfg.fan_growth_config.win_multiplier??2),podium:String(cfg.fan_growth_config.podium_multiplier??1.5),points:String(cfg.fan_growth_config.points_multiplier??1),finish:String(cfg.fan_growth_config.finish_multiplier??0.5)});
    if(cfg.sponsor_division_probabilities)setDivisionProb({premioT1:String(cfg.sponsor_division_probabilities.premio?.T1??0),premioT2:String(cfg.sponsor_division_probabilities.premio?.T2??0),premioT3:String(cfg.sponsor_division_probabilities.premio?.T3??0),zweiT1:String(cfg.sponsor_division_probabilities.zwei?.T1??0),zweiT2:String(cfg.sponsor_division_probabilities.zwei?.T2??0),zweiT3:String(cfg.sponsor_division_probabilities.zwei?.T3??0)});
    if(current?.team_id)setTeam((t.data||[]).find((x:Team)=>x.id===current?.team_id)||null);
    const active=(se.data||[]).find((x:Season)=>x.status==="active")||(se.data||[])[0];if(active&&!seasonId)setSeasonId(active.id);
@@ -129,7 +131,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    ["driver_reputation_weights",numberMap(driverWeights),"Driver Reputation weights"],
    ["sponsor_trust_weights",numberMap(trustWeights),"Sponsor Trust weights"],
    ["bonus_pool_percent",{value:Number(bonusPercent)},"Seasonal bonus pool percentage"],
-   ["sponsor_division_probabilities",p,"Sponsor tier probability by division"]
+   ["sponsor_division_probabilities",p,"Sponsor tier probability by division"],
+   ["fan_growth_config",{base_growth_percent:Number(fanGrowth.base),win_multiplier:Number(fanGrowth.win),podium_multiplier:Number(fanGrowth.podium),points_multiplier:Number(fanGrowth.points),finish_multiplier:Number(fanGrowth.finish),regional_scope:"regional"},"Regional fan growth multipliers"]
   ];
   for(const [key,value,description] of configs){const {error}=await supabase!.rpc("admin_set_brand_ecosystem_config",{p_key:key,p_value:value,p_description:description});if(error){setNotice(error.message);return;}}
   setNotice("Konfigurasi Brand Ecosystem disimpan.");await refresh();
@@ -206,6 +209,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     <div className="brand-config-group"><strong>Driver Reputation weights</strong><div className="brand-config-grid">{Object.entries(driverWeights).map(([k,v])=><label key={k}>{k.replaceAll("_"," ")}<input type="number" min="0" value={v} onChange={e=>setDriverWeights(x=>({...x,[k]:e.target.value}))}/></label>)}</div></div>
     <div className="brand-config-group"><strong>Sponsor Trust weights</strong><div className="brand-config-grid">{Object.entries(trustWeights).map(([k,v])=><label key={k}>{k.replaceAll("_"," ")}<input type="number" min="0" value={v} onChange={e=>setTrustWeights(x=>({...x,[k]:e.target.value}))}/></label>)}</div></div>
     <label>Seasonal bonus pool (%)<input type="number" min="0" max="100" value={bonusPercent} onChange={e=>setBonusPercent(e.target.value)}/></label>
+    <strong>Regional fan growth per published race (%)</strong><div className="brand-config-grid">{Object.entries(fanGrowth).map(([k,v])=><label key={k}>{k==="base"?"Base growth":k+" multiplier"}<input type="number" min="0" max={k==="base"?"100":"10"} step="0.1" value={v} onChange={e=>setFanGrowth(x=>({...x,[k]:e.target.value}))}/></label>)}</div>
     <strong>Tier availability by division (%)</strong><div className="brand-config-grid">{Object.entries(divisionProb).map(([k,v])=><label key={k}>{k.replace(/([A-Z])/g," $1")}<input type="number" min="0" max="100" value={v} onChange={e=>setDivisionProb(x=>({...x,[k]:e.target.value}))}/></label>)}</div>
     <button className="action primary" disabled={saving} onClick={()=>void saveEngineConfig()}>Simpan Konfigurasi Engine</button>
    </article>
