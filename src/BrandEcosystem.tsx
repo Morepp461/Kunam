@@ -29,9 +29,14 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[budget,setBudget]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState("");
  const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",budget:"0",maxBudget:"",active:true});
  const [selectedSponsorId,setSelectedSponsorId]=useState(""),[sponsorBudgetEdit,setSponsorBudgetEdit]=useState("");
- const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState(""),[trustMetrics,setTrustMetrics]=useState(""),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
+ const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState(""),[repDriver,setRepDriver]=useState(""),[driverMetrics,setDriverMetrics]=useState(""),[trustMetrics,setTrustMetrics]=useState(""),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
  const [targetContract,setTargetContract]=useState(""),[targetTitle,setTargetTitle]=useState(""),[targetMetric,setTargetMetric]=useState(""),[targetValue,setTargetValue]=useState(""),[targetBonus,setTargetBonus]=useState("");
  const [progressTarget,setProgressTarget]=useState(""),[progressValue,setProgressValue]=useState("");
+ const [teamWeights,setTeamWeights]=useState<Record<string,string>>({championship:"25",race_performance:"25",consistency:"15",driver_reputation:"15",fanbase:"10",commercial_credibility:"10"});
+ const [driverWeights,setDriverWeights]=useState<Record<string,string>>({championship:"25",race_performance:"25",consistency:"15",experience:"10",fan_popularity:"15",professional_record:"10"});
+ const [trustWeights,setTrustWeights]=useState<Record<string,string>>({target_achievement:"45",consistency:"20",fanbase_growth:"15",commercial_exposure:"10",partnership_conduct:"10"});
+ const [bonusPercent,setBonusPercent]=useState("50");
+ const [divisionProb,setDivisionProb]=useState({premioT1:"50",premioT2:"40",premioT3:"10",zweiT1:"25",zweiT2:"50",zweiT3:"25"});
 
  const refresh=useCallback(async()=>{
   if(!supabase){setLoading(false);setNotice("Supabase belum dikonfigurasi.");return;}
@@ -44,7 +49,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    setMember(current);
    if(mode!=="admin"&&!current){setNotice("Akun belum terhubung ke member.");setLoading(false);return;}
    if(mode==="team"&&current?.role!=="Owner"){setNotice("Halaman sponsorship hanya dapat diakses Team Owner.");setLoading(false);return;}
-   const [s,se,t,m,o,r,c,ta,tr,rt,rd,fa]=await Promise.all([
+   const [s,se,t,m,o,r,c,ta,tr,rt,rd,fa,configs]=await Promise.all([
     supabase.from("caleris_sponsors").select("id,name,industry,tier_key,source_code,available_budget,flexibility_percent,is_active").eq("is_active",true).order("name"),
     supabase.from("license_seasons").select("id,title,starts_on,status").order("starts_on",{ascending:false}),
     supabase.from("teams").select("id,name").order("name"),
@@ -58,10 +63,16 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     current?.role==="Driver"?supabase.from("caleris_driver_reputation").select("*").eq("member_id",current.id).maybeSingle():Promise.resolve({data:null,error:null}),
     supabase.from("caleris_fan_populations").select("*").order("region_key")
    ]);
-   const issue=[s.error,se.error,t.error,m.error,o.error,r.error,c.error,ta.error,tr.error,rt.error,rd.error,fa.error].find(Boolean);if(issue)throw issue;
+   const issue=[s.error,se.error,t.error,m.error,o.error,r.error,c.error,ta.error,tr.error,rt.error,rd.error,fa.error,configs.error].find(Boolean);if(issue)throw issue;
    setSponsors((s.data||[]) as Sponsor[]);setSeasons((se.data||[]) as Season[]);setTeams((t.data||[]) as Team[]);setMembers((m.data||[]) as Member[]);
    setOffers((o.data||[]) as Offer[]);setRevisions((r.data||[]) as Revision[]);setContracts((c.data||[]) as Contract[]);setTargets((ta.data||[]) as Target[]);
    setTiers((tr.data||[]) as Tier[]);setTeamRep(rt.data as Reputation|null);setDriverRep(rd.data as Reputation|null);setFans((fa.data||[]) as Fan[]);
+   const cfg=Object.fromEntries((configs.data||[]).map((x:any)=>[x.config_key,x.config_value]));
+   if(cfg.team_reputation_weights)setTeamWeights(Object.fromEntries(Object.entries(cfg.team_reputation_weights).map(([k,v])=>[k,String(v)])));
+   if(cfg.driver_reputation_weights)setDriverWeights(Object.fromEntries(Object.entries(cfg.driver_reputation_weights).map(([k,v])=>[k,String(v)])));
+   if(cfg.sponsor_trust_weights)setTrustWeights(Object.fromEntries(Object.entries(cfg.sponsor_trust_weights).map(([k,v])=>[k,String(v)])));
+   if(cfg.bonus_pool_percent?.value!==undefined)setBonusPercent(String(cfg.bonus_pool_percent.value));
+   if(cfg.sponsor_division_probabilities)setDivisionProb({premioT1:String(cfg.sponsor_division_probabilities.premio?.T1??0),premioT2:String(cfg.sponsor_division_probabilities.premio?.T2??0),premioT3:String(cfg.sponsor_division_probabilities.premio?.T3??0),zweiT1:String(cfg.sponsor_division_probabilities.zwei?.T1??0),zweiT2:String(cfg.sponsor_division_probabilities.zwei?.T2??0),zweiT3:String(cfg.sponsor_division_probabilities.zwei?.T3??0)});
    if(current?.team_id)setTeam((t.data||[]).find((x:Team)=>x.id===current?.team_id)||null);
    const active=(se.data||[]).find((x:Season)=>x.status==="active")||(se.data||[])[0];if(active&&!seasonId)setSeasonId(active.id);
    if(mode==="admin"&&!repTeam&&t.data?.[0])setRepTeam(t.data[0].id);
@@ -102,6 +113,25 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   let metrics:Record<string,number>={};try{metrics=repMetrics?JSON.parse(repMetrics):{};}catch{setNotice("Format metrics harus JSON object yang valid.");return;}
   if(!repMetrics.trim()){setNotice("Metrics Team Reputation wajib diisi.");return;}
   await run("admin_calculate_team_reputation",{p_team_id:repTeam,p_metrics:metrics,p_source_event:"season_evaluation"},"Team Reputation dihitung dari bobot konfigurasi.");
+ };
+ const setDriverReputation=async()=>{
+  let metrics:Record<string,number>={};try{metrics=driverMetrics?JSON.parse(driverMetrics):{};}catch{setNotice("Format Driver metrics harus JSON object.");return;}
+  if(!repDriver||!driverMetrics.trim()){setNotice("Pilih Driver dan isi metrics.");return;}
+  await run("admin_calculate_driver_reputation",{p_member_id:repDriver,p_metrics:metrics,p_source_event:"season_evaluation"},"Driver Reputation dihitung dari bobot konfigurasi.");
+ };
+ const saveEngineConfig=async()=>{
+  const numberMap=(v:Record<string,string>)=>Object.fromEntries(Object.entries(v).map(([k,x])=>[k,Number(x)]));
+  const p={premio:{T1:Number(divisionProb.premioT1),T2:Number(divisionProb.premioT2),T3:Number(divisionProb.premioT3)},zwei:{T1:Number(divisionProb.zweiT1),T2:Number(divisionProb.zweiT2),T3:Number(divisionProb.zweiT3)}};
+  for(const [name,value] of Object.entries(p)){if(Object.values(value).some(n=>!Number.isFinite(n)||n<0||n>100)||Math.abs(Object.values(value).reduce((a,b)=>a+b,0)-100)>0.01){setNotice("Probabilitas tier "+name+" harus berjumlah tepat 100%.");return;}}
+  const configs=[
+   ["team_reputation_weights",numberMap(teamWeights),"Team Reputation weights"],
+   ["driver_reputation_weights",numberMap(driverWeights),"Driver Reputation weights"],
+   ["sponsor_trust_weights",numberMap(trustWeights),"Sponsor Trust weights"],
+   ["bonus_pool_percent",{value:Number(bonusPercent)},"Seasonal bonus pool percentage"],
+   ["sponsor_division_probabilities",p,"Sponsor tier probability by division"]
+  ];
+  for(const [key,value,description] of configs){const {error}=await supabase!.rpc("admin_set_brand_ecosystem_config",{p_key:key,p_value:value,p_description:description});if(error){setNotice(error.message);return;}}
+  setNotice("Konfigurasi Brand Ecosystem disimpan.");await refresh();
  };
  const adjustFans=async()=>{
   const delta=Number(fanDelta);if(!Number.isInteger(delta)||delta===0){setNotice("Perubahan populasi harus bilangan bulat selain nol.");return;}
@@ -164,6 +194,19 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     <label>Team<select value={repTeam} onChange={e=>setRepTeam(e.target.value)}><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
     <label>Metrics JSON<input value={repMetrics} onChange={e=>setRepMetrics(e.target.value)} placeholder='{"championship":80,"race_performance":70,"consistency":65,"driver_reputation":60,"fanbase":50,"commercial_credibility":50}'/></label>
     <button className="action primary" disabled={saving||!repTeam||!repMetrics} onClick={()=>void setReputation()}>Hitung Team Reputation</button>
+   </article>
+   <article className="workspace-card"><span className="section-eyebrow">DRIVER REPUTATION</span><h2>Update Driver Score</h2>
+    <label>Driver<select value={repDriver} onChange={e=>setRepDriver(e.target.value)}><option value="">Pilih Driver</option>{members.filter(m=>m.role==="Driver").map(m=><option key={m.id} value={m.id}>{m.character_name||m.id}</option>)}</select></label>
+    <label>Metrics JSON<input value={driverMetrics} onChange={e=>setDriverMetrics(e.target.value)} placeholder='{"championship":80,"race_performance":70,"consistency":60,"experience":50,"fan_popularity":40,"professional_record":60}'/></label>
+    <button className="action primary" disabled={saving||!repDriver||!driverMetrics} onClick={()=>void setDriverReputation()}>Hitung Driver Reputation</button>
+   </article>
+   <article className="workspace-card"><span className="section-eyebrow">ENGINE CONFIGURATION</span><h2>Weights & Sponsor Availability</h2>
+    <div className="brand-config-group"><strong>Team Reputation weights</strong><div className="brand-config-grid">{Object.entries(teamWeights).map(([k,v])=><label key={k}>{k.replaceAll("_"," ")}<input type="number" min="0" value={v} onChange={e=>setTeamWeights(x=>({...x,[k]:e.target.value}))}/></label>)}</div></div>
+    <div className="brand-config-group"><strong>Driver Reputation weights</strong><div className="brand-config-grid">{Object.entries(driverWeights).map(([k,v])=><label key={k}>{k.replaceAll("_"," ")}<input type="number" min="0" value={v} onChange={e=>setDriverWeights(x=>({...x,[k]:e.target.value}))}/></label>)}</div></div>
+    <div className="brand-config-group"><strong>Sponsor Trust weights</strong><div className="brand-config-grid">{Object.entries(trustWeights).map(([k,v])=><label key={k}>{k.replaceAll("_"," ")}<input type="number" min="0" value={v} onChange={e=>setTrustWeights(x=>({...x,[k]:e.target.value}))}/></label>)}</div></div>
+    <label>Seasonal bonus pool (%)<input type="number" min="0" max="100" value={bonusPercent} onChange={e=>setBonusPercent(e.target.value)}/></label>
+    <strong>Tier availability by division (%)</strong><div className="brand-config-grid">{Object.entries(divisionProb).map(([k,v])=><label key={k}>{k.replace(/([A-Z])/g," $1")}<input type="number" min="0" max="100" value={v} onChange={e=>setDivisionProb(x=>({...x,[k]:e.target.value}))}/></label>)}</div>
+    <button className="action primary" disabled={saving} onClick={()=>void saveEngineConfig()}>Simpan Konfigurasi Engine</button>
    </article>
    <article className="workspace-card"><span className="section-eyebrow">REGIONAL FANBASE</span><h2>Adjust Fan Population</h2>
     <label>Entity<select value={fanEntity} onChange={e=>{setFanEntity(e.target.value);setFanTarget("")}}><option value="team">Team</option><option value="driver">Driver</option></select></label>
