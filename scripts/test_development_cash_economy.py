@@ -99,7 +99,6 @@ for fragment in [
     "license_tier in ('bronze','silver','gold','super')",
     "division_key in ('zwei','premio')",
     "member_upgrade_development_attribute",
-    "v_license_tier:=lower(trim(coalesce(v_member.license,'')))",
     "v_team_division",
     "private.post_economy_transaction",
     "development_upgrade",
@@ -122,10 +121,24 @@ for division,total in team_division_totals.items():
     assert f"('{division}','race_pace'" in tier_sql
     assert total*50 in [412_500_000,687_500_000]
 
+mapping_migration = ROOT / "supabase/migrations/20261117093000_development_license_tier_mapping.sql"
+assert mapping_migration.is_file(), "Missing development license tier mapping migration"
+mapping_sql = mapping_migration.read_text(encoding="utf-8").lower()
+for fragment in [
+    "caleris_development_license_tier_mapping",
+    "license_label=trim(coalesce(v_member.license,''))",
+    "tier harga untuk lisensi driver ini belum dipetakan oleh admin",
+    "from public.site_admins",
+]:
+    assert fragment in mapping_sql, f"Development license mapping missing: {fragment}"
+
 matrix = (ROOT / "src/DevelopmentPricingMatrix.tsx").read_text(encoding="utf-8")
 for fragment in [
     "caleris_driver_development_tier_pricing",
     "caleris_team_development_division_pricing",
+    "caleris_development_license_tier_mapping",
+    "Pemetaan Lisensi Driver",
+    "Simpan pemetaan lisensi",
     "Simpan harga Driver per lisensi",
     "Simpan harga Team per divisi",
     "bronze",
@@ -137,6 +150,7 @@ for fragment in [
 
 dev_ui = (ROOT / "src/DevelopmentTokens.tsx").read_text(encoding="utf-8")
 assert "caleris_driver_development_tier_pricing" in dev_ui
+assert "caleris_development_license_tier_mapping" in dev_ui
 assert "caleris_team_development_division_pricing" in dev_ui
 assert 'select("id,role,team_id,character_name,license")' in dev_ui
 assert 'select("id,name,division_key")' in dev_ui
