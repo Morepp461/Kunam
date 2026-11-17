@@ -8,6 +8,12 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
+const teamColor = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  const palette = [0x9d2630, 0x9e8a56, 0x566a78, 0x6b3438, 0x9a633d, 0x56634f, 0x77716a, 0x314b68];
+  return palette[Math.abs(hash) % palette.length];
+};
 const numberFor = (name: string, index: number) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 33 + name.charCodeAt(i)) | 0;
@@ -97,6 +103,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
         const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
+        const sphere = (parent: Three.Object3D, pos: [number, number, number], scale: [number, number, number], mat: Three.Material) =>
+          mesh(new THREE.SphereGeometry(1, 20, 14), mat, parent, pos, scale);
 
         scene.add(new THREE.HemisphereLight(0xdce5ef, 0x34302a, 2.15));
         const keyLight = new THREE.DirectionalLight(0xffead0, 3.1);
@@ -166,13 +174,41 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           return mat;
         };
 
+        // CC0 high-detail human base mesh (Grab3D, man-base-character).
+        // License: https://grab3d.com/models/characters/man-base-character/ (CC0 1.0).
+        // The source garment is recolored and finished with Caleris racing-suit panels.
+        let cc0HumanScene: Three.Group | null = null;
+        let cloneHuman: ((source: Three.Object3D) => Three.Object3D) | null = null;
+        try {
+          const [{ GLTFLoader }, skeletonUtils] = await Promise.all([
+            import("three/examples/jsm/loaders/GLTFLoader.js"),
+            import("three/examples/jsm/utils/SkeletonUtils.js"),
+          ]);
+          const loader = new GLTFLoader();
+          const gltf = await loader.loadAsync("https://grab3d.com/dl/man-base-character/man-base-character.glb");
+          if (disposed) return;
+          cc0HumanScene = gltf.scene;
+          cloneHuman = skeletonUtils.clone;
+        } catch (assetError) {
+          console.warn("CC0 driver model could not be loaded; using local fallback figure.", assetError);
+        }
+
         const createDriver = (driver: DriverRow, index: number) => {
           const root = new THREE.Group();
           const column = index % 4;
           const row = Math.floor(index / 4);
           root.position.set((column - 1.5) * 10.2, 0, -row * 11.2 - 1);
           root.userData.driverId = driver.id;
+          const suit = material(teamColor(driver.team?.name || "Caleris"), 0.76, 0.04);
           const trim = material(0x20242a, 0.52, 0.28);
+          const skin = material(0xb98261, 0.82, 0.02);
+          const skinLight = material(0xd19a78, 0.82, 0.01);
+          const hair = material(0x211b18, 0.88, 0.01);
+          const eyeWhite = material(0xe7e3dc, 0.36, 0.02);
+          const iris = material(0x44382c, 0.3, 0.02);
+          const visor = material(0x171a1e, 0.4, 0.15);
+          const glove = material(0x171a1e, 0.82, 0.02);
+          const boot = material(0x101216, 0.74, 0.12);
           const podium = new THREE.Group();
           root.add(podium);
           cylinder(podium, 1.1, 1.25, 0.32, [0, 0.16, 0], darkMetal);
@@ -182,42 +218,108 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           plaque.rotation.x = -0.08;
           const figure = new THREE.Group();
           root.add(figure);
-          const frameMat = material(0xb69a5e, 0.28, 0.72);
-          const backingMat = material(0x101317, 0.48, 0.35);
-          box(figure, [1.55, 2.25, 0.12], [0, 1.52, 0.02], frameMat);
-          box(figure, [1.39, 2.09, 0.035], [0, 1.52, 0.095], backingMat);
-          const portraitCanvas = document.createElement("canvas");
-          portraitCanvas.width = 512;
-          portraitCanvas.height = 768;
-          const portraitCtx = portraitCanvas.getContext("2d");
-          if (portraitCtx) {
-            const gradient = portraitCtx.createLinearGradient(0, 0, 512, 768);
-            gradient.addColorStop(0, "#34383c"); gradient.addColorStop(1, "#111519");
-            portraitCtx.fillStyle = gradient; portraitCtx.fillRect(0, 0, 512, 768);
-            portraitCtx.fillStyle = "#a52a34"; portraitCtx.fillRect(0, 0, 16, 768);
-            portraitCtx.fillStyle = "#e7d6a1"; portraitCtx.font = "700 34px Arial";
-            portraitCtx.fillText("CALERIS MASTERS", 42, 62);
-            portraitCtx.fillStyle = "#f5f0e5"; portraitCtx.font = "900 52px Arial";
-            portraitCtx.fillText(String(driver.character_name || "DRIVER").toUpperCase().slice(0, 18), 42, 690);
-            portraitCtx.fillStyle = "#c7b276"; portraitCtx.font = "700 28px Arial";
-            portraitCtx.fillText(String(driver.team?.name || "TEAM OWNER").toUpperCase().slice(0, 24), 42, 735);
-          }
-          const portraitTexture = new THREE.CanvasTexture(portraitCanvas);
-          portraitTexture.colorSpace = THREE.SRGBColorSpace;
-          const portraitMaterial = new THREE.MeshBasicMaterial({ map: portraitTexture, side: THREE.DoubleSide });
-          textures.push(portraitTexture); disposableMaterials.push(portraitMaterial);
-          const portrait = mesh(new THREE.PlaneGeometry(1.34, 2.04), portraitMaterial, figure, [0, 1.52, 0.12]);
-          const avatarUrl = typeof driver.avatar_url === "string" ? driver.avatar_url : "";
-          if (avatarUrl) {
-            new THREE.TextureLoader().load(avatarUrl, (texture) => {
-              if (disposed) { texture.dispose(); return; }
-              texture.colorSpace = THREE.SRGBColorSpace;
-              texture.anisotropy = renderer?.capabilities.getMaxAnisotropy() || 1;
-              portraitTexture.dispose();
-              portrait.material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide });
-              textures.push(texture);
-              disposableMaterials.push(portrait.material as Three.Material);
-            }, undefined, (error) => console.warn("Avatar portrait failed to load", error));
+          if (cc0HumanScene && cloneHuman) {
+            const human = cloneHuman(cc0HumanScene) as Three.Group;
+            human.scale.setScalar(1.34);
+            human.position.set(0, 0.35, 0);
+            human.traverse((obj) => {
+              const part = obj as Three.Mesh;
+              if (!part.isMesh) return;
+              part.castShadow = !mobile;
+              part.receiveShadow = false;
+              const bounds = new THREE.Box3().setFromObject(part);
+              const centerY = ((bounds.min.y + bounds.max.y) * 0.5 - 0.35) / 1.34;
+              const sourceMaterials = Array.isArray(part.material) ? part.material : [part.material];
+              const adapted = sourceMaterials.map((source) => {
+                const mat = source.clone();
+                const label = (source.name || part.name || "").toLowerCase();
+                const isSkin = /skin|face|eye|teeth|hair|brow|mouth/.test(label) || centerY > 1.48 || centerY < 0.28;
+                if (!isSkin && centerY > 0.38 && centerY < 1.58) {
+                  (mat as Three.MeshStandardMaterial).color?.set(centerY > 0.9 ? 0x191d22 : 0x24282e);
+                  if ("roughness" in mat) (mat as Three.MeshStandardMaterial).roughness = 0.78;
+                  if ("metalness" in mat) (mat as Three.MeshStandardMaterial).metalness = 0.08;
+                }
+                return mat;
+              });
+              part.material = Array.isArray(part.material) ? adapted : adapted[0];
+            });
+            figure.add(human);
+
+            const suitBlack = material(0x171b20, 0.82, 0.08);
+            const calerisRed = material(0x9e2631, 0.58, 0.12);
+            const calerisGold = material(0xb69a5e, 0.38, 0.62);
+            box(figure, [0.42, 0.16, 0.035], [0, 1.42, 0.255], calerisRed);
+            box(figure, [0.045, 0.62, 0.028], [-0.18, 1.31, 0.26], calerisGold);
+            box(figure, [0.045, 0.62, 0.028], [0.18, 1.31, 0.26], calerisRed);
+            box(figure, [0.28, 0.055, 0.025], [0, 1.55, 0.27], calerisGold);
+            box(figure, [0.24, 0.11, 0.03], [0, 0.88, 0.205], suitBlack);
+            for (const side of [-1, 1]) {
+              const sleeve = mesh(new THREE.CapsuleGeometry(0.095, 0.32, 6, 12), suitBlack, figure, [side * 0.29, 1.34, 0]);
+              sleeve.rotation.z = side * -0.12;
+              const trouser = mesh(new THREE.CapsuleGeometry(0.105, 0.55, 6, 12), suitBlack, figure, [side * 0.13, 0.48, 0]);
+              trouser.rotation.z = side * 0.025;
+              box(figure, [0.16, 0.075, 0.04], [side * 0.27, 1.62, 0.04], calerisRed);
+              box(figure, [0.13, 0.07, 0.035], [side * 0.105, 0.79, 0.205], calerisGold);
+              box(figure, [0.13, 0.12, 0.16], [side * 0.19, 0.12, 0.04], suitBlack);
+            }
+            const numberCanvas = document.createElement("canvas");
+            numberCanvas.width = 256;
+            numberCanvas.height = 128;
+            const numberCtx = numberCanvas.getContext("2d");
+            if (numberCtx) {
+              numberCtx.fillStyle = "#f4f0e6";
+              numberCtx.font = "900 88px Arial";
+              numberCtx.textAlign = "center";
+              numberCtx.textBaseline = "middle";
+              numberCtx.fillText(numberFor(driver.character_name || "Driver", index), 128, 66);
+            }
+            const numberTexture = new THREE.CanvasTexture(numberCanvas);
+            numberTexture.colorSpace = THREE.SRGBColorSpace;
+            textures.push(numberTexture);
+            const numberMaterial = new THREE.MeshBasicMaterial({ map: numberTexture, transparent: true, side: THREE.DoubleSide });
+            disposableMaterials.push(numberMaterial);
+            mesh(new THREE.PlaneGeometry(0.3, 0.15), numberMaterial, figure, [0, 1.25, 0.286]);
+          } else {
+            // Anatomical driver silhouette: exposed human face, neck, shoulders and fitted race suit.
+            const pelvis = mesh(new THREE.SphereGeometry(0.34, 32, 24), suit, figure, [0, 0.78, 0]);
+            pelvis.scale.set(1.05, 0.75, 0.8);
+            const torso = mesh(new THREE.CapsuleGeometry(0.34, 0.72, 8, 24), suit, figure, [0, 1.38, 0]);
+            torso.scale.set(1.28, 1.05, 0.82);
+            sphere(figure, [0, 1.84, 0], [0.48, 0.28, 0.38], suit);
+            cylinder(figure, 0.12, 0.14, 0.24, [0, 1.99, 0], skin);
+            // Tailored suit seams and front zip.
+            box(figure, [0.035, 0.68, 0.018], [0, 1.42, 0.31], trim);
+            box(figure, [0.32, 0.055, 0.035], [0, 1.64, 0.34], goldMetal);
+            box(figure, [0.34, 0.08, 0.04], [0, 1.17, 0.32], redMetal);
+            for (const side of [-1, 1]) {
+              const arm = mesh(new THREE.CapsuleGeometry(0.135, 0.62, 8, 18), suit, figure, [side * 0.53, 1.35, 0]);
+              arm.rotation.z = side * -0.18;
+              sphere(figure, [side * 0.65, 0.91, 0.015], [0.135, 0.16, 0.13], glove);
+              const leg = mesh(new THREE.CapsuleGeometry(0.16, 0.66, 8, 18), suit, figure, [side * 0.2, 0.48, 0]);
+              leg.rotation.z = side * 0.035;
+              box(figure, [0.29, 0.17, 0.48], [side * 0.2, 0.1, 0.13], boot);
+              // Gloves, cuff rings and knee reinforcement.
+              cylinder(figure, 0.14, 0.14, 0.09, [side * 0.65, 0.82, 0.015], goldMetal);
+              box(figure, [0.26, 0.19, 0.035], [side * 0.2, 0.47, 0.15], trim);
+            }
+            // Real human head with jaw, ears, eyes, nose, mouth and hair rather than a helmet-shaped capsule.
+            sphere(figure, [0, 2.28, 0], [0.235, 0.31, 0.22], skin);
+            sphere(figure, [0, 2.16, 0.055], [0.19, 0.16, 0.19], skinLight);
+            for (const side of [-1, 1]) {
+              sphere(figure, [side * 0.235, 2.29, 0], [0.055, 0.09, 0.065], skin);
+              sphere(figure, [side * 0.09, 2.32, 0.187], [0.052, 0.035, 0.025], eyeWhite);
+              sphere(figure, [side * 0.09, 2.32, 0.208], [0.022, 0.025, 0.012], iris);
+              sphere(figure, [side * 0.09, 2.38, 0.184], [0.062, 0.018, 0.025], hair);
+            }
+            sphere(figure, [0, 2.25, 0.218], [0.045, 0.075, 0.045], skinLight);
+            sphere(figure, [0, 2.105, 0.205], [0.075, 0.018, 0.018], visor);
+            sphere(figure, [0, 2.49, -0.005], [0.238, 0.13, 0.225], hair);
+            sphere(figure, [0, 2.42, -0.105], [0.22, 0.12, 0.16], hair);
+            // Helmet carried at the driver's side as a separate race accessory.
+            const helmetShell = material(0xd8d5cc, 0.24, 0.56);
+            sphere(figure, [0.88, 0.72, 0.02], [0.22, 0.25, 0.22], helmetShell);
+            sphere(figure, [0.88, 0.72, 0.2], [0.17, 0.09, 0.06], visor);
+  
           }
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
@@ -279,23 +381,23 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           });
         };
         galleryItems.forEach(photoFrame);
-        const wallSign = (text: string, sub: string, position: [number, number, number], width: number) => {
-          const canvas = document.createElement("canvas"); canvas.width = 1024; canvas.height = 256;
-          const ctx = canvas.getContext("2d");
-          if (ctx) {
-            ctx.fillStyle = "#0c1014"; ctx.fillRect(0, 0, 1024, 256);
-            ctx.strokeStyle = "#b79b60"; ctx.lineWidth = 8; ctx.strokeRect(8, 8, 1008, 240);
-            ctx.fillStyle = "#b32c36"; ctx.fillRect(8, 8, 18, 240);
-            ctx.fillStyle = "#f3eee2"; ctx.font = "900 74px Arial"; ctx.fillText(text, 54, 125);
-            ctx.fillStyle = "#c9b77f"; ctx.font = "700 30px Arial"; ctx.fillText(sub, 58, 190);
-          }
-          const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; textures.push(tex);
-          const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide }); disposableMaterials.push(mat);
-          mesh(new THREE.PlaneGeometry(width, width * 0.25), mat, scene, position);
+        // Official brand artwork from repository assets. Never recreate brand marks in code.
+        const loadWallLogo = (src: string, width: number, height: number, position: [number, number, number], rotationY = 0) => {
+          new THREE.TextureLoader().load(src, (texture) => {
+            if (disposed) { texture.dispose(); return; }
+            texture.colorSpace = THREE.SRGBColorSpace;
+            const logoMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+            const logo = new THREE.Mesh(new THREE.PlaneGeometry(width, height), logoMaterial);
+            logo.position.set(...position);
+            logo.rotation.y = rotationY;
+            scene.add(logo);
+            textures.push(texture);
+            disposableMaterials.push(logoMaterial);
+            disposableGeometries.push(logo.geometry);
+          }, undefined, (error) => console.warn("Official wall logo failed to load:", src, error));
         };
-        wallSign("CALERIS MASTERS", "OFFICIAL MOTORSPORT CHAMPIONSHIP", [0, 8.5, -46.9], 15);
-        wallSign("VREEO", "OFFICIAL PARTNER", [-23.0, 8.2, -28], 7);
-        wallSign("VREEO × CALERIS", "RACE. PRECISION. LEGACY.", [23.0, 8.2, -52], 8);
+        loadWallLogo("/assets/Add%20a%20heading_20260907_003952_0000.png", 12.5, 4.8, [0, 8.0, -46.85]);
+        loadWallLogo("/assets/Untitled%20design_20261103_142659_0000.png", 6.2, 3.8, [-23.0, 7.8, -28], Math.PI / 2);
         for (let z = -8; z >= -78; z -= 18) {
           const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.16, 12, 28), darkMetal);
           tyre.position.set(-22.8, 2.1, z); tyre.rotation.y = Math.PI / 2; scene.add(tyre);
@@ -499,9 +601,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     if (!node) return;
     if (document.fullscreenElement === node) { await document.exitFullscreen(); return; }
     if (fullscreenFallback) { setFullscreenFallback(false); setIsFullscreen(false); return; }
-    try {
-      if (node.requestFullscreen) { await node.requestFullscreen(); return; }
-    } catch { /* Embedded Android browsers may reject the native API. */ }
+    try { if (node.requestFullscreen) { await node.requestFullscreen(); return; } } catch { /* Embedded Android browsers may reject native fullscreen. */ }
     setFullscreenFallback(true); setIsFullscreen(true);
   };
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
