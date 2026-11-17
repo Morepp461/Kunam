@@ -693,11 +693,88 @@ Migrations:
 Urutan kalender season CALERIS wajib: Pre Season → Race Periode 1 → Break Balancing Periode 1 → Race Periode 2 → Break Balancing Periode 2 → Race Periode 3 → Break Balancing Periode 3 → Race Periode 4 → Break Balancing Periode 4 → Race Periode 5 → End Season → Off Season. Off Season adalah masa transisi menuju season berikutnya.
 
 
-## Race Result Image Review and Statistics
+## Race Result Image Review, CSV Workflow, and Statistics
 
-- FIA Race Input documents the screenshot-assisted workflow: upload the official race-result image in the CALERIS ChatGPT conversation, review the extracted draft, correct any errors, and explicitly confirm before database entry.
-- The review stage is read-only. Official race entry continues through the existing secured `fia_submit_race_classification` workflow, preserving round sequencing, participant validation, scoring, race rewards, and downstream settlement.
+### Screenshot-to-CSV review workflow
+
+The operational race-result intake uses a reviewable CSV file before any official database write:
+
+1. Send the official race-result screenshot in the CALERIS MASTERS ChatGPT conversation.
+2. Extract every visible participant row and race-level metadata into a CSV draft.
+3. Review and edit the CSV locally. Driver/team spelling, country/flag, position, grid, time, gap, DNF, and tyre stints can all be corrected in the file.
+4. Return the revised CSV for a second validation pass. The revised file is the source of truth for the proposed result; do not silently overwrite user corrections with OCR guesses.
+5. Only after the user explicitly approves the validated final CSV may the result be entered through the existing official race workflow.
+
+**The screenshot/CSV review is not a database import or a live OCR feature inside the website.** Draft creation and revision review happen in the ChatGPT conversation. No database write, race publication, points settlement, or statistics update occurs during draft/revision stages.
+
+### CSV schema
+
+The current reviewed schema contains one row per driver, including DNF participants. Race-level metadata is repeated on each row so the CSV remains self-contained when edited or sorted.
+
+| Column | Meaning |
+|---|---|
+| `circuit` | Circuit name |
+| `circuit_flag` | Circuit country flag |
+| `circuit_country` | Circuit country |
+| `session` | Session name, e.g. Race |
+| `position` | Classified position or DNF |
+| `result_status` | Machine-readable status, e.g. `classified` or `dnf` |
+| `driver_number` | Driver race number |
+| `flag` | Driver nationality flag |
+| `country` | Driver nationality/country |
+| `driver_name` | Driver display name |
+| `team_name` | Team recorded for that race |
+| `grid_position` | Starting grid position |
+| `time_or_laps_behind` | Winner's race time, classified time, or DNF laps behind |
+| `gap` | Gap to the winner; DNF rows retain the laps-behind value |
+| `tire_stint_count` | Number of recorded tyre stints |
+| `tire_compounds_sequence` | Ordered tyre compound sequence, separated by semicolons |
+| `stint_1_tire` | Compound used in stint 1 |
+| `stint_2_tire` | Compound used in stint 2, when present |
+| `stint_3_tire` | Compound used in stint 3, when present |
+| `fastest_lap_driver` | Driver credited with fastest lap |
+| `fastest_lap_time` | Fastest-lap time |
+| `pole_driver` | Pole sitter |
+| `pole_time` | Pole lap time |
+| `driver_of_the_day` | Driver of the Day |
+
+The schema currently represents up to three tyre stints with explicit `stint_1_tire` through `stint_3_tire` columns. If a race needs more than three stints, the schema must be extended rather than dropping the additional stint data.
+
+### Tyre compound mapping
+
+Pit markers encode the tyre compound used for each stint, not merely the number of pit stops. Preserve both the stint count and the ordered compound sequence.
+
+| Screenshot marker | Compound value |
+|---|---|
+| Red | `Soft` |
+| Yellow | `Medium` |
+| White | `Hard` |
+| Green | `Intermediate` |
+| Blue | `Wet` |
+
+The CSV records one compound per stint in chronological order. The number of pit markers/stints must not be interpreted as a pit-stop count without applying the race display's stint convention.
+
+### CSV encoding and validation
+
+- Export CSV as UTF-8 with BOM so spreadsheet applications can open it cleanly.
+- Preserve the exact ASCII column headers above; do not allow a BOM to become part of the first header (for example, `circuit` must not become a garbled header).
+- Preserve Unicode nationality flags and names without mojibake.
+- Keep race times and gaps as text values so spreadsheet software does not convert them into dates or numeric values.
+- Keep DNF rows in the same file as classified finishers. Do not omit them from the race result.
+- Validate that `tire_stint_count`, `tire_compounds_sequence`, and the individual stint columns agree.
+
+### Derived race statistics
+
 - Driver career statistics are derived from official race result entries and published standings: points, wins, poles, podiums, fastest laps, Driver of the Day, completed races, gained positions, average finishing position, points per completed race, and DNF.
-- Team statistics are derived from the team snapshot recorded on each race entry and official team standings: points, wins, poles, podiums, fastest laps, gained positions, completed races, and DNF.
+- Team career statistics are derived from the team snapshot recorded on each race entry and official team standings: points, wins, poles, podiums, fastest laps, gained positions, completed races, and DNF.
 - No statistic is manually editable by Admin. Corrections must be made to the underlying official race result and reflected in the derived statistics.
-- Existing database tables and the official race submission RPC are reused; no new statistic input table or parallel scoring engine is introduced.
+- Driver career statistics remain associated with the driver; team statistics attribute each result to the team snapshot recorded for that race.
+- Existing race-result tables, standings, and the secured `fia_submit_race_classification` workflow are reused. No parallel scoring engine or manually editable statistics table is introduced.
+- Official submission must retain round sequencing, participant validation, scoring, race rewards, idempotency, and downstream settlement. A corrected official result must update derived totals without double-counting a previously published race.
+
+### Related implementation
+
+- FIA Race Input page: `/fia-panel/punishment-input`.
+- Driver statistics: Character and Career History.
+- Team statistics: Team Summary.
+- No new database migration is required for the CSV review format itself; it is a pre-submission interchange format. Database writes continue through the existing official race workflow.
