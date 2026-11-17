@@ -830,3 +830,11 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Scroll vertikal utama dilakukan oleh dokumen/halaman. Hindari nested scroll container global yang membuat footer tidak terjangkau.
 - Breakpoint hanya menyesuaikan kepadatan, jarak, dan susunan komponen. Tidak membuat frame atau versi layout terpisah.
 - Tabel dengan banyak kolom boleh memiliki overflow horizontal pada wadah tabelnya sendiri, tanpa memperlebar seluruh halaman.
+
+
+### Responsive shell regression correction
+
+- Header logo memakai ukuran natural di dalam slot brand; tidak ada transform scale pada desktop maupun mobile.
+- Grid shell memakai tinggi berbasis konten agar footer tetap setelah seluruh konten workspace.
+- Workspace content tidak dipaksa menjadi area dengan tinggi viewport dan tidak memakai scroll vertikal internal global.
+- Perubahan ini frontend-only; tidak ada migrasi database atau perubahan dependency.
