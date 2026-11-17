@@ -123,7 +123,7 @@ begin
     on conflict(season_id,team_id) do update
       set owner_member_id=excluded.owner_member_id,profit_amount=0,share_amount=0,
           status='no_profit',processed_at=now(),last_error=null,updated_at=now()
-      where public.caleris_team_owner_profit_shares.status='pending';
+      where caleris_team_owner_profit_shares.status='pending';
     v_no_profit:=v_no_profit+1;
     continue;
    end if;
@@ -138,7 +138,7 @@ begin
       set owner_member_id=excluded.owner_member_id,profit_amount=excluded.profit_amount,
           share_amount=excluded.share_amount,status='pending',
           last_error=excluded.last_error,updated_at=now()
-      where public.caleris_team_owner_profit_shares.status='pending';
+      where caleris_team_owner_profit_shares.status='pending';
     v_pending:=v_pending+1;
     continue;
    end if;
@@ -156,7 +156,7 @@ begin
       set owner_member_id=excluded.owner_member_id,profit_amount=excluded.profit_amount,
           share_amount=excluded.share_amount,status='pending',
           last_error=excluded.last_error,updated_at=now()
-      where public.caleris_team_owner_profit_shares.status='pending';
+      where caleris_team_owner_profit_shares.status='pending';
     v_pending:=v_pending+1;
     continue;
    end if;
@@ -180,7 +180,7 @@ begin
       set owner_member_id=excluded.owner_member_id,profit_amount=excluded.profit_amount,
           share_amount=excluded.share_amount,status='pending',
           last_error=excluded.last_error,updated_at=now()
-      where public.caleris_team_owner_profit_shares.status='pending';
+      where caleris_team_owner_profit_shares.status='pending';
     v_pending:=v_pending+1;
     continue;
    end if;
@@ -193,7 +193,7 @@ begin
     set owner_member_id=excluded.owner_member_id,profit_amount=excluded.profit_amount,
         share_amount=excluded.share_amount,status='paid',
         transaction_id=excluded.transaction_id,processed_at=now(),last_error=null,updated_at=now()
-    where public.caleris_team_owner_profit_shares.status='pending';
+    where caleris_team_owner_profit_shares.status='pending';
    v_paid:=v_paid+1;
   end loop;
  end loop;
