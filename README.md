@@ -834,7 +834,7 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 
 ### Responsive shell regression correction
 
-- Header logo memakai ukuran natural di dalam slot brand; tidak ada transform scale pada desktop maupun mobile.
+- Header logo memakai ukuran natural di dalam slot brand. Semua override transform scale lama pada selector `.site-header .brand img` dikalahkan oleh aturan final setelah seluruh breakpoint.
 - Grid shell memakai tinggi berbasis konten agar footer tetap setelah seluruh konten workspace.
 - Workspace content tidak dipaksa menjadi area dengan tinggi viewport dan tidak memakai scroll vertikal internal global.
 - Perubahan ini frontend-only; tidak ada migrasi database atau perubahan dependency.
