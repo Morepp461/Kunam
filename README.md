@@ -864,3 +864,13 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Quest cards link to their relevant feature pages (Development, Training, Sponsorship, Place Job Advert, contracts, and affiliations).
 - Circuit Pool displays the lap-record holder. FIA/Admin can enter a driver name for a manually seeded initial lap record; faster times entered through official race classifications automatically become the record holder from the race-result driver.
 - Includes a Supabase migration for both testing and production. No dependency changes.
+
+
+## Team Owner Profit Share
+
+- Setiap End Season, setelah seluruh division selesai dan seluruh prizepool season berhasil dibayarkan, sistem menghitung net cashflow setiap Team Wallet selama tanggal season.
+- Team Owner menerima 10% dari profit positif tim langsung ke Team Owner Wallet. Tim dengan profit nol atau negatif tidak menerima pembagian.
+- Pencairan otomatis berjalan melalui database scheduler, memakai ledger transaksi ekonomi yang idempotent dan dapat retry jika VreeoBank atau Team Owner Wallet belum tersedia / saldo Bank belum mencukupi.
+- Pencairan pinjaman (principal) tidak dihitung sebagai pendapatan atau biaya operasional. Semua penerimaan dan pengeluaran operasional yang tercatat pada Team Wallet, termasuk prize, sponsor, payroll, dan development, masuk perhitungan profit.
+- Quest Driver masuk ke Driver Wallet; Quest Team Owner masuk ke Team Owner Wallet. Tidak ada wallet reward terpisah.
+- Migration: `20261118010000_team_owner_profit_share.sql`.
