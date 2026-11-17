@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { PointerEvent as ReactPointerEvent } from "react";
 import type * as Three from "three";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Maximize2, Search, UserRound, X } from "lucide-react";
 import "./driver-exhibition.css";
@@ -28,6 +27,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
   const [teamFilter, setTeamFilter] = useState("all");
   const [sceneError, setSceneError] = useState("");
   const selectedRef = useRef<DriverRow | null>(null);
+  const visibleIdsRef = useRef<Set<string>>(new Set());
   const filteredDrivers = useMemo(() => drivers.filter((d) => {
     const term = query.trim().toLowerCase();
     const matchesQuery = !term || [d.character_name, d.team?.name, d.license].some((v) => String(v || "").toLowerCase().includes(term));
@@ -57,7 +57,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
         renderer.toneMappingExposure = 1.15;
         renderer.shadowMap.enabled = !mobile;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
         renderer.domElement.setAttribute("aria-label", "Interactive 3D Caleris driver exhibition hall. Drag to look around and select a driver.");
         host.appendChild(renderer.domElement);
@@ -220,6 +220,12 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         };
 
         drivers.forEach(createDriver);
+        driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
+        const onFilter = (event: Event) => {
+          const visible = new Set((event as CustomEvent<string[]>).detail || []);
+          driverObjects.forEach((root, id) => { root.visible = visible.has(id); });
+        };
+        window.addEventListener("caleris-driver-filter", onFilter);
         const lightCount = Math.max(4, Math.min(8, Math.ceil(drivers.length / 4)));
         for (let i = 0; i < lightCount; i++) {
           const light = new THREE.SpotLight(0xffe2b6, 125, 25, Math.PI / 5, 0.7, 1.4);
@@ -351,6 +357,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           window.removeEventListener("keydown", onKeyDown);
           window.removeEventListener("keyup", onKeyUp);
           window.removeEventListener("blur", onBlur);
+          window.removeEventListener("caleris-driver-filter", onFilter);
           resizeObserver?.disconnect();
           cancelAnimationFrame(frame);
           scene.traverse((obj) => {
@@ -390,12 +397,9 @@ export default function DriverExhibition({ drivers, scope }: Props) {
   }, []);
 
   useEffect(() => {
-    const visible = new Set(filteredDrivers.map((d) => d.id));
-    const timer = window.setInterval(() => {
-      // Visibility is applied to the scene objects through the shared API event.
-      window.dispatchEvent(new CustomEvent("caleris-driver-filter", { detail: [...visible] }));
-    }, 250);
-    return () => window.clearInterval(timer);
+    const visible = new Set<string>(filteredDrivers.map((d) => d.id));
+    visibleIdsRef.current = visible;
+    window.dispatchEvent(new CustomEvent("caleris-driver-filter", { detail: [...visible] }));
   }, [filteredDrivers]);
 
   const resetCamera = () => { apiRef.current?.reset(); setSelected(null); selectedRef.current = null; };
