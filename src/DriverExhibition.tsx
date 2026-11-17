@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Three from "three";
-import { createCharacter, type AraCharacter } from "ara3d";
+import type { AraCharacter } from "ara3d";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Gamepad2, Maximize2, Minimize2, Search, UserRound, X } from "lucide-react";
 import "./driver-exhibition.css";
@@ -53,6 +53,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     const boot = async () => {
       try {
         const THREE = await import("three");
+        const { createCharacter } = await import("ara3d");
         if (disposed || !host) return;
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
         const mobile = window.matchMedia("(max-width: 760px)").matches;
