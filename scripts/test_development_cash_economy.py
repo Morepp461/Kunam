@@ -88,7 +88,7 @@ assert "member_upgrade_development_attribute" in edge
 
 workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 assert "scripts/test_development_cash_economy.py" in workflow
-tier_migration = ROOT / "supabase/migrations/20261117090000_development_license_and_division_pricing.sql"
+tier_migration = ROOT / "supabase/migrations/20261117052110_development_license_and_division_pricing.sql"
 assert tier_migration.is_file(), "Missing license/division Development pricing migration"
 tier_sql = tier_migration.read_text(encoding="utf-8").lower()
 for fragment in [
@@ -119,7 +119,7 @@ for division,total in team_division_totals.items():
     assert f"('{division}','race_pace'" in tier_sql
     assert total*50 in [412_500_000,687_500_000]
 
-mapping_migration = ROOT / "supabase/migrations/20261117093000_development_license_tier_mapping.sql"
+mapping_migration = ROOT / "supabase/migrations/20261117052112_development_license_tier_mapping.sql"
 assert mapping_migration.is_file(), "Missing development license tier mapping migration"
 mapping_sql = mapping_migration.read_text(encoding="utf-8").lower()
 for fragment in [
@@ -154,7 +154,7 @@ assert "caleris_team_development_division_pricing" in dev_ui
 assert 'select("id,role,team_id,character_name,license")' in dev_ui
 assert 'select("id,name,division_key")' in dev_ui
 
-index_migration = ROOT / "supabase/migrations/20261117100000_development_pricing_admin_indexes.sql"
+index_migration = ROOT / "supabase/migrations/20261117052114_development_pricing_admin_indexes.sql"
 assert index_migration.is_file(), "Missing Development pricing FK indexes migration"
 index_sql = index_migration.read_text(encoding="utf-8").lower()
 for fragment in [
