@@ -50,7 +50,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     if (!supabase) { setNotice("Supabase belum dikonfigurasi."); setLoading(false); return; }
     setLoading(true);
     setNotice("");
-    const [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ] = await Promise.all([
+    const [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ, fanPopulationsQ, driverReputationQ] = await Promise.all([
       supabase.from("profiles").select("user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown").eq("user_id", session.user.id).maybeSingle(),
       supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }),
       supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
@@ -75,9 +75,11 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       supabase.from("economy_wallet_accounts").select("id,account_kind,member_id,team_id,balance,is_active").eq("is_active", true),
       supabase.from("economy_transactions").select("id,event_type,source_account_id,destination_account_id,amount,description,metadata,created_at").order("created_at", { ascending: false }).limit(150),
       supabase.from("season_calendar_periods").select("id,season_id,period_type,period_number,title,starts_on,ends_on,sort_order").order("sort_order"),
-      supabase.from("season_period_rounds").select("id,period_id,season_division_id,round_id")
+      supabase.from("season_period_rounds").select("id,period_id,season_division_id,round_id"),
+      supabase.from("caleris_fan_populations").select("member_id,population").eq("entity_kind","driver"),
+      supabase.from("caleris_driver_reputation").select("member_id,score,band")
     ]);
-    const errors = [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ].map(x => x.error).filter(Boolean);
+    const errors = [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ, fanPopulationsQ, driverReputationQ].map(x => x.error).filter(Boolean);
     if (errors.length && errors[0]) setNotice(errors[0].message);
     let ownProfile = (p.data || null) as Row | null;
     if (ownProfile?.avatar_path) {
@@ -125,7 +127,8 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       announcements: announcementsQ.data || [], regulations: regulationsQ.data || [], adverts: advertsQ.data || [],
       appeals: appealsQ.data || [], fines: finesQ.data || [], contracts: contractsQ.data || [], wallets: walletsQ.data || [],
       transactions: transactionsQ.data || [], periods: (periodsQ.data || []).filter((x: Row) => x.season_id === activeSeason?.id), periodMappings: periodMappingsQ.data || [],
-      personalWallets, ownTeamWallets, ledgerEntries, activeRoundIds
+      personalWallets, ownTeamWallets, ledgerEntries, activeRoundIds,
+      fanPopulations: fanPopulationsQ.data || [], driverReputations: driverReputationQ.data || []
     });
     setLoading(false);
   }, [session.user.id]);
@@ -215,6 +218,8 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     return { ...entry, transaction, incoming: entry.entry_side === "inflow" };
   }).sort((a: Row, b: Row) => String(b.created_at).localeCompare(String(a.created_at)));
   const ownAttributes = (data.attributes || []).find((x: Row) => x.member_id === member?.id)?.attributes || {};
+  const ownFanTotal = (data.fanPopulations || []).filter((x: Row) => x.member_id === member?.id).reduce((sum: number, x: Row) => sum + Number(x.population || 0), 0);
+  const ownReputation = (data.driverReputations || []).find((x: Row) => x.member_id === member?.id) || null;
   const ownAchievements = (data.achievements || []).filter((x: Row) => isDriver ? x.target_kind === "member" && x.member_id === member?.id : x.target_kind === "team" && x.team_id === activeTeamId);
 
   const submit = async (e: FormEvent, action: () => Promise<void>) => { e.preventDefault(); if (saving) return; setSaving(true); setNotice(""); try { await action(); } catch (err: any) { setNotice(err?.message || "Terjadi kesalahan."); } finally { setSaving(false); } };
@@ -286,7 +291,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     };
     return <section className="workspace s5-workspace">{heading("DRIVER PANEL · CHARACTER", "Character", "Profil lengkap karakter, kontrak, performa, atribut, dan achievement.")}{!member ? <Empty>Akun ini belum terhubung ke data Driver.</Empty> : <>
       <div className="s5-hero"><div className="s5-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="Avatar driver"/> : <span>{(member.character_name || "D").slice(0, 1)}</span>}</div><div className="s5-hero-copy"><span>OFFICIAL DRIVER PROFILE</span><h2>{member.character_name || "Driver"}</h2><p>{team?.name || "No team"} · {labelDivision(team?.division_key)}</p><small>{profile?.nationality || profile?.hometown || "Asal belum diatur"} · {ageOf(profile?.date_of_birth)}</small></div><div className="s5-wallet-chip"><Wallet size={16}/><span>{money((data.personalWallets || []).reduce((n: number, w: Row) => n + Number(w.balance || 0), 0))}</span></div></div>
-      <div className="s5-grid s5-grid-4">{[["RACE WIN",statsAll.wins],["POLE",statsAll.poles],["FINISH",statsAll.finishes],["DNF",statsAll.dnf]].map(([k,v])=><div className="s5-stat" key={k as string}><span>{k}</span><strong>{v as number}</strong></div>)}</div>
+      <div className="s5-grid s5-grid-4">{[["RACE WIN",statsAll.wins],["POLE",statsAll.poles],["FINISH",statsAll.finishes],["DNF",statsAll.dnf],["TOTAL FANS",ownFanTotal.toLocaleString("id-ID")],["REPUTATION",ownReputation?Number(ownReputation.score).toLocaleString("id-ID"):"Belum dihitung"]].map(([k,v])=><div className="s5-stat" key={k as string}><span>{k}</span><strong>{v as string|number}</strong>{k==="REPUTATION"&&ownReputation?.band&&<small>{ownReputation.band}</small>}</div>)}</div>
       <div className="s5-grid s5-grid-2"><Card title="Contract & Salary" eyebrow="CURRENT SEASON"><dl className="s5-dl"><dt>Team</dt><dd>{team?.name || "Belum ada tim"}</dd><dt>License</dt><dd>{member.license || "Belum ditetapkan"}</dd><dt>Status</dt><dd>{activeContract?.status || "Belum ada kontrak"}</dd><dt>Annual salary</dt><dd>{activeContract ? money(Number(activeContract.annual_salary || 0)) : "—"}</dd><dt>Season</dt><dd>{(data.seasons || []).find((s: Row) => s.id === activeContract?.season_id)?.title || "—"}</dd><dt>Contract term</dt><dd>{ownContracts.filter((c: Row) => c.status === "active").length || "—"} season(s)</dd></dl></Card><Card title="Driver Attributes" eyebrow="ATTRIBUTE PROFILE · TAP TO VIEW CHART" onClick={() => setAttributeModalOpen(true)}><div className="s5-attribute-summary">{Object.entries(ownAttributes).map(([key, value])=><div key={key}><span>{key.replaceAll("_"," ")}</span><strong>{String(value)}</strong></div>)}</div></Card></div>
       {attributeModalOpen && <div className="s5-attribute-modal-backdrop" onClick={() => setAttributeModalOpen(false)}><section className="s5-attribute-modal" role="dialog" aria-modal="true" aria-labelledby="s5-attribute-modal-title" onClick={e => e.stopPropagation()}><div className="s5-attribute-modal-head"><div><span>ATTRIBUTE PROFILE</span><h2 id="s5-attribute-modal-title">Driver Attributes Chart</h2></div><button type="button" className="s5-secondary" onClick={() => setAttributeModalOpen(false)}>Close</button></div><div className="s5-attributes">{Object.entries(ownAttributes).map(([key, value])=><div key={key}><span>{key.replaceAll("_"," ")}</span><i><b style={{width: Math.max(0,Math.min(100,Number(value)))+"%"}}/></i><strong>{String(value)}</strong></div>)}</div></section></div>}
       <Card title="Race History" eyebrow="OFFICIAL CLASSIFICATION"><Table headers={["Season","Round","Division","Result","Status"]} rows={driverRaceHistory.map((r: Row)=>[r.season?.title||"Season",r.round?.title||("R"+r.round?.round_number),r.division?.division_name||"Division",r.finishing_position?"P"+r.finishing_position:"—",r.finish_status.toUpperCase()])}/></Card><Card title="Season History" eyebrow="CAREER RECORD"><Table headers={["Season","Team","Division","Final Position","Points","Title"]} rows={careerStandings.map((r: Row)=>[r.season || "Season",r.team?.name || "—",r.division || "Division","#"+r.final_position,Number(r.final_points||0).toLocaleString("id-ID"),r.final_position===1?"WDC":"—"])}/></Card>
