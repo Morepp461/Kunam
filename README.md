@@ -569,7 +569,7 @@ Brand Ecosystem introduces team-only sponsorship partnerships, sponsor-tier matc
 - **Contracts:** accepted contracts carry a season duration, annual value, and aggregate bonus pool. The bonus pool percentage is configurable; the initial default is 50%.
 - **Settlement:** seasonal payments and earned target bonuses use the Sponsor Source wallet and private.post_economy_transaction. A pg_cron job checks due payments and eligible bonuses every 15 minutes. Insufficient sponsor budget or Sponsor Source balance prevents settlement rather than minting funds.
 - **Reputation:** Admin enters sourced metric values; weighted scores are calculated from editable weights in caleris_brand_ecosystem_config.
-- **Fans:** population is stored as regional aggregates, not individual fan records. Admin adjustments are recorded in a population history ledger. Configurable race-result growth applies once per published round to regional team and driver populations. Sponsorship performance targets for points, podiums, wins, and finish rate recalculate automatically when a round is published. Driver fan populations remain attached to the driver across team transfers, with transfer snapshots recorded without duplicating fan counts.
+- **Fans:** population is stored as regional aggregates, not individual fan records. Admin adjustments are recorded in a population history ledger. Configurable race-result growth and decline apply once per published round to regional team and driver populations. P1/podium/points finishes grow fan populations; poor finishes and DNF reduce them. A three-race poor-performance streak adds a configurable decline. Two consecutive missed rounds trigger inactivity decay. Loyalty reduces the decline impact, while engagement and sentiment moderate positive growth. All rates and grace periods are editable in Admin. Sponsorship performance targets for points, podiums, wins, and finish rate recalculate automatically when a round is published. Driver fan populations remain attached to the driver across team transfers, with transfer snapshots recorded without duplicating fan counts.
 - **Trust and renewal:** Admin evaluates five 0–100 metrics using configurable weights. Renewal bands are Premium (90+), Standard (80–89), Conditional (60–79), and Terminated (below 60).
 
 ### Brand Ecosystem migrations
@@ -593,10 +593,7 @@ Brand Ecosystem introduces team-only sponsorship partnerships, sponsor-tier matc
 - 20261117280000_brand_fan_growth_engine.sql
 - 20261117290000_brand_fan_growth_config_validation.sql
 - 20261117300000_brand_fan_growth_idempotency_fix.sql
-- 20261117280000_brand_fan_growth_engine.sql
-- 20261117290000_brand_fan_growth_config_validation.sql
-- 20261117300000_brand_fan_growth_idempotency_fix.sql
-- 20261117280000_brand_fan_growth_engine.sql
-- 20261117290000_brand_fan_growth_config_validation.sql
+- 20261117310000_brand_fan_population_dynamics.sql
+- 20261117320000_brand_fan_inactivity_and_config.sql
 
 The 100 fictional sponsors, including the 20 Indonesia-based entries, are seeded from Pool Sponsor v1.1. Tier reputation thresholds, contract ranges, season durations, focus targets, and division probabilities are seeded from that source. Sponsor budgets start at 1.5× the listed annual amount multiplied by contract duration to cover the agreed annual payment plus 50% seasonal bonus pool; Admin can increase or adjust each budget subject to outstanding commitments.
