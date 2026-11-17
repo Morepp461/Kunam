@@ -280,7 +280,7 @@ function PaddockDatePicker({value,onChange,max}:{value:string;onChange:(value:st
  return <div className={"settings-field paddock-picker-field"+(open?" is-open":"")}><span>Tanggal lahir</span><div className="paddock-picker-wrap"><button type="button" className={"paddock-select-trigger paddock-date-trigger"+(open?" is-open":"")} aria-haspopup="dialog" aria-expanded={open} onClick={toggle}><span>{formatted}</span><CalendarDays size={18}/></button>{open&&calendar}</div></div>;
 }
 function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Promise<void>}){
- const {toast,loading}=useUI();const navigate=useNavigate();
+ const {toast,loading}=useUI();
  const [avatarFile,setAvatarFile]=useState<File|null>(null),[avatarPreview,setAvatarPreview]=useState(""),[avatarEditing,setAvatarEditing]=useState(false),[cropX,setCropX]=useState(50),[cropY,setCropY]=useState(50);
  const originalAvatarFileRef=useRef<File|null>(null);
  const [firstName,setFirstName]=useState(""),[dateOfBirth,setDateOfBirth]=useState(""),[nickname,setNickname]=useState(""),[preferredRole,setPreferredRole]=useState(""),[nationality,setNationality]=useState(""),[hometown,setHometown]=useState("");
@@ -302,7 +302,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   if(!dateOfBirth)next.dateOfBirth="Tanggal lahir harus diisi.";
    if(!nationality)next.nationality="Nationality wajib dipilih.";
    if(!hometown)next.hometown="Hometown wajib dipilih.";
-  else if(dateOfBirth>maxDob)next.dateOfBirth="Paddock Access hanya tersedia mulai usia 13 tahun.";
+  if(dateOfBirth&&dateOfBirth>maxDob)next.dateOfBirth="Paddock Access hanya tersedia mulai usia 13 tahun.";
   if(!nickname.trim())next.nickname="Nickname harus diisi.";
   if(nickname.trim().length>32)next.nickname="Nickname maksimal 32 karakter.";
   if(!preferredRole)next.preferredRole="Pilih preferensi role.";
@@ -324,7 +324,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   finally{loading(false);setSaving(false);}
  };
  if(registration?.status==="pending")return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Pengajuan Terkirim</h1><p className="page-description">Pendaftaran role dan profilmu sedang diperiksa Admin.</p></div><div className="mer-panel"><Shield/><h2>Menunggu Persetujuan</h2><p>Role akan aktif setelah Admin menyetujui pengajuan.</p><span className="mer-status">PENDING REVIEW</span></div></div></section>;
- return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Paddock Access</h1><p className="page-description">Lengkapi identitas dan detail role dalam satu proses pendaftaran.</p></div><form className="paddock-access-form" onSubmit={e=>e.preventDefault()} noValidate>
+ return <section className="workspace paddock-access-workspace"><div className="paddock-access-shell"><div className="paddock-access-heading"><span className="section-eyebrow">CALERIS MASTERS · MEMBER REGISTRATION</span><h1 className="page-title">Paddock Access</h1><p className="page-description">Lengkapi identitas dan detail role dalam satu proses pendaftaran.</p></div><div className="paddock-access-form">
   <div className="paddock-avatar-field"><div className="paddock-avatar-preview">{avatarPreview?<img src={avatarPreview} alt="Preview foto profil"/>:<Camera size={28}/>}</div><div className="paddock-avatar-copy"><strong>Foto profil</strong><small>JPG, PNG, WEBP · Maksimal 3 MB</small><div className="paddock-avatar-actions"><label className="action upload-button">Pilih foto<input type="file" accept="image/jpeg,image/png,image/webp" onChange={chooseAvatar}/></label>{avatarPreview&&!avatarEditing&&<button type="button" className="action avatar-edit-button" onClick={()=>{const original=originalAvatarFileRef.current;if(!original)return;if(avatarPreview)URL.revokeObjectURL(avatarPreview);setAvatarFile(original);setAvatarPreview(URL.createObjectURL(original));setCropX(50);setCropY(50);setAvatarEditing(true);}}>Edit foto</button>}</div>{errors.avatar&&<small className="field-error">{errors.avatar}</small>}</div></div>
   {avatarPreview&&avatarEditing&&<div className="avatar-inline-crop"><span>GESER FOTO UNTUK MENGATUR POSISI</span><div ref={avatarStageRef} className="avatar-inline-stage" onPointerDown={beginAvatarDrag} onPointerMove={moveAvatarDrag} onPointerUp={finishAvatarDrag} onPointerCancel={finishAvatarDrag}><img ref={avatarImageRef} src={avatarPreview} alt="Geser foto profil" draggable={false} style={{objectPosition:cropX+"% "+cropY+"%"}}/></div><button type="button" className="action primary avatar-confirm-button" onClick={confirmAvatarCrop}>Konfirmasi posisi foto</button></div>}
   <div className="paddock-name-fields"><label className="settings-field">Nama panggilan<input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} autoComplete="nickname" placeholder="Nama panggilan"/></label></div>
@@ -333,11 +333,10 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   <label className="settings-field">Caleris Nickname<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} autoComplete="nickname" placeholder="Caleris Nickname"/>{errors.nickname&&<small className="field-error">{errors.nickname}</small>}</label>
   <PaddockRolePicker value={preferredRole} onChange={setPreferredRole}/>{errors.preferredRole&&<small className="field-error">{errors.preferredRole}</small>}
   {registration?.status==="rejected"&&<div className="mer-notice">Pengajuan sebelumnya ditolak. {registration.review_note?`Catatan Admin: ${registration.review_note}`:"Kamu dapat mengirim pengajuan baru."}</div>}
-  {preferredRole&&<PaddockRoleDetails role={preferredRole==="Team Owner"?"Team Owner":"Driver"} saving={saving} onSubmit={submit}/>}
   <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setErrors(v=>({...v,privacy:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
   {errors.privacy&&<small className="field-error">{errors.privacy}</small>}
-
- </form></div></section>;
+  {preferredRole&&<PaddockRoleDetails role={preferredRole==="Team Owner"?"Team Owner":"Driver"} saving={saving} onSubmit={submit}/>}
+ </div></div></section>;
 }
 function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
   const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);
