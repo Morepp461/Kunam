@@ -33,7 +33,7 @@ function questDestination(quest:Quest,scope:"driver"|"team_owner"){
  return "/team-panel/team-summary";
 }
 
-function QuestCard({quest,scope}:{quest:Quest;scope:"driver"|"team_owner"}){
+function QuestCard({quest,scope,onClaim,claiming}:{quest:Quest;scope:"driver"|"team_owner";onClaim:(id:string)=>void;claiming:boolean}){
  const progress=Math.max(0,Math.min(100,Number(quest.progress)/Math.max(1,quest.target)*100));
  const done=quest.status==="completed";
  const destination=questDestination(quest,scope);
@@ -44,20 +44,24 @@ function QuestCard({quest,scope}:{quest:Quest;scope:"driver"|"team_owner"}){
    <div className="quest-progress-meta"><span>Progress</span><strong>{Math.min(Number(quest.progress),quest.target).toLocaleString("id-ID")} / {quest.target.toLocaleString("id-ID")}</strong></div>
    <div className="quest-progress-track"><i style={{width:progress+"%"}}/></div>
    <div className="quest-card-bottom"><span className="quest-reward"><Wallet size={14}/>{money(quest.reward_amount)}</span>
-    {quest.reward_status==="paid"?<span className="quest-state paid"><CheckCircle2 size={14}/> Reward masuk ke wallet aktif</span>
-     :quest.reward_status==="pending"?<span className="quest-state pending"><Clock3 size={14}/> Menunggu saldo VreeoBank</span>
+    {quest.reward_status==="paid"?<span className="quest-state paid"><CheckCircle2 size={14}/> Reward masuk wallet pribadi</span>
+     :quest.reward_status==="pending"?<span className="quest-state pending"><Clock3 size={14}/> Klaim tertunda, saldo VreeoBank tidak cukup</span>
      :quest.status==="expired"?<span className="quest-state expired">Periode berakhir</span>
-     :done?<span className="quest-state completed"><CheckCircle2 size={14}/> Reward masuk otomatis</span>
+     :done?<span className="quest-state completed"><CheckCircle2 size={14}/> Reward siap diklaim</span>
      :<span className="quest-state active">Sedang berjalan</span>}
    </div>
    <span className="quest-open-hint">Buka halaman aktivitas <ArrowUpRight size={13}/></span>
   </Link>
+  {done&&quest.reward_status!=="paid"&&<button className="quest-claim-button" type="button" disabled={claiming} onClick={()=>onClaim(quest.id)}>
+   {claiming?"Memproses klaim…":quest.reward_status==="pending"?"Coba klaim lagi":"Klaim Reward"}
+  </button>}
  </article>;
 }
 
 export default function QuestPage({session,scope}:{session:Session;scope:"driver"|"team_owner"}){
  const [board,setBoard]=useState<Board|null>(null);
  const [loading,setLoading]=useState(true),[error,setError]=useState("");
+ const [claimingId,setClaimingId]=useState<string|null>(null),[notice,setNotice]=useState("");
 
  const load=useCallback(async()=>{
   if(!supabase){setError("Koneksi database belum tersedia.");setLoading(false);return;}
@@ -69,22 +73,34 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
   setBoard(result);setLoading(false);
  },[session.user.id,scope]);
  useEffect(()=>{void load()},[load]);
+ const claim=async(id:string)=>{
+  if(!supabase||claimingId)return;
+  setClaimingId(id);setNotice("");
+  const {data,error:claimError}=await supabase.rpc("member_claim_quest_reward",{p_assignment_id:id});
+  setClaimingId(null);
+  if(claimError){setNotice(claimError.message);return;}
+  if(data?.status==="paid")setNotice("Reward berhasil diklaim dan masuk ke wallet pribadi.");
+  else if(data?.status==="pending")setNotice(data?.reason||"Klaim belum berhasil. Periksa saldo VreeoBank lalu coba lagi.");
+  else if(data?.already_claimed)setNotice("Reward ini sudah pernah diklaim.");
+  else setNotice("Status klaim belum dapat dipastikan. Refresh untuk memeriksa saldo.");
+  await load();
+ };
  const title=scope==="driver"?"Driver Quest":"Team Owner Quest";
  return <section className="workspace quest-workspace">
   <Link className="back-link" to="/dashboard">← Dashboard</Link>
-  <header className="page-heading quest-heading"><div><span className="section-eyebrow">{scope==="driver"?"DRIVER PANEL":"TEAM PANEL"} · QUEST ENGINE</span><h1 className="page-title">{title}</h1><p className="page-description">Selesaikan aktivitas dari fitur yang sudah tersedia. Reward langsung dikirim ke wallet sesuai role karakter.</p></div><button className="quest-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
+  <header className="page-heading quest-heading"><div><span className="section-eyebrow">{scope==="driver"?"DRIVER PANEL":"TEAM PANEL"} · QUEST ENGINE</span><h1 className="page-title">{title}</h1><p className="page-description">Selesaikan aktivitas yang diminta, lalu klaim reward setelah target Quest tercapai. Pembayaran masuk ke wallet pribadi sesuai role karakter.</p></div><button className="quest-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
   {loading?<div className="workspace-card quest-empty">Memuat quest dan progress...</div>:error?<div className="workspace-card quest-empty quest-error">{error}</div>:board?<>
    <div className="quest-wallet-strip"><div><span>Wallet {scope==="driver"?"Driver":"Team Owner"}</span><strong>{money(board.wallet_balance)}</strong></div><span className="quest-wallet-icon"><Wallet size={21}/></span></div>
    <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET HARIAN</span><h2>Daily Quest</h2><p>{new Date(board.date+"T00:00:00").toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p></div><span className="quest-count">{board.daily.length} quest</span></div>
-    {board.daily.length?<div className="quest-grid">{board.daily.map(q=><QuestCard key={q.id} quest={q} scope={scope} />)}</div>:<div className="workspace-card quest-empty">Belum ada Daily Quest yang memenuhi kondisi aktivitas hari ini.</div>}
+    {board.daily.length?<div className="quest-grid">{board.daily.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>:<div className="workspace-card quest-empty">Belum ada Daily Quest yang memenuhi kondisi aktivitas hari ini.</div>}
    </section>
    <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET PERIODE</span><h2>Period Quest</h2>{board.period&&<p><CalendarDays size={14}/>{board.period.title} · {board.period.starts_on} – {board.period.ends_on}</p>}</div><span className="quest-count">{board.period_quests.length} quest</span></div>
     {!board.period?<div className="workspace-card quest-empty">Belum ada periode season yang aktif. Period Quest akan mengikuti kalender 12 periode CALERIS.</div>
-     :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q} scope={scope}/>)}</div>
+     :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>
      :<div className="workspace-card quest-empty">Belum ada Period Quest yang memenuhi kondisi pada periode ini.</div>}
    </section>
-   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward yang memenuhi syarat langsung masuk ke Driver Wallet atau Team Owner Wallet sesuai role karakter. Jika saldo VreeoBank belum mencukupi, pembayaran akan berstatus pending dan diproses ulang otomatis.</p>
+   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward tidak dibayarkan saat halaman dibuka atau progress selesai. Tekan Klaim Reward untuk mengirim saldo dari VreeoBank ke Driver Wallet atau Team Owner Wallet sesuai role karakter.</p>
   </>:null}
-
+  {notice&&<div className="license-notice" role="status">{notice}</div>}
  </section>;
 }
