@@ -205,12 +205,13 @@ def main():
     quest_source = quest_page.read_text(encoding="utf-8")
     quest_admin_source = quest_admin.read_text(encoding="utf-8")
     quest_sql = "\\n".join(path.read_text(encoding="utf-8") for path in quest_migrations)
-    for fragment in ["member_get_quest_board", "Daily Quest", "Period Quest", "reward_status", "VreeoBank", "Driver Wallet", "Owner Wallet"]:
+    for fragment in ["member_get_quest_board", "member_claim_quest_reward", "Daily Quest", "Period Quest", "reward_status", "VreeoBank", "Driver Wallet", "Team Owner Wallet", "Klaim Reward", "wallet pribadi"]:
         assert fragment in quest_source, f"Quest board missing: {fragment}"
-    for fragment in ["admin_update_quest_reward_amounts", "admin_process_pending_quest_rewards", "Nominal berdasarkan kesulitan"]:
+    for fragment in ["admin_update_quest_reward_amounts", "Nominal berdasarkan kesulitan"]:
         assert fragment in quest_admin_source, f"Quest Admin missing: {fragment}"
-    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "admin_process_pending_quest_rewards", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='team_owner'", "PERIOD_SEQUENCE"]:
+    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "member_claim_quest_reward", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='driver'", "account_kind='team_owner'", "PERIOD_SEQUENCE"]:
         assert fragment in quest_sql or fragment in calendar_source, f"Quest Engine migration missing: {fragment}"
+    assert "admin_process_pending_quest_rewards" not in quest_admin_source, "Admin Quest Engine must not pay unclaimed member rewards"
     assert 'path="/driver-panel/quest"' in app and 'path="/team-panel/quest"' in app and 'path="/admin/quest-engine"' in app
     assert "Quest Engine" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "payroll" in edge_source and "process_payroll_pending" in edge_source
