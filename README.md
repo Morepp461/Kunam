@@ -580,5 +580,11 @@ Brand Ecosystem introduces team-only sponsorship partnerships, sponsor-tier matc
 - 20261117150000_brand_sponsor_offer_bands.sql
 - 20261117160000_brand_ecosystem_engine_hardening.sql
 - 20261117170000_brand_ecosystem_settlement_scheduler.sql
+- 20261117180000_seed_brand_sponsor_pool_v1_1.sql
+- 20261117190000_brand_ecosystem_seasonal_targets_and_matching.sql
+- 20261117200000_brand_sponsor_budget_admin.sql
+- 20261117210000_brand_sponsorship_race_target_automation.sql
+- 20261117220000_brand_contract_commitment_guard.sql
+- 20261117230000_brand_custom_sponsor_matching.sql
 
 The 100 fictional sponsors, including the 20 Indonesia-based entries, are seeded from Pool Sponsor v1.1. Tier reputation thresholds, contract ranges, season durations, focus targets, and division probabilities are seeded from that source. Sponsor budgets start at 1.5× the listed annual amount multiplied by contract duration to cover the agreed annual payment plus 50% seasonal bonus pool; Admin can increase or adjust each budget subject to outstanding commitments.
