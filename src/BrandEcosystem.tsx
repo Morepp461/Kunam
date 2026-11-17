@@ -61,7 +61,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     supabase.from("caleris_sponsor_tier_rules").select("*").order("tier_key"),
     current?.team_id?supabase.from("caleris_team_reputation").select("*").eq("team_id",current.team_id).maybeSingle():Promise.resolve({data:null,error:null}),
     current?.role==="Driver"?supabase.from("caleris_driver_reputation").select("*").eq("member_id",current.id).maybeSingle():Promise.resolve({data:null,error:null}),
-    supabase.from("caleris_fan_populations").select("*").order("region_key")
+    supabase.from("caleris_fan_populations").select("*").order("region_key"),
+    mode==="admin"?supabase.from("caleris_brand_ecosystem_config").select("config_key,config_value"):Promise.resolve({data:[],error:null})
    ]);
    const issue=[s.error,se.error,t.error,m.error,o.error,r.error,c.error,ta.error,tr.error,rt.error,rd.error,fa.error,configs.error].find(Boolean);if(issue)throw issue;
    setSponsors((s.data||[]) as Sponsor[]);setSeasons((se.data||[]) as Season[]);setTeams((t.data||[]) as Team[]);setMembers((m.data||[]) as Member[]);
