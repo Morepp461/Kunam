@@ -2,7 +2,7 @@ begin;
 
 create table if not exists public.caleris_quest_difficulty_rewards (
   difficulty text primary key check (difficulty in ('easy','normal','hard','elite')),
-  reward_amount numeric(20,2) not null check (reward_amount >= 0 and reward_amount <= 999999999999999999.99),
+  reward_amount numeric(20,2) not null check (reward_amount > 0 and reward_amount <= 999999999999999999.99),
   updated_by uuid references auth.users(id) on delete set null,
   updated_at timestamptz not null default now()
 );
@@ -183,7 +183,7 @@ begin
       select count(*)::numeric into v_value
       from public.caleris_sponsorship_contracts c
       where c.target_kind='team' and c.target_team_id=p_team_id
-        and c.status='active' and c.started_at>=p_starts_at and c.started_at<p_ends_at;
+        and c.started_at>=p_starts_at and c.started_at<p_ends_at;
 
     when 'team_job_advert' then
       select count(*)::numeric into v_value
@@ -479,7 +479,7 @@ begin
 
   for v_assignment in
     select a.id,a.starts_at,a.ends_at,a.reward_amount,a.reward_status,a.status,
-      c.quest_key,c.title,c.metric_key,c.metric_filter,c.target_value
+      c.quest_key,c.title,c.metric_key,c.metric_filter,c.target_value,c.difficulty
     from public.caleris_quest_assignments a
     join public.caleris_quest_catalog c on c.id=a.quest_id
     where a.member_id=v_member.id
@@ -513,7 +513,7 @@ begin
               'quest_assignment_id',v_assignment.id,
               'quest_key',v_assignment.quest_key,
               'role_scope',v_role_scope,
-              'difficulty',v_assignment.metric_filter->>'difficulty',
+              'difficulty',v_assignment.difficulty,
               'source','quest_engine'
             ),
             null,true
@@ -558,6 +558,8 @@ begin
   from public.caleris_quest_assignments a
   join public.caleris_quest_catalog c on c.id=a.quest_id
   where a.member_id=v_member.id and a.assignment_scope='period' and a.period_id=v_period.id;
+
+  select balance into v_wallet_balance from public.economy_wallet_accounts where id=v_wallet_id;
 
   return jsonb_build_object(
     'member_name',coalesce(v_member.character_name,'Member'),
