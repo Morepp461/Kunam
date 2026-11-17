@@ -154,4 +154,14 @@ assert "caleris_team_development_division_pricing" in dev_ui
 assert 'select("id,role,team_id,character_name,license")' in dev_ui
 assert 'select("id,name,division_key")' in dev_ui
 
+index_migration = ROOT / "supabase/migrations/20261117100000_development_pricing_admin_indexes.sql"
+assert index_migration.is_file(), "Missing Development pricing FK indexes migration"
+index_sql = index_migration.read_text(encoding="utf-8").lower()
+for fragment in [
+    "caleris_driver_development_tier_pricing_updated_by_idx",
+    "caleris_team_development_division_pricing_updated_by_idx",
+    "caleris_development_license_tier_mapping_updated_by_idx",
+]:
+    assert fragment in index_sql, f"Development pricing index missing: {fragment}"
+
 print("Development cash economy and tier pricing regression checks passed.")
