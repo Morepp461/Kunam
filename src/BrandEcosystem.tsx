@@ -27,7 +27,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const [counterId,setCounterId]=useState(""),[counterAmount,setCounterAmount]=useState(""),[counterTerms,setCounterTerms]=useState("");
  const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[budget,setBudget]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState("");
- const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",budget:"0",maxBudget:"",active:true});\n const [selectedSponsorId,setSelectedSponsorId]=useState(""),[sponsorBudgetEdit,setSponsorBudgetEdit]=useState("");
+ const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",budget:"0",maxBudget:"",active:true});
+ const [selectedSponsorId,setSelectedSponsorId]=useState(""),[sponsorBudgetEdit,setSponsorBudgetEdit]=useState("");
  const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState(""),[trustMetrics,setTrustMetrics]=useState(""),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
  const [targetContract,setTargetContract]=useState(""),[targetTitle,setTargetTitle]=useState(""),[targetMetric,setTargetMetric]=useState(""),[targetValue,setTargetValue]=useState(""),[targetBonus,setTargetBonus]=useState("");
  const [progressTarget,setProgressTarget]=useState(""),[progressValue,setProgressValue]=useState("");
@@ -93,7 +94,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   if(id&&offerMin&&offerMax)await run("admin_set_sponsor_offer_band",{p_sponsor_id:id,p_minimum:Number(offerMin),p_maximum:Number(offerMax)},"Rentang penawaran sponsor disimpan.");
   setSponsorName("");setIndustry("");setBudget("");setOfferMin("");setOfferMax("");
  };
- const saveBudget=async()=>{await run("admin_set_sponsor_budget",{p_sponsor_id:selectedSponsorId,p_budget:Number(sponsorBudgetEdit)},"Budget sponsor diperbarui.");setSponsorBudgetEdit("");};\n const saveTier=async()=>{await run("admin_upsert_sponsor_tier_rule",{p_tier_key:tierForm.key,p_label:tierForm.label,p_minimum_team_reputation:Number(tierForm.rep),p_minimum_fan_population:Number(tierForm.fans),p_minimum_season_performance:Number(tierForm.performance),p_minimum_budget:Number(tierForm.budget),p_maximum_budget:tierForm.maxBudget?Number(tierForm.maxBudget):null,p_is_active:tierForm.active},"Aturan tier sponsor disimpan.");};
+ const saveBudget=async()=>{await run("admin_set_sponsor_budget",{p_sponsor_id:selectedSponsorId,p_budget:Number(sponsorBudgetEdit)},"Budget sponsor diperbarui.");setSponsorBudgetEdit("");};
+ const saveTier=async()=>{await run("admin_upsert_sponsor_tier_rule",{p_tier_key:tierForm.key,p_label:tierForm.label,p_minimum_team_reputation:Number(tierForm.rep),p_minimum_fan_population:Number(tierForm.fans),p_minimum_season_performance:Number(tierForm.performance),p_minimum_budget:Number(tierForm.budget),p_maximum_budget:tierForm.maxBudget?Number(tierForm.maxBudget):null,p_is_active:tierForm.active},"Aturan tier sponsor disimpan.");};
  const generate=()=>run("generate_team_sponsorship_offers",{p_season_id:seasonId},"AI Sponsor matching selesai dijalankan.");
  const sponsorRespond=(id:string)=>run("sponsor_engine_respond",{p_offer_id:id},"Sponsor engine telah memberikan respons otomatis.");
  const setReputation=async()=>{
