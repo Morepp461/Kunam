@@ -2,3 +2,45 @@
 @media(max-width:760px){.driver-exhibition-scene{height:74svh;min-height:590px;border-radius:7px}.driver-exhibition-vignette{background:linear-gradient(90deg,#030508b8,transparent 75%),linear-gradient(0deg,#030508e8,transparent 44%,#03050845)}.driver-exhibition-top{top:15px;left:15px;right:15px}.driver-exhibition-brand span,.driver-exhibition-count span{font-size:8px}.driver-exhibition-brand strong{font-size:15px}.driver-exhibition-count strong{font-size:21px}.driver-exhibition-heading{left:16px;top:25%;width:55%}.driver-exhibition-heading>span{font-size:8px}.driver-exhibition-heading h1{font-size:clamp(36px,11vw,58px)}.driver-exhibition-heading p{font-size:10px;margin-top:10px}.driver-exhibition-filters{top:75px;left:15px;width:calc(100% - 30px);gap:6px}.driver-exhibition-filters label{height:35px;padding:0 9px}.driver-exhibition-filters select{width:112px;font-size:9px}.driver-exhibition-controls{left:15px;bottom:54px;gap:9px}.driver-control-pad{grid-template-columns:repeat(3,30px);grid-template-rows:repeat(2,30px)}.driver-control-pad button{min-width:30px;min-height:30px}.driver-camera-hint{font-size:7px;gap:5px}.driver-camera-hint svg{width:11px}.driver-reset-camera{right:15px;bottom:54px;height:32px;padding:0 8px;font-size:8px}.driver-exhibition-footer{left:15px;right:15px;bottom:17px;font-size:7px}.driver-selected-panel{top:auto;right:10px;bottom:10px;left:10px;transform:none;width:auto;padding:15px 16px 13px;animation:driverPanelMobile .25s ease-out}@keyframes driverPanelMobile{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}.driver-panel-identity{margin:12px 0 10px}.driver-panel-avatar{width:42px;height:42px}.driver-panel-identity h2{font-size:19px}.driver-panel-stats{margin-top:10px}.driver-panel-stats strong{font-size:18px}.driver-panel-note{display:none}.driver-panel-license{padding:8px 0}.driver-exhibition-scene:has(.driver-selected-panel) .driver-exhibition-controls,.driver-exhibition-scene:has(.driver-selected-panel) .driver-reset-camera{opacity:.2;pointer-events:none}}
 @media(max-width:430px){.driver-exhibition-scene{min-height:560px}.driver-exhibition-heading{width:62%}.driver-exhibition-heading h1{font-size:36px}.driver-camera-hint span:nth-child(2){display:none}.driver-exhibition-footer span:last-child{display:none}.driver-selected-panel{bottom:8px}.driver-exhibition-scene:has(.driver-selected-panel){height:82svh}}
 @media(prefers-reduced-motion:reduce){.driver-selected-panel{animation:none}}
+
+/* Readability, fullscreen and touch navigation refinements */
+.driver-exhibition-scene{background:#171b20}
+.driver-exhibition-webgl{position:absolute;inset:0;z-index:0;overflow:hidden;background:linear-gradient(145deg,#30353b,#171b20)}
+.driver-exhibition-webgl .driver-exhibition-canvas{position:absolute;inset:0}
+.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(5,7,10,.68),rgba(5,7,10,.2) 38%,transparent 72%),linear-gradient(0deg,rgba(5,7,10,.55),transparent 30%,rgba(5,7,10,.08));box-shadow:inset 0 0 70px #0005}
+.driver-exhibition-top-actions{display:flex;align-items:flex-start;gap:12px}
+.driver-fullscreen-button{display:grid;place-items:center;width:36px;height:36px;border:1px solid #d8bd796b;border-radius:5px;background:#111820dc;color:#f0d99b;backdrop-filter:blur(12px)}
+.driver-fullscreen-button:hover{background:#34302a;border-color:#e7ce8c}
+.driver-mobile-joystick{display:none}
+.driver-exhibition-scene:fullscreen{width:100vw;height:100dvh;min-height:100dvh;max-height:100dvh;border:0;border-radius:0;background:#171b20}
+.driver-exhibition-scene:fullscreen .driver-exhibition-webgl{height:100dvh}
+.driver-exhibition-scene:fullscreen .driver-exhibition-heading{top:24%}
+.driver-exhibition-scene:fullscreen .driver-selected-panel{width:min(380px,30%)}
+@media(max-width:760px){
+  .driver-exhibition-scene{height:78svh;min-height:620px;background:#20252b}
+  .driver-exhibition-vignette{background:linear-gradient(90deg,rgba(4,6,9,.52),rgba(4,6,9,.14) 48%,transparent 78%),linear-gradient(0deg,rgba(4,6,9,.5),transparent 38%,rgba(4,6,9,.06));box-shadow:inset 0 0 45px #0004}
+  .driver-exhibition-top-actions{gap:7px}
+  .driver-fullscreen-button{width:33px;height:33px}
+  .driver-exhibition-controls{bottom:55px}
+  .driver-mobile-joystick{position:absolute;z-index:4;left:17px;bottom:20px;display:flex;flex-direction:column;align-items:center;gap:4px;touch-action:none;user-select:none;-webkit-user-select:none}
+  .driver-joystick-base{position:relative;width:94px;height:94px;display:grid;place-items:center;border:1px solid #dfc77b88;border-radius:50%;background:radial-gradient(circle,#7b7b7730 0 36%,#111820b8 38% 100%);box-shadow:0 5px 24px #0008,inset 0 0 20px #ffffff12;touch-action:none}
+  .driver-joystick-base:before,.driver-joystick-base:after{content:"";position:absolute;background:#e1c87b3b}
+  .driver-joystick-base:before{width:1px;height:68%;left:50%;top:16%}
+  .driver-joystick-base:after{height:1px;width:68%;left:16%;top:50%}
+  .driver-joystick-knob{position:absolute;z-index:1;left:50%;top:50%;margin:-20px 0 0 -20px;width:40px;height:40px;display:grid;place-items:center;border:1px solid #f0d99b;border-radius:50%;background:linear-gradient(145deg,#6b6260,#25282b);color:#fff0c1;box-shadow:0 3px 10px #0009;will-change:transform;pointer-events:none}
+  .driver-mobile-joystick>span{font:700 8px 'Barlow Condensed',Arial,sans-serif;letter-spacing:.2em;color:#e8d69f;text-shadow:0 1px 4px #000}
+  .driver-camera-hint{font-size:7px}
+  .driver-camera-hint .driver-desktop-hint{display:none}
+  .driver-exhibition-scene:has(.driver-selected-panel) .driver-selected-panel{left:auto;right:8px;bottom:8px;width:min(58%,260px);padding:12px}
+  .driver-exhibition-scene:has(.driver-selected-panel) .driver-mobile-joystick{opacity:.95}
+  .driver-exhibition-scene:has(.driver-selected-panel) .driver-exhibition-controls{opacity:.35}
+  .driver-exhibition-scene:fullscreen{height:100dvh;min-height:100dvh}
+  .driver-exhibition-scene:fullscreen .driver-mobile-joystick{bottom:max(18px,env(safe-area-inset-bottom))}
+  .driver-exhibition-scene:fullscreen .driver-exhibition-footer{bottom:max(16px,env(safe-area-inset-bottom))}
+}
+@media(max-width:430px){
+  .driver-exhibition-scene{height:80svh;min-height:600px}
+  .driver-mobile-joystick{left:12px;bottom:17px}
+  .driver-joystick-base{width:88px;height:88px}
+  .driver-exhibition-scene:has(.driver-selected-panel){height:84svh}
+}
