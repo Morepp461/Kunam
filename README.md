@@ -821,26 +821,12 @@ The FIA Race Input page at `/fia-panel/race-input` is a complete official submis
 
 ### Responsive Design Standard
 
-Untuk menjaga tampilan Circuit Pool konsisten dan memudahkan pengeditan desain, gunakan ukuran frame acuan berikut:
+CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 900 px hanya menjadi acuan komposisi desain, bukan ukuran tetap aplikasi atau batas lebar konten.
 
-| Target | Frame desain | Aturan layout |
-|---|---:|---|
-| Desktop | 1440 × 900 px | Konten maksimal 1200 px, gutter 32 px |
-| Tablet | 768 × 1024 px | Gutter 24 px, grid 2 kolom |
-| Mobile | 390 × 844 px | Gutter 16 px, layout kartu dan grid 1–2 kolom |
-
-- Breakpoint resmi Circuit Pool: mobile sampai 767 px, tablet 768–1023 px, desktop mulai 1024 px.
-- Ukuran frame adalah acuan desain, bukan ukuran layar wajib. Layout tetap fluid pada ukuran di antaranya.
-- Modal detail sirkuit dan tabel directory memiliki aturan responsive khusus; data tidak boleh terpotong atau memaksa seluruh halaman melebar.
-- Maksimum lebar konten desktop adalah 1200 px.
-
-
-### Single Fluid Design Canvas
-
-Circuit Pool menggunakan **satu desain/layout yang sama** untuk desktop, tablet, dan mobile. Tidak ada pergantian tabel menjadi kartu atau versi desain terpisah.
-
-- Acuan master design: lebar kanvas 1440 px. Implementasi web memakai lebar fluid 100% dengan batas konten 1200 px.
-- Tidak perlu membuat frame desain terpisah untuk tiap device. Buat satu master design, lalu gunakan constraint kiri/kanan, max-width, auto-layout, dan komponen yang dapat menyusut.
-- Padding dan tipografi memakai skala fluid; ruang kosong horizontal tidak dipertahankan sebagai kolom kosong.
-- Breakpoint hanya mengatur kepadatan, jarak, dan jumlah kolom form/detail. Struktur dan urutan konten utama tetap sama.
-- Tabel administrasi yang memiliki banyak kolom tetap satu tabel dan dapat digeser horizontal, bukan diubah menjadi desain kartu.
+- Root aplikasi dan shell mengisi lebar viewport (width: 100%) tanpa max-width global.
+- Workspace halaman menggunakan lebar area yang tersedia. Komponen internal boleh membatasi lebar bila memang diperlukan oleh keterbacaan atau pola data.
+- Gutter memakai padding fluid yang mengecil di layar sempit; tidak boleh menyisakan kolom kosong besar di sisi desktop.
+- Tinggi halaman mengikuti konten. Footer berada di document flow setelah konten, bukan fixed/overlay dan tidak boleh menutup area interaksi.
+- Scroll vertikal utama dilakukan oleh dokumen/halaman. Hindari nested scroll container global yang membuat footer tidak terjangkau.
+- Breakpoint hanya menyesuaikan kepadatan, jarak, dan susunan komponen. Tidak membuat frame atau versi layout terpisah.
+- Tabel dengan banyak kolom boleh memiliki overflow horizontal pada wadah tabelnya sendiri, tanpa memperlebar seluruh halaman.
