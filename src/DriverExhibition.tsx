@@ -8,12 +8,6 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
-const teamColor = (name: string) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  const palette = [0x9d2630, 0x9e8a56, 0x566a78, 0x6b3438, 0x9a633d, 0x56634f, 0x77716a, 0x314b68];
-  return palette[Math.abs(hash) % palette.length];
-};
 const numberFor = (name: string, index: number) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 33 + name.charCodeAt(i)) | 0;
@@ -103,8 +97,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
         const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
-        const sphere = (parent: Three.Object3D, pos: [number, number, number], scale: [number, number, number], mat: Three.Material) =>
-          mesh(new THREE.SphereGeometry(1, 20, 14), mat, parent, pos, scale);
 
         scene.add(new THREE.HemisphereLight(0xdce5ef, 0x34302a, 2.15));
         const keyLight = new THREE.DirectionalLight(0xffead0, 3.1);
