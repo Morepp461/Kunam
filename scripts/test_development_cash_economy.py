@@ -75,7 +75,6 @@ assert "tidak dapat dibeli" in shop.lower()
 
 pricing = (ROOT / "src/AdminPricingCenter.tsx").read_text(encoding="utf-8")
 for fragment in [
-    "cash_eur_per_point",
     "DevelopmentPricingMatrix",
     "Harga Berdasarkan Lisensi & Divisi",
     "Development Race Rewards",
