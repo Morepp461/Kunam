@@ -537,5 +537,6 @@ The owner-only integration gateway is available at `/admin/developer-api`.
 - MCP uses Streamable HTTP at `POST /mcp` and exposes matching read-only tools: `list_circuits`, `list_seasons`, `list_teams`, `list_drivers`, and `list_rounds`.
 - All calls require `Authorization: Bearer <Caleris API Key>` and the Supabase project publishable key in the `apikey` header. The gateway does not expose arbitrary SQL, wallet balances, private profile data, or mutation tools.
 - The gateway runs as a Supabase Edge Function. Its API-key auth is validated inside the function, while Supabase service credentials remain server-side. API key hashes and owner policies are migrated to both Testing and Production; each database retains its own primary owner identity.
+- Database migrations: `20261117054738_owner_developer_api_keys.sql` and `20261117054919_developer_api_primary_owner.sql`.
 
 Use the Edge Function URL from the Developer API page. The web deployment remains configured to use the Testing Supabase environment as previously requested; database schema migrations for this feature must be applied to both Testing and Production, while runtime secrets and deployed Edge Functions are configured per project.
