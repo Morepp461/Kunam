@@ -76,8 +76,8 @@ assert "tidak dapat dibeli" in shop.lower()
 pricing = (ROOT / "src/AdminPricingCenter.tsx").read_text(encoding="utf-8")
 for fragment in [
     "cash_eur_per_point",
-    "Simpan harga Development Mobil",
-    "Simpan harga Development Driver",
+    "DevelopmentPricingMatrix",
+    "Harga Berdasarkan Lisensi & Divisi",
     "Development Race Rewards",
     "driver_win_ddp",
     "team_win_tdp",
@@ -90,4 +90,55 @@ assert "member_upgrade_development_attribute" in edge
 
 workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 assert "scripts/test_development_cash_economy.py" in workflow
-print("Development cash economy regression checks passed.")
+tier_migration = ROOT / "supabase/migrations/20261117090000_development_license_and_division_pricing.sql"
+assert tier_migration.is_file(), "Missing license/division Development pricing migration"
+tier_sql = tier_migration.read_text(encoding="utf-8").lower()
+for fragment in [
+    "caleris_driver_development_tier_pricing",
+    "caleris_team_development_division_pricing",
+    "license_tier in ('bronze','silver','gold','super')",
+    "division_key in ('zwei','premio')",
+    "member_upgrade_development_attribute",
+    "v_license_tier:=lower(trim(coalesce(v_member.license,'')))",
+    "v_team_division",
+    "private.post_economy_transaction",
+    "development_upgrade",
+    "from public.site_admins",
+]:
+    assert fragment in tier_sql, f"Tiered Development migration missing: {fragment}"
+
+tier_prices = {
+    "bronze": [150000,200000,200000,150000,200000,275000,325000,250000],
+    "silver": [225000,300000,300000,225000,300000,400000,500000,375000],
+    "gold": [350000,450000,450000,350000,450000,600000,750000,550000],
+    "super": [500000,650000,650000,500000,650000,850000,1000000,800000],
+}
+assert [sum(values)*50 for values in tier_prices.values()] == [87_500_000,136_250_000,200_000_000,280_000_000]
+for tier, values in tier_prices.items():
+    assert f"('{tier}','aggression',{values[0]})" in tier_sql
+
+team_division_totals = {"zwei": 8_700_000, "premio": 14_500_000}
+for division,total in team_division_totals.items():
+    assert f"('{division}','race_pace'" in tier_sql
+    assert total*50 in [435_000_000,725_000_000]
+
+matrix = (ROOT / "src/DevelopmentPricingMatrix.tsx").read_text(encoding="utf-8")
+for fragment in [
+    "caleris_driver_development_tier_pricing",
+    "caleris_team_development_division_pricing",
+    "Simpan harga Driver per lisensi",
+    "Simpan harga Team per divisi",
+    "bronze",
+    "super",
+    "premio",
+    "zwei",
+]:
+    assert fragment in matrix, f"Admin tier matrix missing: {fragment}"
+
+dev_ui = (ROOT / "src/DevelopmentTokens.tsx").read_text(encoding="utf-8")
+assert "caleris_driver_development_tier_pricing" in dev_ui
+assert "caleris_team_development_division_pricing" in dev_ui
+assert 'select("id,role,team_id,character_name,license")' in dev_ui
+assert 'select("id,name,division_key")' in dev_ui
+
+print("Development cash economy and tier pricing regression checks passed.")
