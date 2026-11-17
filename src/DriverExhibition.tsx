@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Three from "three";
+import { createCharacter, type AraCharacter } from "ara3d";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Gamepad2, Maximize2, Minimize2, Search, UserRound, X } from "lucide-react";
 import "./driver-exhibition.css";
@@ -8,12 +9,6 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
-const teamColor = (name: string) => {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  const palette = [0x9d2630, 0x9e8a56, 0x566a78, 0x6b3438, 0x9a633d, 0x56634f, 0x77716a, 0x314b68];
-  return palette[Math.abs(hash) % palette.length];
-};
 const numberFor = (name: string, index: number) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 33 + name.charCodeAt(i)) | 0;
@@ -32,6 +27,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [query, setQuery] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [sceneError, setSceneError] = useState("");
+  const [sceneLoading, setSceneLoading] = useState(false);
+  const [loadingCount, setLoadingCount] = useState(0);
   const selectedRef = useRef<DriverRow | null>(null);
   const visibleIdsRef = useRef<Set<string>>(new Set());
   const filteredDrivers = useMemo(() => drivers.filter((d) => {
@@ -50,6 +47,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     const host = mountRef.current;
     if (!host) return;
     setSceneError("");
+    setSceneLoading(drivers.length > 0);
+    setLoadingCount(0);
 
     const boot = async () => {
       try {
@@ -61,7 +60,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.32;
+        renderer.toneMappingExposure = 1.08;
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
@@ -85,7 +84,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const disposableGeometries: Three.BufferGeometry[] = [];
         const disposableMaterials: Three.Material[] = [];
         const textures: Three.Texture[] = [];
-        const driverMotions: Array<{ figure: Three.Group; phase: number; speed: number; style: number; head?: Three.Bone; spine?: Three.Bone; leftArm?: Three.Bone; rightArm?: Three.Bone; base?: { head?: Three.Euler; spine?: Three.Euler; leftArm?: Three.Euler; rightArm?: Three.Euler } }> = [];
+        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer }> = [];
 
         const material = (color: number, roughness = 0.62, metalness = 0.12) => {
           const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -104,16 +103,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
         const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
-        const sphere = (parent: Three.Object3D, pos: [number, number, number], scale: [number, number, number], mat: Three.Material) =>
-          mesh(new THREE.SphereGeometry(1, 20, 14), mat, parent, pos, scale);
-
-        scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 3.0));
-        const keyLight = new THREE.DirectionalLight(0xfff0d8, 4.2);
+        scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 1.55));
+        const keyLight = new THREE.DirectionalLight(0xfff0d8, 2.35);
         keyLight.position.set(-8, 16, 10);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xf0f5ff, 2.2);
+        const fillLight = new THREE.DirectionalLight(0xf0f5ff, 1.05);
         fillLight.position.set(12, 8, -18);
         scene.add(fillLight);
 
@@ -175,41 +171,23 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           return mat;
         };
 
-        // CC0 high-detail human base mesh (Grab3D, man-base-character).
-        // License: https://grab3d.com/models/characters/man-base-character/ (CC0 1.0).
-        // The source garment is recolored and finished with Caleris racing-suit panels.
-        let cc0HumanScene: Three.Group | null = null;
-        let cloneHuman: ((source: Three.Object3D) => Three.Object3D) | null = null;
-        try {
-          const [{ GLTFLoader }, skeletonUtils] = await Promise.all([
-            import("three/examples/jsm/loaders/GLTFLoader.js"),
-            import("three/examples/jsm/utils/SkeletonUtils.js"),
-          ]);
-          const loader = new GLTFLoader();
-          const gltf = await loader.loadAsync("https://grab3d.com/dl/man-base-character/man-base-character.glb");
-          if (disposed) return;
-          cc0HumanScene = gltf.scene;
-          cloneHuman = skeletonUtils.clone;
-        } catch (assetError) {
-          console.warn("CC0 driver model could not be loaded; using local fallback figure.", assetError);
-        }
-
-        const createDriver = (driver: DriverRow, index: number) => {
+        // Ara 3D Gen: CC0 MakeHuman anatomy, photo-based skin textures, fitted clothing,
+        // facial blendshapes and a game-ready rig with motion clips.
+        const animationRoutines = [
+          "idle 5s, look_around 3s, idle 4s, talk_gestures 4s",
+          "idle 4s, wave, idle 6s, look_around 3s",
+          "idle 6s, talk_gestures 4s, idle 5s, look_around 3s",
+          "idle 4s, look_around 3s, idle 4s, wave, idle 5s",
+          "idle 5s, talk_gestures 3s, idle 5s, wave",
+        ];
+        const hairStyles = ["short02", "short04", "buzz", "cornrows", "box_braids"];
+        const createDriver = async (driver: DriverRow, index: number) => {
           const root = new THREE.Group();
           const column = index % 4;
           const row = Math.floor(index / 4);
           root.position.set((column - 1.5) * 10.2, 0, -row * 11.2 - 1);
           root.userData.driverId = driver.id;
-          const suit = material(teamColor(driver.team?.name || "Caleris"), 0.76, 0.04);
           const trim = material(0x20242a, 0.52, 0.28);
-          const skin = material(0xb98261, 0.82, 0.02);
-          const skinLight = material(0xd19a78, 0.82, 0.01);
-          const hair = material(0x211b18, 0.88, 0.01);
-          const eyeWhite = material(0xe7e3dc, 0.36, 0.02);
-          const iris = material(0x44382c, 0.3, 0.02);
-          const visor = material(0x171a1e, 0.4, 0.15);
-          const glove = material(0x171a1e, 0.82, 0.02);
-          const boot = material(0x101216, 0.74, 0.12);
           const podium = new THREE.Group();
           root.add(podium);
           cylinder(podium, 1.1, 1.25, 0.32, [0, 0.16, 0], darkMetal);
@@ -217,107 +195,57 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           box(podium, [1.75, 0.7, 0.08], [0, 0.72, 1.08], trim);
           const plaque = mesh(new THREE.PlaneGeometry(1.66, 0.62), createLabel(driver.character_name || "Driver", driver.team?.name || "Independent", numberFor(driver.character_name || "Driver", index)), podium, [0, 0.72, 1.13]);
           plaque.rotation.x = -0.08;
-          const figure = new THREE.Group();
-          root.add(figure);
-          if (cc0HumanScene && cloneHuman) {
-            const human = cloneHuman(cc0HumanScene) as Three.Group;
-            human.scale.setScalar(1.34);
-            human.position.set(0, 0.35, 0);
-            human.traverse((obj) => {
-              const part = obj as Three.Mesh;
-              if (!part.isMesh) return;
-              part.castShadow = !mobile;
-              part.receiveShadow = false;
-              const bounds = new THREE.Box3().setFromObject(part);
-              const centerY = ((bounds.min.y + bounds.max.y) * 0.5 - 0.35) / 1.34;
-              const sourceMaterials = Array.isArray(part.material) ? part.material : [part.material];
-              const adapted = sourceMaterials.map((source) => {
-                const mat = source.clone();
-                const label = (source.name || part.name || "").toLowerCase();
-                const isSkin = /skin|face|eye|teeth|hair|brow|mouth/.test(label) || centerY > 1.48 || centerY < 0.28;
-                if (!isSkin && centerY > 0.38 && centerY < 1.58) {
-                  (mat as Three.MeshStandardMaterial).color?.set(centerY > 0.9 ? 0x191d22 : 0x24282e);
-                  if ("roughness" in mat) (mat as Three.MeshStandardMaterial).roughness = 0.78;
-                  if ("metalness" in mat) (mat as Three.MeshStandardMaterial).metalness = 0.08;
-                }
-                return mat;
-              });
-              part.material = Array.isArray(part.material) ? adapted : adapted[0];
-            });
-            figure.add(human);
 
-            // Keep the original human silhouette and fitted garment mesh; no rigid add-on panels.
-            const numberCanvas = document.createElement("canvas");
-            numberCanvas.width = 256;
-            numberCanvas.height = 128;
-            const numberCtx = numberCanvas.getContext("2d");
-            if (numberCtx) {
-              numberCtx.fillStyle = "#f4f0e6";
-              numberCtx.font = "900 88px Arial";
-              numberCtx.textAlign = "center";
-              numberCtx.textBaseline = "middle";
-              numberCtx.fillText(numberFor(driver.character_name || "Driver", index), 128, 66);
-            }
-            const numberTexture = new THREE.CanvasTexture(numberCanvas);
-            numberTexture.colorSpace = THREE.SRGBColorSpace;
-            textures.push(numberTexture);
-            const numberMaterial = new THREE.MeshBasicMaterial({ map: numberTexture, transparent: true, side: THREE.DoubleSide });
-            disposableMaterials.push(numberMaterial);
-            mesh(new THREE.PlaneGeometry(0.3, 0.15), numberMaterial, figure, [0, 1.25, 0.286]);
-          } else {
-            // Anatomical driver silhouette: exposed human face, neck, shoulders and fitted race suit.
-            const pelvis = mesh(new THREE.SphereGeometry(0.34, 32, 24), suit, figure, [0, 0.78, 0]);
-            pelvis.scale.set(1.05, 0.75, 0.8);
-            const torso = mesh(new THREE.CapsuleGeometry(0.34, 0.72, 8, 24), suit, figure, [0, 1.38, 0]);
-            torso.scale.set(1.28, 1.05, 0.82);
-            sphere(figure, [0, 1.84, 0], [0.48, 0.28, 0.38], suit);
-            cylinder(figure, 0.12, 0.14, 0.24, [0, 1.99, 0], skin);
-            // Tailored suit seams and front zip.
-            box(figure, [0.035, 0.68, 0.018], [0, 1.42, 0.31], trim);
-            box(figure, [0.32, 0.055, 0.035], [0, 1.64, 0.34], goldMetal);
-            box(figure, [0.34, 0.08, 0.04], [0, 1.17, 0.32], redMetal);
-            for (const side of [-1, 1]) {
-              const arm = mesh(new THREE.CapsuleGeometry(0.135, 0.62, 8, 18), suit, figure, [side * 0.53, 1.35, 0]);
-              arm.rotation.z = side * -0.18;
-              sphere(figure, [side * 0.65, 0.91, 0.015], [0.135, 0.16, 0.13], glove);
-              const leg = mesh(new THREE.CapsuleGeometry(0.16, 0.66, 8, 18), suit, figure, [side * 0.2, 0.48, 0]);
-              leg.rotation.z = side * 0.035;
-              box(figure, [0.29, 0.17, 0.48], [side * 0.2, 0.1, 0.13], boot);
-              // Gloves, cuff rings and knee reinforcement.
-              cylinder(figure, 0.14, 0.14, 0.09, [side * 0.65, 0.82, 0.015], goldMetal);
-              box(figure, [0.26, 0.19, 0.035], [side * 0.2, 0.47, 0.15], trim);
-            }
-            // Real human head with jaw, ears, eyes, nose, mouth and hair rather than a helmet-shaped capsule.
-            sphere(figure, [0, 2.28, 0], [0.235, 0.31, 0.22], skin);
-            sphere(figure, [0, 2.16, 0.055], [0.19, 0.16, 0.19], skinLight);
-            for (const side of [-1, 1]) {
-              sphere(figure, [side * 0.235, 2.29, 0], [0.055, 0.09, 0.065], skin);
-              sphere(figure, [side * 0.09, 2.32, 0.187], [0.052, 0.035, 0.025], eyeWhite);
-              sphere(figure, [side * 0.09, 2.32, 0.208], [0.022, 0.025, 0.012], iris);
-              sphere(figure, [side * 0.09, 2.38, 0.184], [0.062, 0.018, 0.025], hair);
-            }
-            sphere(figure, [0, 2.25, 0.218], [0.045, 0.075, 0.045], skinLight);
-            sphere(figure, [0, 2.105, 0.205], [0.075, 0.018, 0.018], visor);
-            sphere(figure, [0, 2.49, -0.005], [0.238, 0.13, 0.225], hair);
-            sphere(figure, [0, 2.42, -0.105], [0.22, 0.12, 0.16], hair);
-            // Helmet carried at the driver's side as a separate race accessory.
-            const helmetShell = material(0xd8d5cc, 0.24, 0.56);
-            sphere(figure, [0.88, 0.72, 0.02], [0.22, 0.25, 0.22], helmetShell);
-            sphere(figure, [0.88, 0.72, 0.2], [0.17, 0.09, 0.06], visor);
-  
-          }
-          const motion: (typeof driverMotions)[number] = { figure, phase: (index * 2.399) % (Math.PI * 2), speed: 0.72 + (index % 5) * 0.13, style: index % 4 };
-          figure.traverse((obj) => {
-            if (!(obj as Three.Bone).isBone) return;
-            const bone = obj as Three.Bone;
-            const name = bone.name.toLowerCase();
-            if (/head|neck/.test(name) && !motion.head) motion.head = bone;
-            else if (/spine|chest|upperchest/.test(name) && !motion.spine) motion.spine = bone;
-            else if (/left.*arm|arm.*left|upperarm_l|mixamorigleftarm/.test(name) && !motion.leftArm) motion.leftArm = bone;
-            else if (/right.*arm|arm.*right|upperarm_r|mixamorigrightarm/.test(name) && !motion.rightArm) motion.rightArm = bone;
+          const genderLabel = String(driver.gender ?? driver.character_gender ?? "").toLowerCase();
+          const isFemale = driver.gender === 0 || /female|woman|perempuan/.test(genderLabel);
+          const seed = Math.abs((index + 1) * 7919 + String(driver.id || driver.character_name || index).split("").reduce((n, c) => (n * 31 + c.charCodeAt(0)) | 0, 7)) % 1000000000;
+          const ethnicity = index % 3;
+          const characterInput = {
+            kind: "ara-character",
+            version: 1,
+            preset: isFemale ? "Athletic woman" : "Athletic man",
+            params: {
+              name: driver.character_name || `Caleris Driver ${index + 1}`,
+              seed,
+              ageYears: 24 + (index % 17),
+              gender: isFemale ? 0 : 1,
+              muscle: 0.58 + (index % 4) * 0.09,
+              weight: 0.38 + (index % 5) * 0.055,
+              height: 0.42 + (index % 4) * 0.045,
+              african: ethnicity === 0 ? 0.85 : ethnicity === 1 ? 0.12 : 0.08,
+              asian: ethnicity === 1 ? 0.78 : ethnicity === 2 ? 0.72 : 0.08,
+              caucasian: ethnicity === 2 ? 0.2 : ethnicity === 0 ? 0.07 : 0.1,
+              skin: "auto",
+              hair: hairStyles[index % hairStyles.length],
+              hairColor: ["#211812", "#34251d", "#171717", "#3b2922"][index % 4],
+              facialHair: isFemale ? "none" : (index % 3 === 0 ? "stubble" : "none"),
+              outfit: isFemale ? "female_sportsuit01" : "male_worksuit01",
+              outfitTint: "#8b202b",
+              shoes: "shoes03",
+              rig: "game",
+              faceBones: true,
+              faceShapes: true,
+              speechShapes: true,
+              restPose: "A",
+              expression: "neutral",
+            },
+          };
+          const character = await createCharacter(characterInput, {
+            detail: mobile ? "low" : "high",
+            animations: ["idle", "look_around", "talk_gestures", "wave"],
           });
-          motion.base = { head: motion.head?.rotation.clone(), spine: motion.spine?.rotation.clone(), leftArm: motion.leftArm?.rotation.clone(), rightArm: motion.rightArm?.rotation.clone() };
-          driverMotions.push(motion);
+          if (disposed) { character.dispose(); return; }
+          const figure = new THREE.Group();
+          figure.position.y = 0.36;
+          root.add(figure);
+          character.scene.scale.setScalar(1);
+          character.scene.position.set(0, 0, 0);
+          figure.add(character.scene);
+          character.scene.traverse((obj) => { obj.userData.araCharacterModel = true; });
+          const mixer = new THREE.AnimationMixer(character.scene);
+          character.playSequence(mixer, animationRoutines[index % animationRoutines.length], { fade: 0.55, repeat: true });
+          mixer.setTime((index % animationRoutines.length) * 0.73);
+          driverMotions.push({ character, mixer });
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
@@ -330,7 +258,16 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           selectable.push(root);
         };
 
-        drivers.forEach(createDriver);
+        for (const [index, driver] of drivers.entries()) {
+          try { await createDriver(driver, index); }
+          catch (error) {
+            console.error("Could not build realistic driver model:", driver.character_name, error);
+            setSceneError("Sebagian model 3D tidak berhasil dimuat. Periksa koneksi lalu muat ulang halaman.");
+          }
+          if (!disposed) setLoadingCount(index + 1);
+        }
+        if (!disposed) setSceneLoading(false);
+
         driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
         const onFilter = (event: Event) => {
           const visible = new Set((event as CustomEvent<string[]>).detail || []);
@@ -339,7 +276,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         window.addEventListener("caleris-driver-filter", onFilter);
         const lightCount = Math.max(4, Math.min(8, Math.ceil(drivers.length / 4)));
         for (let i = 0; i < lightCount; i++) {
-          const light = new THREE.SpotLight(0xffe2b6, 125, 25, Math.PI / 5, 0.7, 1.4);
+          const light = new THREE.SpotLight(0xffe2b6, 58, 25, Math.PI / 5, 0.7, 1.4);
           light.position.set((i % 4 - 1.5) * 10.2, 9.5, -Math.floor(i / 4) * 22 - 2);
           light.target.position.set(light.position.x, 0, light.position.z - 1);
           scene.add(light, light.target);
@@ -500,17 +437,9 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           frame = requestAnimationFrame(animate);
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
-          const seconds = time / 1000;
           driverMotions.forEach((motion) => {
-            const t = seconds * motion.speed + motion.phase;
-            const breath = Math.sin(t * 1.35);
-            motion.figure.position.y = breath * 0.018;
-            motion.figure.rotation.y = Math.sin(t * 0.43) * (motion.style === 1 ? 0.075 : 0.045);
-            motion.figure.rotation.z = Math.sin(t * 0.7 + 0.8) * 0.012;
-            if (motion.head && motion.base?.head) motion.head.rotation.set(motion.base.head.x + Math.sin(t * 0.58) * 0.055, motion.base.head.y + Math.sin(t * 0.31 + motion.style) * 0.16, motion.base.head.z + Math.sin(t * 0.42) * 0.025);
-            if (motion.spine && motion.base?.spine) motion.spine.rotation.set(motion.base.spine.x + breath * 0.018, motion.base.spine.y, motion.base.spine.z + Math.sin(t * 0.52) * 0.018);
-            if (motion.leftArm && motion.base?.leftArm) motion.leftArm.rotation.set(motion.base.leftArm.x + Math.sin(t * 0.38) * (motion.style === 2 ? 0.11 : 0.035), motion.base.leftArm.y, motion.base.leftArm.z + Math.sin(t * 0.61) * 0.035);
-            if (motion.rightArm && motion.base?.rightArm) motion.rightArm.rotation.set(motion.base.rightArm.x + Math.sin(t * 0.34 + 1) * (motion.style === 3 ? 0.1 : 0.032), motion.base.rightArm.y, motion.base.rightArm.z - Math.sin(t * 0.57) * 0.03);
+            motion.mixer.update(delta);
+            motion.character.update(delta);
           });
           yaw += (targetYaw - yaw) * Math.min(1, delta * 7);
           pitch += (targetPitch - pitch) * Math.min(1, delta * 7);
@@ -546,11 +475,9 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           resizeObserver?.disconnect();
           cancelAnimationFrame(frame);
           scene.traverse((obj) => {
-            if ((obj as Three.Mesh).isMesh) {
-              const m = obj as Three.Mesh;
-              m.geometry.dispose();
-            }
+            if ((obj as Three.Mesh).isMesh && !obj.userData.araCharacterModel) (obj as Three.Mesh).geometry.dispose();
           });
+          driverMotions.forEach((motion) => motion.character.dispose());
           disposableGeometries.forEach((g) => g.dispose());
           disposableMaterials.forEach((m) => m.dispose());
           textures.forEach((t) => t.dispose());
@@ -559,12 +486,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           apiRef.current = null;
         };
       } catch (error) {
-        if (!disposed) setSceneError(error instanceof Error ? error.message : "WebGL tidak tersedia pada perangkat ini.");
+        if (!disposed) { setSceneLoading(false); setSceneError(error instanceof Error ? error.message : "WebGL tidak tersedia pada perangkat ini."); }
       }
     };
     void boot();
     return () => {
       disposed = true;
+      setSceneLoading(false);
       cancelAnimationFrame(frame);
       cleanup?.();
     };
@@ -618,6 +546,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   return <section className="driver-exhibition">
     <div className={`driver-exhibition-scene${fullscreenFallback ? " driver-exhibition-fullscreen-fallback" : ""}`} ref={sceneCardRef}>
       <div className="driver-exhibition-webgl" ref={mountRef} />
+      {sceneLoading && <div className="driver-scene-loading"><strong>BUILDING DRIVER MODELS</strong><span>{loadingCount} / {drivers.length} · REALISTIC 3D CHARACTERS</span><div><i style={{ width: `${drivers.length ? loadingCount / drivers.length * 100 : 0}%` }}/></div></div>}
       {sceneError && <div className="driver-scene-fallback"><strong>3D VIEW UNAVAILABLE</strong><span>{sceneError}</span><p>Gunakan browser/perangkat dengan dukungan WebGL untuk menjelajahi Driver Exhibition.</p></div>}
       <div className="driver-exhibition-vignette" />
       <header className="driver-exhibition-top">
@@ -650,7 +579,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       {selected && <aside className="driver-selected-panel">
         <button className="driver-panel-close" onClick={() => setSelected(null)} aria-label="Close driver information"><X size={17}/></button>
         <span className="driver-panel-eyebrow"><Crosshair size={13}/> SELECTED DRIVER</span>
-        <div className="driver-panel-identity"><div className="driver-panel-avatar"><UserRound size={27}/></div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
+        <div className="driver-panel-identity"><div className="driver-panel-avatar">{selected.avatar_url ? <img src={selected.avatar_url} alt="" loading="lazy"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
         <div className="driver-panel-license"><span>LICENSE</span><strong>{selected.license || "UNASSIGNED"}</strong></div>
         <div className="driver-panel-stats">
           <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div>
