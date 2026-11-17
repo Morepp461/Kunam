@@ -817,3 +817,19 @@ The FIA Race Input page at `/fia-panel/race-input` is a complete official submis
 - Replacing a layout image converts the new upload to WEBP, stores it in Supabase Storage, updates the circuit record, and then removes the superseded image.
 - Circuit Pool subscribes to Supabase Realtime changes on `caleris_circuits`; insertions and edits appear on the public-facing Circuit Pool page without manual refresh.
 - Migration: `20261118120000_circuit_pool_realtime.sql`.
+
+
+### Responsive Design Standard
+
+Untuk menjaga tampilan Circuit Pool konsisten dan memudahkan pengeditan desain, gunakan ukuran frame acuan berikut:
+
+| Target | Frame desain | Aturan layout |
+|---|---:|---|
+| Desktop | 1440 × 900 px | Konten maksimal 1200 px, gutter 32 px |
+| Tablet | 768 × 1024 px | Gutter 24 px, grid 2 kolom |
+| Mobile | 390 × 844 px | Gutter 16 px, layout kartu dan grid 1–2 kolom |
+
+- Breakpoint resmi Circuit Pool: mobile sampai 767 px, tablet 768–1023 px, desktop mulai 1024 px.
+- Ukuran frame adalah acuan desain, bukan ukuran layar wajib. Layout tetap fluid pada ukuran di antaranya.
+- Modal detail sirkuit dan tabel directory memiliki aturan responsive khusus; data tidak boleh terpotong atau memaksa seluruh halaman melebar.
+- Maksimum lebar konten desktop adalah 1200 px.
