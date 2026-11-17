@@ -265,7 +265,9 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         let downX = 0;
         let downY = 0;
         let dragged = false;
-        let focused = false;\n        let stickX = 0;\n        let stickY = 0;
+        let focused = false;
+        let stickX = 0;
+        let stickY = 0;
         const onPointerDown = (event: PointerEvent) => {
           downX = event.clientX;
           downY = event.clientY;
@@ -359,7 +361,9 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           pitch += (targetPitch - pitch) * Math.min(1, delta * 7);
           const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
           const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-          const speed = (keys.has("shift") ? 11 : 6) * delta;\n          desiredPosition.addScaledVector(right, stickX * speed);\n          desiredPosition.addScaledVector(forward, -stickY * speed);
+          const speed = (keys.has("shift") ? 11 : 6) * delta;
+          desiredPosition.addScaledVector(right, stickX * speed);
+          desiredPosition.addScaledVector(forward, -stickY * speed);
           if (keys.has("w") || keys.has("arrowup")) desiredPosition.addScaledVector(forward, speed);
           if (keys.has("s") || keys.has("arrowdown")) desiredPosition.addScaledVector(forward, -speed);
           if (keys.has("a") || keys.has("arrowleft")) desiredPosition.addScaledVector(right, -speed);
@@ -429,11 +433,33 @@ export default function DriverExhibition({ drivers, scope }: Props) {
   }, [filteredDrivers]);
 
   const resetCamera = () => { apiRef.current?.reset(); setSelected(null); selectedRef.current = null; };
-  const move = (key: string, active: boolean) => apiRef.current?.move(key, active);\n  const updateStick = (event: ReactPointerEvent<HTMLDivElement>) => {\n    const rect = event.currentTarget.getBoundingClientRect();\n    const dx = (event.clientX - rect.left - rect.width / 2) / (rect.width * 0.34);\n    const dy = (event.clientY - rect.top - rect.height / 2) / (rect.height * 0.34);\n    const length = Math.hypot(dx, dy);\n    const scale = length > 1 ? 1 / length : 1;\n    const x = dx * scale; const y = dy * scale;\n    setStickPosition({ x: x * 34, y: y * 34 });\n    apiRef.current?.stick(x, y);\n  };\n  const resetStick = () => { stickPointerRef.current = null; setStickPosition({ x: 0, y: 0 }); apiRef.current?.stick(0, 0); };\n  useEffect(() => {\n    const sync = () => setIsFullscreen(document.fullscreenElement === sceneCardRef.current);\n    document.addEventListener("fullscreenchange", sync);\n    return () => document.removeEventListener("fullscreenchange", sync);\n  }, []);\n  const toggleFullscreen = async () => {\n    const node = sceneCardRef.current;\n    if (!node) return;\n    try { if (document.fullscreenElement === node) await document.exitFullscreen(); else if (node.requestFullscreen) await node.requestFullscreen(); } catch { /* Fullscreen can be unavailable in embedded browsers. */ }\n  };
+  const move = (key: string, active: boolean) => apiRef.current?.move(key, active);
+  const updateStick = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const dx = (event.clientX - rect.left - rect.width / 2) / (rect.width * 0.34);
+    const dy = (event.clientY - rect.top - rect.height / 2) / (rect.height * 0.34);
+    const length = Math.hypot(dx, dy);
+    const scale = length > 1 ? 1 / length : 1;
+    const x = dx * scale; const y = dy * scale;
+    setStickPosition({ x: x * 34, y: y * 34 });
+    apiRef.current?.stick(x, y);
+  };
+  const resetStick = () => { stickPointerRef.current = null; setStickPosition({ x: 0, y: 0 }); apiRef.current?.stick(0, 0); };
+  useEffect(() => {
+    const sync = () => setIsFullscreen(document.fullscreenElement === sceneCardRef.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const toggleFullscreen = async () => {
+    const node = sceneCardRef.current;
+    if (!node) return;
+    try { if (document.fullscreenElement === node) await document.exitFullscreen(); else if (node.requestFullscreen) await node.requestFullscreen(); } catch { /* Fullscreen can be unavailable in embedded browsers. */ }
+  };
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
 
   return <section className="driver-exhibition">
-    <div className="driver-exhibition-scene" ref={sceneCardRef}>\n      <div className="driver-exhibition-webgl" ref={mountRef} />
+    <div className="driver-exhibition-scene" ref={sceneCardRef}>
+      <div className="driver-exhibition-webgl" ref={mountRef} />
       {sceneError && <div className="driver-scene-fallback"><strong>3D VIEW UNAVAILABLE</strong><span>{sceneError}</span><p>Gunakan browser/perangkat dengan dukungan WebGL untuk menjelajahi Driver Exhibition.</p></div>}
       <div className="driver-exhibition-vignette" />
       <header className="driver-exhibition-top">
@@ -459,7 +485,8 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           <button onPointerDown={() => move("s", true)} onPointerUp={() => move("s", false)} onPointerLeave={() => move("s", false)} aria-label="Move backward"><ArrowDown/></button>
           <button onPointerDown={() => move("d", true)} onPointerUp={() => move("d", false)} onPointerLeave={() => move("d", false)} aria-label="Move right"><ArrowRight/></button>
         </div>
-        <div className="driver-camera-hint"><span><Camera size={14}/> DRAG TO LOOK</span><span className="driver-desktop-hint">WASD TO MOVE</span><span>SCROLL TO ZOOM</span></div>\n        <div className="driver-mobile-joystick" onPointerDown={(e) => { e.stopPropagation(); stickPointerRef.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); updateStick(e); }} onPointerMove={(e) => { if (stickPointerRef.current === e.pointerId) updateStick(e); }} onPointerUp={(e) => { if (stickPointerRef.current === e.pointerId) resetStick(); }} onPointerCancel={resetStick} onLostPointerCapture={resetStick} role="application" aria-label="Analog camera movement joystick"><div className="driver-joystick-base"><div className="driver-joystick-knob" style={{ transform: `translate(${stickPosition.x}px, ${stickPosition.y}px)` }}><Gamepad2 size={18}/></div></div><span>MOVE</span></div>
+        <div className="driver-camera-hint"><span><Camera size={14}/> DRAG TO LOOK</span><span className="driver-desktop-hint">WASD TO MOVE</span><span>SCROLL TO ZOOM</span></div>
+        <div className="driver-mobile-joystick" onPointerDown={(e) => { e.stopPropagation(); stickPointerRef.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); updateStick(e); }} onPointerMove={(e) => { if (stickPointerRef.current === e.pointerId) updateStick(e); }} onPointerUp={(e) => { if (stickPointerRef.current === e.pointerId) resetStick(); }} onPointerCancel={resetStick} onLostPointerCapture={resetStick} role="application" aria-label="Analog camera movement joystick"><div className="driver-joystick-base"><div className="driver-joystick-knob" style={{ transform: `translate(${stickPosition.x}px, ${stickPosition.y}px)` }}><Gamepad2 size={18}/></div></div><span>MOVE</span></div>
         <button className="driver-reset-camera" onClick={resetCamera}><Maximize2 size={15}/> RESET CAMERA</button>
       </div>
       {selected && <aside className="driver-selected-panel">
