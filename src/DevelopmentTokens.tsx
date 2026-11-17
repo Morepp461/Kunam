@@ -18,6 +18,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const [member,setMember]=useState<Member|null>(null),[team,setTeam]=useState<Team|null>(null);
  const [account,setAccount]=useState<Account|null>(null),[cashWallet,setCashWallet]=useState<CashWallet|null>(null);
  const [attributes,setAttributes]=useState<Attribute[]>([]),[prices,setPrices]=useState<Record<string,number>>({});
+ const [driverPriceTier,setDriverPriceTier]=useState<string|null>(null);
  const [snapshots,setSnapshots]=useState<Snapshot[]>([]),[seasons,setSeasons]=useState<Season[]>([]);
  const [selected,setSelected]=useState(""),[amount,setAmount]=useState("1"),[paymentMethod,setPaymentMethod]=useState<"cash"|"token">("cash");
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
@@ -46,8 +47,15 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
    ?supabase.from("economy_wallet_accounts").select("id,balance").eq("account_kind","driver").eq("member_id",m.id).eq("is_active",true).maybeSingle()
    :supabase.from("economy_wallet_accounts").select("id,balance").eq("account_kind","team").eq("team_id",ownerId).eq("is_active",true).maybeSingle();
   const devAccountQuery=supabase.from("caleris_development_accounts").select("id,asset_type,balance,member_id,team_id").eq("asset_type",asset).eq(asset==="DDP"?"member_id":"team_id",ownerId).maybeSingle();
+  let mappedDriverTier:string|null=null;
+  if(asset==="DDP"&&m.license){
+   const {data:mapping,error:mappingError}=await supabase.from("caleris_development_license_tier_mapping").select("license_tier").eq("license_label",m.license.trim()).eq("is_active",true).maybeSingle();
+   if(mappingError){setNotice(mappingError.message);setLoading(false);return;}
+   mappedDriverTier=mapping?.license_tier||null;
+  }
+  setDriverPriceTier(mappedDriverTier);
   const priceQuery=asset==="DDP"
-   ?supabase.from("caleris_driver_development_tier_pricing").select("attribute_key,cash_eur_per_point").eq("license_tier",String(m.license||"").trim().toLowerCase()).eq("is_configured",true)
+   ?supabase.from("caleris_driver_development_tier_pricing").select("attribute_key,cash_eur_per_point").eq("license_tier",mappedDriverTier||"__unmapped__").eq("is_configured",true)
    :supabase.from("caleris_team_development_division_pricing").select("part_key,cash_eur_per_point").eq("division_key",String(teamData?.division_key||"").trim().toLowerCase()).eq("is_configured",true);
   const [{data:a,error:ae},{data:w,error:we},{data:rows,error:re},{data:priceRows,error:priceError},{data:ss,error:se},{data:seasonRows,error:sre}]=await Promise.all([
    devAccountQuery,cashWalletQuery,
@@ -87,7 +95,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const latestBaseline=history.find(s=>s.snapshot_stage==="season_baseline");
  return <section className="workspace development-token-workspace">
   <div className="development-page-actions"><Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link></div>
-  <header className="page-heading"><span className="section-eyebrow">DEVELOPMENT ECONOMY</span><h1 className="page-title">{asset==="DDP"?"Driver Development":"Team Car Development"}</h1><p className="page-description">{asset==="DDP"?"Development delapan atribut pribadi Driver. Tier harga: "+(member?.license||"belum ditetapkan")+".":"Development enam belas part mobil milik tim. Divisi: "+(team?.division_key||"belum ditetapkan")+"."} Upgrade utama menggunakan saldo wallet; token hanya untuk development gratis dari race reward.</p></header>
+  <header className="page-heading"><span className="section-eyebrow">DEVELOPMENT ECONOMY</span><h1 className="page-title">{asset==="DDP"?"Driver Development":"Team Car Development"}</h1><p className="page-description">{asset==="DDP"?"Development delapan atribut pribadi Driver. Tier harga: "+(member?.license||"belum ditetapkan")+(driverPriceTier?" · "+driverPriceTier.toUpperCase():" · tier harga belum dipetakan")+".":"Development enam belas part mobil milik tim. Divisi: "+(team?.division_key||"belum ditetapkan")+"."} Upgrade utama menggunakan saldo wallet; token hanya untuk development gratis dari race reward.</p></header>
   {loading?<div className="workspace-card">Memuat data Development...</div>:<>
    <div className="development-balance-grid">
     <article className="development-token-hero"><div><span className="section-eyebrow">WALLET CASH</span><strong>{money(cashBalance)}</strong><small>{asset==="DDP"?member?.character_name||"Driver":team?.name||"Team"}</small></div><span className="development-token-icon"><Wallet size={27}/></span></article>
@@ -101,6 +109,8 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
     <label className="development-payment-method">Metode pembayaran<select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value as "cash"|"token")}><option value="cash">Wallet Cash · {money(cashBalance)}</option><option value="token">Race Reward Token · {Number(tokenBalance).toLocaleString("id-ID")} tersedia</option></select></label>
     {selected&&<div className="development-cost-preview"><p><span>Hasil atribut</span><strong>{oldValue} → {newValue}/100</strong></p><p><span>Harga cash per poin</span><strong>{money(cashRate)}</strong></p>{paymentMethod==="cash"?<p><span>Total pembayaran</span><strong>{money(cashCost)}</strong></p>:<p><span>Token gratis digunakan</span><strong>{tokenCost.toLocaleString("id-ID",{maximumFractionDigits:2})} {asset}</strong></p>}<p><span>Sisa wallet setelah upgrade</span><strong>{paymentMethod==="cash"?money(Math.max(0,cashBalance-cashCost)):money(cashBalance)}</strong></p>{paymentMethod==="token"&&<p><span>Sisa token</span><strong>{Math.max(0,tokenBalance-tokenCost).toLocaleString("id-ID",{maximumFractionDigits:2})} {asset}</strong></p>}</div>}
     <p className="economy-form-hint">Nilai maksimum atribut 100. Cash dibayar dari wallet Driver/Team ke Development Treasury. Token hanya berasal dari hasil race dan tidak memiliki harga tunai.</p>
+    {asset==="DDP"&&!driverPriceTier&&<p className="economy-form-hint">Tier harga untuk lisensi {member?.license||"Driver ini"} belum dipetakan Admin. Upgrade cash belum tersedia sampai pemetaan dilakukan.</p>}
+    {asset==="TDP"&&!["premio","zwei"].includes(String(team?.division_key||"").toLowerCase())&&<p className="economy-form-hint">Divisi tim belum ditetapkan ke Caleris Premio atau Caleris Zwei. Upgrade cash belum tersedia.</p>}
     <button className="economy-primary-button" disabled={saving||!selected||!validDelta||!validPayment} onClick={()=>void upgrade()}>{saving?"Memproses...":paymentMethod==="cash"?"Konfirmasi Upgrade & Bayar":"Upgrade Gratis dengan Race Token"}</button>
    </section>
    <section className="workspace-card development-panel-card"><div className="section-title-row"><div><span className="section-eyebrow">03 · SEASON ATTRIBUTE HISTORY</span><h2>Riwayat Development</h2></div></div>
