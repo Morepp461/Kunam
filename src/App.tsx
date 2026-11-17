@@ -35,6 +35,7 @@ import {CircuitPool,CircuitPoolInput} from "./CircuitPool";
 import JobSearch from "./JobSearch";
 import MainEventRegistration from "./MainEventRegistration";
 import AdminRegisteredMembers from "./AdminRegisteredMembers";
+import DeveloperAPI from "./DeveloperAPI";
 import TeamDriverApplications from "./TeamDriverApplications";
 
 import CashLoanCentre from "./CashLoanCentre";
@@ -76,19 +77,22 @@ function GlobalUI({children}:{children:ReactNode}){
 export default function App(){return <GlobalUI><Application/></GlobalUI>}
 function Application(){
  const [session,setSession]=useState<Session|null>(null),[authReady,setAuthReady]=useState(false),[theme,setTheme]=useState<"dark"|"light">(()=>{try{return localStorage.getItem("caleris-theme")==="light"?"light":"dark"}catch{return "dark"}});
- const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false),[isAdmin,setIsAdmin]=useState(false),[panelAccess,setPanelAccess]=useState<PanelAccess>(NO_PANEL_ACCESS);
+ const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false),[isAdmin,setIsAdmin]=useState(false),[isPrimaryOwner,setIsPrimaryOwner]=useState(false),[panelAccess,setPanelAccess]=useState<PanelAccess>(NO_PANEL_ACCESS);
  const location=useLocation();const {toast,loading}=useUI();
  const refreshProfile=useCallback(async()=>{
-  if(!supabase||!session){setProfile(null);setIsAdmin(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
+  if(!supabase||!session){setProfile(null);setIsAdmin(false);setIsPrimaryOwner(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
   setProfileReady(false);
-  const [profileResult,adminResult]=await Promise.all([
+  const [profileResult,adminResult,ownerResult]=await Promise.all([
    supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",session.user.id).maybeSingle(),
-   supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle()
+   supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle(),
+   supabase.from("caleris_developer_api_owner").select("owner_user_id").eq("singleton",true).maybeSingle()
   ]);
   if(profileResult.error)toast("error","Profil gagal dimuat",profileResult.error.message);
   if(adminResult.error)toast("error","Akses akun gagal diperiksa",adminResult.error.message);
+  if(ownerResult.error)toast("error","Akses Developer API gagal diperiksa",ownerResult.error.message);
   let account=profileResult.data as AccountProfile|null;
   const admin=Boolean(adminResult.data?.user_id);
+  setIsPrimaryOwner(ownerResult.data?.owner_user_id===session.user.id);
   let memberRole:string|null=null;
   if(account?.member_id){
    const {data:member,error:memberError}=await supabase.from("members").select("role").eq("id",account.member_id).maybeSingle();
@@ -118,7 +122,7 @@ function Application(){
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
- return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} panelAccess={panelAccess}><Routes>
+ return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess}><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session?(needsPaddockAccess?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to="/dashboard" replace/>):<Navigate to="/" replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
@@ -165,12 +169,13 @@ function Application(){
   <Route path="/auth/callback" element={<AuthCallback/>}/>
   <Route path="/admin/test-personas" element={session&&!needsPaddockAccess&&isAdmin?<AdminTestPersonas/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/users" element={session&&!needsPaddockAccess&&isAdmin?<AdminUsers/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/developer-api" element={session&&!needsPaddockAccess&&isPrimaryOwner?<DeveloperAPI session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/registered-members" element={session&&!needsPaddockAccess&&isAdmin?<AdminRegisteredMembers/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
  </Routes></Shell>;
 }
-function Shell({children,theme,setTheme,session,profile,isAdmin,panelAccess}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null;isAdmin:boolean;panelAccess:PanelAccess}){
+function Shell({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,panelAccess}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null;isAdmin:boolean;isPrimaryOwner:boolean;panelAccess:PanelAccess}){
  const {toast,loading}=useUI();const [menuOpen,setMenuOpen]=useState(false),[navOpen,setNavOpen]=useState(false);const navigate=useNavigate();const location=useLocation();
  useEffect(()=>{setMenuOpen(false);setNavOpen(false)},[location.pathname]);
  const logout=async()=>{if(!supabase)return;loading(true);const {error}=await supabase.auth.signOut();loading(false);setMenuOpen(false);if(error)toast("error","Logout gagal",error.message);else{toast("success","Berhasil logout","Sesi akun sudah diakhiri.");navigate("/")}};
@@ -180,7 +185,7 @@ function Shell({children,theme,setTheme,session,profile,isAdmin,panelAccess}:{ch
   {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},{to:"/shop",label:"Shop",description:"Beli Development Token dan item resmi.",icon:<ShoppingBag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
   ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.filter(tab=>(isAdmin||tab.path!=="registration"||panelAccess.member_role===null)&&(!(group.path==="team-panel"&&["driver-registration","engine-market"].includes(tab.path))||isAdmin||panelAccess.member_role==="Owner")).map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:<Activity size={17}/> }))})),
   {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
-  ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/prizepool",label:"Season Prizepool",description:"Atur hadiah akhir musim dan proses pembayaran dari VreeoBank.",icon:<Coins size={17}/>},{to:"/admin/license-engine",label:"License Scoring Engine",description:"Kelola season, check-in, standings, dan validasi WDC.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/users",label:"Daftar Akun",description:"Seluruh akun, profil, dan konfigurasi role member.",icon:<Users size={17}/>},{to:"/admin/registered-members",label:"Registered Member",description:"Review formulir registrasi Main Event dan aktivasi role.",icon:<ClipboardList size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>}]}]:[])
+  ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/prizepool",label:"Season Prizepool",description:"Atur hadiah akhir musim dan proses pembayaran dari VreeoBank.",icon:<Coins size={17}/>},{to:"/admin/license-engine",label:"License Scoring Engine",description:"Kelola season, check-in, standings, dan validasi WDC.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/users",label:"Daftar Akun",description:"Seluruh akun, profil, dan konfigurasi role member.",icon:<Users size={17}/>},{to:"/admin/registered-members",label:"Registered Member",description:"Review formulir registrasi Main Event dan aktivasi role.",icon:<ClipboardList size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>},...(isPrimaryOwner?[{to:"/admin/developer-api",label:"Developer API & MCP",description:"API key dan koneksi integrasi eksternal.",icon:<Shield size={17}/>}]:[])]}]:[])
  ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];
  return <div className="site"><div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/><div className="scene-light"/><div className="scene-reflection"/><div className="scene-depth"/><div className="scene-flare"/><canvas className="dust-canvas"/></div>
  <header className="site-header">
