@@ -1,0 +1,65 @@
+import {useCallback,useEffect,useState} from "react";
+import type {Session} from "@supabase/supabase-js";
+import {CalendarDays,CheckCircle2,Clock3,RefreshCw,Wallet} from "lucide-react";
+import {Link} from "react-router-dom";
+import {supabase} from "./lib/supabase";
+
+type Quest={
+ id:string;quest_key:string;title:string;description:string;category:string;
+ difficulty:"easy"|"normal"|"hard"|"elite";target:number;progress:number;
+ status:"active"|"completed"|"expired";reward_amount:number;
+ reward_status:"unpaid"|"pending"|"paid";completed_at:string|null;paid_at:string|null;
+};
+type Period={id:string;title:string;period_type:string;period_number:number|null;starts_on:string;ends_on:string};
+type Board={member_name:string;role_scope:"driver"|"team_owner";team_id:string|null;wallet_balance:number;date:string;period:Period|null;daily:Quest[];period_quests:Quest[]};
+const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
+const difficultyLabel:Record<string,string>={easy:"Easy",normal:"Normal",hard:"Hard",elite:"Elite"};
+const difficultyClass:Record<string,string>={easy:"easy",normal:"normal",hard:"hard",elite:"elite"};
+function QuestCard({quest}:{quest:Quest}){
+ const progress=Math.max(0,Math.min(100,Number(quest.progress)/Math.max(1,quest.target)*100));
+ const done=quest.status==="completed";
+ return <article className={"quest-card"+(done?" is-complete":"")}>
+  <div className="quest-card-top"><span className="quest-category">{quest.category}</span><span className={"quest-difficulty "+(difficultyClass[quest.difficulty]||"normal")}>{difficultyLabel[quest.difficulty]||quest.difficulty}</span></div>
+  <div className="quest-card-copy"><h3>{quest.title}</h3><p>{quest.description}</p></div>
+  <div className="quest-progress-meta"><span>Progress</span><strong>{Math.min(Number(quest.progress),quest.target).toLocaleString("id-ID")} / {quest.target.toLocaleString("id-ID")}</strong></div>
+  <div className="quest-progress-track"><i style={{width:progress+"%"}}/></div>
+  <div className="quest-card-bottom"><span className="quest-reward"><Wallet size={14}/>{money(quest.reward_amount)}</span>
+   {quest.reward_status==="paid"?<span className="quest-state paid"><CheckCircle2 size={14}/> Reward masuk wallet</span>
+    :quest.reward_status==="pending"?<span className="quest-state pending"><Clock3 size={14}/> Menunggu saldo VreeoBank</span>
+    :quest.status==="expired"?<span className="quest-state expired">Periode berakhir</span>
+    :done?<span className="quest-state completed"><CheckCircle2 size={14}/> Target tercapai</span>
+    :<span className="quest-state active">Sedang berjalan</span>}
+  </div>
+ </article>;
+}
+export default function QuestPage({session,scope}:{session:Session;scope:"driver"|"team_owner"}){
+ const [board,setBoard]=useState<Board|null>(null);
+ const [loading,setLoading]=useState(true),[error,setError]=useState("");
+ const load=useCallback(async()=>{
+  if(!supabase){setError("Koneksi database belum tersedia.");setLoading(false);return;}
+  setLoading(true);setError("");
+  const {data,error:requestError}=await supabase.rpc("member_get_quest_board");
+  if(requestError||!data){setBoard(null);setError(requestError?.message||"Quest belum dapat dimuat.");setLoading(false);return;}
+  const result=data as Board;
+  if(result.role_scope!==scope){setBoard(null);setError("Quest tidak sesuai dengan role karakter aktif.");setLoading(false);return;}
+  setBoard(result);setLoading(false);
+ },[session.user.id,scope]);
+ useEffect(()=>{void load()},[load]);
+ const title=scope==="driver"?"Driver Quest":"Team Owner Quest";
+ return <section className="workspace quest-workspace">
+  <Link className="back-link" to="/dashboard">← Dashboard</Link>
+  <header className="page-heading quest-heading"><div><span className="section-eyebrow">{scope==="driver"?"DRIVER PANEL":"TEAM PANEL"} · QUEST ENGINE</span><h1 className="page-title">{title}</h1><p className="page-description">Selesaikan aktivitas dari fitur yang sudah tersedia untuk memperoleh reward saldo wallet.</p></div><button className="quest-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
+  {loading?<div className="workspace-card quest-empty">Memuat quest dan progress...</div>:error?<div className="workspace-card quest-empty quest-error">{error}</div>:board?<>
+   <div className="quest-wallet-strip"><div><span>Wallet reward</span><strong>{money(board.wallet_balance)}</strong></div><span className="quest-wallet-icon"><Wallet size={21}/></span></div>
+   <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET HARIAN</span><h2>Daily Quest</h2><p>{new Date(board.date+"T00:00:00").toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p></div><span className="quest-count">{board.daily.length} quest</span></div>
+    {board.daily.length?<div className="quest-grid">{board.daily.map(q=><QuestCard key={q.id} quest={q}/>)}</div>:<div className="workspace-card quest-empty">Belum ada Daily Quest yang memenuhi kondisi aktivitas hari ini.</div>}
+   </section>
+   <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET PERIODE</span><h2>Period Quest</h2>{board.period&&<p><CalendarDays size={14}/>{board.period.title} · {board.period.starts_on} – {board.period.ends_on}</p>}</div><span className="quest-count">{board.period_quests.length} quest</span></div>
+    {!board.period?<div className="workspace-card quest-empty">Belum ada periode season yang aktif. Period Quest akan mengikuti kalender 12 periode CALERIS.</div>
+     :board.period_quests.length?<div className="quest-grid">{board.period_quests.map(q=><QuestCard key={q.id} quest={q}/>)}</div>
+     :<div className="workspace-card quest-empty">Belum ada Period Quest yang memenuhi kondisi pada periode ini.</div>}
+   </section>
+   <p className="quest-footnote">Progress dihitung dari aktivitas database. Reward otomatis dikirim ke wallet Driver atau wallet Tim melalui VreeoBank setelah target tercapai. Jika saldo VreeoBank belum mencukupi, reward akan menunggu dan diproses ulang.</p>
+  </>:null}
+ </section>;
+}
