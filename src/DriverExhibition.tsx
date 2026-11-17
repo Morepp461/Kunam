@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Three from "three";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Maximize2, Search, UserRound, X } from "lucide-react";
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Gamepad2, Maximize2, Minimize2, Search, UserRound, X } from "lucide-react";
 import "./driver-exhibition.css";
 
 type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; scope: string };
-type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void };
+type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
 const teamColor = (name: string) => {
   let hash = 0;
@@ -21,6 +21,10 @@ const numberFor = (name: string, index: number) => {
 
 export default function DriverExhibition({ drivers, scope }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const sceneCardRef = useRef<HTMLDivElement>(null);
+  const stickPointerRef = useRef<number | null>(null);
+  const [stickPosition, setStickPosition] = useState({ x: 0, y: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const apiRef = useRef<SceneApi | null>(null);
   const [selected, setSelected] = useState<DriverRow | null>(null);
   const [query, setQuery] = useState("");
@@ -55,7 +59,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.15;
+        renderer.toneMappingExposure = 1.32;
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
@@ -100,21 +104,21 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         const sphere = (parent: Three.Object3D, pos: [number, number, number], scale: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.SphereGeometry(1, 20, 14), mat, parent, pos, scale);
 
-        scene.add(new THREE.HemisphereLight(0x9da8b5, 0x17191d, 1.45));
-        const keyLight = new THREE.DirectionalLight(0xffe5c1, 2.3);
+        scene.add(new THREE.HemisphereLight(0xdce5ef, 0x34302a, 2.15));
+        const keyLight = new THREE.DirectionalLight(0xffead0, 3.1);
         keyLight.position.set(-8, 16, 10);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0x8a9db5, 0.85);
+        const fillLight = new THREE.DirectionalLight(0xa9c6e5, 1.45);
         fillLight.position.set(12, 8, -18);
         scene.add(fillLight);
 
-        const floorMat = material(0x171a1e, 0.3, 0.48);
-        const wallMat = material(0x111418, 0.72, 0.3);
-        const darkMetal = material(0x24282d, 0.36, 0.78);
-        const redMetal = material(0x681d25, 0.34, 0.55);
-        const goldMetal = material(0x9d8044, 0.3, 0.72);
+        const floorMat = material(0x292d32, 0.3, 0.48);
+        const wallMat = material(0x252a30, 0.72, 0.3);
+        const darkMetal = material(0x454a50, 0.36, 0.68);
+        const redMetal = material(0x8e2932, 0.34, 0.55);
+        const goldMetal = material(0xb49a61, 0.3, 0.62);
         const floor = mesh(new THREE.PlaneGeometry(100, 150), floorMat, scene, [0, 0, -35]);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = !mobile;
@@ -189,22 +193,45 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           plaque.rotation.x = -0.08;
           const figure = new THREE.Group();
           root.add(figure);
-          const torso = mesh(new THREE.CapsuleGeometry(0.43, 0.88, 5, 12), suit, figure, [0, 1.35, 0]);
-          torso.scale.set(1.12, 1.12, 0.78);
-          cylinder(figure, 0.34, 0.4, 0.18, [0, 0.9, 0], trim);
-          box(figure, [0.48, 0.1, 0.12], [0, 1.52, 0.35], goldMetal);
-          sphere(figure, [0, 2.34, 0], [0.39, 0.43, 0.38], helmet);
-          sphere(figure, [0, 2.32, 0.315], [0.31, 0.17, 0.12], visor);
-          sphere(figure, [0, 2.62, 0], [0.31, 0.09, 0.3], suit);
+          // Anatomical driver silhouette: exposed human face, neck, shoulders and fitted race suit.
+          const pelvis = mesh(new THREE.SphereGeometry(0.34, 32, 24), suit, figure, [0, 0.78, 0]);
+          pelvis.scale.set(1.05, 0.75, 0.8);
+          const torso = mesh(new THREE.CapsuleGeometry(0.34, 0.72, 8, 24), suit, figure, [0, 1.38, 0]);
+          torso.scale.set(1.28, 1.05, 0.82);
+          sphere(figure, [0, 1.84, 0], [0.48, 0.28, 0.38], suit);
+          cylinder(figure, 0.12, 0.14, 0.24, [0, 1.99, 0], skin);
+          // Tailored suit seams and front zip.
+          box(figure, [0.035, 0.68, 0.018], [0, 1.42, 0.31], trim);
+          box(figure, [0.32, 0.055, 0.035], [0, 1.64, 0.34], goldMetal);
+          box(figure, [0.34, 0.08, 0.04], [0, 1.17, 0.32], redMetal);
           for (const side of [-1, 1]) {
-            const arm = mesh(new THREE.CapsuleGeometry(0.145, 0.72, 4, 9), suit, figure, [side * 0.57, 1.35, 0]);
-            arm.rotation.z = side * -0.24;
-            sphere(figure, [side * 0.69, 0.88, 0.02], [0.17, 0.17, 0.16], glove);
-            const leg = mesh(new THREE.CapsuleGeometry(0.19, 0.68, 4, 9), suit, figure, [side * 0.22, 0.48, 0]);
-            leg.rotation.z = side * 0.04;
-            box(figure, [0.34, 0.2, 0.58], [side * 0.22, 0.12, 0.12], boot);
+            const arm = mesh(new THREE.CapsuleGeometry(0.135, 0.62, 8, 18), suit, figure, [side * 0.53, 1.35, 0]);
+            arm.rotation.z = side * -0.18;
+            sphere(figure, [side * 0.65, 0.91, 0.015], [0.135, 0.16, 0.13], glove);
+            const leg = mesh(new THREE.CapsuleGeometry(0.16, 0.66, 8, 18), suit, figure, [side * 0.2, 0.48, 0]);
+            leg.rotation.z = side * 0.035;
+            box(figure, [0.29, 0.17, 0.48], [side * 0.2, 0.1, 0.13], boot);
+            // Gloves, cuff rings and knee reinforcement.
+            cylinder(figure, 0.14, 0.14, 0.09, [side * 0.65, 0.82, 0.015], goldMetal);
+            box(figure, [0.26, 0.19, 0.035], [side * 0.2, 0.47, 0.15], trim);
           }
-          box(figure, [0.16, 0.42, 0.12], [0, 1.56, 0.41], trim);
+          // Real human head with jaw, ears, eyes, nose, mouth and hair rather than a helmet-shaped capsule.
+          sphere(figure, [0, 2.28, 0], [0.235, 0.31, 0.22], skin);
+          sphere(figure, [0, 2.16, 0.055], [0.19, 0.16, 0.19], skinLight);
+          for (const side of [-1, 1]) {
+            sphere(figure, [side * 0.235, 2.29, 0], [0.055, 0.09, 0.065], skin);
+            sphere(figure, [side * 0.09, 2.32, 0.187], [0.052, 0.035, 0.025], eyeWhite);
+            sphere(figure, [side * 0.09, 2.32, 0.208], [0.022, 0.025, 0.012], iris);
+            sphere(figure, [side * 0.09, 2.38, 0.184], [0.062, 0.018, 0.025], hair);
+          }
+          sphere(figure, [0, 2.25, 0.218], [0.045, 0.075, 0.045], skinLight);
+          sphere(figure, [0, 2.105, 0.205], [0.075, 0.018, 0.018], visor);
+          sphere(figure, [0, 2.49, -0.005], [0.238, 0.13, 0.225], hair);
+          sphere(figure, [0, 2.42, -0.105], [0.22, 0.12, 0.16], hair);
+          // Helmet carried at the driver's side as a separate race accessory.
+          const helmetShell = material(0xd8d5cc, 0.24, 0.56);
+          sphere(figure, [0.88, 0.72, 0.02], [0.22, 0.25, 0.22], helmetShell);
+          sphere(figure, [0.88, 0.72, 0.2], [0.17, 0.09, 0.06], visor);
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
@@ -237,7 +264,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         let downX = 0;
         let downY = 0;
         let dragged = false;
-        let focused = false;
+        let focused = false;\n        let stickX = 0;\n        let stickY = 0;
         const onPointerDown = (event: PointerEvent) => {
           downX = event.clientX;
           downY = event.clientY;
@@ -303,7 +330,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           selectedRef.current = driver;
           window.dispatchEvent(new CustomEvent("caleris-driver-select", { detail: driver }));
         };
-        apiRef.current = { reset, focus, move: (key, active) => active ? keys.add(key) : keys.delete(key) };
+        apiRef.current = { reset, focus, move: (key, active) => active ? keys.add(key) : keys.delete(key), stick: (x, y) => { stickX = x; stickY = y; } };
         renderer.domElement.addEventListener("pointerdown", onPointerDown);
         renderer.domElement.addEventListener("pointermove", onPointerMove);
         renderer.domElement.addEventListener("pointerup", onPointerUp);
@@ -331,7 +358,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           pitch += (targetPitch - pitch) * Math.min(1, delta * 7);
           const forward = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
           const right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-          const speed = (keys.has("shift") ? 11 : 6) * delta;
+          const speed = (keys.has("shift") ? 11 : 6) * delta;\n          desiredPosition.addScaledVector(right, stickX * speed);\n          desiredPosition.addScaledVector(forward, -stickY * speed);
           if (keys.has("w") || keys.has("arrowup")) desiredPosition.addScaledVector(forward, speed);
           if (keys.has("s") || keys.has("arrowdown")) desiredPosition.addScaledVector(forward, -speed);
           if (keys.has("a") || keys.has("arrowleft")) desiredPosition.addScaledVector(right, -speed);
@@ -401,16 +428,16 @@ export default function DriverExhibition({ drivers, scope }: Props) {
   }, [filteredDrivers]);
 
   const resetCamera = () => { apiRef.current?.reset(); setSelected(null); selectedRef.current = null; };
-  const move = (key: string, active: boolean) => apiRef.current?.move(key, active);
+  const move = (key: string, active: boolean) => apiRef.current?.move(key, active);\n  const updateStick = (event: ReactPointerEvent<HTMLDivElement>) => {\n    const rect = event.currentTarget.getBoundingClientRect();\n    const dx = (event.clientX - rect.left - rect.width / 2) / (rect.width * 0.34);\n    const dy = (event.clientY - rect.top - rect.height / 2) / (rect.height * 0.34);\n    const length = Math.hypot(dx, dy);\n    const scale = length > 1 ? 1 / length : 1;\n    const x = dx * scale; const y = dy * scale;\n    setStickPosition({ x: x * 34, y: y * 34 });\n    apiRef.current?.stick(x, y);\n  };\n  const resetStick = () => { stickPointerRef.current = null; setStickPosition({ x: 0, y: 0 }); apiRef.current?.stick(0, 0); };\n  useEffect(() => {\n    const sync = () => setIsFullscreen(document.fullscreenElement === sceneCardRef.current);\n    document.addEventListener("fullscreenchange", sync);\n    return () => document.removeEventListener("fullscreenchange", sync);\n  }, []);\n  const toggleFullscreen = async () => {\n    const node = sceneCardRef.current;\n    if (!node) return;\n    try { if (document.fullscreenElement === node) await document.exitFullscreen(); else if (node.requestFullscreen) await node.requestFullscreen(); } catch { /* Fullscreen can be unavailable in embedded browsers. */ }\n  };
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
 
   return <section className="driver-exhibition">
-    <div className="driver-exhibition-scene" ref={mountRef}>
+    <div className="driver-exhibition-scene" ref={sceneCardRef}>\n      <div className="driver-exhibition-webgl" ref={mountRef} />
       {sceneError && <div className="driver-scene-fallback"><strong>3D VIEW UNAVAILABLE</strong><span>{sceneError}</span><p>Gunakan browser/perangkat dengan dukungan WebGL untuk menjelajahi Driver Exhibition.</p></div>}
       <div className="driver-exhibition-vignette" />
       <header className="driver-exhibition-top">
         <div className="driver-exhibition-brand"><span>CALERIS MASTERS</span><strong>DRIVER EXHIBITION</strong></div>
-        <div className="driver-exhibition-count"><span>REGISTERED DRIVERS</span><strong>{filteredDrivers.length.toString().padStart(2, "0")} <small>/ {drivers.length.toString().padStart(2, "0")}</small></strong></div>
+        <div className="driver-exhibition-top-actions"><div className="driver-exhibition-count"><span>REGISTERED DRIVERS</span><strong>{filteredDrivers.length.toString().padStart(2, "0")} <small>/ {drivers.length.toString().padStart(2, "0")}</small></strong></div><button className="driver-fullscreen-button" onClick={toggleFullscreen} aria-label={isFullscreen ? "Exit fullscreen" : "Open fullscreen"} title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>{isFullscreen ? <Minimize2 size={17}/> : <Maximize2 size={17}/>}</button></div>
       </header>
       <div className="driver-exhibition-heading">
         <span>THE PEOPLE BEHIND THE GRID · {scopeLabel}</span>
@@ -431,7 +458,7 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           <button onPointerDown={() => move("s", true)} onPointerUp={() => move("s", false)} onPointerLeave={() => move("s", false)} aria-label="Move backward"><ArrowDown/></button>
           <button onPointerDown={() => move("d", true)} onPointerUp={() => move("d", false)} onPointerLeave={() => move("d", false)} aria-label="Move right"><ArrowRight/></button>
         </div>
-        <div className="driver-camera-hint"><span><Camera size={14}/> DRAG TO LOOK</span><span>WASD TO MOVE</span><span>SCROLL TO ZOOM</span></div>
+        <div className="driver-camera-hint"><span><Camera size={14}/> DRAG TO LOOK</span><span className="driver-desktop-hint">WASD TO MOVE</span><span>SCROLL TO ZOOM</span></div>\n        <div className="driver-mobile-joystick" onPointerDown={(e) => { e.stopPropagation(); stickPointerRef.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); updateStick(e); }} onPointerMove={(e) => { if (stickPointerRef.current === e.pointerId) updateStick(e); }} onPointerUp={(e) => { if (stickPointerRef.current === e.pointerId) resetStick(); }} onPointerCancel={resetStick} onLostPointerCapture={resetStick} role="application" aria-label="Analog camera movement joystick"><div className="driver-joystick-base"><div className="driver-joystick-knob" style={{ transform: `translate(${stickPosition.x}px, ${stickPosition.y}px)` }}><Gamepad2 size={18}/></div></div><span>MOVE</span></div>
         <button className="driver-reset-camera" onClick={resetCamera}><Maximize2 size={15}/> RESET CAMERA</button>
       </div>
       {selected && <aside className="driver-selected-panel">
