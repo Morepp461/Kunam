@@ -4,6 +4,8 @@ import type { Session } from "@supabase/supabase-js";
 import { Link, useLocation } from "react-router-dom";
 import { Activity, CheckCircle2, Flag, Medal, Search, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import DriverExhibition from "./DriverExhibition";
+import "./driver-exhibition.css";
 
 type Props = { session: Session; fallback: ReactNode; isAdmin?: boolean };
 type Row = Record<string, any>;
@@ -364,6 +366,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     const resultsDetail = detail === "results";
     const driverListDetail = detail === "driver-list";
     const teamListDetail = detail === "team-list";
+    if (driverListDetail) return <section className="workspace s5-workspace">{heading("MAIN EVENT · " + scope, data.activeSeason?.title || "Caleris Masters", "Jelajahi seluruh driver Caleris Masters dalam 3D exhibition hall.")}<DriverExhibition drivers={driverRows} scope={tab}/></section>;
     return <section className="workspace s5-workspace">{heading("MAIN EVENT · "+scope, data.activeSeason?.title||"Caleris Masters", "Klasemen, statistik, jadwal, dan performa resmi "+scope.toLowerCase()+".")}<div className="s5-main-tabs"><Link to={"/main-event/"+tab+"/driver-ranking"}>Driver Ranking</Link><Link to={"/main-event/"+tab+"/rookie-of-the-season"}>Rookie of the Season</Link><Link to={"/main-event/"+tab+"/team-ranking"}>Team Ranking</Link><Link to={"/main-event/"+tab+"/engine-ranking"}>Engine Ranking</Link><Link to={"/main-event/"+tab+"/statistic"}>Statistics</Link><Link to={"/main-event/"+tab+"/comparison"}>Comparison</Link><Link to={"/main-event/"+tab+"/calendar"}>Schedule</Link><Link to={"/main-event/"+tab+"/results"}>Results</Link><Link to={"/main-event/"+tab+"/driver-list"}>Driver List</Link><Link to={"/main-event/"+tab+"/team-list"}>Team List</Link></div>
       {(!detail||driverDetail)&&<Card title="Driver Ranking" eyebrow="OFFICIAL CHAMPIONSHIP STANDINGS"><Table headers={["POS","DRIVER","TEAM / LOGO","POINTS"]} rows={standingsRows}/></Card>}
       {(!detail||rookieDetail)&&<Card title="Rookie of the Season" eyebrow="BEST-PLACED DEBUTANT"><div className="s5-rookie">{currentRookie?<><Medal/><div><span>{(data.finalStandings||[]).some((standing: Row)=>(data.activeDivisions||[]).some((division: Row)=>division.id===standing.season_division_id))?"ROOKIE OF THE SEASON":"PROVISIONAL ROOKIE LEADER"}</span><h3>{currentRookie.character_name}</h3><p>{currentRookie.team?.name||"Independent"} · {currentRookie.points} points</p></div></>:<Empty>Belum ada debutant yang memenuhi kriteria pada season ini.</Empty>}</div></Card>}
