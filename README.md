@@ -557,3 +557,28 @@ Use the Edge Function URL from the Developer API page. The web deployment remain
 - A successful session improves the selected attribute. A failed session reduces it; Mistake Rate uses inverse scoring, so successful training lowers it and failure raises it.
 - Training does not spend wallet cash or DDP. Outcomes are resolved server-side only after the timer finishes; one active session per Driver and one cooldown shared across modes for each training program.
 - Session attempts, result rolls, attribute deltas, and cooldown timestamps are stored in Supabase with owner-only read access. Client-side writes are not granted.
+
+
+## Brand Ecosystem
+
+Brand Ecosystem introduces team-only sponsorship partnerships, sponsor-tier matching, weighted Team/Driver Reputation, regional fan population, sponsor trust evaluation, seasonal payment schedules, and achievement bonuses.
+
+- **Sponsorship:** new offers target teams only. Team Owner is the authorized negotiator, with a maximum of three counter-offers. Historical driver sponsorship rows remain intact but cannot be accepted into new contracts.
+- **AI Sponsor matching:** Admin configures sponsor tiers, reputation/fan thresholds, sponsor budget and each sponsor's offer amount band. Matching can generate offers for multiple eligible teams per sponsor.
+- **Negotiation:** the sponsor engine responds to Team Owner counters using each sponsor's configured flexibility and available budget.
+- **Contracts:** accepted contracts carry a season duration, annual value, and aggregate bonus pool. The bonus pool percentage is configurable; the initial default is 50%.
+- **Settlement:** seasonal payments and earned target bonuses use the Sponsor Source wallet and private.post_economy_transaction. A pg_cron job checks due payments and eligible bonuses every 15 minutes. Insufficient sponsor budget or Sponsor Source balance prevents settlement rather than minting funds.
+- **Reputation:** Admin enters sourced metric values; weighted scores are calculated from editable weights in caleris_brand_ecosystem_config.
+- **Fans:** population is stored as regional aggregates, not individual fan records. Admin adjustments are recorded in a population history ledger.
+- **Trust and renewal:** Admin evaluates five 0–100 metrics using configurable weights. Renewal bands are Premium (90+), Standard (80–89), Conditional (60–79), and Terminated (below 60).
+
+### Brand Ecosystem migrations
+
+- 20261117120000_brand_ecosystem_engine.sql
+- 20261117130000_brand_ecosystem_operations.sql
+- 20261117140000_brand_ecosystem_integrity.sql
+- 20261117150000_brand_sponsor_offer_bands.sql
+- 20261117160000_brand_ecosystem_engine_hardening.sql
+- 20261117170000_brand_ecosystem_settlement_scheduler.sql
+
+Configuration is intentionally not seeded with invented sponsor records, deal values, or tier thresholds. Admin must configure the sponsor pool and rules from the source dataset before matching can create offers.
