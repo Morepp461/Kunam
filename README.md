@@ -540,3 +540,11 @@ The owner-only integration gateway is available at `/admin/developer-api`.
 - Database migrations: `20261117054738_owner_developer_api_keys.sql` and `20261117054919_developer_api_primary_owner.sql`.
 
 Use the Edge Function URL from the Developer API page. The web deployment remains configured to use the Testing Supabase environment as previously requested; database schema migrations for this feature must be applied to both Testing and Production, while runtime secrets and deployed Edge Functions are configured per project.
+
+## Unified Paddock Access Registration
+
+- The standalone Main Event Registration page has been removed. The legacy route /main-event/registration redirects to /paddock-access for accounts without an active member role.
+- Paddock Access keeps the existing profile, avatar, date-of-birth, nationality, hometown, nickname, and privacy fields. Role choices are Driver and Team Owner.
+- Selecting a role reveals the former Registration Step 2 fields inline: Driver number/team preference/epithet, or Team Owner team profile/logo/division/engine selection.
+- A single final submission saves the profile and submits the matching registration through submit_main_event_registration_v2. The existing Admin Registered Member queue reads the same registration records and continues to handle ACC/reject, including initial wallet/team/engine processing on approval.
+- Pending applications show their review status in Paddock Access. Rejected applications can be resubmitted from the same page.
