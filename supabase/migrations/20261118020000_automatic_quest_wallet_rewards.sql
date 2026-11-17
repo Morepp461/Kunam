@@ -402,8 +402,7 @@ else
     'period_quests',v_period_quests
   );
 end;
-$function$
-
+$function$;
 
 revoke all on function public.member_claim_quest_reward(uuid) from public,anon,authenticated,service_role;
 revoke all on function public.admin_process_pending_quest_rewards() from public,anon,service_role;
