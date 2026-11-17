@@ -36,7 +36,7 @@ export default function DeveloperAPI({ session }: { session: Session }) {
   const [newSecret, setNewSecret] = useState("");
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
-  const endpoint = "https://vxwvhyyvoipjwucbrvlu.supabase.co/functions/v1/caleris-integrations";
+  const endpoint = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/caleris-integrations`;
 
   const load = useCallback(async () => {
     if (!supabase || session.user.id !== OWNER_USER_ID) { setError("Akses developer ditolak."); setLoading(false); return; }
