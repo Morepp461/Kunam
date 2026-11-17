@@ -85,6 +85,11 @@ Deno.serve(async (req: Request) => {
       return respond(400, { error: "Profile photo path is not valid for this account." });
     }
 
+    const registrationPayload = body.registrationPayload;
+    if (!registrationPayload || typeof registrationPayload !== "object" || Array.isArray(registrationPayload)) {
+      return respond(400, { error: "Role registration details are required." });
+    }
+
     const adminClient = createClient(supabaseUrl, adminKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
@@ -108,10 +113,6 @@ Deno.serve(async (req: Request) => {
       return respond(500, { error: "Unable to save Paddock Access profile." });
     }
 
-    const registrationPayload = body.registrationPayload;
-    if (!registrationPayload || typeof registrationPayload !== "object" || Array.isArray(registrationPayload)) {
-      return respond(400, { error: "Role registration details are required." });
-    }
     const requestedRole = preferredRole === "Team Owner" ? "Owner" : "Driver";
     const payload = {
       ...(registrationPayload as Record<string, unknown>),
