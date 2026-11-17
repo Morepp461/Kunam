@@ -46,8 +46,7 @@ left join lateral (
 do $migration$
 declare
   v_source text;
-  v_old_block text := $old$
-if v_assignment.reward_status<>'paid' then
+  v_old_block text := $old$if v_assignment.reward_status<>'paid' then
         if v_bank_id is null then
           update public.caleris_quest_assignments set reward_status='pending' where id=v_assignment.id;
         else
@@ -75,8 +74,7 @@ if v_assignment.reward_status<>'paid' then
             where id=v_assignment.id;
           end if;
         end if;
-      end if;
-$old$;
+      end if;$old$;
 begin
   select p.prosrc into v_source
   from pg_proc p
