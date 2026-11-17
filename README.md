@@ -668,3 +668,12 @@ Migrations:
 - Small incremental counter-offers above the sponsor's latest amount can therefore be accepted within the configured flexibility percentage.
 - Excessive counter-offers and amounts beyond sponsor budget are still rejected immediately.
 - Migration: `20261117420000_sponsor_counter_latest_offer_flexibility.sql`.
+
+
+### Team Official Sponsors
+
+- Team Summary memuat daftar sponsor yang sudah resmi deal melalui kontrak sponsorship berstatus aktif.
+- Setiap partner menampilkan logo (jika tersedia), nama brand, industri, nilai kontrak per season, durasi kontrak, dan status partnership.
+- Data bersumber dari `caleris_sponsorship_contracts` dan `caleris_sponsors`; tidak ada daftar sponsor manual atau data dummy.
+- Sponsor yang sudah memiliki kontrak aktif tetap ditampilkan meskipun status sponsor di pool sudah nonaktif, selama kebijakan akses peserta kontrak mengizinkan.
+- Tampilan menggunakan kartu responsif dan menyediakan empty state jika tim belum memiliki sponsor aktif.
