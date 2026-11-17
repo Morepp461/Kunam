@@ -79,7 +79,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       supabase.from("caleris_fan_populations").select("member_id,population").eq("entity_kind","driver"),
       supabase.from("caleris_driver_reputation").select("member_id,score,band"),
       supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,target_team_id,season_id,contract_amount,annual_contract_amount,duration_seasons,status,started_at,ended_at,renewal_status").eq("target_kind","team").eq("status","active").order("started_at",{ascending:false}),
-      supabase.from("caleris_sponsors").select("id,name,logo_url,industry").eq("is_active",true).order("name")
+      supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name")
     ]);
     const errors = [p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ, registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ, achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ, finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ, fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ].map(x => x.error).filter(Boolean);
     if (errors.length && errors[0]) setNotice(errors[0].message);
