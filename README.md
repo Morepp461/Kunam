@@ -563,6 +563,23 @@ Use the Edge Function URL from the Developer API page. The web deployment remain
 
 Brand Ecosystem introduces team-only sponsorship partnerships, sponsor-tier matching, weighted Team/Driver Reputation, regional fan population, sponsor trust evaluation, seasonal payment schedules, and achievement bonuses.
 
+### Panduan kartu Admin Brand Ecosystem
+
+Seluruh input angka dan indikator tersedia sebagai field biasa; Admin tidak perlu menulis JSON. Struktur data internal tetap dikelola aplikasi dan tidak ditampilkan sebagai konfigurasi mentah.
+
+- **Tambah Sponsor:** mendaftarkan brand, industri, tier, budget, fleksibilitas negosiasi, dan rentang nilai offer. Update Sponsor Budget menambah atau mengoreksi dana sponsor.
+- **Aturan Tier:** menentukan batas reputasi tim, jumlah fans, performa season, dan budget agar tim dapat dipasangkan dengan sponsor tier tersebut.
+- **Generate Sponsor Offers:** menjalankan pencocokan sponsor dengan tim yang memenuhi syarat untuk season yang dipilih. Ini membuat offer, bukan kontrak otomatis.
+- **Automatic Settlement:** memproses pembayaran kontrak yang jatuh tempo dan bonus target yang sudah tercapai melalui Sponsor Source dan Economy Ledger.
+- **Update Reputation (Team):** menghitung skor reputasi tim dari enam indikator bernilai 0–100. Bobot tiap indikator ada di Engine Configuration.
+- **Update Driver Score:** menghitung reputasi driver dari enam indikator bernilai 0–100 dengan bobot konfigurasi driver.
+- **Weights & Sponsor Availability:** pengaturan lanjutan untuk bobot reputasi tim/driver, Sponsor Trust, bonus pool, komposisi tier per divisi, target fokus tiap tier, serta pertumbuhan dan penurunan fans. Nilai awal sudah disediakan dan tidak perlu diubah untuk penggunaan normal.
+- **Adjust Fan Population:** koreksi manual jumlah fans tim/driver pada wilayah tertentu. Perubahan dicatat ke riwayat populasi.
+- **Offer & Sponsor Engine:** memantau negosiasi offer dan menjalankan respons sponsor otomatis setelah Team Owner mengirim counter-offer.
+- **Contracts & Targets:** membuat target kontrak, mencatat progres, membayar bonus yang memenuhi syarat, dan mengevaluasi Sponsor Trust menggunakan indikator 0–100.
+
+Target otomatis yang tersedia: raihan poin per race, podium per race, kemenangan per race, dan tingkat finish. Nilai progress target dihitung dari hasil race yang sudah dipublikasikan.
+
 - **Sponsorship:** new offers target teams only. Team Owner is the authorized negotiator, with a maximum of three counter-offers. Historical driver sponsorship rows remain intact but cannot be accepted into new contracts.
 - **AI Sponsor matching:** Admin configures sponsor tiers, reputation/fan thresholds, sponsor budget and each sponsor's offer amount band. Matching can generate offers for multiple eligible teams per sponsor.
 - **Negotiation:** the sponsor engine responds to Team Owner counters using each sponsor's configured flexibility and available budget.
