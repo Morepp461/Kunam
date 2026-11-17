@@ -7,7 +7,7 @@ import {supabase} from "./lib/supabase";
 type Sponsor={id:string;name:string;tier_key:string|null;available_budget:number|null;is_active:boolean};
 type Team={id:string;name:string};
 type Offer={id:string;sponsor_id:string;target_team_id:string|null;status:string;proposed_amount:number;counter_count:number;created_at:string;expires_at:string|null};
-type Revision={offer_id:string;actor_kind:string;amount:number;response:string;terms:Record<string,unknown>;created_at:string};
+type Revision={id:string;offer_id:string;actor_kind:string;amount:number;response:string;terms:Record<string,unknown>;created_at:string};
 type Contract={id:string;sponsor_id:string;target_team_id:string|null;contract_amount:number;annual_contract_amount:number|null;status:string;duration_seasons:number;renewal_status:string;bonus_pool_total:number;bonus_pool_paid:number};
 type Target={contract_id:string;title:string;current_value:number;target_value:number;bonus_amount:number;status:string};
 type Payment={contract_id:string;amount:number;status:string;due_at:string;paid_at:string|null};
@@ -40,7 +40,7 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
    supabase.from("caleris_sponsors").select("id,name,tier_key,available_budget,is_active").order("name"),
    supabase.from("teams").select("id,name").order("name"),
    supabase.from("caleris_sponsorship_offers").select("id,sponsor_id,target_team_id,status,proposed_amount,counter_count,created_at,expires_at").order("created_at",{ascending:false}),
-   supabase.from("caleris_sponsorship_offer_revisions").select("offer_id,actor_kind,amount,response,terms,created_at").order("created_at"),
+   supabase.from("caleris_sponsorship_offer_revisions").select("id,offer_id,actor_kind,amount,response,terms,created_at").order("created_at").order("id"),
    supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,target_team_id,contract_amount,annual_contract_amount,status,duration_seasons,renewal_status,bonus_pool_total,bonus_pool_paid").order("started_at",{ascending:false}),
    supabase.from("caleris_sponsorship_targets").select("contract_id,title,current_value,target_value,bonus_amount,status").order("created_at",{ascending:false}),
    supabase.from("caleris_sponsorship_payment_schedule").select("contract_id,amount,status,due_at,paid_at").order("due_at",{ascending:false}),
@@ -66,7 +66,7 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
  useEffect(()=>{void refresh()},[refresh]);
  const sponsorName=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
  const teamName=(id:string|null)=>teams.find(t=>t.id===id)?.name||"Team";
- const history=(id:string)=>revisions.filter(r=>r.offer_id===id);
+ const history=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
  const latest=(id:string)=>history(id).at(-1);
  const awaitingOwner=offers.filter(o=>o.status==="offered"&&latest(o.id)?.actor_kind==="admin");
  const awaitingEngine=offers.filter(o=>o.status==="negotiating"&&latest(o.id)?.actor_kind==="member");
