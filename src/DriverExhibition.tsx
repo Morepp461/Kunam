@@ -73,7 +73,6 @@ export default function DriverExhibition({ drivers, scope }: Props) {
         let targetPitch = pitch;
         const lookTarget = new THREE.Vector3(0, 1.5, -4);
         const desiredPosition = camera.position.clone();
-        const desiredTarget = lookTarget.clone();
         const keys = new Set<string>();
         const driverObjects = new Map<string, Three.Group>();
         const selectable: Three.Object3D[] = [];
@@ -181,7 +180,6 @@ export default function DriverExhibition({ drivers, scope }: Props) {
           const visor = material(0x141b23, 0.18, 0.78);
           const glove = material(0x171a1e, 0.82, 0.02);
           const boot = material(0x101216, 0.74, 0.12);
-          const skin = material(0xb18b70, 0.84, 0);
           const podium = new THREE.Group();
           root.add(podium);
           cylinder(podium, 1.1, 1.25, 0.32, [0, 0.16, 0], darkMetal);
@@ -403,7 +401,6 @@ export default function DriverExhibition({ drivers, scope }: Props) {
   }, [filteredDrivers]);
 
   const resetCamera = () => { apiRef.current?.reset(); setSelected(null); selectedRef.current = null; };
-  const openDriver = (driver: DriverRow) => { apiRef.current?.focus(driver.id); };
   const move = (key: string, active: boolean) => apiRef.current?.move(key, active);
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
 
