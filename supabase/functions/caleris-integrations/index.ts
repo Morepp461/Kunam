@@ -133,10 +133,12 @@ Deno.serve(async (req: Request) => {
   if (!allowedOrigin(origin)) return json({ error: "Origin is not allowed." }, 403);
   const url = new URL(req.url);
   const path = url.pathname;
+  const functionMarker = "/caleris-integrations";
+  const endpointPath = path.includes(functionMarker) ? path.slice(path.indexOf(functionMarker) + functionMarker.length) : path;
   if (req.method === "OPTIONS") return new Response(null, { status: 204 });
   if (req.method !== "POST" && req.method !== "GET") return json({ error: "Method not allowed." }, 405);
 
-  if (path.endsWith("/mcp")) {
+  if (endpointPath.endsWith("/mcp")) {
     if (req.method !== "POST") return json({ error: "MCP endpoint accepts POST only." }, 405);
     const auth = await authenticate(req);
     if ("error" in auth) return json({ error: auth.error }, auth.status);
@@ -182,9 +184,9 @@ Deno.serve(async (req: Request) => {
     return json({ jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found." } });
   }
 
-  if (path.includes("/v1/")) {
+  if (endpointPath.startsWith("/v1/")) {
     if (req.method !== "GET") return json({ error: "REST API accepts GET only." }, 405);
-    const resource = path.slice(path.indexOf("/v1/"));
+    const resource = endpointPath;
     const scopeMap: Record<string, Scope> = {
       "/v1/circuits": "circuits:read",
       "/v1/seasons": "seasons:read",
