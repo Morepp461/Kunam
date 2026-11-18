@@ -2,6 +2,7 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import {AlertTriangle,CheckCircle2,Flag,Plus,RefreshCw,Save,ShieldCheck,Timer,Trash2,Trophy} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
 import RaceOCR from "./RaceOCR";
 
 type Round={id:string;round_number:number;title:string;season_division_id:string;status:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division?:{division_name:string;license_seasons?:{title:string}}};
@@ -69,7 +70,10 @@ export default function RaceControl(){
   if(data?.prizepool?.status==="pending_configuration")pending.push(`Prizepool pending: ${data.prizepool.detail||"konfigurasi belum lengkap"}`);
   if(data?.wealth_tax?.status==="pending_configuration")pending.push(`Wealth Tax pending: ${data.wealth_tax.detail||"konfigurasi belum lengkap"}`);
   if(Number(data?.round_processing?.payroll?.pending||0)>0)pending.push(`${data.round_processing.payroll.pending} payroll tertunda`);
-  setNotice({kind:"success",text:`Race resmi disahkan. ${entries.length} Driver diproses.${pending.length?` Settlement: ${pending.join(", ")}.`:" Settlement yang tersedia berhasil diproses."}`});
+   const podium=finished.sort((a,b)=>Number(a.position)-Number(b.position)).slice(0,3).map(x=>"P"+x.position+" · "+x.driverName+" ("+x.teamName+")").join("\n");
+   const raceArticle=[round.title+" · "+circuit.name, "Official podium:\n"+podium, "Pole position: "+pole.driverName, "Fastest lap: "+fastest.driverName, "Driver of the Day: "+(entries.find(x=>x.memberId===dotdId)?.driverName||"Not recorded")].join("\n\n");
+   const broadcast=await broadcastNewsroomArticle("Race Report · "+round.title+" at "+circuit.name,raceArticle,"official_race_result");
+   setNotice({kind:"success",text:"Race resmi disahkan. "+entries.length+" Driver diproses. "+(pending.length?"Settlement: "+pending.join(", ")+". ":"Settlement yang tersedia berhasil diproses. ")+(broadcast.sent?"Laporan otomatis dikirim ke Discord via Vreeo Pedia.":"Laporan terbit, tetapi Discord belum terkirim: "+(broadcast.error?.message||"integrasi belum dikonfigurasi."))});
   setRoundId("");setCircuitId("");setEntries([]);setDotdId("");setPoleTime("");await refresh();
  };
  const changeStatus=(x:Entry,status:FinishStatus)=>update(x.memberId,{status,position:"",timeOrLaps:"",gap:""});
