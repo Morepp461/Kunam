@@ -1,2 +1,21 @@
+# Public directory endpoints perform their own authorization for privileged actions.
+[functions.member-directory]
+verify_jwt = false
+
+# Registration is authenticated inside the function using auth.getUser().
+[functions.complete-paddock-access]
+verify_jwt = false
+
+# API-key authenticated integration endpoint (cm_live_ keys).
 [functions.caleris-integrations]
 verify_jwt = false
+
+# These endpoints require a valid user JWT at the gateway and enforce role/ownership internally.
+[functions.admin-user-management]
+verify_jwt = true
+
+[functions.economy-engine]
+verify_jwt = true
+
+[functions.economy-workflows]
+verify_jwt = true
