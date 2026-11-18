@@ -87,7 +87,7 @@ export default function TeamJobAdvert(){
     <form className="team-job-advert-form" onSubmit={publish}>
      <label>Position<select required value={position} onChange={e=>changePosition(e.target.value as "Driver"|"Team Owner")}><option value="Driver">Driver</option><option value="Team Owner">Team Owner</option></select></label>
      {position==="Driver"&&<>
-      <label>Minimum driver license<select required value={license} onChange={e=>changeLicense(e.target.value)}><option value="">Pilih lisensi minimum</option>{bands.map(b=><option key={b.license_label} value={b.license_label}>{b.license_label}</option>)}</select></label>
+      <label>Minimum driver license<select required value={license} onChange={e=>changeLicense(e.target.value)}><option value="">Pilih lisensi minimum</option>{bands.filter(b=>b.license_label!=="A").map(b=><option key={b.license_label} value={b.license_label}>{b.license_label}</option>)}</select></label>
       <div className="team-job-advert-row">
        <label>Salary minimum (€)<input required type="number" min={selectedBand?.salary_min_eur||1} max={salaryCeiling||undefined} step="1000" value={salaryMin} onChange={e=>setSalaryMin(e.target.value)} placeholder="Minimum salary"/></label>
        <label>Salary maximum (€)<input required type="number" min={salaryMin||selectedBand?.salary_min_eur||1} max={salaryCeiling||undefined} step="1000" value={salaryMax} onChange={e=>setSalaryMax(e.target.value)} placeholder="Maximum salary"/></label>
