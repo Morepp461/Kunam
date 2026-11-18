@@ -190,22 +190,23 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     finishes: (data.resultEntries || []).filter((r: Row) => r.member_id === m.id && r.finish_status === "finished" && (data.activeRoundIds || []).includes(r.round_id)).length,
     dnf: (data.resultEntries || []).filter((r: Row) => r.member_id === m.id && r.finish_status === "dnf" && (data.activeRoundIds || []).includes(r.round_id)).length
   })).sort((a: Row, b: Row) => b.points - a.points || a.wins - b.wins), [members, data, roundPoints, divisionFilter, scopedRoundIds]);
+  // Constructor points sum each round's awarded points, attributed to the team snapshot on the official result entry.
+  const teamSeasonPoints = (teamId: string) => {
+    const team = teamOf(teamId);
+    if (!team) return 0;
+    return (data.roundPoints || []).reduce((total: number, row: Row) => {
+      if (!(data.activeRoundIds || []).includes(row.round_id)) return total;
+      const round = (data.rounds || []).find((item: Row) => item.id === row.round_id);
+      const division = (data.activeDivisions || []).find((item: Row) => item.id === round?.season_division_id);
+      if (!division || String(division.division_key).toLowerCase() !== String(team.division_key || "").toLowerCase()) return total;
+      const entry = (data.resultEntries || []).find((item: Row) => item.round_id === row.round_id && item.member_id === row.member_id);
+      return total + (entry?.team_id === teamId ? Number(row.points_total || 0) : 0);
+    }, 0);
+  };
   const teamRows = useMemo(() => teams.filter((t: Row) => !divisionFilter || String(t.division_key || "").toLowerCase().includes(divisionFilter)).map((t: Row) => {
     const drivers = driverRows.filter((d: Row) => d.team_id === t.id);
     const entries = (data.resultEntries || []).filter((e: Row) => e.team_id === t.id && (data.activeRoundIds || []).includes(e.round_id));
-    const standings = (data.roundPoints || []).filter((row: Row) => (data.activeRoundIds || []).includes(row.round_id))
-      .map((row: Row) => ({ ...row, round: (data.rounds || []).find((r: Row) => r.id === row.round_id) }))
-      .filter((row: Row) => row.round)
-      .sort((a: Row, b: Row) => String(a.round.season_division_id).localeCompare(String(b.round.season_division_id)) || Number(a.round.round_number) - Number(b.round.round_number));
-    const previous = new Map<string, number>();
-    const points = standings.reduce((total: number, row: Row) => {
-      const key = String(row.round.season_division_id) + ":" + String(row.member_id);
-      const current = Number(row.points_total || 0);
-      const delta = current - (previous.get(key) || 0);
-      previous.set(key, current);
-      const entry = (data.resultEntries || []).find((e: Row) => e.round_id === row.round_id && e.member_id === row.member_id);
-      return total + (entry?.team_id === t.id ? delta : 0);
-    }, 0);
+    const points = teamSeasonPoints(t.id);
     const teamWins = (data.raceResults || []).filter((r: Row) => (data.activeRoundIds || []).includes(r.round_id) && entries.some((e: Row) => e.round_id === r.round_id && e.member_id === r.winner_member_id)).length;
     const teamPoles = (data.raceResults || []).filter((r: Row) => (data.activeRoundIds || []).includes(r.round_id) && entries.some((e: Row) => e.round_id === r.round_id && e.member_id === r.pole_member_id)).length;
     const finished = entries.filter((e: Row) => e.finish_status === "finished" && Number(e.finishing_position) > 0);
@@ -370,7 +371,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     const teamPodiums = teamFinishedRows.filter((r:Row)=>Number(r.finishing_position)<=3).length;
     const teamFastestLaps = (data.raceResults||[]).filter((r:Row)=>(data.resultEntries||[]).some((e:Row)=>e.round_id===r.round_id&&e.member_id===r.fastest_lap_member_id&&e.team_id===activeTeamId)).length;
     const teamGained = teamFinishedRows.reduce((n:number,r:Row)=>n+Number(r.grid_position||r.finishing_position)-Number(r.finishing_position),0);
-    const teamPoints = racePointDeltas.filter((r:Row)=>r.team_id===activeTeamId).reduce((n:number,r:Row)=>n+Number(r.points||0),0);
+    const teamPoints = teamSeasonPoints(activeTeamId);
     const teamSponsors = (data.sponsorshipContracts||[]).filter((contract: Row)=>contract.target_team_id===activeTeamId && contract.status==="active").map((contract: Row)=>({...contract,sponsor:(data.sponsors||[]).find((s: Row)=>s.id===contract.sponsor_id)})).filter((contract: Row)=>contract.sponsor);
     return <section className="workspace s5-workspace">{heading("TEAM PANEL · IDENTITY", "Team Summary", "Profil resmi tim, susunan driver, sejarah, dan statistik kejuaraan.")}{!ownTeam?<Empty>Akun ini belum terhubung ke tim.</Empty>:<><div className="s5-hero s5-team-brand-hero" style={{background:`linear-gradient(112deg, ${tProfile?.main_color||"#7A263A"}, ${tProfile?.secondary_color||"#C6A33A"})`}}>{tProfile?.logo_url?<img className="s5-team-logo" src={tProfile.logo_url} alt={ownTeam.name+" logo"}/>:<div className="s5-team-logo s5-logo-placeholder">{ownTeam.name.slice(0,1)}</div>}<div className="s5-hero-copy"><span>OFFICIAL TEAM PROFILE</span><h2>{ownTeam.name}</h2><p>{labelDivision(ownTeam.division_key)} · {tProfile?.country_of_origin||tProfile?.base_location||"Origin not set"}</p><small>Founded {tProfile?.founded_year||"—"}</small></div><div className="s5-wallet-chip"><Wallet size={16}/>{money(walletTotal)}</div></div><div className="s5-grid s5-grid-4">{[["POINTS",teamPoints],["WINS",teamWins],["POLES",teamPoles],["PODIUM",teamPodiums],["FASTEST LAPS",teamFastestLaps],["GAINED POSITIONS",teamGained],["COMPLETED RACES",teamFinishes],["DNF",teamDnfs]].map(([k,v])=><div className="s5-stat" key={k as string}><span>{k}</span><strong>{v as number}</strong></div>)}</div><Card title="Team History" eyebrow="OFFICIAL RECORD"><p className="s5-history">{tProfile?.history||"Sejarah tim belum diisi."}</p><dl className="s5-dl"><dt>Founded</dt><dd>{tProfile?.founded_year||"—"}</dd><dt>Country</dt><dd>{tProfile?.country_of_origin||"—"}</dd><dt>Base</dt><dd>{tProfile?.base_location||"—"}</dd><dt>Engine</dt><dd>{(data.teamEngines||[]).find((x: Row)=>x.team_id===activeTeamId)?.caleris_engines?.name||"Belum ditetapkan"}</dd></dl></Card><Card title="Official Sponsors" eyebrow="ACTIVE BRAND PARTNERS"><div className="s5-sponsor-grid">{teamSponsors.length?teamSponsors.map((contract: Row)=><article className="s5-sponsor-card" key={contract.id}>{contract.sponsor.logo_url?<img src={contract.sponsor.logo_url} alt={contract.sponsor.name+" logo"}/>:<span className="s5-sponsor-mark">{String(contract.sponsor.name||"S").slice(0,1)}</span>}<div><strong>{contract.sponsor.name}</strong><small>{contract.sponsor.industry||"Official partner"}</small><b>{money(Number(contract.annual_contract_amount??contract.contract_amount))} / season</b><small>{contract.duration_seasons||1} season · {contract.renewal_status||"Active"}</small></div></article>):<Empty>Belum ada sponsor yang resmi deal dengan tim ini.</Empty>}</div></Card><Card title="Active Drivers" eyebrow="CURRENT LINE-UP"><Table headers={["Driver","Licence","Contract","Annual Salary"]} rows={drivers.map((d: Row)=>{const c=teamContracts.find((x: Row)=>x.member_id===d.id&&x.season_id===activeSeasonId);return [d.character_name||"Driver",d.license||"—",c?.status||"No contract",c?money(Number(c.annual_salary||0)):"—"]})}/></Card><Card title="Driver History" eyebrow="CONTRACT REGISTER"><Table headers={["Driver","Season","Status","Salary"]} rows={teamContracts.map((c: Row)=>[memberOf(c.member_id)?.character_name||"Driver",(data.seasons||[]).find((s: Row)=>s.id===c.season_id)?.title||"Season",c.status,money(Number(c.annual_salary||0))])}/></Card><Card title="Championship History" eyebrow="TEAM TITLES"><Table headers={["Season","Driver","Division","Title"]} rows={teamContracts.filter((contract: Row)=>(data.finalStandings||[]).some((standing: Row)=>standing.member_id===contract.member_id&&standing.final_position===1&&(data.divisions||[]).some((division: Row)=>division.id===standing.season_division_id&&division.season_id===contract.season_id))).map((contract: Row)=>[ (data.seasons||[]).find((s: Row)=>s.id===contract.season_id)?.title||"Season",memberOf(contract.member_id)?.character_name||"Driver",labelDivision(teamOf(contract.team_id)?.division_key),"Team Champion"])}/></Card><Card title="Achievements" eyebrow="TEAM HALL OF FAME">{ownAchievements.length?<div className="s5-achievements">{ownAchievements.map((a: Row)=><article key={a.id}><Medal/><div><b>{a.title}</b><small>{a.description||"Official Caleris achievement"}</small></div></article>)}</div>:<Empty>Belum ada achievement tim.</Empty>}</Card></>}</section>;
   }
