@@ -84,3 +84,8 @@
 .driver-exhibition-scene .driver-exhibition-top .driver-exhibition-brand strong,.driver-exhibition-count strong{color:#f0e8d8!important}
 .driver-panel-avatar img{object-fit:cover;image-rendering:auto}
 @media(max-width:760px){.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.72),rgba(8,7,6,.2) 48%,transparent 80%),linear-gradient(0deg,rgba(5,5,5,.66),transparent 38%,rgba(5,5,5,.14))!important}}
+
+/* Keep the dark walnut hall readable while retaining the reference's warm amber ceiling glow. */
+.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.46),rgba(8,7,6,.12) 42%,transparent 78%),linear-gradient(0deg,rgba(5,5,5,.34),transparent 34%,rgba(5,5,5,.06))!important;box-shadow:inset 0 0 70px #0006!important}
+.driver-exhibition-webgl{background:radial-gradient(ellipse at 50% 5%,#745333 0%,#30241a 55%,#171411 100%)!important}
+@media(max-width:760px){.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.42),rgba(8,7,6,.08) 48%,transparent 80%),linear-gradient(0deg,rgba(5,5,5,.4),transparent 38%,rgba(5,5,5,.05))!important}}
