@@ -9,11 +9,12 @@ type Season={id:string;title:string;status:string};
 type Contract={id:string;season_id:string;team_id:string;member_id:string;annual_salary:number;status:string;members?:{character_name:string|null;license:string|null}[]};
 type Claim={id:string;period_id:string;member_id:string;amount:number;status:string;paid_at:string|null;season_id:string};
 type PayrollSplit={id:string;claim_id:string;payer_team_id:string;member_id:string;season_id:string;period_id:string;origin_team_id:string;amount:number;share_percent:number;status:string;paid_at:string|null};
+type SalaryBand={license_label:string;salary_min_eur:number;salary_max_eur:number;license_tier:string};
 const cash=(value:number)=>"€ "+Number(value||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const licenseLabel=(value:string|null|undefined)=>String(value||"").trim().toUpperCase()==="A"?"Super License":value||"Lisensi belum tersedia";
 export default function TeamDriverContracts({session,isAdmin}:{session:Session;isAdmin:boolean}){
  const [member,setMember]=useState<Member|null>(null),[teams,setTeams]=useState<Team[]>([]),[seasons,setSeasons]=useState<Season[]>([]);
- const [drivers,setDrivers]=useState<Member[]>([]),[contracts,setContracts]=useState<Contract[]>([]),[claims,setClaims]=useState<Claim[]>([]),[payrollSplits,setPayrollSplits]=useState<PayrollSplit[]>([]);
+ const [drivers,setDrivers]=useState<Member[]>([]),[contracts,setContracts]=useState<Contract[]>([]),[claims,setClaims]=useState<Claim[]>([]),[payrollSplits,setPayrollSplits]=useState<PayrollSplit[]>([]),[salaryBands,setSalaryBands]=useState<SalaryBand[]>([]);
  const [teamId,setTeamId]=useState(""),[seasonId,setSeasonId]=useState(""),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
  const load=useCallback(async()=>{
   if(!supabase)return;setBusy(true);
@@ -29,13 +30,14 @@ export default function TeamDriverContracts({session,isAdmin}:{session:Session;i
   setMember(own);setTeams(nextTeams);setSeasons((seasonRows.data||[]) as Season[]);setDrivers((driverRows.data||[]) as Member[]);
   const chosen=own?.team_id||(isAdmin?teamId||nextTeams[0]?.id||"":"");if(chosen!==teamId)setTeamId(chosen);
   if(!chosen){setContracts([]);setClaims([]);setPayrollSplits([]);setBusy(false);return;}
-  const [c,p,s]=await Promise.all([
+  const [c,p,s,b]=await Promise.all([
    supabase.from("economy_driver_contracts").select("*,members(character_name,license)").eq("team_id",chosen).order("created_at",{ascending:false}),
    supabase.from("economy_payroll_claims").select("id,period_id,member_id,amount,status,paid_at,season_id").eq("team_id",chosen).order("created_at",{ascending:false}),
-   supabase.from("economy_payroll_claim_splits").select("id,claim_id,payer_team_id,member_id,season_id,period_id,origin_team_id,amount,share_percent,status,paid_at").eq("payer_team_id",chosen).order("created_at",{ascending:false})
+   supabase.from("economy_payroll_claim_splits").select("id,claim_id,payer_team_id,member_id,season_id,period_id,origin_team_id,amount,share_percent,status,paid_at").eq("payer_team_id",chosen).order("created_at",{ascending:false}),
+   supabase.from("caleris_driver_salary_bands").select("license_label,license_tier,salary_min_eur,salary_max_eur").order("sort_order")
   ]);
-  if(c.error||p.error||s.error)setNotice(c.error?.message||p.error?.message||s.error?.message||"Gagal memuat detail kontrak.");else setNotice("");
-  setContracts((c.data||[]) as Contract[]);setClaims((p.data||[]) as Claim[]);setPayrollSplits((s.data||[]) as PayrollSplit[]);setBusy(false);
+  if(c.error||p.error||s.error||b.error)setNotice(c.error?.message||p.error?.message||s.error?.message||b.error?.message||"Gagal memuat detail kontrak.");else setNotice("");
+  setContracts((c.data||[]) as Contract[]);setClaims((p.data||[]) as Claim[]);setPayrollSplits((s.data||[]) as PayrollSplit[]);setSalaryBands((b.data||[]) as SalaryBand[]);setBusy(false);
  },[isAdmin,teamId,session.user.id]);
  useEffect(()=>{void load()},[load]);
  const visibleContracts=useMemo(()=>contracts.filter(c=>!seasonId||c.season_id===seasonId),[contracts,seasonId]);
@@ -48,7 +50,8 @@ export default function TeamDriverContracts({session,isAdmin}:{session:Session;i
    <label>Season<select value={seasonId} onChange={e=>setSeasonId(e.target.value)}><option value="">Semua season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label>
   </div>{selectedTeam&&<p className="team-contracts-muted">Menampilkan kontrak milik {selectedTeam.name}. {selectedSeason?"Filter season "+selectedSeason.title+".":"Pilih season untuk mempersempit daftar."}</p>}{!owner&&!isAdmin&&<p className="team-contracts-muted"><ShieldCheck size={16}/> Data kontrak hanya tersedia untuk Team Owner.</p>}</section>
   <section className="team-contracts-card"><div className="team-contracts-section-title"><div><span className="section-eyebrow">AGREED CONTRACTS</span><h2>Kontrak Driver</h2></div><span>{visibleContracts.length} kontrak</span></div>
-   {busy?<p className="team-contracts-muted">Memuat kontrak...</p>:visibleContracts.length===0?<p className="team-contracts-muted">Belum ada kontrak untuk tim dan season yang dipilih.</p>:visibleContracts.map(c=><article className="team-contract-row" key={c.id}><div><strong>{c.members?.[0]?.character_name||drivers.find(d=>d.id===c.member_id)?.character_name||"Driver"}</strong><small>{licenseLabel(c.members?.[0]?.license)} · {seasons.find(s=>s.id===c.season_id)?.title||"Season"}</small><small>Gaji tahunan: {cash(c.annual_salary)} · {claims.filter(x=>x.member_id===c.member_id&&x.season_id===c.season_id).length} payroll period</small></div><span className="team-contracts-muted">{c.status==="pending_registration"?"Menunggu registrasi FIA":c.status==="active"?"Active":c.status==="suspended"?"Suspended":"Ended"}</span></article>)}
+   {busy?<p className="team-contracts-muted">Memuat kontrak...</p>:visibleContracts.length===0?<p className="team-contracts-muted">Belum ada kontrak untuk tim dan season yang dipilih.</p>:visibleContracts.map(c=><article className="team-contract-row" key={c.id}><div><strong>{c.members?.[0]?.character_name||drivers.find(d=>d.id===c.member_id)?.character_name||"Driver"}</strong><small>{licenseLabel(c.members?.[0]?.license)} · {seasons.find(s=>s.id===c.season_id)?.title||"Season"}</small><small>Gaji tahunan: {cash(c.annual_salary)} · {claims.filter(x=>x.member_id===c.member_id&&x.season_id===c.season_id).length} payroll period</small>
+     {(()=>{const band=salaryBands.find(b=>b.license_label.toLowerCase()===String(c.members?.[0]?.license||"").toLowerCase());const invalid=!band||Number(c.annual_salary)<Number(band.salary_min_eur)||Number(c.annual_salary)>Number(band.salary_max_eur);return invalid?<small className="team-contracts-legacy">LEGACY DATA · di luar rentang lisensi resmi saat ini</small>:<small className="team-contracts-muted">Band resmi: {cash(Number(band.salary_min_eur))} – {cash(Number(band.salary_max_eur))}</small>})()}</div><span className="team-contracts-muted">{c.status==="pending_registration"?"Menunggu registrasi FIA":c.status==="active"?"Active":c.status==="suspended"?"Suspended":"Ended"}</span></article>)}
   </section>
   <section className="team-contracts-card"><div className="team-contracts-section-title"><div><span className="section-eyebrow">PAYROLL CONTRIBUTION</span><h2>Riwayat pembagian gaji</h2></div><span>{payrollSplits.length} pembayaran</span></div>
    {payrollSplits.length===0?<p className="team-contracts-muted">Belum ada pembayaran gaji yang dibebankan ke tim ini.</p>:payrollSplits.map(split=><article className="team-contract-row" key={split.id}><div><strong>{drivers.find(d=>d.id===split.member_id)?.character_name||"Driver"}</strong><small>{seasons.find(s=>s.id===split.season_id)?.title||"Season"} · {split.share_percent}% bagian tim · {split.status}</small><small>{cash(split.amount)}{split.paid_at?" · "+new Date(split.paid_at).toLocaleDateString("id-ID"):" · Menunggu saldo tim"}</small></div><span className="team-contracts-muted">{split.status==="paid"?"Paid":"Pending"}</span></article>)}
