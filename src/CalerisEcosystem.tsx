@@ -12,6 +12,11 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [loading,setLoading]=useState(true),[error,setError]=useState(""),[team,setTeam]=useState<TeamInfo|null>(null);
  const [wallet,setWallet]=useState(0),[valuation,setValuation]=useState<number|null>(null),[reputation,setReputation]=useState<number|null>(null);
  const [development,setDevelopment]=useState<{part_key:string;current_value:number}[]>([]);
+ const [contracts,setContracts]=useState<{id:string;member_id:string;annual_salary:number;status:string;driver_name:string}[]>([]);
+ const [raceForm,setRaceForm]=useState<{id:string;round_id:string;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
+ const [hqFacilities,setHqFacilities]=useState<{facility_key:string;level:number;condition:number;asset_value:number}[]>([]);
+ const [loanRisk,setLoanRisk]=useState({active:0,overdue:0});
+ const [teamTarget,setTeamTarget]=useState<{vision:string|null;long_term_target:string|null}>({vision:null,long_term_target:null});
  const [sponsors,setSponsors]=useState<{id:string;contract_amount:number;annual_contract_amount:number|null;status:string}[]>([]);
  const [news,setNews]=useState<NewsItem[]>([]);
  const [achievements,setAchievements]=useState<{id:string;title:string;description:string|null;awarded_at:string;target_kind:string}[]>([]);
@@ -26,18 +31,39 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    if(profile?.member_id){const {data:member}=await supabase.from("members").select("team_id").eq("id",profile.member_id).maybeSingle();if(member?.team_id){const {data}=await supabase.from("teams").select("id,name,division_key").eq("id",member.team_id).maybeSingle();currentTeam=data as TeamInfo|null;}}
    setTeam(currentTeam);
    if(currentTeam){
-    const [walletRes,valueRes,repRes,devRes,sponsorRes]=await Promise.all([
+    const [walletRes,valueRes,repRes,devRes,sponsorRes,contractRes,loanRes,hqRes,profileRes,seasonRes]=await Promise.all([
      supabase.from("economy_wallet_accounts").select("balance").eq("account_kind","team").eq("team_id",currentTeam.id).maybeSingle(),
      supabase.from("caleris_team_valuations").select("total_valuation").eq("team_id",currentTeam.id).order("assessed_at",{ascending:false}).limit(1).maybeSingle(),
      supabase.from("caleris_team_reputation").select("score").eq("team_id",currentTeam.id).maybeSingle(),
      supabase.from("caleris_team_development_parts").select("part_key,current_value").eq("team_id",currentTeam.id).order("part_key"),
-     supabase.from("caleris_sponsorship_contracts").select("id,contract_amount,annual_contract_amount,status").eq("target_kind","team").eq("target_team_id",currentTeam.id).eq("status","active")
+     supabase.from("caleris_sponsorship_contracts").select("id,contract_amount,annual_contract_amount,status").eq("target_kind","team").eq("target_team_id",currentTeam.id).eq("status","active"),
+     supabase.from("economy_driver_contracts").select("id,member_id,annual_salary,status").eq("team_id",currentTeam.id).eq("status","active"),
+     supabase.from("economy_cash_loans").select("total_due,amount_repaid,status").eq("loan_type","team").eq("team_id",currentTeam.id).in("status",["active","overdue"]),
+     supabase.from("caleris_team_hq_facilities").select("facility_key,level,condition,asset_value").eq("team_id",currentTeam.id),
+     supabase.from("caleris_team_profiles").select("vision,long_term_target").eq("team_id",currentTeam.id).maybeSingle(),
+     supabase.from("license_seasons").select("id").neq("status","draft").order("starts_on",{ascending:false}).limit(1).maybeSingle()
     ]);
     if(walletRes.error)throw walletRes.error;setWallet(Number(walletRes.data?.balance??0));
     setValuation(valueRes.error?null:Number(valueRes.data?.total_valuation??0));setReputation(repRes.error?null:Number(repRes.data?.score??0));
     setDevelopment((devRes.data??[]) as {part_key:string;current_value:number}[]);
     setSponsors((sponsorRes.data??[]) as {id:string;contract_amount:number;annual_contract_amount:number|null;status:string}[]);
-   }else{setWallet(0);setValuation(null);setReputation(null);setDevelopment([]);setSponsors([]);}
+    setLoanRisk({active:(loanRes.data??[]).reduce((sum:any,row:any)=>sum+Math.max(0,Number(row.total_due)-Number(row.amount_repaid)),0),overdue:(loanRes.data??[]).filter((row:any)=>row.status==="overdue").reduce((sum:any,row:any)=>sum+Math.max(0,Number(row.total_due)-Number(row.amount_repaid)),0)});
+    setHqFacilities((hqRes.data??[]) as {facility_key:string;level:number;condition:number;asset_value:number}[]);
+    setTeamTarget({vision:profileRes.data?.vision??null,long_term_target:profileRes.data?.long_term_target??null});
+    if(seasonRes.data?.id){
+      const {data:seasonContracts}=await supabase.from("economy_driver_contracts").select("id,member_id,annual_salary,status").eq("team_id",currentTeam.id).eq("season_id",seasonRes.data.id).eq("status","active");
+      const memberIds=(seasonContracts??[]).map((row:any)=>row.member_id);
+      const {data:memberRows}=memberIds.length?await supabase.from("members").select("id,character_name").in("id",memberIds):{data:[]};
+      const nameMap=new Map((memberRows??[]).map((m:any)=>[m.id,m.character_name]));
+      setContracts((seasonContracts??[]).map((row:any)=>({...row,driver_name:nameMap.get(row.member_id)??"Driver"})));
+    }else setContracts([]);
+    const {data:publishedRaces}=await supabase.from("caleris_race_results").select("round_id").not("published_at","is",null);
+    const publishedRoundIds=[...new Set((publishedRaces??[]).map((row:any)=>row.round_id).filter(Boolean))];
+    if(publishedRoundIds.length){
+      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
+      setRaceForm((entries??[]) as any);
+    }else setRaceForm([]);
+   }else{setWallet(0);setValuation(null);setReputation(null);setDevelopment([]);setSponsors([]);setContracts([]);setRaceForm([]);setHqFacilities([]);setLoanRisk({active:0,overdue:0});setTeamTarget({vision:null,long_term_target:null});}
    if(mode==="news"){
     const [ann,stories,races]=await Promise.all([
      supabase.from("caleris_announcements").select("id,title,body,category,published_at,created_at").eq("is_published",true).order("published_at",{ascending:false}).limit(30),
@@ -70,6 +96,9 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
   {error&&<p className="ce-error">{error}</p>}
   {(mode==="owner"||mode==="finance")&&<>{!team?<div className="workspace-card"><p>Akun ini belum terhubung ke tim. Informasi keuangan tim hanya tersedia untuk anggota tim yang berwenang.</p></div>:<>
    <div className="ce-metrics"><article><Wallet/><span>TEAM WALLET</span><strong>{currency(wallet)}</strong></article><article><BarChart3/><span>TEAM VALUATION</span><strong>{valuation===null?"—":currency(valuation)}</strong></article><article><Award/><span>REPUTATION SCORE</span><strong>{reputation===null?"—":reputation}</strong></article><article><Activity/><span>ACTIVE SPONSORS</span><strong>{sponsors.length}</strong></article></div>
+   <div className="ce-columns"><section className="workspace-card"><div className="ce-title"><h2>Driver Contracts</h2><span>{contracts.length} active</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong>{contract.driver_name}</strong><span>{currency(Number(contract.annual_salary))} / season</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section><section className="workspace-card"><div className="ce-title"><h2>HQ Facilities</h2><span>{hqFacilities.length} facilities</span></div>{hqFacilities.map(f=><div className="ce-row" key={f.facility_key}><strong>{f.facility_key.replaceAll("_"," ")}</strong><span>Lv. {f.level} · {Number(f.condition).toFixed(0)}%</span></div>)}{!hqFacilities.length&&<p className="ce-empty">Data fasilitas belum tersedia.</p>}</section></div>
+   <div className="ce-columns"><section className="workspace-card"><div className="ce-title"><h2>Financial Risk</h2><span>Active team loans</span></div><div className="ce-finance-summary"><span>Outstanding debt</span><strong>{currency(loanRisk.active)}</strong></div><div className="ce-finance-summary"><span>Overdue exposure</span><strong>{currency(loanRisk.overdue)}</strong></div></section><section className="workspace-card"><div className="ce-title"><h2>Season Target</h2><span>Team strategy</span></div><p className="ce-note">{teamTarget.vision||"Visi tim belum ditentukan."}</p><strong>{teamTarget.long_term_target||"Target jangka panjang belum ditentukan."}</strong></section></div>
+   <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong>{entry.driver_name_snapshot??"Driver"}</strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
    <div className="ce-columns"><section className="workspace-card"><div className="ce-title"><h2>Active Sponsorship</h2><span>{sponsors.length} contracts</span></div>{sponsors.length?sponsors.map(s=><div className="ce-row" key={s.id}><strong>Contract</strong><span>{currency(Number(s.annual_contract_amount??s.contract_amount))} / season</span></div>):<p className="ce-empty">Belum ada kontrak sponsorship aktif.</p>}</section><section className="workspace-card"><div className="ce-title"><h2>Car Development</h2><span>{development.length} attributes</span></div>{development.slice(0,8).map(p=><div className="ce-development" key={p.part_key}><span>{p.part_key.replaceAll("_"," ")}</span><strong>{Number(p.current_value).toFixed(0)}</strong><i><b style={{width:Math.max(0,Math.min(100,Number(p.current_value)))+"%"}}/></i></div>)}{!development.length&&<p className="ce-empty">Data development belum tersedia.</p>}</section></div>
    <section className="workspace-card"><div className="ce-title"><h2>Financial Intelligence</h2><span>Official Economy Engine</span></div><p className="ce-note">Saldo diambil langsung dari wallet tim. Transaksi dan pembayaran tetap dikelola oleh Economy Engine, tidak ada saldo bayangan di dashboard ini.</p><div className="ce-finance-summary"><span>Available cash</span><strong>{currency(wallet)}</strong></div><div className="ce-finance-summary"><span>Active sponsor commitment</span><strong>{currency(sponsors.reduce((sum,s)=>sum+Number(s.annual_contract_amount??s.contract_amount),0))}</strong></div></section>
   </>}</>}
