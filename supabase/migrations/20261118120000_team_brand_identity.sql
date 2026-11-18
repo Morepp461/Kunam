@@ -46,7 +46,9 @@ begin
     if v_division not in ('premio','zwei') then raise exception 'Pilih divisi awal yang valid.'; end if;
     v_main_color:=upper(btrim(coalesce(p_payload->>'team_main_color','')));
     v_secondary_color:=upper(btrim(coalesce(p_payload->>'team_secondary_color','')));
-    if v_main_color !~ '^#[0-9A-F]{6}
+    if v_main_color !~ '^#[0-9A-F]{6}$' or v_secondary_color !~ '^#[0-9A-F]{6}$' then
+      raise exception 'Main Color dan Secondary Color wajib dipilih dari palette tim.';
+    end if;
 
     perform pg_catalog.pg_advisory_xact_lock(
       pg_catalog.hashtextextended('main-event-division:'||v_division,0)
@@ -97,116 +99,6 @@ begin
         selected_engine_id=case when v_engine_choice='buy' then v_engine_id else null end,
         main_color=v_main_color,
         secondary_color=v_secondary_color
-    where id=v_registration_id and user_id=(select auth.uid()) and status='pending';
-  end if;
-  return v_result;
-end;
-$function$
- or v_secondary_color !~ '^#[0-9A-F]{6}
-
-    perform pg_catalog.pg_advisory_xact_lock(
-      pg_catalog.hashtextextended('main-event-division:'||v_division,0)
-    );
-    select
-      (select count(*) from public.teams t where lower(t.division_key)=v_division)
-      +
-      (select count(*) from public.caleris_member_registrations r
-       where r.requested_role='Owner' and r.status='pending'
-         and r.initial_division=v_division)
-    into v_count;
-
-    if (v_division='premio' and v_count>=12) or (v_division='zwei' and v_count>=14) then
-      raise exception 'Divisi yang dipilih sudah tidak memiliki slot pendaftaran.';
-    end if;
-
-    v_engine_choice:=p_payload->>'engine_choice';
-    if v_engine_choice not in ('new','buy') then raise exception 'Pilih opsi Engine.'; end if;
-
-    if v_engine_choice='new' then
-      v_engine_name:=nullif(btrim(p_payload->>'requested_engine_name'),'');
-      if v_engine_name is null or length(v_engine_name) not between 2 and 60 then
-        raise exception 'Nama Engine wajib diisi (2–60 karakter).';
-      end if;
-      if exists(select 1 from public.caleris_engines where lower(name)=lower(v_engine_name)) then
-        raise exception 'Nama Engine sudah digunakan.';
-      end if;
-    else
-      v_engine_id:=nullif(p_payload->>'selected_engine_id','')::uuid;
-      if v_engine_id is null or not exists(
-        select 1 from public.caleris_engines e
-        where e.id=v_engine_id and e.is_active and e.is_for_sale
-          and e.owner_team_id is not null
-          and e.asking_price between 5000000 and 25000000
-      ) then
-        raise exception 'Engine yang dipilih tidak tersedia untuk dibeli.';
-      end if;
-    end if;
-  end if;
-
-  v_result:=public.submit_main_event_registration(p_payload);
-  v_registration_id:=(v_result->>'registration_id')::uuid;
-  if v_role='Owner' then
-    update public.caleris_member_registrations
-    set initial_division=v_division,
-        engine_choice=v_engine_choice,
-        requested_engine_name=case when v_engine_choice='new' then v_engine_name else null end,
-        selected_engine_id=case when v_engine_choice='buy' then v_engine_id else null end
-    where id=v_registration_id and user_id=(select auth.uid()) and status='pending';
-  end if;
-  return v_result;
-end;
-$function$
- then
-      raise exception 'Main Color dan Secondary Color wajib dipilih dari palette tim.';
-    end if;
-
-    perform pg_catalog.pg_advisory_xact_lock(
-      pg_catalog.hashtextextended('main-event-division:'||v_division,0)
-    );
-    select
-      (select count(*) from public.teams t where lower(t.division_key)=v_division)
-      +
-      (select count(*) from public.caleris_member_registrations r
-       where r.requested_role='Owner' and r.status='pending'
-         and r.initial_division=v_division)
-    into v_count;
-
-    if (v_division='premio' and v_count>=12) or (v_division='zwei' and v_count>=14) then
-      raise exception 'Divisi yang dipilih sudah tidak memiliki slot pendaftaran.';
-    end if;
-
-    v_engine_choice:=p_payload->>'engine_choice';
-    if v_engine_choice not in ('new','buy') then raise exception 'Pilih opsi Engine.'; end if;
-
-    if v_engine_choice='new' then
-      v_engine_name:=nullif(btrim(p_payload->>'requested_engine_name'),'');
-      if v_engine_name is null or length(v_engine_name) not between 2 and 60 then
-        raise exception 'Nama Engine wajib diisi (2–60 karakter).';
-      end if;
-      if exists(select 1 from public.caleris_engines where lower(name)=lower(v_engine_name)) then
-        raise exception 'Nama Engine sudah digunakan.';
-      end if;
-    else
-      v_engine_id:=nullif(p_payload->>'selected_engine_id','')::uuid;
-      if v_engine_id is null or not exists(
-        select 1 from public.caleris_engines e
-        where e.id=v_engine_id and e.is_active and e.is_for_sale
-          and e.owner_team_id is not null
-          and e.asking_price between 5000000 and 25000000
-      ) then
-        raise exception 'Engine yang dipilih tidak tersedia untuk dibeli.';
-      end if;
-    end if;
-  end if;
-
-  v_result:=public.submit_main_event_registration(p_payload);
-  v_registration_id:=(v_result->>'registration_id')::uuid;
-  if v_role='Owner' then
-    update public.caleris_member_registrations
-    set initial_division=v_division,
-        engine_choice=v_engine_choice,
-        requested_engine_name=case when v_engine_choice='new' then v_engine_name else null end,
-        selected_engine_id=case when v_engine_choice='buy' then v_engine_id else null end
     where id=v_registration_id and user_id=(select auth.uid()) and status='pending';
   end if;
   return v_result;
