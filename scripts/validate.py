@@ -204,8 +204,8 @@ def main():
     contracts_source = contracts_component.read_text(encoding="utf-8")
     for fragment in ["season_calendar_periods", "season_period_rounds", "economy_driver_contracts", "economy_payroll_claims", "fia_create_season_calendar", "payroll_for_period_round", "admin_process_pending_economy_payroll", "is_caleris_fia_or_admin"]:
         assert fragment in calendar_sql, f"Season calendar/payroll migration missing: {fragment}"
-    for fragment in ["Off Season", "Pre Season", "Race Periode", "Break Balancing Periode", "End Season", "Reschedule", "3–5 round", "fia_create_season_calendar", "PERIOD_SEQUENCE"]:
-        assert fragment in calendar_source, f"Season calendar UI missing: {fragment}"
+    for fragment in ["Off Season", "Pre Season", "Race Period", "Break Balancing", "End Season", "Reschedule", "fia_reschedule_season_calendar", "12 periode"]:
+        assert fragment in calendar_source, f"Automated Season Calendar UI missing: {fragment}"
     assert "annual_salary" in contracts_source and "economy_driver_contracts" in contracts_source
 
     quest_page = ROOT / "src/QuestPage.tsx"
