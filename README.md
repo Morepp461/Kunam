@@ -22,6 +22,7 @@
 - Discord OAuth sign-in through Supabase Auth.
 - Rules page with an admin editor supporting draft and publish states.
 - Admin-managed Discord community invite URL.
+- Team Directory uses responsive team identity cards with main/secondary color gradients, team logos, division, base nation, hometown, driver roster, points, and wins.
 
 ### 3D Driver Exhibition
 
