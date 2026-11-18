@@ -192,7 +192,29 @@ Activation snapshots the Driver name, team identity, contract, and salary for th
 
 The Circuit selector in License Scoring Engine reads directly from the Circuit Pool view. Do not maintain a second hardcoded circuit list.
 
-Driver transfer negotiations are available only during End Season and Off Season. The server also enforces the window, so direct RPC calls cannot bypass it. A team with fewer than two active Drivers may recruit an unassigned Free Agent outside the normal transfer window. New Team Owner registrations remain available mid-season while the division quota has space. Current quota limits are 12 teams for Caleris Premio and 14 teams for Caleris Zwei; the registration RPC checks existing teams and pending Owner applications together.
+Driver transfer negotiations are available only during End Season and Off Season. The server also enforces the window, so direct RPC calls cannot bypass it. A team with fewer than two active Drivers may recruit an unassigned Free Agent outside the normal transfer window, but the exception is a two-party annual-salary negotiation in Main Event → Transfer Market. The Free Agent is not assigned directly to a team: after both sides agree, a pending-registration contract is created and the Team Owner submits the Driver through Team Panel → Driver Registration to add the Driver to the FIA season roster. Permanent transfers and Driver Loans remain restricted to End Season and Off Season. New Team Owner registrations remain available mid-season while the division quota has space. Current quota limits are 12 teams for Caleris Premio and 14 teams for Caleris Zwei; the registration RPC checks existing teams and pending Owner applications together.
+
+## Fixed Driver License Salary Bands
+
+Driver annual salary is fixed to the official license band and is stored in EUR per season:
+
+| License | Minimum salary | Maximum salary |
+|---|---:|---:|
+| Bronze | €5,000,000 | €7,500,000 |
+| Silver | €7,600,000 | €12,000,000 |
+| Gold | €12,100,000 | €22,500,000 |
+| Super License | €22,600,000 | €45,000,000 |
+
+The database owns the fixed salary-band reference. Contract creation and every salary counter-offer are validated server-side against the Driver's current license. The existing legacy license label `A` is normalized to Super License for salary validation and display, while the public vacancy dropdown exposes only the four official labels. The same band table powers Driver vacancy validation: the minimum salary cannot be below the selected minimum license's floor, and the maximum salary cannot exceed the Super License ceiling of €45,000,000.
+
+### Contract and recruitment workflow
+
+- Main Event → Transfer Market is the only place to negotiate Driver recruitment. Team-to-team Permanent Transfer and Driver Loan retain their existing End Season / Off Season window and FIA approval rules.
+- Unassigned Free Agents can be recruited mid-season only through a two-party salary negotiation in Transfer Market. Direct assignment/signing is disabled.
+- Once the Free Agent and Team Owner agree, the system creates a locked pending-registration salary contract. The Driver is not assigned to the team until the Team Owner submits the contract through Team Panel → Driver Registration.
+- Driver Registration is used both for mid-season Free Agent registration and for the complete contracted roster during Pre Season. Active-season registration appends immutable identity snapshots and initializes only unprocessed future round standings; completed race history is not rewritten.
+- Team Panel → Driver Contracts is read-only. It displays agreed salary, season, contract status, and payroll history. Salary, team, member, and season identity cannot be edited after agreement. Lifecycle changes such as transfer execution, season expiry, inactivity, or an authorized termination close the contract through server-side workflows.
+- Team Panel → Place Job Advert automatically uses the signed-in Team Owner's team. The form has no editable team selector. Driver vacancies use a license dropdown and salary-range validation; Team Owner vacancies omit license and salary because the position has no Driver license or team-paid salary requirement. Job Search continues to read the published team adverts.
 
 ## Panel Role Access
 
@@ -382,7 +404,7 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 - Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
 - Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
 - Reschedule updates a period's dates and records an immutable calendar revision.
-- Team Panel → Driver Contracts allows the Team Owner to set each Driver's annual salary for a season. The contract is team- and season-specific; no default salary is assumed.
+- Team Panel → Driver Contracts is a read-only view of the team's agreed Driver contracts and payroll history. Salary is set through the validated two-party negotiation workflow, enforced by the fixed license salary bands, and cannot be edited directly on the contracts page.
 - Payroll is calculated as annual salary divided by the actual number of Race Periods configured for that season. Two-decimal rounding differences are reconciled in the final Race Period so total season salary equals the contract amount.
 - Payroll runs automatically after FIA/Admin processes the final round of a Race Period. Funds move directly from the matching Team Wallet to the Driver Wallet through the immutable double-entry ledger.
 - Payroll cannot create a negative Team Wallet. If funds are insufficient, the payroll claim remains pending and Admin can process pending payroll after the Team Wallet is funded.
