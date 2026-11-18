@@ -74,7 +74,7 @@ Deno.serve(async (req: Request) => {
         const { data: story } = await db.from("caleris_sponsorship_story_events")
           .select("id,headline,body,contract_id,visibility")
           .eq("id", sourceId).eq("visibility", "public").maybeSingle();
-        if (story && story.headline === body.title && story.body === body.description) {
+        if (story && story.headline.trim() === String(body.title).trim() && story.body.trim().slice(0, 3500) === String(body.description).trim().slice(0, 3500)) {
           const { data: contract } = await db.from("caleris_sponsorship_contracts")
             .select("id").eq("id", story.contract_id).eq("target_team_id", member.team_id).maybeSingle();
           authorized = Boolean(contract?.id);
