@@ -109,10 +109,20 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
         if (item.path && item.signedUrl) avatarUrlByPath.set(item.path, item.signedUrl);
       });
     }
-    const membersWithAvatars = directoryMembers.map((m: Row) => ({
-      ...m,
-      avatar_url: m.avatar_path ? avatarUrlByPath.get(m.avatar_path) || null : null,
-    }));
+    const sessionAvatar = String(session.user.user_metadata?.avatar_url || session.user.user_metadata?.picture || "");
+    const ownAvatar = ownProfile?.avatar_url || sessionAvatar || null;
+    const membersWithAvatars = directoryMembers.map((m: Row) => {
+      const avatarPath = String(m.avatar_path || "");
+      const publicAvatar = avatarPath
+        ? (avatarPath.startsWith("https://") || avatarPath.startsWith("http://")
+          ? avatarPath
+          : supabase.storage.from("profile-avatars").getPublicUrl(avatarPath).data.publicUrl)
+        : null;
+      return {
+        ...m,
+        avatar_url: m.id === ownMember?.id ? (ownAvatar || publicAvatar) : publicAvatar,
+      };
+    });
     const seasons = (seasonsQ.data || []) as Row[];
     const activeSeason = seasons.find(s => s.status === "active") || seasons[0] || null;
     const divisions = (divisionsQ.data || []) as Row[];
