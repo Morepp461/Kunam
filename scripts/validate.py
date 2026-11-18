@@ -231,7 +231,7 @@ def main():
     assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
     assert 'import FIAEventControlCenter from "./FIAEventControlCenter"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
-    assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
+    assert "CALERIS MASTERS · FIA AUTOMATION" in license_engine_source and "fia_create_caleris_season" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to="/admin/license-engine"' in app, "License Scoring Engine must be Admin-only"
 
@@ -309,7 +309,7 @@ def main():
     assert "delete from public.license_round_standings" not in roster_sql.lower()
     assert "delete from public.license_final_standings" not in roster_sql.lower()
     assert "delete from public.license_team_final_standings" not in roster_sql.lower()
-    assert 'economy_driver_contracts' in license_engine and 'c.season_id===selectedSeason' in license_engine and 'c.team_id===d.team_id' in license_engine
+    assert "fia_create_caleris_season" in license_engine and "CALERIS PREMIO" in license_engine and "CALERIS ZWEI" in license_engine
     assert "ended_contracts" in expiry_sql and "set status='ended'" in expiry_sql and "contracts_ended" in expiry_sql
     assert "driver_name_snapshot" in stage5_panel and "team_name_snapshot" in stage5_panel and "r.team_name_snapshot" in stage5_panel
     recruitment_migration = ROOT / "supabase/migrations/20261118190000_license_salary_and_team_recruitment_workflows.sql"
