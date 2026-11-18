@@ -1,4 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
+import type {FormEvent} from "react";
 import {BriefcaseBusiness,LoaderCircle,Send} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import "./marketplace-directory.css";
@@ -48,7 +49,7 @@ export default function TeamJobAdvert(){
   if(band){setSalaryMin(String(band.salary_min_eur));setSalaryMax(String(salaryCeiling));}
   else{setSalaryMin("");setSalaryMax("");}
  };
- const publish=async(e:React.FormEvent<HTMLFormElement>)=>{
+ const publish=async(e:FormEvent<HTMLFormElement>)=>{
   e.preventDefault();if(!supabase||!team)return;
   if(position==="Driver"){
    const min=Number(salaryMin),max=Number(salaryMax);
@@ -71,9 +72,8 @@ export default function TeamJobAdvert(){
   });
   setSaving(false);
   if(error){setNotice(error.message);return;}
-  setNotice("Lowongan "+position+" berhasil dipublikasikan untuk "+team.name+".");
   setTitle("");setDescription("");setRequirements("");setOpenSeats("1");setAvailableFrom("");
-  await load();
+  await load();setNotice("Lowongan "+position+" berhasil dipublikasikan untuk "+team.name+".");
  };
 
  return <section className="workspace">
