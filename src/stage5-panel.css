@@ -92,3 +92,5 @@
 .s5-sponsor-card strong{font-size:13px;overflow-wrap:anywhere}
 .s5-sponsor-card small{font-size:10px;color:#a5a5a5}
 .s5-sponsor-card b{font-size:12px;color:#dfc18f}
+
+.s5-export-card{margin-top:14px}.s5-export-card .s5-primary{display:inline-flex;align-items:center;justify-content:center;gap:9px}.s5-export-card .s5-footnote{display:block;margin-top:10px}
