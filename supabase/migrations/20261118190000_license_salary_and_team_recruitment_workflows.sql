@@ -117,7 +117,7 @@ create policy "Negotiation parties read free agent salary negotiations"
  on public.caleris_free_agent_contract_negotiations for select to authenticated using (
   exists(select 1 from public.profiles p where p.user_id=(select auth.uid()) and p.member_id=driver_member_id)
   or exists(select 1 from public.profiles p join public.members m on m.id=p.member_id
-    where p.user_id=(select auth.uid()) and m.role in ('Owner','Principal') and m.team_id=team_id)
+    where p.user_id=(select auth.uid()) and m.role in ('Owner','Principal') and m.team_id=caleris_free_agent_contract_negotiations.team_id)
   or exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))
  );
 drop policy if exists "Negotiation parties read free agent salary offers" on public.caleris_free_agent_contract_offers;
@@ -125,10 +125,10 @@ create policy "Negotiation parties read free agent salary offers"
  on public.caleris_free_agent_contract_offers for select to authenticated using (
   exists(select 1 from public.caleris_free_agent_contract_negotiations n
     join public.profiles p on p.member_id=n.driver_member_id
-    where n.id=negotiation_id and p.user_id=(select auth.uid()))
+    where n.id=caleris_free_agent_contract_offers.negotiation_id and p.user_id=(select auth.uid()))
   or exists(select 1 from public.caleris_free_agent_contract_negotiations n
     join public.profiles p on true join public.members m on m.id=p.member_id
-    where n.id=negotiation_id and p.user_id=(select auth.uid()) and m.team_id=n.team_id)
+    where n.id=caleris_free_agent_contract_offers.negotiation_id and p.user_id=(select auth.uid()) and m.team_id=n.team_id)
   or exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))
  );
 
@@ -267,7 +267,6 @@ declare
  v_division public.license_season_divisions%rowtype;
  v_contract public.economy_driver_contracts%rowtype;
  v_roster_count integer;
- v_today date:=(now() at time zone 'Asia/Jakarta')::date;
 begin
  select m.* into v_actor from public.profiles p join public.members m on m.id=p.member_id
  where p.user_id=(select auth.uid());
@@ -275,9 +274,11 @@ begin
   raise exception 'Hanya Team Owner yang dapat mengirim registrasi Driver ke FIA.';
  end if;
  select * into v_team from public.teams where id=v_actor.team_id for update;
+ if not found then raise exception 'Tim tidak ditemukan.'; end if;
  select * into v_driver from public.members where id=p_member_id and role='Driver' for update;
+ if not found then raise exception 'Driver tidak ditemukan.'; end if;
  select * into v_season from public.license_seasons where id=p_season_id;
- if not found or v_driver.id is null then raise exception 'Driver atau season tidak ditemukan.'; end if;
+ if not found then raise exception 'Season tidak ditemukan.'; end if;
  if v_season.status not in ('draft','active') then raise exception 'Registrasi hanya tersedia pada Pre Season atau season aktif.'; end if;
  select * into v_division from public.license_season_divisions
  where season_id=p_season_id and lower(division_key)=lower(v_team.division_key) limit 1;
