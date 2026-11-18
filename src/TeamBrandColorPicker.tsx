@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import { TEAM_COLOR_GROUPS } from "./lib/teamColorPalette";
 type Props={label:string;value:string;onChange:(value:string)=>void};
 export default function TeamBrandColorPicker({label,value,onChange}:Props){
- const [activeGroup,setActiveGroup]=useState(TEAM_COLOR_GROUPS[0].name);
+ const [activeGroup,setActiveGroup]=useState("Caleris Classics");
  const group=TEAM_COLOR_GROUPS.find(item=>item.name===activeGroup)||TEAM_COLOR_GROUPS[0];
  return <section className="mer-team-color-picker" aria-label={label}>
   <div className="mer-team-color-heading"><strong>{label}</strong><span className="mer-team-color-current"><i style={{backgroundColor:value}}/></span></div>
