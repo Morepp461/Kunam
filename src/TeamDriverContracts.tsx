@@ -51,6 +51,6 @@ export default function TeamDriverContracts({session,isAdmin}:{session:Session;i
   </section>
   <section className="team-contracts-card"><div className="team-contracts-section-title"><div><span className="section-eyebrow">PAYROLL CONTRIBUTION</span><h2>Riwayat pembagian gaji</h2></div><span>{payrollSplits.length} pembayaran</span></div>
    {payrollSplits.length===0?<p className="team-contracts-muted">Belum ada pembayaran gaji yang dibebankan ke tim ini.</p>:payrollSplits.map(split=><article className="team-contract-row" key={split.id}><div><strong>{drivers.find(d=>d.id===split.member_id)?.character_name||"Driver"}</strong><small>{seasons.find(s=>s.id===split.season_id)?.title||"Season"} · {split.share_percent}% bagian tim · {split.status}</small><small>{cash(split.amount)}{split.paid_at?" · "+new Date(split.paid_at).toLocaleDateString("id-ID"):" · Menunggu saldo tim"}</small></div><span className="team-contracts-muted">{split.status==="paid"?"Paid":"Pending"}</span></article>)}
-  </section><div className="team-contracts-footer"><button className="team-contracts-refresh" onClick={()=>void load()} disabled={busy}><RefreshCw size={14}/> Refresh data</button></div>
+  </section><div className="team-contracts-footer"><button className="economy-secondary-button" onClick={()=>void load()} disabled={busy}><RefreshCw size={14}/> Refresh data</button></div>
  </section>;
 }
