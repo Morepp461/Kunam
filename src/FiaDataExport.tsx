@@ -12,17 +12,19 @@ export default function FiaDataExport({isAdmin,isFia}:{isAdmin:boolean;isFia:boo
   if(!supabase||(!isAdmin&&!isFia)){setNotice("Akses export hanya untuk Admin dan FIA.");return}
   setBusy(true);setNotice("");
   try{
-   const [membersQ,teamsQ,driverQ,driverDevQ,teamDevQ,profilesQ]=await Promise.all([
+   const [membersQ,teamsQ,driverQ,driverDevQ,teamDevQ,profilesQ,memberRecordsQ,teamRecordsQ]=await Promise.all([
     supabase.from("caleris_member_directory").select("*").order("character_name"),
     supabase.from("caleris_team_directory").select("*").order("name"),
     supabase.from("caleris_driver_attributes").select("*"),
     supabase.from("caleris_driver_development_attributes").select("*"),
     supabase.from("caleris_team_development_parts").select("*"),
-    supabase.from("caleris_team_profiles").select("*")
+    supabase.from("caleris_team_profiles").select("*"),
+    supabase.from("members").select("*"),
+    supabase.from("teams").select("*")
    ]);
-   const error=[membersQ.error,teamsQ.error,driverQ.error,driverDevQ.error,teamDevQ.error,profilesQ.error].find(Boolean);
+   const error=[membersQ.error,teamsQ.error,driverQ.error,driverDevQ.error,teamDevQ.error,profilesQ.error,memberRecordsQ.error,teamRecordsQ.error].find(Boolean);
    if(error)throw error;
-   const members=(membersQ.data||[]) as Row[],teams=(teamsQ.data||[]) as Row[];
+   const members=(membersQ.data||[]).map((m:any)=>({...m,...((memberRecordsQ.data||[]).find((x:any)=>x.id===m.id)||{})})) as Row[],teams=(teamsQ.data||[]).map((t:any)=>({...t,...((teamRecordsQ.data||[]).find((x:any)=>x.id===t.id)||{})})) as Row[];
    const driverRows=(driverQ.data||[]) as Row[],driverDev=(driverDevQ.data||[]) as Row[],teamDev=(teamDevQ.data||[]) as Row[],teamProfiles=(profilesQ.data||[]) as Row[];
    const driverSheet=members.filter(m=>String(m.role||"").toLowerCase()==="driver").map(m=>{
     const base=driverRows.find(x=>x.member_id===m.id)||{};
