@@ -31,6 +31,7 @@ import DriverTraining from "./DriverTraining";
 import ShopPage from "./ShopPage";
 import AdminTestPersonas from "./AdminTestPersonas";
 import AdminUsers from "./AdminUsers";
+import AdminSeasonCalendar from "./AdminSeasonCalendar";
 import FIAEventControlCenter from "./FIAEventControlCenter";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
