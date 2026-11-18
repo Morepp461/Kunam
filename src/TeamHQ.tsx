@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, RefreshCw, Save, ShieldCheck, Wrench } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { parseTeamHqConfigJson, teamHqFacilityConfigSchema } from "./lib/teamHqValidation";
 import "./team-hq.css";
 
 type FacilityConfig = {
@@ -88,9 +89,18 @@ export default function TeamHQ() {
   };
   const saveConfig = async () => {
     if (!supabase || !draft) return;
-    let parsed: Record<string, unknown> = {};
-    try { for (const [key] of jsonFields) parsed[key] = JSON.parse(jsonDraft[key] || "{}"); }
-    catch { setError("Format JSON konfigurasi tidak valid. Periksa kembali semua kolom."); return; }
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = parseTeamHqConfigJson(jsonDraft);
+    } catch (validationError) {
+      setError(validationError instanceof Error ? validationError.message : "Format JSON konfigurasi tidak valid.");
+      return;
+    }
+    const validation = teamHqFacilityConfigSchema.safeParse({ ...draft, ...parsed });
+    if (!validation.success) {
+      setError(validation.error.issues.map(issue => issue.message).join(" "));
+      return;
+    }
     if (draft.max_level_premio < 1 || draft.max_level_premio > 8 || draft.max_level_zwei < 1 || draft.max_level_zwei > 6) {
       setError("Batas level harus 1–8 untuk Premio dan 1–6 untuk Zwei."); return;
     }
