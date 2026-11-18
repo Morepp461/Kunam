@@ -37,6 +37,7 @@ import TeamDriverContracts from "./TeamDriverContracts";
 import {CircuitPool} from "./CircuitPool";
 import RaceScheduleDashboard from "./RaceScheduleDashboard";
 import NotificationsCenter from "./NotificationsCenter";
+import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 
 import JobSearch from "./JobSearch";
 import PaddockRoleDetails from "./PaddockRoleDetails";
@@ -139,7 +140,7 @@ function Application(){
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
- return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess}><Routes>
+ return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess}><AnalyticsTracker/><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
@@ -560,7 +561,7 @@ function AccountSettings({session,profile,profileReady,onSaved,theme,setTheme}:{
  <div className="settings-fields-grid"><label className="settings-field">Nama depan <span className="optional-label">Opsional</span><input value={firstName} onChange={e=>setFirstName(e.target.value)} maxLength={80} placeholder="Nama depan"/></label><label className="settings-field">Nama belakang <span className="optional-label">Opsional</span><input value={lastName} onChange={e=>setLastName(e.target.value)} maxLength={80} placeholder="Nama belakang"/></label><LocationSelectors nationality={nationality} hometown={hometown} onNationalityChange={setNationality} onHometownChange={setHometown}/></div>
  <label className="settings-field">Nickname web<input value={webNickname} onChange={e=>setWebNickname(e.target.value)} maxLength={32} placeholder="Nama yang tampil di website"/></label><label className="settings-field">Nickname driver<input value={driverNickname} onChange={e=>setDriverNickname(e.target.value)} maxLength={32} placeholder="Nama karakter / driver"/></label>
  <div className="settings-note"><Shield size={16}/><p>Role, tim, saldo, kontrak, dan data karakter resmi tidak dapat diubah melalui pengaturan akun. Hubungi Admin untuk koreksi data tersebut.</p></div>
- <div className="theme-preference"><div><span className="section-eyebrow">DISPLAY</span><strong>Mode tampilan</strong><small>Preferensi ini juga berlaku di landing page.</small></div><div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div></div>
+ <AnalyticsConsentSettings/><div className="theme-preference"><div><span className="section-eyebrow">DISPLAY</span><strong>Mode tampilan</strong><small>Preferensi ini juga berlaku di landing page.</small></div><div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div></div>
  <div className="admin-actions"><button className="action primary" onClick={save} disabled={saving||uploading}>{saving?"Menyimpan...":"Simpan perubahan"}</button><Link className="action" to="/profile">Batal</Link></div></>}</div></section>;
 }
 type Rule={title:string;body:string};
