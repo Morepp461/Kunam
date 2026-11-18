@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+import shutil
 from collections import defaultdict
 from pathlib import Path
 
@@ -33,7 +34,7 @@ if not production or not testing:
     print("Remote schema parity skipped: configure SUPABASE_PRODUCTION_DB_URL and SUPABASE_TESTING_DB_URL in GitHub Actions secrets.")
     sys.exit(0)
 
-if not shutil_which := __import__("shutil").which("psql"):
+if shutil.which("psql") is None:
     raise SystemExit("psql is required when Supabase DB URL secrets are configured.")
 
 fingerprint_sql = r"""
@@ -61,7 +62,7 @@ from (
 
 def query(url: str, sql: str) -> str:
     result = subprocess.run(
-        ["psql", url, "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", sql],
+        ["psql", "-d", url, "-X", "-A", "-t", "-v", "ON_ERROR_STOP=1", "-c", sql],
         check=True, capture_output=True, text=True,
     )
     return result.stdout.strip()
