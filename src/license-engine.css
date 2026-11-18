@@ -56,3 +56,25 @@
 .license-setup-status.completed{border-color:#5c6267;color:#b5b8ba}
 @media(max-width:760px){.license-setup-event{grid-template-columns:1fr}.license-setup-flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:520px){.license-setup-division-grid{grid-template-columns:1fr 1fr}.license-setup-flow{grid-template-columns:1fr 1fr}.license-setup-season-row{align-items:flex-start;flex-direction:column}.license-setup-status{align-self:flex-start}}
+
+.license-schedule-summary{display:flex;gap:10px;flex-wrap:wrap;margin:15px 0;padding:12px;border:1px solid #9d83514d;border-radius:5px;background:#111416}
+.license-schedule-summary span{display:flex;gap:6px;align-items:center;color:#aaa;font-size:11px}
+.license-schedule-summary strong{color:#e1c58e;font-size:13px;font-variant-numeric:tabular-nums}
+.license-schedule-table-wrap{width:100%;overflow-x:auto;margin-top:14px;border:1px solid #ffffff1a;border-radius:5px}
+.license-schedule-table{width:100%;min-width:780px;border-collapse:collapse;font-size:11px}
+.license-schedule-table th{padding:11px 10px;text-align:left;background:#17191b;color:#d9bd80;font-size:9px;letter-spacing:.09em;text-transform:uppercase}
+.license-schedule-table td{padding:10px;border-top:1px solid #ffffff14;vertical-align:top}
+.license-schedule-table td:first-child{min-width:120px}
+.license-schedule-table td:first-child strong,.license-schedule-table td:first-child small{display:block}
+.license-schedule-table td:first-child small{margin-top:5px;color:#96999a;font-size:9px}
+.license-schedule-table td:nth-child(2){min-width:85px;color:#c6c6c3;white-space:nowrap}
+.license-circuit-select-list{display:grid;gap:6px;min-width:210px}
+.license-circuit-select-row{display:flex;gap:5px;align-items:center}
+.license-circuit-select-row select{width:100%;min-width:0;padding:8px;background:#0c0f11;color:#eee;border:1px solid #ffffff26;border-radius:4px;font:inherit;font-size:10px}
+.license-circuit-select-row select option{background:#17191b}
+.license-circuit-select-row button,.license-add-race{display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:none;padding:7px;border:1px solid #ffffff24;border-radius:4px;background:#17191b;color:#c5b28a;cursor:pointer}
+.license-add-race{justify-self:start;padding:6px 8px;font-size:9px}
+.license-circuit-select-row button:hover,.license-add-race:hover{border-color:#b79b65}
+@media(max-width:700px){.license-schedule-table-wrap{margin-left:-2px;margin-right:-2px}.license-schedule-summary{gap:12px}}
+
+.license-schedule-days{display:block;margin-top:4px;color:#9b9b9b;font-size:9px}
