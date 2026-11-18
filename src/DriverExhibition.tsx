@@ -255,7 +255,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         textures.push(carpetTexture);
         const floorMat = material(0xffffff, 0.88, 0.02);
         floorMat.map = carpetTexture;
-        const wallMat = material(0x292521, 0.7, 0.12);
+        const wallMat = material(0x3b3026, 0.72, 0.08);
         const darkMetal = material(0x262321, 0.3, 0.78);
         const redMetal = material(0x651d25, 0.42, 0.48);
         const goldMetal = material(0x8b7045, 0.3, 0.68);
@@ -274,7 +274,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           for (let z = 2; z >= -82; z -= 9) {
             box(scene, [0.16, 10.4, 0.34], [x, 5.4, z], goldMetal);
             box(scene, [0.42, 0.16, 0.62], [x * 0.985, 8.4, z], darkMetal);
-            const sconce = new THREE.PointLight(0xffbd73, 1.15, 8, 2);
+            const sconce = new THREE.PointLight(0xffc987, mobile ? 2.4 : 3.2, 10, 1.65);
             sconce.position.set(x * 0.96, 8.1, z);
             scene.add(sconce);
           }
@@ -294,7 +294,10 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           disposableGeometries.push(roof.geometry);
           const points = Array.from({ length: 49 }, (_, i) => {
             const x = -21.8 + (43.6 * i) / 48;
-            return new THREE.Vector3(x, 10.0 + 9.35 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2)), z - 0.12);
+            const across = x / 22;
+            // Match the actual quadratic vault profile used by the shell above.
+            const innerCeilingY = 9.65 + 4.85 * (1 - across * across);
+            return new THREE.Vector3(x, innerCeilingY - 0.16, z - 0.12);
           });
           const arch = new THREE.CatmullRomCurve3(points);
           const rib = new THREE.Mesh(new THREE.TubeGeometry(arch, 64, 0.12, 8, false), goldMetal);
@@ -478,43 +481,45 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         }
 
         // Transverse light bands follow the vault from its left edge to its right edge.
-        const vaultLightMat = new THREE.MeshBasicMaterial({ color: 0xffd28a, toneMapped: false });
+        const vaultLightMat = new THREE.MeshBasicMaterial({ color: 0xffe2b2, toneMapped: false });
         const vaultTrimMat = material(0x8b7045, 0.28, 0.72);
         disposableMaterials.push(vaultLightMat);
         for (let z = 2; z >= -82; z -= 8) {
           // The light bars sit below the lower inner surface of the roof shell, not inside the roof mesh.
           const crossPoints = Array.from({ length: 65 }, (_, i) => {
             const x = -21.7 + (43.4 * i) / 64;
-            const innerRoofY = 19.35 - 9.7 * (x / 22) ** 2;
-            return new THREE.Vector3(x, innerRoofY - 0.62, z + 0.18);
+            const across = x / 22;
+            // QuadraticCurveTo midpoint is 14.5, not 19.35. Keep the LED physically below the inner shell.
+            const innerRoofY = 9.65 + 4.85 * (1 - across * across);
+            return new THREE.Vector3(x, innerRoofY - 0.30, z + 0.18);
           });
           const crossCurve = new THREE.CatmullRomCurve3(crossPoints);
-          const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.22, 8, false), vaultTrimMat);
-          const crossDiffuser = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.13, 8, false), vaultLightMat);
+          const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.24, 8, false), vaultTrimMat);
+          const crossDiffuser = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.17, 8, false), vaultLightMat);
           crossHousing.renderOrder = 2; crossDiffuser.renderOrder = 3;
           scene.add(crossHousing, crossDiffuser);
           disposableGeometries.push(crossHousing.geometry, crossDiffuser.geometry);
           if (Math.abs(z) % 16 < 1) {
-            const vaultWash = new THREE.PointLight(0xffbd70, mobile ? 24 : 32, 38, 1.55);
-            vaultWash.position.set(0, 17.1, z - 0.5);
+            const vaultWash = new THREE.PointLight(0xffc987, mobile ? 18 : 28, 34, 1.35);
+            vaultWash.position.set(0, 13.45, z - 0.5);
             scene.add(vaultWash);
           }
         }
         // Warm luminous fixtures and downlights mounted along the crown of the vaulted ceiling.
         for (let z = 2; z >= -82; z -= 16) {
           const fixture = new THREE.Group();
-          fixture.position.set(0, 18.25, z);
+          fixture.position.set(0, 14.12, z);
           scene.add(fixture);
           const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.58, 0.16, 20), darkMetal);
           fixture.add(housing);
-          const diffuserMat = new THREE.MeshStandardMaterial({ color: 0xffe0ad, emissive: 0xffb95f, emissiveIntensity: 2.2, roughness: 0.25 });
+          const diffuserMat = new THREE.MeshBasicMaterial({ color: 0xffe7c4, toneMapped: false });
           disposableMaterials.push(diffuserMat);
           const diffuser = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.42, 0.055, 20), diffuserMat);
           diffuser.position.y = -0.11; fixture.add(diffuser);
-          const down = new THREE.PointLight(0xffd39a, mobile ? 15 : 24, 30, 1.7);
-          down.position.set(0, -0.4, 0); fixture.add(down);
-          const sideGlow = new THREE.PointLight(0xffbd75, 7, 18, 2);
-          sideGlow.position.set(-5, -0.7, 0); fixture.add(sideGlow);
+          const down = new THREE.PointLight(0xffd39a, mobile ? 28 : 38, 34, 1.45);
+          down.position.set(0, -0.55, 0); fixture.add(down);
+          const sideGlow = new THREE.PointLight(0xffbd75, mobile ? 10 : 15, 24, 1.7);
+          sideGlow.position.set(-5, -0.8, 0); fixture.add(sideGlow);
         }
 
         // Premium paddock wall: framed driver and team-owner portraits, motorsport memorabilia and brand plaques.
