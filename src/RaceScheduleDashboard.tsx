@@ -59,7 +59,7 @@ export default function RaceScheduleDashboard({session,memberId,isAdmin}:{sessio
  const primaryState=primary?getRaceState(primary,now):null;
  const start=primary?new Date(primary.race_starts_at).getTime():0;
  const end=primary?start+primary.race_duration_minutes*60000:0;
- const countdown=primaryState==="in_progress"?end-now:primaryState==="upcoming"?start-now:0;
+ const countdown=(primaryState==="in_progress"||primaryState==="result_confirmed")?end-now:primaryState==="upcoming"?start-now:0;
  const raceTime=(v:string)=>new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(v));
  return <section className="dashboard-race-schedule">
   <div className="dashboard-race-head"><div><span className="section-eyebrow">LIVE SEASON CALENDAR · GMT+7</span><h2>Race Schedule</h2></div><CalendarDays size={20}/></div>
@@ -68,7 +68,7 @@ export default function RaceScheduleDashboard({session,memberId,isAdmin}:{sessio
     {primaryState==="awaiting_result"&&<small>Durasi selesai. Menunggu konfirmasi hasil resmi FIA.</small>}
     {primaryState==="result_confirmed"&&<small>Hasil sudah sah. Countdown durasi tetap berjalan.</small>}
    </div>
-   {(primaryState==="in_progress"||primaryState==="upcoming")&&<div className="dashboard-race-count"><small><Timer size={13}/> {primaryState==="in_progress"?"RACE ENDS IN":"RACE STARTS IN"}</small><strong>{formatRemaining(countdown)}</strong></div>}
+   {(primaryState==="in_progress"||primaryState==="upcoming"||primaryState==="result_confirmed")&&<div className="dashboard-race-count"><small><Timer size={13}/> {primaryState==="in_progress"?"RACE ENDS IN":primaryState==="result_confirmed"?"SCHEDULED DURATION ENDS IN":"RACE STARTS IN"}</small><strong>{formatRemaining(countdown)}</strong></div>}
   </div>:<p className="dashboard-race-muted">{message||"Tidak ada race aktif atau mendatang pada jadwal divisi ini."}</p>}
   {upcoming.length>0&&<div className="dashboard-race-list">{upcoming.map(r=><article key={r.id}><span><Flag size={13}/> {r.division_name} · R{r.round_number}</span><strong>{r.circuit_name||r.title}</strong><small>{raceTime(r.race_starts_at)} · {r.race_duration_minutes} menit</small></article>)}</div>}
  </section>;
