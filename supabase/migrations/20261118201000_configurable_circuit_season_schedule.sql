@@ -30,6 +30,7 @@ declare
   v_circuit record;
   v_period_number integer;
   v_round_number integer;
+  v_global_round_number integer;
   v_premio_total integer:=0;
   v_zwei_total integer:=0;
   v_period_days integer;
@@ -149,7 +150,7 @@ begin
         status,session_type,circuit_name,circuit_country_code
       ) values(
         v_premio_id,coalesce((select max(round_number)+1 from public.license_rounds where season_division_id=v_premio_id),1),
-        'Round '||lpad((v_premio_total-(select coalesce(sum(jsonb_array_length(x->'premio_circuits')),0) from jsonb_array_elements(p_schedule) x where (x->>'period_number')::integer>v_period_number)+v_round_number)::text,2,'0'),
+        'Round '||lpad((v_premio_total-(select coalesce(sum(jsonb_array_length(x->'premio_circuits')),0) from jsonb_array_elements(p_schedule) x where (x->>'period_number')::integer>=v_period_number)+v_round_number)::text,2,'0'),
         ((v_period_start+v_round_number-1)::timestamp) at time zone 'Asia/Jakarta',
         ((v_period_start+v_round_number-1)::timestamp+time '23:59:59') at time zone 'Asia/Jakarta',
         'scheduled','race',v_circuit.name,v_circuit.country_code
@@ -165,7 +166,7 @@ begin
         status,session_type,circuit_name,circuit_country_code
       ) values(
         v_zwei_id,coalesce((select max(round_number)+1 from public.license_rounds where season_division_id=v_zwei_id),1),
-        'Round '||lpad((v_zwei_total-(select coalesce(sum(jsonb_array_length(x->'zwei_circuits')),0) from jsonb_array_elements(p_schedule) x where (x->>'period_number')::integer>v_period_number)+v_round_number)::text,2,'0'),
+        'Round '||lpad((v_zwei_total-(select coalesce(sum(jsonb_array_length(x->'zwei_circuits')),0) from jsonb_array_elements(p_schedule) x where (x->>'period_number')::integer>=v_period_number)+v_round_number)::text,2,'0'),
         ((v_period_start+v_round_number-1)::timestamp) at time zone 'Asia/Jakarta',
         ((v_period_start+v_round_number-1)::timestamp+time '23:59:59') at time zone 'Asia/Jakarta',
         'scheduled','race',v_circuit.name,v_circuit.country_code
