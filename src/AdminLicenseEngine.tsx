@@ -17,6 +17,7 @@ const todayJakarta=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",
 const moneyless=(value:number)=>Number(value||0).toLocaleString("id-ID");
 const defaultSchedule=():RaceSchedule[]=>Array.from({length:5},()=>({premio:["","",""],zwei:["","",""]}));
 const periodSequence=["Pre Season","Race Period 1","Break Balancing 1","Race Period 2","Break Balancing 2","Race Period 3","Break Balancing 3","Race Period 4","Break Balancing 4","Race Period 5","End Season","Off Season"];
+const addDays=(date:string,days:number)=>{const d=new Date(date+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
 
 export default function AdminLicenseEngine({session:_session}:{session:Session}){
  const [seasons,setSeasons]=useState<Season[]>([]);
@@ -58,6 +59,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
 
  const totals=useMemo(()=>schedule.reduce((acc,p)=>({premio:acc.premio+p.premio.length,zwei:acc.zwei+p.zwei.length}),{premio:0,zwei:0}),[schedule]);
  const scheduleReady=circuits.length>0&&schedule.every(p=>p.premio.length>=3&&p.premio.length<=5&&p.zwei.length>=3&&p.zwei.length<=5&&p.premio.every(Boolean)&&p.zwei.every(Boolean));
+ const periodRows=useMemo(()=>{let offset=0;return periodSequence.map((name,index)=>{const race=name.startsWith("Race Period");const raceIndex=Math.floor(index/2);const days=race?Math.max(schedule[raceIndex].premio.length,schedule[raceIndex].zwei.length):index===0?7:name==="End Season"?5:name==="Off Season"?7:2;const start=addDays(startDate,offset);const end=addDays(start,days-1);offset+=days;return {name,index,race,raceIndex,days,start,end}})},[startDate,schedule]);
  const duplicates=useMemo(()=>{
   const p=schedule.flatMap(x=>x.premio),z=schedule.flatMap(x=>x.zwei);
   return p.some((id,i)=>id&&p.indexOf(id)!==i)||z.some((id,i)=>id&&z.indexOf(id)!==i);
@@ -113,13 +115,10 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
     <table className="license-schedule-table">
      <thead><tr><th>Periode</th><th>Jadwal</th><th>Caleris Premio</th><th>Caleris Zwei</th></tr></thead>
      <tbody>
-      {periodSequence.map((name,index)=>{
-       const isRace=name.startsWith("Race Period");
-       const raceIndex=Math.floor(index/2);
-       const days=isRace?Math.max(schedule[raceIndex]?.premio.length||3,schedule[raceIndex]?.zwei.length||3):index===0?7:name==="End Season"?5:name==="Off Season"?7:2;
+      {periodRows.map(({name,index,race:isRace,raceIndex,days,start,end})=>{
        return <tr key={name}>
         <td><strong>{name}</strong><small>{isRace?"3–5 race per divisi":index===0?"7 hari":name==="End Season"?"5 hari":name==="Off Season"?"7 hari":"2 hari"}</small></td>
-        <td>{isRace?<span>{days} hari</span>:<span>Otomatis</span>}</td>
+        <td><span>{start} – {end}<small className="license-schedule-days">{days} hari</small></span></td>
         {isRace?(["premio","zwei"] as const).map(division=><td key={division}>
          <div className="license-circuit-select-list">
           {schedule[raceIndex][division].map((selected,slot)=>{
