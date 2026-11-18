@@ -26,6 +26,12 @@ jobs:
         continue-on-error: true
       - run: npm run check
       - run: npm run build
+      - name: Unit and schema validation tests
+        run: npm run test
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser smoke tests
+        run: npm run test:e2e
       - run: python3 -B scripts/validate.py
       - name: Economy transaction regression checks
         run: python3 -B scripts/test_economy_regressions.py
