@@ -57,8 +57,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const THREE = await import("three");
         const { createCharacter } = await import("ara3d");
         if (disposed || !host) return;
-        renderer = new THREE.WebGLRenderer({ antialias: !mobile, alpha: false, powerPreference: "high-performance" });
         const mobile = window.matchMedia("(max-width: 760px)").matches;
+        renderer = new THREE.WebGLRenderer({ antialias: !mobile, alpha: false, powerPreference: "high-performance" });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.35));
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
