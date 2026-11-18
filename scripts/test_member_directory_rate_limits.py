@@ -6,7 +6,7 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 directory = read("supabase/functions/member-directory/index.ts")
-migration = read("supabase/migrations/20261118124500_member_directory_rate_limit.sql")
+migration = read("supabase/migrations/20261118124634_member_directory_rate_limit.sql")
 config = read("supabase/config.toml")
 
 assert "resolveClientIp(req)" in directory
