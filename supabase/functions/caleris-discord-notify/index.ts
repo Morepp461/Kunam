@@ -54,23 +54,37 @@ Deno.serve(async (req: Request) => {
     const { data: auth, error: authError } = await authClient.auth.getUser(token);
     if (authError || !auth.user) return json({ error: "Session invalid." }, 401, origin);
 
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") return json({ error: "Invalid JSON body." }, 400, origin);
     const db = serviceClient();
     const [{ data: admin }, { data: memberProfile }] = await Promise.all([
       db.from("site_admins").select("user_id").eq("user_id", auth.user.id).maybeSingle(),
       db.from("profiles").select("member_id").eq("user_id", auth.user.id).maybeSingle(),
     ]);
-    let isFia = false;
+    let member: { role: string | null; team_id: string | null } | null = null;
     if (memberProfile?.member_id) {
-      const { data: member } = await db.from("members").select("role").eq("id", memberProfile.member_id).maybeSingle();
-      isFia = member?.role === "FIA";
+      const { data } = await db.from("members").select("role,team_id").eq("id", memberProfile.member_id).maybeSingle();
+      member = data;
     }
-    if (!admin?.user_id && !isFia) return json({ error: "FIA/Admin access required." }, 403, origin);
+    let authorized = Boolean(admin?.user_id) || member?.role === "FIA";
+    if (!authorized && event === "paddock_story" && member?.team_id && ["Owner", "Principal"].includes(String(member.role))) {
+      const sourceId = typeof body.source_id === "string" ? body.source_id : "";
+      if (sourceId) {
+        const { data: story } = await db.from("caleris_sponsorship_story_events")
+          .select("id,headline,body,contract_id,visibility")
+          .eq("id", sourceId).eq("visibility", "public").maybeSingle();
+        if (story && story.headline === body.title && story.body === body.description) {
+          const { data: contract } = await db.from("caleris_sponsorship_contracts")
+            .select("id").eq("id", story.contract_id).eq("target_team_id", member.team_id).maybeSingle();
+          authorized = Boolean(contract?.id);
+        }
+      }
+    }
+    if (!authorized) return json({ error: "FIA/Admin access or ownership of the published paddock story is required." }, 403, origin);
 
     const webhook = Deno.env.get("DISCORD_WEBHOOK_URL");
     if (!webhook) return json({ error: "Discord integration is not configured yet. Add DISCORD_WEBHOOK_URL to Supabase Function secrets." }, 503, origin);
 
-    const body = await req.json().catch(() => null);
-    if (!body || typeof body !== "object") return json({ error: "Invalid JSON body." }, 400, origin);
     const title = typeof body.title === "string" ? body.title.trim().slice(0, 240) : "";
     const description = typeof body.description === "string" ? body.description.trim().slice(0, 3500) : "";
     const urlValue = typeof body.url === "string" ? body.url.trim() : "";
