@@ -190,3 +190,13 @@
 .team-graphic-card-stats strong{color:#f4f0e7;font:700 16px 'Barlow Condensed',sans-serif}
 @media(max-width:620px){.team-graphic-card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.team-graphic-card-top{min-height:112px;padding:10px}.team-graphic-card-top h3{max-width:70%;font-size:clamp(14px,3.7vw,19px)}.team-graphic-card-logo{right:7px;bottom:5px;width:34%;height:82%}.team-graphic-card-base{gap:7px;min-height:118px;padding:9px}.team-graphic-card-meta{font-size:9px;gap:5px}.team-graphic-card-drivers{gap:4px}.team-graphic-card-drivers span{font-size:9px;padding:2px 5px}.team-graphic-card-stats{gap:14px;padding-top:6px}.team-graphic-card-stats small{font-size:8px}.team-graphic-card-stats strong{font-size:14px}}
 @media(max-width:370px){.team-graphic-card-top{min-height:102px}.team-graphic-card-base{min-height:126px}.team-graphic-card-meta{font-size:8px}}
+
+/* Team directory cards are real interactive controls. */
+.team-graphic-card{display:flex;width:100%;flex-direction:column;padding:0;color:inherit;text-align:left;font:inherit;cursor:pointer;transition:transform .2s ease,border-color .2s ease}
+.team-graphic-card:hover,.team-graphic-card:focus-visible{transform:translateY(-2px);border-color:rgba(198,163,58,.55);outline:none}
+.team-graphic-card:focus-visible{box-shadow:0 0 0 2px rgba(198,163,58,.45)}
+.team-detail-roster{margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.team-detail-roster h3{margin:0 0 10px;color:#c6a33a;font:700 11px 'Barlow Condensed',sans-serif;letter-spacing:.16em}
+.team-detail-roster>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06);color:#eee}
+.team-detail-roster>div strong{color:#d9c27c;font:700 11px 'Barlow Condensed',sans-serif;white-space:nowrap}
+.team-detail-roster>p{color:#a6adb2;font-size:12px}
