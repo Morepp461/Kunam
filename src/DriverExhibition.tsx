@@ -9,7 +9,73 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
-const characterModelCache = new Map<string, Promise<AraCharacter>>();
+type PersistentCharacterRecord = { key: string; driverId: string; fingerprint: string; glb: ArrayBuffer; savedAt: number };
+const CHARACTER_CACHE_DB = "caleris-driver-model-cache";
+const CHARACTER_CACHE_STORE = "models";
+const CHARACTER_CACHE_VERSION = 1;
+const characterModelCache = new Map<string, Promise<ArrayBuffer>>();
+
+const openCharacterCache = (): Promise<IDBDatabase> => new Promise((resolve, reject) => {
+  if (!("indexedDB" in window)) { reject(new Error("IndexedDB unavailable")); return; }
+  const request = indexedDB.open(CHARACTER_CACHE_DB, CHARACTER_CACHE_VERSION);
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    if (!db.objectStoreNames.contains(CHARACTER_CACHE_STORE)) db.createObjectStore(CHARACTER_CACHE_STORE, { keyPath: "key" });
+  };
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error || new Error("Could not open character cache"));
+});
+
+const readCharacterCache = async (key: string): Promise<PersistentCharacterRecord | null> => {
+  const db = await openCharacterCache();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = db.transaction(CHARACTER_CACHE_STORE, "readonly").objectStore(CHARACTER_CACHE_STORE).get(key);
+      request.onsuccess = () => resolve((request.result as PersistentCharacterRecord | undefined) || null);
+      request.onerror = () => reject(request.error);
+    });
+  } finally { db.close(); }
+};
+
+const writeCharacterCache = async (record: PersistentCharacterRecord): Promise<void> => {
+  const db = await openCharacterCache();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(CHARACTER_CACHE_STORE, "readwrite");
+      tx.objectStore(CHARACTER_CACHE_STORE).put(record);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Character cache write aborted"));
+    });
+  } finally { db.close(); }
+};
+
+const pruneCharacterCache = async (activeCacheKeys: Set<string>): Promise<void> => {
+  const db = await openCharacterCache();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(CHARACTER_CACHE_STORE, "readwrite");
+      const request = tx.objectStore(CHARACTER_CACHE_STORE).openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const record = cursor.value as PersistentCharacterRecord;
+        if (!activeCacheKeys.has(record.key)) cursor.delete();
+        cursor.continue();
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Character cache cleanup aborted"));
+    });
+  } finally { db.close(); }
+};
+
+const toArrayBuffer = async (value: unknown): Promise<ArrayBuffer | null> => {
+  if (value instanceof Blob) return value.arrayBuffer();
+  if (value instanceof ArrayBuffer) return value.slice(0);
+  if (ArrayBuffer.isView(value)) return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer;
+  return null;
+};
 
 const numberFor = (name: string, index: number) => {
   let hash = 0;
@@ -87,7 +153,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const disposableGeometries: Three.BufferGeometry[] = [];
         const disposableMaterials: Three.Material[] = [];
         const textures: Three.Texture[] = [];
-        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer; root: Three.Group }> = [];
+        const driverMotions: Array<{ character: AraCharacter | null; modelScene: Three.Group; mixer: Three.AnimationMixer; root: Three.Group; clips: Three.AnimationClip[]; elapsed: number; nextClipAt: number; activeAction: Three.AnimationAction | null }> = [];
 
         const material = (color: number, roughness = 0.62, metalness = 0.12) => {
           const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -245,13 +311,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
 
         // Ara 3D Gen: CC0 MakeHuman anatomy, photo-based skin textures, fitted clothing,
         // facial blendshapes and a game-ready rig with motion clips.
-        const animationRoutines = [
-          "idle 5s, look_around 3s, idle 4s, talk_gestures 4s",
-          "idle 4s, wave, idle 6s, look_around 3s",
-          "idle 6s, talk_gestures 4s, idle 5s, look_around 3s",
-          "idle 4s, look_around 3s, idle 4s, wave, idle 5s",
-          "idle 5s, talk_gestures 3s, idle 5s, wave",
-        ];
         const hairStyles = ["short02", "short04", "buzz", "cornrows", "box_braids"];
         const createDriver = async (driver: DriverRow, index: number) => {
           const root = new THREE.Group();
@@ -310,31 +369,45 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               expression: "neutral",
             },
           };
-          const cacheKey = `${String(driver.id || driver.character_name || seed)}:race-suit-v2`;
-          let characterPromise = characterModelCache.get(cacheKey);
-          if (!characterPromise) {
-            characterPromise = createCharacter(characterInput, {
-              detail: mobile ? "low" : "high",
-              animations: ["idle", "look_around", "talk_gestures", "wave"],
-            });
-            characterModelCache.set(cacheKey, characterPromise);
-            characterPromise.catch(() => {
-              if (characterModelCache.get(cacheKey) === characterPromise) characterModelCache.delete(cacheKey);
-            });
+          const stableDriverId = String(driver.id || driver.character_name || seed);
+          const detail = mobile ? "low" : "high";
+          const cacheKey = stableDriverId + ":" + detail + ":race-suit-v3";
+          const fingerprint = JSON.stringify({ generator: "ara3d@0.7.4", detail, characterInput });
+          let cachedBytes = characterModelCache.get(cacheKey);
+          if (!cachedBytes) {
+            cachedBytes = (async () => {
+              const saved = await readCharacterCache(cacheKey).catch(() => null);
+              if (saved?.fingerprint === fingerprint && saved.glb?.byteLength) return saved.glb;
+              const character = await createCharacter(characterInput, { detail, animations: ["idle", "look_around", "talk_gestures", "wave"] });
+              const bytes = await toArrayBuffer((character as AraCharacter & { glb?: unknown }).glb);
+              if (!bytes) { character.dispose(); throw new Error("Ara3D did not return a reusable GLB model"); }
+              await writeCharacterCache({ key: cacheKey, driverId: stableDriverId, fingerprint, glb: bytes, savedAt: Date.now() }).catch((error) => console.warn("Could not persist driver model cache:", error));
+              character.dispose();
+              return bytes;
+            })();
+            characterModelCache.set(cacheKey, cachedBytes);
+            cachedBytes.catch(() => { if (characterModelCache.get(cacheKey) === cachedBytes) characterModelCache.delete(cacheKey); });
           }
-          const character = await characterPromise;
+          const glbBytes = await cachedBytes;
+          if (disposed) return;
+          const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+          const loader = new GLTFLoader();
+          const gltf = await loader.parseAsync(glbBytes.slice(0), "");
           if (disposed) return;
           const figure = new THREE.Group();
           figure.position.y = 0.36;
           root.add(figure);
-          character.scene.scale.setScalar(1);
-          character.scene.position.set(0, 0, 0);
-          figure.add(character.scene);
-          character.scene.traverse((obj) => { obj.userData.araCharacterModel = true; });
-          const mixer = new THREE.AnimationMixer(character.scene);
-          character.playSequence(mixer, animationRoutines[index % animationRoutines.length], { fade: 0.55, repeat: true });
-          mixer.setTime((index % animationRoutines.length) * 0.73);
-          driverMotions.push({ character, mixer, root });
+          const modelScene = gltf.scene;
+          modelScene.scale.setScalar(1);
+          modelScene.position.set(0, 0, 0);
+          figure.add(modelScene);
+          modelScene.traverse((obj) => { obj.userData.araCharacterModel = true; });
+          const mixer = new THREE.AnimationMixer(modelScene);
+          const clips = gltf.animations || [];
+          const preferredIdle = clips.find((clip) => /idle/i.test(clip.name)) || clips[0];
+          const initialAction = preferredIdle ? mixer.clipAction(preferredIdle) : null;
+          initialAction?.play();
+          driverMotions.push({ character: null, modelScene, mixer, root, clips, elapsed: 0, nextClipAt: 5 + (index % 4) * 1.4, activeAction: initialAction });
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
@@ -356,6 +429,12 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           if (!disposed) setLoadingCount(index + 1);
         }
         if (!disposed) setSceneLoading(false);
+        const activeCacheKeys = new Set(drivers.flatMap((driver) => {
+          const id = String(driver.id || driver.character_name || "");
+          return [id + ":low:race-suit-v3", id + ":high:race-suit-v3"];
+        }));
+        void pruneCharacterCache(activeCacheKeys).catch((error) => console.warn("Could not prune removed or outdated driver cache entries:", error));
+        if (navigator.storage && navigator.storage.persist) void navigator.storage.persist().catch(() => false);
 
         driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
         const onFilter = (event: Event) => {
@@ -543,10 +622,24 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           frame = requestAnimationFrame(animate);
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
-          driverMotions.forEach((motion) => {
+          driverMotions.forEach((motion, motionIndex) => {
             if (!motion.root.visible || camera.position.distanceTo(motion.root.position) > 42) return;
             motion.mixer.update(delta);
-            motion.character.update(delta);
+            if (motion.character) motion.character.update(delta);
+            else {
+              motion.elapsed += delta;
+              if (motion.elapsed >= motion.nextClipAt && motion.clips.length > 1) {
+                const candidates = motion.clips.filter((clip) => clip !== motion.activeAction?.getClip());
+                const nextClip = candidates[(motionIndex + Math.floor(motion.elapsed)) % Math.max(1, candidates.length)];
+                if (nextClip) {
+                  const nextAction = motion.mixer.clipAction(nextClip);
+                  nextAction.reset().fadeIn(0.65).play();
+                  motion.activeAction?.fadeOut(0.65);
+                  motion.activeAction = nextAction;
+                }
+                motion.nextClipAt = motion.elapsed + 4 + ((motionIndex * 7) % 5);
+              }
+            }
           });
           yaw += (targetYaw - yaw) * Math.min(1, delta * 7);
           pitch += (targetPitch - pitch) * Math.min(1, delta * 7);
@@ -584,7 +677,21 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           scene.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh && !obj.userData.araCharacterModel) (obj as Three.Mesh).geometry.dispose();
           });
-          driverMotions.forEach((motion) => { motion.mixer.stopAllAction(); motion.character.scene.removeFromParent(); });
+          driverMotions.forEach((motion) => {
+            motion.mixer.stopAllAction();
+            motion.modelScene.removeFromParent();
+            if (motion.character) motion.character.dispose();
+            else motion.modelScene.traverse((obj) => {
+              const mesh = obj as Three.Mesh;
+              if (!mesh.isMesh) return;
+              mesh.geometry.dispose();
+              const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+              materials.forEach((mat) => {
+                Object.values(mat).forEach((value) => { if (value && typeof value === "object" && "isTexture" in value) (value as Three.Texture).dispose(); });
+                mat.dispose();
+              });
+            });
+          });
           disposableGeometries.forEach((g) => g.dispose());
           disposableMaterials.forEach((m) => m.dispose());
           textures.forEach((t) => t.dispose());
