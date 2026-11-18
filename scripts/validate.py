@@ -229,7 +229,7 @@ def main():
     assert "Quest Engine" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "payroll" in edge_source and "process_payroll_pending" in edge_source
     assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
-    assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
+    assert 'import FIAEventControlCenter from "./FIAEventControlCenter"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
@@ -263,7 +263,7 @@ def main():
         assert fragment in race_source or fragment in race_sql, f"Race Control missing: {fragment}"
     for fragment in ["caleris_race_stints", "caleris_race_points_rules", "process_license_round", "payout_season_prizepool", "fia_record_race_result("]:
         assert fragment in race_sql, f"Automated race settlement missing: {fragment}"
-    assert 'path="/fia-panel/race-input"' in app and 'import RaceControl from "./RaceControl";' in app
+    assert 'path="/fia-panel/race-input"' in app and 'import RaceControl from "./RaceControl";' in (ROOT / "src/FIAEventControlCenter.tsx").read_text(encoding="utf-8")
     assert 'path: "race-input", label: "Race Input"' in (ROOT / "src/PanelPages.tsx").read_text(encoding="utf-8")
 
 

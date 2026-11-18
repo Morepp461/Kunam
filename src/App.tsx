@@ -17,8 +17,6 @@ import AdminQuestEngine from "./AdminQuestEngine";
 import QuestPage from "./QuestPage";
 import AdminPricingCenter from "./AdminPricingCenter";
 import AdminOperations from "./AdminOperations";
-import FIAOperations from "./FIAOperations";
-import RaceControl from "./RaceControl";
 import MemberRaceCheckIn from "./MemberRaceCheckIn";
 import TeamAffiliate from "./TeamAffiliate";
 import TeamEngineMarket from "./TeamEngineMarket";
@@ -33,10 +31,11 @@ import DriverTraining from "./DriverTraining";
 import ShopPage from "./ShopPage";
 import AdminTestPersonas from "./AdminTestPersonas";
 import AdminUsers from "./AdminUsers";
-import AdminSeasonCalendar from "./AdminSeasonCalendar";
+import FIAEventControlCenter from "./FIAEventControlCenter";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
-import {CircuitPool,CircuitPoolInput} from "./CircuitPool";
+import {CircuitPool} from "./CircuitPool";
+
 import JobSearch from "./JobSearch";
 import PaddockRoleDetails from "./PaddockRoleDetails";
 import { optimizeImageToWebp } from "./lib/imageOptimization";
@@ -153,9 +152,10 @@ function Application(){
   <Route path="/driver-panel/quest" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Driver")?<QuestPage session={session} scope="driver"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/quest" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Owner"?<QuestPage session={session} scope="team_owner"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/license-engine" element={isAdmin?<Navigate to="/admin/license-engine" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<FIAOperations/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/fia-panel/race-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<RaceControl/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/event-control" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<FIAEventControlCenter session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/race-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/driver-contracts" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamDriverContracts session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<DevelopmentTokens session={session} asset="TDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/sponsorship" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -169,7 +169,7 @@ function Application(){
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
   <Route path="/main-event/circuit-pool" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<CircuitPool/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-   <Route path="/fia-panel/circuit-pool-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<CircuitPoolInput/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+   <Route path="/fia-panel/circuit-pool-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/job-search" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<JobSearch/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/take-over" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<TeamTakeoverMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/transfer-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<DriverTransferMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
