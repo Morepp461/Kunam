@@ -3,6 +3,7 @@ import {ArrowLeft,RefreshCw,Handshake,Coins,Target,Globe2,Plus,CheckCircle2,X} f
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
 import "./brand-ecosystem.css";
 
 type Member={id:string;role:string|null;team_id:string|null;character_name:string|null};
@@ -117,7 +118,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   if(issue){setSaving(false);setNotice(issue.message);return;}
   if(o.data)setOffers(current=>current.map(item=>item.id===id?o.data as Offer:item));
   setRevisions(current=>[...current.filter(item=>item.offer_id!==id),...((r.data||[]) as Revision[])]);
-  if(action==="accept"){setContracts((co.data||[]) as Contract[]);setTargets((ta.data||[]) as Target[]);}
+  if(action==="accept"){setContracts((co.data||[]) as Contract[]);setTargets((ta.data||[]) as Target[]);const accepted=(co.data||[]).find((contract:any)=>contract.offer_id===id);if(accepted){const {data:storyRows}=await supabase.from("caleris_sponsorship_story_events").select("id,headline,body,visibility").eq("contract_id",accepted.id).eq("visibility","public").order("created_at",{ascending:false});for(const story of storyRows||[])await broadcastNewsroomArticle(story.headline,story.body,"paddock_story",{source_id:story.id});}}
   const result=data as {status?:string;counter_count?:number}|null;
   setSaving(false);setCounterId("");setCounterAmount("");setCounterTerms("");
   setNotice(action==="counter"?(result?.status==="rejected"?"Sponsor langsung menolak counter di luar batas fleksibilitas.":"Counter diproses otomatis oleh Sponsor Engine.") : action==="accept"?"Kontrak sponsorship diterima.":"Offer ditolak.");

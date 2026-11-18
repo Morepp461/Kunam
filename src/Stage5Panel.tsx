@@ -4,6 +4,7 @@ import type { Session } from "@supabase/supabase-js";
 import { Link, useLocation } from "react-router-dom";
 import { Activity, CarFront, CheckCircle2, Flag, Medal, Search, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { broadcastNewsroomArticle } from "./lib/newsroomBroadcast";
 import DriverExhibition from "./DriverExhibition";
 import FiaDataExport from "./FiaDataExport";
 import "./driver-exhibition.css";
@@ -302,7 +303,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     const title = String(form.title || "").trim(), body = String(form.body || "").trim();
     if (!title || !body) throw new Error("Judul dan isi pengumuman wajib diisi.");
     const { error } = await supabase.from("caleris_announcements").insert({ title, body, category: form.category || "general", division_key: form.division_key || null, season_id: form.season_id || null, is_published: true, published_at: new Date().toISOString(), created_by: session.user.id });
-    if (error) throw error; setForm({}); await refresh(); setNotice("Pengumuman dipublikasikan ke Main Event → FIA Announcement.");
+    if (error) throw error; const broadcast = await broadcastNewsroomArticle(title, body, "official_bulletin"); setForm({}); await refresh(); setNotice(broadcast.sent ? "Pengumuman terbit dan otomatis dikirim ke Discord melalui Vreeo Pedia." : "Pengumuman terbit. Notifikasi Discord belum terkirim: " + (broadcast.error?.message || "integrasi belum dikonfigurasi."));
   });
   const publishRegulation = async (e: FormEvent) => submit(e, async () => {
     if (!supabase) return;
@@ -311,7 +312,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     const scope = form.scope_kind || "permanent";
     if (scope === "seasonal" && !form.season_id) throw new Error("Pilih season untuk regulasi seasonal.");
     const { error } = await supabase.rpc("fia_publish_regulation", { p_title: title, p_body: body, p_scope_kind: scope, p_division_key: form.division_key || null, p_season_id: scope === "seasonal" ? form.season_id : null, p_version_label: String(form.version_label || "").trim() || null });
-    if (error) throw error; setForm({}); await refresh(); setNotice("Regulasi dipublikasikan ke Main Event → Regulation dan FIA Announcement.");
+    if (error) throw error; const broadcast = await broadcastNewsroomArticle(title, body, "regulation_update"); setForm({}); await refresh(); setNotice(broadcast.sent ? "Regulasi terbit dan otomatis dikirim ke Discord melalui Vreeo Pedia." : "Regulasi terbit. Notifikasi Discord belum terkirim: " + (broadcast.error?.message || "integrasi belum dikonfigurasi."));
   });
   const decideAppeal = async (id: string, approve: boolean) => {
     if (!supabase || saving) return; setSaving(true); setNotice("");
