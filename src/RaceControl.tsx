@@ -66,8 +66,8 @@ export default function RaceControl(){
   const {data,error}=await supabase.rpc("fia_submit_race_classification_v2",{p_round_id:round.id,p_entries:payload,p_driver_of_day_member_id:dotdId,p_pole_time_ms:poleMs,p_circuit_name:circuit.name,p_circuit_country_code:circuit.country_code});
   setSaving(false);if(error){fail(error.message);return}
   const pending=[] as string[];
-  if(data?.prizepool?.status==="pending_configuration")pending.push("Prizepool menunggu konfigurasi");
-  if(data?.wealth_tax?.status==="pending_configuration")pending.push("Wealth Tax menunggu konfigurasi");
+  if(data?.prizepool?.status==="pending_configuration")pending.push(`Prizepool pending: ${data.prizepool.detail||"konfigurasi belum lengkap"}`);
+  if(data?.wealth_tax?.status==="pending_configuration")pending.push(`Wealth Tax pending: ${data.wealth_tax.detail||"konfigurasi belum lengkap"}`);
   if(Number(data?.round_processing?.payroll?.pending||0)>0)pending.push(`${data.round_processing.payroll.pending} payroll tertunda`);
   setNotice({kind:"success",text:`Race resmi disahkan. ${entries.length} Driver diproses.${pending.length?` Settlement: ${pending.join(", ")}.`:" Settlement yang tersedia berhasil diproses."}`});
   setRoundId("");setCircuitId("");setEntries([]);setDotdId("");setPoleTime("");await refresh();
