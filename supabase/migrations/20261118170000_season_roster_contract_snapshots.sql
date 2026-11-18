@@ -302,6 +302,21 @@ begin
     return jsonb_build_object('ready',false,'reason','calendar_not_complete');
   end if;
 
+  if (select array_agg(period_type order by sort_order) from public.season_calendar_periods where season_id=p_season_id)
+    is distinct from array['pre_season','race_period','race_break','race_period','race_break','race_period','race_break','race_period','race_break','race_period','end_season','off_season']::text[] then
+    return jsonb_build_object('ready',false,'reason','calendar_period_sequence_invalid');
+  end if;
+
+  if exists(
+    select 1 from (
+      select starts_on,lag(ends_on) over(order by sort_order) as previous_end
+      from public.season_calendar_periods where season_id=p_season_id
+    ) dates
+    where previous_end is not null and starts_on<>previous_end+1
+  ) then
+    return jsonb_build_object('ready',false,'reason','calendar_dates_not_contiguous');
+  end if;
+
   if exists(
     select 1
     from public.license_season_divisions d
