@@ -9,10 +9,11 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
-type PersistentCharacterRecord = { key: string; driverId: string; fingerprint: string; glb: ArrayBuffer; savedAt: number };
+type PersistentCharacterRecord = { key: string; driverId: string; fingerprint: string; glb?: ArrayBuffer; glbGzip?: ArrayBuffer; originalByteLength?: number; savedAt: number };
 const CHARACTER_CACHE_DB = "caleris-driver-model-cache";
 const CHARACTER_CACHE_STORE = "models";
-const CHARACTER_CACHE_VERSION = 1;
+const CHARACTER_CACHE_VERSION = 2;
+const CHARACTER_MODEL_VERSION = "race-suit-v4";
 const characterModelCache = new Map<string, Promise<ArrayBuffer>>();
 
 const openCharacterCache = (): Promise<IDBDatabase> => new Promise((resolve, reject) => {
@@ -76,6 +77,22 @@ const toArrayBuffer = async (value: unknown): Promise<ArrayBuffer | null> => {
   if (ArrayBuffer.isView(value)) return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer;
   return null;
 };
+
+const hashFingerprint = async (value: string): Promise<string> => {
+  if (!globalThis.crypto?.subtle) return value;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+};
+
+const transformModelBytes = async (bytes: ArrayBuffer, format: "gzip" | "gunzip"): Promise<ArrayBuffer> => {
+  const Constructor = format === "gzip" ? globalThis.CompressionStream : globalThis.DecompressionStream;
+  if (!Constructor) throw new Error("Browser compression API unavailable");
+  const stream = new Blob([bytes]).stream().pipeThrough(new Constructor("gzip"));
+  return new Response(stream).arrayBuffer();
+};
+
+const compressModelBytes = (bytes: ArrayBuffer): Promise<ArrayBuffer> => transformModelBytes(bytes, "gzip");
+const decompressModelBytes = (bytes: ArrayBuffer): Promise<ArrayBuffer> => transformModelBytes(bytes, "gunzip");
 
 const numberFor = (name: string, index: number) => {
   let hash = 0;
@@ -161,17 +178,27 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           return m;
         };
         const mesh = (geometry: Three.BufferGeometry, mat: Three.Material, parent: Three.Object3D, position?: [number, number, number], scale?: [number, number, number]) => {
-          disposableGeometries.push(geometry);
+          if (!disposableGeometries.includes(geometry)) disposableGeometries.push(geometry);
           const item = new THREE.Mesh(geometry, mat);
           if (position) item.position.set(...position);
           if (scale) item.scale.set(...scale);
           parent.add(item);
           return item;
         };
-        const box = (parent: Three.Object3D, size: [number, number, number], pos: [number, number, number], mat: Three.Material) =>
-          mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
-        const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
-          mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
+        const sharedBoxGeometries = new Map<string, Three.BoxGeometry>();
+        const sharedCylinderGeometries = new Map<string, Three.CylinderGeometry>();
+        const box = (parent: Three.Object3D, size: [number, number, number], pos: [number, number, number], mat: Three.Material) => {
+          const key = size.join(":");
+          let geometry = sharedBoxGeometries.get(key);
+          if (!geometry) { geometry = new THREE.BoxGeometry(...size); sharedBoxGeometries.set(key, geometry); }
+          return mesh(geometry, mat, parent, pos);
+        };
+        const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) => {
+          const key = [radiusTop, radiusBottom, height].join(":");
+          let geometry = sharedCylinderGeometries.get(key);
+          if (!geometry) { geometry = new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16); sharedCylinderGeometries.set(key, geometry); }
+          return mesh(geometry, mat, parent, pos);
+        };
         scene.background = new THREE.Color(0x171411);
         scene.fog = new THREE.FogExp2(0x171411, 0.0021);
         renderer.toneMappingExposure = 0.82;
@@ -329,8 +356,10 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
 
           const genderLabel = String(driver.gender ?? driver.character_gender ?? "").toLowerCase();
           const isFemale = driver.gender === 0 || /female|woman|perempuan/.test(genderLabel);
-          const seed = Math.abs((index + 1) * 7919 + String(driver.id || driver.character_name || index).split("").reduce((n, c) => (n * 31 + c.charCodeAt(0)) | 0, 7)) % 1000000000;
-          const ethnicity = index % 3;
+          const stableDriverId = String(driver.id || driver.character_name || index);
+          const seed = [...stableDriverId].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7919) % 1000000000;
+          const stableVariant = [...stableDriverId].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
+          const ethnicity = stableVariant % 3;
           const characterInput = {
             kind: "ara-character",
             version: 1,
@@ -338,18 +367,18 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             params: {
               name: driver.character_name || `Caleris Driver ${index + 1}`,
               seed,
-              age: 0.48 + (index % 9) * 0.012,
+              age: 0.48 + (stableVariant % 9) * 0.012,
               gender: isFemale ? 0 : 1,
-              muscle: 0.58 + (index % 4) * 0.09,
-              weight: 0.38 + (index % 5) * 0.055,
-              height: 0.42 + (index % 4) * 0.045,
+              muscle: 0.58 + (stableVariant % 4) * 0.09,
+              weight: 0.38 + (stableVariant % 5) * 0.055,
+              height: 0.42 + (stableVariant % 4) * 0.045,
               african: ethnicity === 0 ? 0.85 : ethnicity === 1 ? 0.12 : 0.08,
               asian: ethnicity === 1 ? 0.78 : ethnicity === 2 ? 0.72 : 0.08,
               caucasian: ethnicity === 2 ? 0.2 : ethnicity === 0 ? 0.07 : 0.1,
               skin: "auto",
-              hair: hairStyles[index % hairStyles.length],
-              hairColor: ["#211812", "#34251d", "#171717", "#3b2922"][index % 4],
-              facialHair: isFemale ? "none" : (index % 3 === 0 ? "stubble" : "none"),
+              hair: hairStyles[stableVariant % hairStyles.length],
+              hairColor: ["#211812", "#34251d", "#171717", "#3b2922"][stableVariant % 4],
+              facialHair: isFemale ? "none" : (stableVariant % 3 === 0 ? "stubble" : "none"),
               outfit: "none",
               top: "techwear_jacket",
               jacket: "none",
@@ -369,20 +398,27 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               expression: "neutral",
             },
           };
-          const stableDriverId = String(driver.id || driver.character_name || seed);
           const detail = mobile ? "low" : "high";
-          const cacheKey = stableDriverId + ":" + detail + ":race-suit-v3";
-          const fingerprint = JSON.stringify({ generator: "ara3d@0.7.4", detail, characterInput });
+          const cacheKey = stableDriverId + ":" + detail + ":" + CHARACTER_MODEL_VERSION;
+          const fingerprintSource = JSON.stringify({ generator: "ara3d@0.7.4", pipeline: CHARACTER_MODEL_VERSION, detail, characterInput });
+          const fingerprint = await hashFingerprint(fingerprintSource);
           const memoryCacheKey = cacheKey + ":" + fingerprint;
           let cachedBytes = characterModelCache.get(memoryCacheKey);
           if (!cachedBytes) {
             cachedBytes = (async () => {
               const saved = await readCharacterCache(cacheKey).catch(() => null);
-              if (saved?.fingerprint === fingerprint && saved.glb?.byteLength) return saved.glb;
+              if (saved?.fingerprint === fingerprint) {
+                if (saved.glbGzip?.byteLength) {
+                  const restored = await decompressModelBytes(saved.glbGzip).catch(() => null);
+                  if (restored?.byteLength) return restored;
+                }
+                if (saved.glb?.byteLength) return saved.glb;
+              }
               const character = await createCharacter(characterInput, { detail, animations: ["idle", "look_around", "talk_gestures", "wave"] });
               const bytes = await toArrayBuffer((character as AraCharacter & { glb?: unknown }).glb);
               if (!bytes) { character.dispose(); throw new Error("Ara3D did not return a reusable GLB model"); }
-              await writeCharacterCache({ key: cacheKey, driverId: stableDriverId, fingerprint, glb: bytes, savedAt: Date.now() }).catch((error) => console.warn("Could not persist driver model cache:", error));
+              const compressed = await compressModelBytes(bytes).catch(() => null);
+              await writeCharacterCache({ key: cacheKey, driverId: stableDriverId, fingerprint, glbGzip: compressed || undefined, glb: compressed ? undefined : bytes, originalByteLength: bytes.byteLength, savedAt: Date.now() }).catch((error) => console.warn("Could not persist driver model cache:", error));
               character.dispose();
               return bytes;
             })();
@@ -420,22 +456,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           driverObjects.set(driver.id, root);
           selectable.push(root);
         };
-
-        for (const [index, driver] of drivers.entries()) {
-          try { await createDriver(driver, index); }
-          catch (error) {
-            console.error("Could not build realistic driver model:", driver.character_name, error);
-            setSceneError("Sebagian model 3D tidak berhasil dimuat. Periksa koneksi lalu muat ulang halaman.");
-          }
-          if (!disposed) setLoadingCount(index + 1);
-        }
-        if (!disposed) setSceneLoading(false);
-        const activeCacheKeys = new Set(drivers.flatMap((driver) => {
-          const id = String(driver.id || driver.character_name || "");
-          return [id + ":low:race-suit-v3", id + ":high:race-suit-v3"];
-        }));
-        void pruneCharacterCache(activeCacheKeys).catch((error) => console.warn("Could not prune removed or outdated driver cache entries:", error));
-        if (navigator.storage && navigator.storage.persist) void navigator.storage.persist().catch(() => false);
 
         driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
         const onFilter = (event: Event) => {
@@ -618,8 +638,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         resizeObserver = new ResizeObserver(resize);
         resizeObserver.observe(host);
         let last = 0;
-        const animate = (time: number) => {
+        let animate: (time: number) => void;
+        const onVisibilityChange = () => { if (!document.hidden && !disposed) { last = 0; if (!frame) frame = requestAnimationFrame(animate); } };
+        document.addEventListener("visibilitychange", onVisibilityChange);
+        animate = (time: number) => {
+          frame = 0;
           if (disposed || !renderer) return;
+          if (document.hidden) return;
           frame = requestAnimationFrame(animate);
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
@@ -663,12 +688,33 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           camera.lookAt(orbitTarget);
           renderer.render(scene, camera);
         };
-        frame = requestAnimationFrame(animate);
+        frame = document.hidden ? 0 : requestAnimationFrame(animate);
+        const loadDriversProgressively = async () => {
+          for (const [index, driver] of drivers.entries()) {
+            if (disposed) return;
+            try { await createDriver(driver, index); }
+            catch (error) {
+              console.error("Could not build realistic driver model:", driver.character_name, error);
+              if (!disposed) setSceneError("Sebagian model 3D tidak berhasil dimuat. Periksa koneksi lalu muat ulang halaman.");
+            }
+            if (!disposed) setLoadingCount(index + 1);
+          }
+          if (!disposed) setSceneLoading(false);
+          const activeCacheKeys = new Set(drivers.flatMap((driver) => {
+            const id = String(driver.id || driver.character_name || "");
+            return [id + ":low:" + CHARACTER_MODEL_VERSION, id + ":high:" + CHARACTER_MODEL_VERSION];
+          }));
+          void pruneCharacterCache(activeCacheKeys).catch((error) => console.warn("Could not prune removed or outdated driver cache entries:", error));
+          if (navigator.storage?.persist) void navigator.storage.persist().catch(() => false);
+          driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
+        };
+        void loadDriversProgressively();
         cleanup = () => {
           renderer?.domElement.removeEventListener("pointerdown", onPointerDown);
           renderer?.domElement.removeEventListener("pointermove", onPointerMove);
           renderer?.domElement.removeEventListener("pointerup", onPointerUp);
           renderer?.domElement.removeEventListener("wheel", onWheel);
+          document.removeEventListener("visibilitychange", onVisibilityChange);
           window.removeEventListener("keydown", onKeyDown);
           window.removeEventListener("keyup", onKeyUp);
           window.removeEventListener("blur", onBlur);
