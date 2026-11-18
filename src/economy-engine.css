@@ -85,3 +85,16 @@
 .economy-audit-footnote svg{flex:none;color:#d8c17b}
 @media(max-width:850px){.economy-audit-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.economy-audit-columns{grid-template-columns:1fr}}
 @media(max-width:560px){.economy-audit-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.economy-audit-list article{grid-template-columns:minmax(0,1fr) auto}}
+
+.economy-audit-health{margin:14px 0;padding:14px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:10px;background:rgba(255,255,255,.018)}
+.economy-audit-health-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.economy-audit-health-head h3{margin:4px 0;font-size:15px;color:var(--text,#fff)}
+.economy-audit-health-head small,.economy-audit-health>p{font-size:10px;color:var(--muted,#aaa)}
+.economy-audit-health-state{padding:5px 8px;border:1px solid var(--line,rgba(255,255,255,.16));border-radius:6px;font-size:9px;letter-spacing:.08em}
+.economy-audit-health-state.healthy{color:#a7c9ad;border-color:rgba(100,170,115,.3)}
+.economy-audit-health-state.attention,.economy-audit-health-state.failed{color:#e3b17a;border-color:rgba(190,142,54,.35)}
+.economy-audit-health-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:12px}
+.economy-audit-health-grid article{display:grid;gap:5px;padding:9px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:7px}
+.economy-audit-health-grid span{font-size:9px;color:var(--muted,#aaa)}
+.economy-audit-health-grid strong{font-size:17px;font-variant-numeric:tabular-nums}
+@media(max-width:720px){.economy-audit-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
