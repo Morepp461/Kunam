@@ -56,6 +56,7 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json().catch(() => null);
     if (!body || typeof body !== "object") return json({ error: "Invalid JSON body." }, 400, origin);
+    const event = typeof body.event === "string" ? body.event.trim().slice(0, 48) : "caleris_update";
     const db = serviceClient();
     const [{ data: admin }, { data: memberProfile }] = await Promise.all([
       db.from("site_admins").select("user_id").eq("user_id", auth.user.id).maybeSingle(),
@@ -88,7 +89,6 @@ Deno.serve(async (req: Request) => {
     const title = typeof body.title === "string" ? body.title.trim().slice(0, 240) : "";
     const description = typeof body.description === "string" ? body.description.trim().slice(0, 3500) : "";
     const urlValue = typeof body.url === "string" ? body.url.trim() : "";
-    const event = typeof body.event === "string" ? body.event.trim().slice(0, 48) : "caleris_update";
     if (!title || !description) return json({ error: "Title and description are required." }, 400, origin);
     let safeUrl: string | undefined;
     if (urlValue) {
