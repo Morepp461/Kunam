@@ -146,4 +146,5 @@ revoke all on public.caleris_team_hq_projects from anon;
 grant select on public.caleris_team_hq_facility_configs to authenticated;
 grant select on public.caleris_team_hq_facilities to authenticated;
 grant select on public.caleris_team_hq_projects to authenticated;
-grant select, insert, update, delete on public.caleris_team_hq_facility_configs to authenticated;\ngrant all on public.caleris_team_hq_facility_configs to service_role;
+grant select, insert, update, delete on public.caleris_team_hq_facility_configs to authenticated;
+grant all on public.caleris_team_hq_facility_configs to service_role;
