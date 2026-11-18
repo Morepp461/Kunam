@@ -54,7 +54,7 @@ export default function RaceControl(){
   if(entries.some(x=>x.status==="finished"&&!parseRaceTime(x.timeOrLaps))){fail("Race time wajib memakai format h:mm:ss.mmm atau m:ss.mmm.");return}
   if(entries.some(x=>x.status==="dnf"&&parseLaps(x.timeOrLaps)===null)){fail("Data DNF wajib mencantumkan laps behind, contoh +11 Laps.");return}
   if(entries.some(x=>(x.status==="finished"&&(!x.gap.trim()||parseGap(x.gap)===null))||(x.status==="dnf"&&!x.gap.trim()))){fail("Gap wajib diisi untuk Finished dan DNF.");return}
-  if(entries.some(x=>!x.stints.length)){fail("Setiap Driver wajib memiliki minimal satu stint ban.");return}
+  if(entries.some(x=>x.status!=="dns"&&!x.stints.length)){fail("Setiap Driver yang start wajib memiliki minimal satu stint ban.");return}
   if(entries.some(x=>x.fastestLap.trim()&&(x.status!=="finished"||!parseLap(x.fastestLap)))){fail("Fastest lap hanya boleh diisi untuk Driver Finished dan memakai format m:ss.mmm.");return}
   const fastestEntries=entries.filter(x=>x.fastestLap.trim());if(fastestEntries.length!==1){fail("Isi fastest lap untuk tepat satu Driver.");return}
   if(!pole){fail("Grid position 1 menentukan Pole Position.");return}
