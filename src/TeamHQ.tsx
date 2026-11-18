@@ -55,7 +55,7 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(false); setIsOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
