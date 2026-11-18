@@ -1,0 +1,147 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Building2, RefreshCw, Save, ShieldCheck, Wrench } from "lucide-react";
+import { supabase } from "./lib/supabase";
+import "./team-hq.css";
+
+type FacilityConfig = {
+  facility_key: string; title: string; description: string; is_enabled: boolean;
+  max_level_premio: number; max_level_zwei: number;
+  construction_cost_by_level: Record<string, number>;
+  construction_days_by_level: Record<string, number>;
+  maintenance_by_level: Record<string, number>;
+  effects_by_level: Record<string, unknown>;
+  maintenance_required: boolean; unlock_rules: Record<string, unknown>;
+};
+type Facility = { id: string; team_id: string; facility_key: string; level: number; condition: number; asset_value: number; last_maintenance_at: string | null };
+type Project = { id: string; facility_key: string; target_level: number; status: string; cost: number; completes_at: string | null; created_at: string };
+type Team = { id: string; name: string; division_key: string | null };
+
+const jsonFields = [
+  ["construction_cost_by_level", "Biaya konstruksi per level"],
+  ["construction_days_by_level", "Durasi konstruksi (hari)"],
+  ["maintenance_by_level", "Maintenance per level"],
+  ["effects_by_level", "Efek per level"],
+  ["unlock_rules", "Aturan unlock"]
+] as const;
+
+const money = (value: number) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value);
+const divisionMax = (division: string | null) => division?.toLowerCase().includes("zwei") ? 6 : 8;
+
+export default function TeamHQ() {
+  const [team, setTeam] = useState<Team | null>(null);
+  const [configs, setConfigs] = useState<FacilityConfig[]>([]);
+  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isFia, setIsFia] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [draft, setDraft] = useState<FacilityConfig | null>(null);
+  const [jsonDraft, setJsonDraft] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    if (!supabase) { setError("Koneksi Supabase belum tersedia."); setLoading(false); return; }
+    setLoading(true); setError("");
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) { setError("Login diperlukan untuk membuka Team HQ."); setLoading(false); return; }
+    const [profileResult, configResult, adminResult] = await Promise.all([
+      supabase.from("profiles").select("member_id").eq("user_id", auth.user.id).maybeSingle(),
+      supabase.from("caleris_team_hq_facility_configs").select("*").order("title"),
+      supabase.from("site_admins").select("user_id").eq("user_id", auth.user.id).maybeSingle()
+    ]);
+    if (configResult.error) setError(configResult.error.message);
+    else setConfigs((configResult.data ?? []) as FacilityConfig[]);
+    const memberId = profileResult.data?.member_id;
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
+    const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
+    if (memberError) setError(memberError.message);
+    const role = String(member?.role ?? "");
+    setIsFia(Boolean(adminResult.data?.user_id) || role === "FIA");
+    setIsOwner(role === "Owner" || role === "Principal");
+    if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setLoading(false); return; }
+    const [teamResult, facilityResult, projectResult] = await Promise.all([
+      supabase.from("teams").select("id,name,division_key").eq("id", member.team_id).maybeSingle(),
+      supabase.from("caleris_team_hq_facilities").select("*").eq("team_id", member.team_id),
+      supabase.from("caleris_team_hq_projects").select("*").eq("team_id", member.team_id).order("created_at", { ascending: false }).limit(10)
+    ]);
+    if (teamResult.error) setError(teamResult.error.message);
+    else setTeam(teamResult.data as Team | null);
+    if (facilityResult.error) setError(facilityResult.error.message);
+    else setFacilities((facilityResult.data ?? []) as Facility[]);
+    if (projectResult.error) setError(projectResult.error.message);
+    else setProjects((projectResult.data ?? []) as Project[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const maxLevel = useMemo(() => divisionMax(team?.division_key ?? null), [team?.division_key]);
+  const facilityMap = useMemo(() => new Map(facilities.map((item) => [item.facility_key, item])), [facilities]);
+
+  const beginEdit = (config: FacilityConfig) => {
+    setEditing(config.facility_key); setDraft({ ...config });
+    setJsonDraft(Object.fromEntries(jsonFields.map(([key]) => [key, JSON.stringify(config[key] ?? {}, null, 2)])));
+    setNotice(""); setError("");
+  };
+  const saveConfig = async () => {
+    if (!supabase || !draft) return;
+    let parsed: Record<string, unknown> = {};
+    try { for (const [key] of jsonFields) parsed[key] = JSON.parse(jsonDraft[key] || "{}"); }
+    catch { setError("Format JSON konfigurasi tidak valid. Periksa kembali semua kolom."); return; }
+    if (draft.max_level_premio < 1 || draft.max_level_premio > 8 || draft.max_level_zwei < 1 || draft.max_level_zwei > 6) {
+      setError("Batas level harus 1–8 untuk Premio dan 1–6 untuk Zwei."); return;
+    }
+    setSaving(true); setError("");
+    const { error: saveError } = await supabase.from("caleris_team_hq_facility_configs").update({
+      title: draft.title.trim(), description: draft.description.trim(), is_enabled: draft.is_enabled,
+      max_level_premio: draft.max_level_premio, max_level_zwei: draft.max_level_zwei,
+      maintenance_required: draft.maintenance_required, ...parsed,
+      updated_at: new Date().toISOString()
+    }).eq("facility_key", draft.facility_key);
+    setSaving(false);
+    if (saveError) setError(saveError.message);
+    else { setNotice("Konfigurasi fasilitas berhasil disimpan."); setEditing(null); setDraft(null); await load(); }
+  };
+
+  if (loading) return <section className="workspace team-hq"><p>Memuat Team HQ...</p></section>;
+  if (error && !team && !isFia) return <section className="workspace team-hq"><h1>Team HQ</h1><p className="team-hq-error">{error}</p></section>;
+
+  return <section className="workspace team-hq">
+    <div className="team-hq-heading">
+      <div><span className="section-eyebrow">TEAM MANAGEMENT · HEADQUARTERS</span><h1>Team HQ</h1><p>{team ? team.name + " · " + (team.division_key ?? "Division belum ditetapkan") : isFia ? "FIA Configuration Center" : "Akun ini belum terhubung ke tim."}</p></div>
+      <button className="team-hq-refresh" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button>
+    </div>
+    {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
+    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{projects.filter(p => p.status === "queued" || p.status === "in_progress").length}/1</strong></div></div>}
+    <div className="team-hq-section-title"><div><span className="section-eyebrow">FACILITY DIRECTORY</span><h2>{isFia ? "Facility Configuration" : "Facilities"}</h2></div><span className="empty-tag">9 FACILITIES</span></div>
+    <div className="team-hq-grid">
+      {configs.map((config) => {
+        const facility = facilityMap.get(config.facility_key);
+        const level = facility?.level ?? 0;
+        const limit = team ? (team.division_key?.toLowerCase().includes("zwei") ? config.max_level_zwei : config.max_level_premio) : config.max_level_premio;
+        return <article className="team-hq-card" key={config.facility_key}>
+          <div className="team-hq-card-top"><span className="team-hq-facility-icon"><Building2 size={18}/></span><span className={config.is_enabled ? "team-hq-status" : "team-hq-status disabled"}>{config.is_enabled ? "ACTIVE" : "DISABLED"}</span></div>
+          <h3>{config.title}</h3><p>{config.description}</p>
+          {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div></>}
+          {config.maintenance_required && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance diperlukan</small>}
+          {isFia && <button className="team-hq-edit" onClick={() => beginEdit(config)}>Edit configuration</button>}
+          {team && isOwner && <small className="team-hq-lock-note">Upgrade akan tersedia setelah integrasi transaksi Economy Engine.</small>}
+        </article>;
+      })}
+    </div>
+    {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">CONSTRUCTION PIPELINE</span><h2>Project History</h2></div><span className="empty-tag">LATEST 10</span></div>{projects.length ? projects.map(project => <div className="team-hq-project-row" key={project.id}><strong>{configs.find(c => c.facility_key === project.facility_key)?.title ?? project.facility_key}</strong><span>Target level {project.target_level}</span><span>{project.status.replaceAll("_"," ")}</span><span>€{money(project.cost)}</span></div>) : <p className="team-hq-empty">Belum ada proyek pembangunan atau upgrade.</p>}</section>}
+    {editing && draft && <div className="team-hq-editor"><div className="team-hq-section-title"><div><span className="section-eyebrow">FIA CONTROL</span><h2>Edit {draft.title}</h2></div></div>
+      <label>Nama fasilitas<input value={draft.title} onChange={e => setDraft(v => v ? { ...v, title: e.target.value } : v)}/></label>
+      <label>Deskripsi<textarea value={draft.description} onChange={e => setDraft(v => v ? { ...v, description: e.target.value } : v)}/></label>
+      <div className="team-hq-form-grid"><label>Max level Premio<input type="number" min="1" max="8" value={draft.max_level_premio} onChange={e => setDraft(v => v ? { ...v, max_level_premio: Number(e.target.value) } : v)}/></label><label>Max level Zwei<input type="number" min="1" max="6" value={draft.max_level_zwei} onChange={e => setDraft(v => v ? { ...v, max_level_zwei: Number(e.target.value) } : v)}/></label></div>
+      <label className="team-hq-check"><input type="checkbox" checked={draft.is_enabled} onChange={e => setDraft(v => v ? { ...v, is_enabled: e.target.checked } : v)}/> Facility enabled</label>
+      <label className="team-hq-check"><input type="checkbox" checked={draft.maintenance_required} onChange={e => setDraft(v => v ? { ...v, maintenance_required: e.target.checked } : v)}/> Maintenance required</label>
+      {jsonFields.map(([key,label]) => <label key={key}>{label}<textarea className="team-hq-json" spellCheck={false} value={jsonDraft[key] ?? "{}"} onChange={e => setJsonDraft(v => ({ ...v, [key]: e.target.value }))}/></label>)}
+      <div className="team-hq-actions"><button onClick={() => { setEditing(null); setDraft(null); }} className="team-hq-cancel">Batal</button><button onClick={() => void saveConfig()} disabled={saving} className="team-hq-save"><Save size={15}/>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button></div>
+      <p className="team-hq-footnote"><ShieldCheck size={14}/> Biaya, durasi, maintenance, efek, dan unlock disimpan sebagai konfigurasi FIA. Tidak ada nilai ekonomi default yang dikarang.</p>
+    </div>}
+  </section>;
+}
