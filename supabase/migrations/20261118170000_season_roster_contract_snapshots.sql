@@ -17,6 +17,28 @@ create table if not exists public.license_season_roster_snapshots (
 );
 create index if not exists license_season_roster_snapshots_division_idx
   on public.license_season_roster_snapshots(season_division_id,team_id,member_id);
+create table if not exists public.license_season_team_snapshots (
+  id uuid primary key default gen_random_uuid(),
+  season_id uuid not null references public.license_seasons(id) on delete restrict,
+  season_division_id uuid not null references public.license_season_divisions(id) on delete restrict,
+  team_id uuid not null references public.teams(id) on delete restrict,
+  team_name_snapshot text not null,
+  created_at timestamptz not null default now(),
+  unique(season_id,team_id),
+  unique(season_division_id,team_id)
+);
+create index if not exists license_season_team_snapshots_division_idx
+  on public.license_season_team_snapshots(season_division_id,team_id);
+alter table public.license_season_team_snapshots enable row level security;
+revoke all on public.license_season_team_snapshots from public,anon,authenticated,service_role;
+grant select on public.license_season_team_snapshots to authenticated;
+drop policy if exists "Authenticated members read season team snapshots" on public.license_season_team_snapshots;
+create policy "Authenticated members read season team snapshots"
+  on public.license_season_team_snapshots for select to authenticated using (true);
+drop trigger if exists license_season_team_snapshot_immutable on public.license_season_team_snapshots;
+create trigger license_season_team_snapshot_immutable
+before update or delete on public.license_season_team_snapshots
+for each row execute function private.guard_season_roster_snapshot_immutable();
 alter table public.license_season_roster_snapshots enable row level security;
 revoke all on public.license_season_roster_snapshots from public,anon,authenticated,service_role;
 grant select on public.license_season_roster_snapshots to authenticated;
@@ -105,6 +127,55 @@ drop trigger if exists caleris_race_result_entry_identity_snapshot on public.cal
 create trigger caleris_race_result_entry_identity_snapshot
 before insert or update on public.caleris_race_result_entries
 for each row execute function private.snapshot_race_result_entry_identity();
+
+create or replace function private.snapshot_season_standing_identity()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_division_id uuid;
+  v_season_id uuid;
+  v_roster public.license_season_roster_snapshots%rowtype;
+begin
+  if tg_table_name='license_round_standings' then
+    select d.id,d.season_id into v_division_id,v_season_id
+    from public.license_rounds r
+    join public.license_season_divisions d on d.id=r.season_division_id
+    where r.id=new.round_id;
+  else
+    v_division_id:=new.season_division_id;
+    select season_id into v_season_id from public.license_season_divisions where id=v_division_id;
+  end if;
+  if v_season_id is not null and tg_table_name<>'license_team_final_standings' then
+    select * into v_roster from public.license_season_roster_snapshots
+    where season_id=v_season_id and season_division_id=v_division_id and member_id=new.member_id;
+    if found then
+      new.driver_name_snapshot:=coalesce(new.driver_name_snapshot,v_roster.driver_name_snapshot);
+      new.team_id_snapshot:=coalesce(new.team_id_snapshot,v_roster.team_id);
+      new.team_name_snapshot:=coalesce(new.team_name_snapshot,v_roster.team_name_snapshot);
+    end if;
+  elsif v_season_id is not null then
+    select team_name_snapshot into new.team_name_snapshot
+    from public.license_season_team_snapshots
+    where season_id=v_season_id and season_division_id=v_division_id and team_id=new.team_id;
+  end if;
+  return new;
+end;
+$;
+drop trigger if exists license_round_standings_identity_snapshot on public.license_round_standings;
+create trigger license_round_standings_identity_snapshot
+before insert or update on public.license_round_standings
+for each row execute function private.snapshot_season_standing_identity();
+drop trigger if exists license_final_standings_identity_snapshot on public.license_final_standings;
+create trigger license_final_standings_identity_snapshot
+before insert or update on public.license_final_standings
+for each row execute function private.snapshot_season_standing_identity();
+drop trigger if exists license_team_final_standings_identity_snapshot on public.license_team_final_standings;
+create trigger license_team_final_standings_identity_snapshot
+before insert or update on public.license_team_final_standings
+for each row execute function private.snapshot_season_standing_identity();
 
 -- Resolve the team that a Driver represents for one particular season.
 -- A full-season loan is represented by the borrower team, while the salary
@@ -216,6 +287,9 @@ begin
 
   select count(*) into v_period_count
   from public.season_calendar_periods where season_id=p_season_id;
+  if not exists(select 1 from public.license_season_divisions where season_id=p_season_id) then
+    return jsonb_build_object('ready',false,'reason','season_has_no_divisions');
+  end if;
   select count(*) into v_race_period_count
   from public.season_calendar_periods where season_id=p_season_id and period_type='race_period';
   select count(*) into v_break_count
@@ -231,13 +305,15 @@ begin
   if exists(
     select 1
     from public.license_season_divisions d
-    cross join public.season_calendar_periods p
-    left join public.season_period_rounds pr
-      on pr.period_id=p.id and pr.season_division_id=d.id
-    where d.season_id=p_season_id and p.season_id=p_season_id
-      and p.period_type='race_period'
-    group by d.id,p.id
-    having count(pr.id) not between 3 and 5
+    where d.season_id=p_season_id
+      and (
+        (select count(*) from public.season_calendar_periods p where p.season_id=p_season_id and p.period_type='race_period')<>5
+        or exists(
+          select 1 from public.season_calendar_periods p
+          where p.season_id=p_season_id and p.period_type='race_period'
+            and (select count(*) from public.season_period_rounds pr where pr.period_id=p.id and pr.season_division_id=d.id) not between 3 and 5
+        )
+      )
   ) then
     return jsonb_build_object('ready',false,'reason','race_period_round_count_invalid');
   end if;
@@ -312,6 +388,13 @@ begin
     set season_division_id=excluded.season_division_id,
         is_hiatus=false,
         preserved_license=coalesce(excluded.preserved_license,public.license_season_members.preserved_license);
+
+  insert into public.license_season_team_snapshots(season_id,season_division_id,team_id,team_name_snapshot)
+  select p_season_id,d.id,t.id,t.name
+  from public.license_season_divisions d
+  join public.teams t on lower(t.division_key)=lower(d.division_key)
+  where d.season_id=p_season_id
+  on conflict(season_id,team_id) do nothing;
 
   insert into public.license_season_roster_snapshots(
     season_id,season_division_id,member_id,team_id,contract_id,
