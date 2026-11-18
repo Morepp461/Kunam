@@ -488,7 +488,7 @@ begin
   get diagnostics v_completed=row_count;
 
   if not exists(select 1 from public.license_seasons where status='active') then
-    select count(*),min(next_season.id)
+    select count(*),(array_agg(next_season.id))[1]
     into v_candidates,v_candidate
     from public.license_seasons next_season
     where next_season.status='draft'
