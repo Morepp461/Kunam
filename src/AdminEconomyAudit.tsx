@@ -42,6 +42,7 @@ type AutomationRun = {
   details: Array<{ kind?: string; status?: string; error?: string }>;
   error: string | null;
 };
+type PayrollRun={id:string;started_at:string;status:string;payroll_paid:number;payroll_pending:number;error:string|null};
 type Snapshot = {
   pending_rewards: number;
   pending_member_checkins: number;
@@ -58,14 +59,18 @@ const date = (value: string | null) => value ? new Intl.DateTimeFormat("id-ID", 
 
 export default function AdminEconomyAudit() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [payrollRuns,setPayrollRuns]=useState<PayrollRun[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(async () => {
     if (!supabase) { setError("Koneksi Supabase belum tersedia."); setLoading(false); return; }
     setLoading(true);
-    const { data, error: requestError } = await supabase.rpc("admin_get_economy_audit_snapshot");
-    if (requestError) setError(requestError.message);
-    else { setSnapshot(data as Snapshot); setError(null); }
+    const [{ data, error: requestError },{data:payrollData,error:payrollError}]=await Promise.all([
+      supabase.rpc("admin_get_economy_audit_snapshot"),
+      supabase.from("caleris_payroll_automation_runs").select("id,started_at,status,payroll_paid,payroll_pending,error").order("started_at",{ascending:false}).limit(8)
+    ]);
+    if (requestError||payrollError) setError(requestError?.message||payrollError?.message||"Gagal memuat audit.");
+    else { setSnapshot(data as Snapshot);setPayrollRuns((payrollData||[]) as PayrollRun[]); setError(null); }
     setLoading(false);
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
@@ -116,11 +121,19 @@ export default function AdminEconomyAudit() {
             <div className="economy-audit-amount"><strong>{run.repayments_paid} angsuran dibayar</strong><small>{run.repayments_overdue} overdue · {run.pending_items} tertunda</small></div>
             <p>Finalisasi divisi {run.divisions_finalized} · Prizepool {run.prizepool_divisions_paid} · Wealth Tax {run.wealth_tax_assessments_paid} assessment dibayar</p>
             {run.repayment_periods_waiting > 0 && <p>{run.repayment_periods_waiting} Race Period menunggu seluruh divisi/payroll selesai.</p>}
-            {run.details?.filter(item => item.error).slice(0, 3).map((item, index) => <p className="economy-audit-error" key={index}>{item.kind}: {item.error}</p>)}
+            {run.details?.slice(0, 5).map((item, index) => <p className={item.error?"economy-audit-error":""} key={index}>{item.kind}: {item.status||"processed"}{item.error?` · ${item.error}`:""}</p>)}
             {run.error && <p className="economy-audit-error">{run.error}</p>}
           </article>)}</div>}
       </div>
+      <div>
+        <h3><Activity size={15}/> Automated Payroll Preparation</h3>
+        {!payrollRuns.length&&!loading?<p className="economy-audit-empty">Belum ada siklus retry payroll.</p>:<div className="economy-audit-list">{payrollRuns.map(run=><article key={run.id}>
+          <div><strong>{run.status==="completed"?"Selesai":run.status==="failed"?"Gagal":run.status==="partial"?"Sebagian tertunda":"Berjalan"}</strong><small>{date(run.started_at)}</small></div>
+          <div className="economy-audit-amount"><strong>{run.payroll_paid} dibayar</strong><small>{run.payroll_pending} masih pending</small></div>
+          {run.error&&<p className="economy-audit-error">{run.error}</p>}
+        </article>)}</div>}
+      </div>
     </div>
-    <p className="economy-audit-footnote"><ShieldCheck size={15}/> Reward, race check-in, transfer window, angsuran Cash Loan, finalisasi Prizepool, dan Wealth Tax diproses otomatis setiap 5 menit atau saat round disahkan. Angsuran hanya berjalan setelah seluruh payroll Race Period selesai. Payroll tetap mengikuti pemrosesan round dan tetap manual; sponsorship juga tetap manual.</p>
+    <p className="economy-audit-footnote"><ShieldCheck size={15}/> Gaji tetap dibuat setelah round terakhir setiap Race Period dan dibagi dari gaji tahunan menjadi lima pembayaran sesuai jumlah periode. Worker hanya me-retry payroll claim yang sudah terbentuk, setiap lima menit, tanpa membuat pembayaran baru atau membayar lebih awal. Bonus kontrak belum diotomatisasi karena model kontrak aktif belum memiliki field bonus tersendiri.</p>
   </section>;
 }
