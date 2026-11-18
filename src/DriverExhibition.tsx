@@ -619,7 +619,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       {selected && <aside className="driver-selected-panel">
         <button className="driver-panel-close" onClick={() => setSelected(null)} aria-label="Close driver information"><X size={17}/></button>
         <span className="driver-panel-eyebrow"><Crosshair size={13}/> SELECTED DRIVER</span>
-        <div className="driver-panel-identity"><div className="driver-panel-avatar">{selected.avatar_url ? <img src={selected.avatar_url} alt="" loading="lazy"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
+        <div className="driver-panel-identity"><div className="driver-panel-avatar">{(selected.avatar_url || selected.profile?.avatar_url || selected.avatarUrl) ? <img src={selected.avatar_url || selected.profile?.avatar_url || selected.avatarUrl} alt={`Foto ${selected.character_name || "driver"}`} loading="eager" referrerPolicy="no-referrer"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
         <div className="driver-panel-license"><span>LICENSE</span><strong>{selected.license || "UNASSIGNED"}</strong></div>
         <div className="driver-panel-stats">
           <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div>
