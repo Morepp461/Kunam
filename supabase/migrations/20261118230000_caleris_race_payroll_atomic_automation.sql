@@ -121,9 +121,14 @@ end;
 $function$;
 revoke all on function private.retry_pending_economy_payroll() from public,anon,authenticated,service_role;
 
-do $$ begin
- if exists(select 1 from cron.job where jobname='caleris-race-lifecycle') then perform cron.unschedule('caleris-race-lifecycle'); end if;
+do $
+declare v_job bigint;
+begin
+ select jobid into v_job from cron.job where jobname='caleris-race-lifecycle';
+ if v_job is not null then perform cron.unschedule(v_job); end if;
  perform cron.schedule('caleris-race-lifecycle','* * * * *','select private.process_race_lifecycle();');
- if exists(select 1 from cron.job where jobname='caleris-payroll-pending-retry') then perform cron.unschedule('caleris-payroll-pending-retry'); end if;
+ select jobid into v_job from cron.job where jobname='caleris-payroll-pending-retry';
+ if v_job is not null then perform cron.unschedule(v_job); end if;
  perform cron.schedule('caleris-payroll-pending-retry','*/5 * * * *','select private.retry_pending_economy_payroll();');
-end $$;
+end
+$;
