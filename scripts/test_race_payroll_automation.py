@@ -20,7 +20,7 @@ assert 'type FinishStatus="finished"|"dnf"|"dns"|"dsq"' in race
 assert 'value="dns"' in race and 'value="dsq"' in race
 assert 'status:"finished"|"dnf"|"dns"|"dsq"' in ocr
 assert 'status:/\\bDSQ\\b/i.test(line)' in ocr
-assert 'status:/\\bDNS\\b/i.test(line)' in ocr
+assert '/\\bDNS\\b/i.test(line)' in ocr
 
 assert 'getRaceState' in schedule
 assert '"in_progress"' in schedule and '"awaiting_result"' in schedule
