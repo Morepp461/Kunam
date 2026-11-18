@@ -80,7 +80,7 @@ begin
  where race_lifecycle_status='awaiting_result' and status<>'closed';
 
  select count(*) into v_missing_calendar from public.license_seasons s
- where s.status in ('draft','active')
+ where s.status='active'
  and (select count(*) from public.season_calendar_periods p where p.season_id=s.id)<>12;
 
  v_snapshot:=jsonb_build_object(
