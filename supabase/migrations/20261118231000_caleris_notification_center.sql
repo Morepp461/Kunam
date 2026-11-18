@@ -139,7 +139,7 @@ begin
   if v_recipient is not null then
    perform private.enqueue_caleris_notification(v_recipient,'transfer_negotiation',v_title,v_body,'/transfer-market',
     'driver-move:'||new.id::text||':'||v_status||':'||v_recipient::text,
-    jsonb_build_object('negotiation_id',new.id,'move_type',new.move_type,'status',v_status),new.initiated_by);
+    jsonb_build_object('negotiation_id',new.id,'move_type',new.move_type,'status',v_status));
   end if;
  end loop;
  return new;
