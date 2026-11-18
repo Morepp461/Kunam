@@ -1,4 +1,4 @@
-import {useCallback,useEffect,useState} from "react";
+import {useCallback,useEffect,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import {X,RefreshCw,Pencil} from "lucide-react";
 import {supabase} from "./lib/supabase";
@@ -12,51 +12,41 @@ const flag=(code:string)=>/^[A-Z]{2}$/.test(code)?String.fromCodePoint(...code.s
 const countryName=(code:string)=>new Intl.DisplayNames(["id"],{type:"region"}).of(code)||code;
 const time=(ms:number|null)=>{if(!ms)return "Belum ada record";const m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000),v=ms%1000;return m+":"+String(s).padStart(2,"0")+","+String(v).padStart(3,"0")};
 const parseTime=(v:string)=>{const m=v.trim().match(/^(\d{1,3}):(\d{2})[.,](\d{3})$/);return m?Number(m[1])*60000+Number(m[2])*1000+Number(m[3]):null};
-async function decodeImageForCanvas(file:File):Promise<{source:CanvasImageSource;width:number;height:number;cleanup:()=>void;close?:()=>void}>{
- if(typeof createImageBitmap==="function"){
-  try{
-   const bitmap=await createImageBitmap(file);
-   return {source:bitmap,width:bitmap.width,height:bitmap.height,cleanup:()=>bitmap.close(),close:()=>bitmap.close()};
-  }catch{
-   // Some Android browsers can preview an image but fail to decode it via createImageBitmap.
-  }
+async function waitForPreviewImage(image:HTMLImageElement){
+ if(image.complete){
+  if(image.naturalWidth>0&&image.naturalHeight>0)return;
+  throw new Error("Preview gambar belum berhasil dimuat. Pilih ulang file gambar.");
  }
- const objectUrl=URL.createObjectURL(file);
- try{
-  const image=await new Promise<HTMLImageElement>((resolve,reject)=>{
-   const element=new Image();
-   element.onload=()=>resolve(element);
-   element.onerror=()=>reject(new Error("Browser gagal membaca gambar. Coba simpan ulang gambar sebagai PNG, JPG, atau WEBP."));
-   element.src=objectUrl;
-  });
-  return {source:image,width:image.naturalWidth,height:image.naturalHeight,cleanup:()=>URL.revokeObjectURL(objectUrl)};
- }catch(error){
-  URL.revokeObjectURL(objectUrl);
-  throw error;
- }
+ await new Promise<void>((resolve,reject)=>{
+  const cleanup=()=>{image.removeEventListener("load",onLoad);image.removeEventListener("error",onError)};
+  const onLoad=()=>{cleanup();resolve()};
+  const onError=()=>{cleanup();reject(new Error("Browser gagal memuat preview gambar. Pilih ulang file atau simpan ulang sebagai PNG, JPG, atau WEBP."))};
+  image.addEventListener("load",onLoad,{once:true});
+  image.addEventListener("error",onError,{once:true});
+ });
+ if(!image.naturalWidth||!image.naturalHeight)throw new Error("Dimensi gambar tidak valid.");
 }
-async function convertAndUpload(file:File){
+async function convertAndUpload(file:File,previewImage:HTMLImageElement|null){
  if(!file.type.startsWith("image/"))throw new Error("Pilih file gambar yang valid.");
  if(file.size>15*1024*1024)throw new Error("Ukuran gambar sumber maksimal 15 MB.");
- const decoded=await decodeImageForCanvas(file);
- try{
-  if(!decoded.width||!decoded.height)throw new Error("Dimensi gambar tidak valid atau gambar gagal dibaca.");
-  if(decoded.width>5000||decoded.height>5000)throw new Error("Resolusi gambar maksimal 5000 × 5000.");
-  const canvas=document.createElement("canvas");
-  canvas.width=decoded.width;canvas.height=decoded.height;
-  const ctx=canvas.getContext("2d");
-  if(!ctx)throw new Error("Konversi gambar tidak didukung browser.");
-  ctx.drawImage(decoded.source,0,0);
-  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Konversi WEBP gagal.")),"image/webp",0.86));
-  if(blob.type!=="image/webp")throw new Error("Browser tidak mendukung konversi WEBP. Gunakan browser yang lebih baru atau unggah gambar WEBP.");
-  if(blob.size>4*1024*1024)throw new Error("Ukuran WEBP maksimal 4 MB.");
-  const path=crypto.randomUUID()+".webp";
-  const uploaded=await supabase!.storage.from("circuit-layouts").upload(path,blob,{contentType:"image/webp",upsert:false});
-  if(uploaded.error)throw uploaded.error;
-  return {path,url:supabase!.storage.from("circuit-layouts").getPublicUrl(path).data.publicUrl};
- }finally{
-  decoded.cleanup();
- }
+ if(!previewImage)throw new Error("Preview gambar belum siap. Tunggu sampai gambar tampil lalu simpan kembali.");
+ // Reuse the exact image element already decoded for the visible preview. This avoids
+ // decoding the same Android-selected file a second time through another Blob URL.
+ await waitForPreviewImage(previewImage);
+ const width=previewImage.naturalWidth,height=previewImage.naturalHeight;
+ if(width>5000||height>5000)throw new Error("Resolusi gambar maksimal 5000 × 5000.");
+ const canvas=document.createElement("canvas");
+ canvas.width=width;canvas.height=height;
+ const ctx=canvas.getContext("2d");
+ if(!ctx)throw new Error("Konversi gambar tidak didukung browser.");
+ ctx.drawImage(previewImage,0,0,width,height);
+ const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Konversi WEBP gagal.")),"image/webp",0.86));
+ if(blob.type!=="image/webp")throw new Error("Browser tidak mendukung konversi WEBP. Gunakan browser yang lebih baru atau unggah gambar WEBP.");
+ if(blob.size>4*1024*1024)throw new Error("Ukuran WEBP maksimal 4 MB.");
+ const path=crypto.randomUUID()+".webp";
+ const uploaded=await supabase!.storage.from("circuit-layouts").upload(path,blob,{contentType:"image/webp",upsert:false});
+ if(uploaded.error)throw uploaded.error;
+ return {path,url:supabase!.storage.from("circuit-layouts").getPublicUrl(path).data.publicUrl};
 }
 function oldImagePath(url:string|null){if(!url)return null;const marker="/object/public/circuit-layouts/";const i=url.indexOf(marker);return i<0?null:decodeURIComponent(url.slice(i+marker.length))}
 export function CircuitPool(){
@@ -69,6 +59,7 @@ export function CircuitPool(){
 }
 export function CircuitPoolInput(){
  const [rows,setRows]=useState<Circuit[]>([]),[loading,setLoading]=useState(true),[form,setForm]=useState<CircuitForm>(emptyForm),[editingId,setEditingId]=useState<string|null>(null),[saving,setSaving]=useState(false),[notice,setNotice]=useState(""),[layoutFile,setLayoutFile]=useState<File|null>(null),[layoutPreview,setLayoutPreview]=useState("");
+ const layoutPreviewImage=useRef<HTMLImageElement|null>(null);
  const set=(key:keyof CircuitForm,value:string)=>setForm(v=>({...v,[key]:value}));
  const load=useCallback(async()=>{if(!supabase)return;const [{data:base,error:baseError},{data:pool,error:poolError}]=await Promise.all([supabase.from("caleris_circuits").select("id,name,country_code,image_url,total_laps,avg_track_temp_c,drs_zones,straights,low_speed_corners,high_speed_corners,grip_level,initial_lap_record_ms,initial_lap_record_driver_name").order("name"),supabase.from("caleris_circuit_pool").select("id,lap_record_ms,lap_record_driver_name")]);if(baseError||poolError){setNotice(baseError?.message||poolError?.message||"Gagal memuat circuit.");setLoading(false);return}const recordMap=new Map((pool||[]).map((x:any)=>[x.id,{time:x.lap_record_ms,driver:x.lap_record_driver_name}]));setRows((base||[]).map((c:any)=>({...c,lap_record_ms:recordMap.get(c.id)?.time??c.initial_lap_record_ms,lap_record_driver_name:recordMap.get(c.id)?.driver??c.initial_lap_record_driver_name})) as Circuit[]);setLoading(false)},[]);
  useEffect(()=>{const client=supabase;if(!client)return;void load();const channel=client.channel("circuit-pool-input-live").on("postgres_changes",{event:"*",schema:"public",table:"caleris_circuits"},()=>{void load()}).subscribe();return()=>{void client.removeChannel(channel)}},[load]);
@@ -76,11 +67,11 @@ export function CircuitPoolInput(){
  const reset=()=>{setEditingId(null);setForm(emptyForm);setLayoutFile(null);setLayoutPreview("");setNotice("")};
  const edit=(c:Circuit)=>{setEditingId(c.id);setForm({name:c.name,country_code:c.country_code,total_laps:String(c.total_laps),avg_track_temp_c:String(c.avg_track_temp_c),drs_zones:String(c.drs_zones),straights:String(c.straights),low_speed_corners:String(c.low_speed_corners),high_speed_corners:String(c.high_speed_corners),grip_level:String(c.grip_level),initial_record:c.initial_lap_record_ms?time(c.initial_lap_record_ms).replace(",","."):"",initial_record_driver_name:c.initial_lap_record_driver_name||""});setLayoutFile(null);setLayoutPreview(c.image_url||"");setNotice("")};
  const submit=async(e:FormEvent)=>{e.preventDefault();if(!supabase)return;const record=form.initial_record.trim()?parseTime(form.initial_record):null;if(form.initial_record.trim()&&!record){setNotice("Format lap record harus m:ss.mmm, contoh 1:32.456.");return}if(record&&!form.initial_record_driver_name.trim()){setNotice("Nama driver pemegang lap record awal wajib diisi.");return}if(!editingId&&!layoutFile){setNotice("Gambar layout sirkuit wajib diunggah.");return}
- setSaving(true);setNotice("");let uploaded:{path:string;url:string}|null=null;try{if(layoutFile)uploaded=await convertAndUpload(layoutFile);const values={name:form.name.trim(),country_code:form.country_code,total_laps:Number(form.total_laps),avg_track_temp_c:Number(form.avg_track_temp_c),drs_zones:Number(form.drs_zones),straights:Number(form.straights),low_speed_corners:Number(form.low_speed_corners),high_speed_corners:Number(form.high_speed_corners),grip_level:Number(form.grip_level),initial_lap_record_ms:record,initial_lap_record_driver_name:record?form.initial_record_driver_name.trim():null,...(uploaded?{image_url:uploaded.url}:{})};
+ setSaving(true);setNotice("");let uploaded:{path:string;url:string}|null=null;try{if(layoutFile)uploaded=await convertAndUpload(layoutFile,layoutPreviewImage.current);const values={name:form.name.trim(),country_code:form.country_code,total_laps:Number(form.total_laps),avg_track_temp_c:Number(form.avg_track_temp_c),drs_zones:Number(form.drs_zones),straights:Number(form.straights),low_speed_corners:Number(form.low_speed_corners),high_speed_corners:Number(form.high_speed_corners),grip_level:Number(form.grip_level),initial_lap_record_ms:record,initial_lap_record_driver_name:record?form.initial_record_driver_name.trim():null,...(uploaded?{image_url:uploaded.url}:{})};
  const query=editingId?supabase.from("caleris_circuits").update(values).eq("id",editingId):supabase.from("caleris_circuits").insert({...values,created_by:(await supabase.auth.getUser()).data.user?.id||null});
  const {error}=await query;if(error){if(uploaded)await supabase.storage.from("circuit-layouts").remove([uploaded.path]);throw error}
  if(editingId&&uploaded){const old=rows.find(c=>c.id===editingId);const path=oldImagePath(old?.image_url||null);if(path)await supabase.storage.from("circuit-layouts").remove([path])}
  setNotice(editingId?"Data circuit berhasil diperbarui.":"Circuit berhasil ditambahkan.");setForm(emptyForm);setEditingId(null);setLayoutFile(null);setLayoutPreview("");await load();
  }catch(err){setNotice(err instanceof Error?err.message:"Gagal menyimpan circuit.")}finally{setSaving(false)}};
- return <section className="workspace circuit-pool"><header className="page-heading"><span className="section-eyebrow">FIA PANEL · CIRCUIT DATABASE</span><h1 className="page-title">Circuit Pool Input</h1><p className="page-description">Kelola seluruh master circuit. Perubahan tersimpan ke database dan langsung tersinkron ke halaman Circuit Pool.</p></header><section className="workspace-card circuit-admin-list"><div className="section-title-row"><div><span className="section-eyebrow">EXISTING CIRCUITS</span><h2>Data circuit tersimpan ({rows.length})</h2></div><button className="economy-secondary-button" onClick={()=>{setLoading(true);void load()}} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>{loading?<p>Memuat data circuit...</p>:rows.length===0?<p className="s5-empty">Belum ada circuit. Tambahkan melalui form di bawah.</p>:<div className="s5-table-wrap"><table className="s5-table circuit-admin-table"><thead><tr><th>Circuit</th><th>Negara</th><th>Total lap</th><th>AVG temp</th><th>DRS</th><th>Straight</th><th>Low corner</th><th>High corner</th><th>Grip</th><th>Lap record</th><th>Layout</th><th>Aksi</th></tr></thead><tbody>{rows.map(c=><tr key={c.id}><td><strong>{c.name}</strong></td><td>{flag(c.country_code)} {countryName(c.country_code)}</td><td>{c.total_laps}</td><td>{c.avg_track_temp_c} °C</td><td>{c.drs_zones}</td><td>{c.straights}</td><td>{c.low_speed_corners}</td><td>{c.high_speed_corners}</td><td>{c.grip_level}/100</td><td>{time(c.lap_record_ms)}</td><td>{c.image_url?<a href={c.image_url} target="_blank" rel="noreferrer">Lihat layout</a>:"Tidak ada"}</td><td><button type="button" className="economy-secondary-button circuit-edit-button" onClick={()=>edit(c)}><Pencil size={14}/> Edit</button></td></tr>)}</tbody></table></div>}</section><section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">{editingId?"EDIT CIRCUIT":"NEW CIRCUIT"}</span><h2>{editingId?"Edit data circuit":"Tambah circuit baru"}</h2></div>{editingId&&<button type="button" className="economy-secondary-button" onClick={reset}>Batal edit</button>}</div><form className="s5-form circuit-input-form" onSubmit={submit}><label className="s5-field"><span>Nama circuit *</span><input value={form.name} onChange={e=>set("name",e.target.value)} maxLength={160} required/></label><label className="s5-field"><span>Negara circuit *</span><CountryCodeSelect value={form.country_code} onChange={v=>set("country_code",v)}/></label><div className="circuit-input-grid">{([["total_laps","Total lap"],["avg_track_temp_c","AVG track temp (°C)"],["drs_zones","DRS zone"],["straights","Straight"],["low_speed_corners","Low speed corner"],["high_speed_corners","High speed corner"],["grip_level","Grip level (0–100)"]] as const).map(([key,label])=><label className="s5-field" key={key}><span>{label} *</span><input type="number" min={key==="avg_track_temp_c"?"-50":key==="total_laps"?"1":"0"} max={key==="grip_level"?"100":undefined} step={key==="avg_track_temp_c"||key==="grip_level"?"0.01":"1"} value={form[key]} onChange={e=>set(key,e.target.value)} required/></label>)}</div><label className="s5-field"><span>Gambar layout sirkuit {editingId?"(opsional, upload untuk mengganti)":"*"}</span><input type="file" accept="image/png,image/jpeg,image/webp" required={!editingId} onChange={e=>{const file=e.target.files?.[0]||null;setLayoutFile(file);setLayoutPreview(file?URL.createObjectURL(file):editingId?(rows.find(c=>c.id===editingId)?.image_url||""):"")}}/></label>{layoutPreview&&<img className="circuit-layout-preview" src={layoutPreview} alt="Preview layout sirkuit"/>}<label className="s5-field"><span>Lap record time (opsional)</span><input value={form.initial_record} onChange={e=>set("initial_record",e.target.value)} placeholder="m:ss.mmm · contoh 1:32.456"/></label><label className="s5-field"><span>Nama driver pemegang record awal</span><input value={form.initial_record_driver_name} onChange={e=>set("initial_record_driver_name",e.target.value)} maxLength={120} placeholder="Nama driver"/></label><p className="economy-form-hint">Record awal hanya menjadi nilai pembuka. Fastest lap dari hasil race resmi akan menggantikannya jika lebih cepat.</p><button className="s5-primary" disabled={saving||!form.country_code}>{saving?"Menyimpan...":editingId?"Simpan perubahan":"Simpan circuit"}</button>{notice&&<p className="license-notice" role="status">{notice}</p>}</form></section></section>
+ return <section className="workspace circuit-pool"><header className="page-heading"><span className="section-eyebrow">FIA PANEL · CIRCUIT DATABASE</span><h1 className="page-title">Circuit Pool Input</h1><p className="page-description">Kelola seluruh master circuit. Perubahan tersimpan ke database dan langsung tersinkron ke halaman Circuit Pool.</p></header><section className="workspace-card circuit-admin-list"><div className="section-title-row"><div><span className="section-eyebrow">EXISTING CIRCUITS</span><h2>Data circuit tersimpan ({rows.length})</h2></div><button className="economy-secondary-button" onClick={()=>{setLoading(true);void load()}} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>{loading?<p>Memuat data circuit...</p>:rows.length===0?<p className="s5-empty">Belum ada circuit. Tambahkan melalui form di bawah.</p>:<div className="s5-table-wrap"><table className="s5-table circuit-admin-table"><thead><tr><th>Circuit</th><th>Negara</th><th>Total lap</th><th>AVG temp</th><th>DRS</th><th>Straight</th><th>Low corner</th><th>High corner</th><th>Grip</th><th>Lap record</th><th>Layout</th><th>Aksi</th></tr></thead><tbody>{rows.map(c=><tr key={c.id}><td><strong>{c.name}</strong></td><td>{flag(c.country_code)} {countryName(c.country_code)}</td><td>{c.total_laps}</td><td>{c.avg_track_temp_c} °C</td><td>{c.drs_zones}</td><td>{c.straights}</td><td>{c.low_speed_corners}</td><td>{c.high_speed_corners}</td><td>{c.grip_level}/100</td><td>{time(c.lap_record_ms)}</td><td>{c.image_url?<a href={c.image_url} target="_blank" rel="noreferrer">Lihat layout</a>:"Tidak ada"}</td><td><button type="button" className="economy-secondary-button circuit-edit-button" onClick={()=>edit(c)}><Pencil size={14}/> Edit</button></td></tr>)}</tbody></table></div>}</section><section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">{editingId?"EDIT CIRCUIT":"NEW CIRCUIT"}</span><h2>{editingId?"Edit data circuit":"Tambah circuit baru"}</h2></div>{editingId&&<button type="button" className="economy-secondary-button" onClick={reset}>Batal edit</button>}</div><form className="s5-form circuit-input-form" onSubmit={submit}><label className="s5-field"><span>Nama circuit *</span><input value={form.name} onChange={e=>set("name",e.target.value)} maxLength={160} required/></label><label className="s5-field"><span>Negara circuit *</span><CountryCodeSelect value={form.country_code} onChange={v=>set("country_code",v)}/></label><div className="circuit-input-grid">{([["total_laps","Total lap"],["avg_track_temp_c","AVG track temp (°C)"],["drs_zones","DRS zone"],["straights","Straight"],["low_speed_corners","Low speed corner"],["high_speed_corners","High speed corner"],["grip_level","Grip level (0–100)"]] as const).map(([key,label])=><label className="s5-field" key={key}><span>{label} *</span><input type="number" min={key==="avg_track_temp_c"?"-50":key==="total_laps"?"1":"0"} max={key==="grip_level"?"100":undefined} step={key==="avg_track_temp_c"||key==="grip_level"?"0.01":"1"} value={form[key]} onChange={e=>set(key,e.target.value)} required/></label>)}</div><label className="s5-field"><span>Gambar layout sirkuit {editingId?"(opsional, upload untuk mengganti)":"*"}</span><input type="file" accept="image/png,image/jpeg,image/webp" required={!editingId} onChange={e=>{const file=e.target.files?.[0]||null;setLayoutFile(file);setLayoutPreview(file?URL.createObjectURL(file):editingId?(rows.find(c=>c.id===editingId)?.image_url||""):"")}}/></label>{layoutPreview&&<img ref={layoutPreviewImage} className="circuit-layout-preview" src={layoutPreview} alt="Preview layout sirkuit"/>}<label className="s5-field"><span>Lap record time (opsional)</span><input value={form.initial_record} onChange={e=>set("initial_record",e.target.value)} placeholder="m:ss.mmm · contoh 1:32.456"/></label><label className="s5-field"><span>Nama driver pemegang record awal</span><input value={form.initial_record_driver_name} onChange={e=>set("initial_record_driver_name",e.target.value)} maxLength={120} placeholder="Nama driver"/></label><p className="economy-form-hint">Record awal hanya menjadi nilai pembuka. Fastest lap dari hasil race resmi akan menggantikannya jika lebih cepat.</p><button className="s5-primary" disabled={saving||!form.country_code}>{saving?"Menyimpan...":editingId?"Simpan perubahan":"Simpan circuit"}</button>{notice&&<p className="license-notice" role="status">{notice}</p>}</form></section></section>
 }
