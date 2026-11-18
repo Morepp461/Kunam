@@ -307,7 +307,7 @@ def main():
     assert "delete from public.license_final_standings" not in roster_sql.lower()
     assert "delete from public.license_team_final_standings" not in roster_sql.lower()
     assert 'economy_driver_contracts' in license_engine and 'c.season_id===selectedSeason' in license_engine and 'c.team_id===d.team_id' in license_engine
-        print("Caleris QA static checks passed.")
+    print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
     main()
