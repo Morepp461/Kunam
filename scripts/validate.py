@@ -293,7 +293,21 @@ def main():
     hardening_sql = development_hardening.read_text(encoding="utf-8")
     assert "caleris_development_season_snapshots_season_idx" in hardening_sql
     assert "revoke all on function public.seed_team_development_parts()" in hardening_sql
-    print("Caleris QA static checks passed.")
+    season_roster_migration = ROOT / "supabase/migrations/20261118170000_season_roster_contract_snapshots.sql"
+    season_roster_validation = ROOT / "supabase/migrations/20261118170500_season_roster_calendar_validation.sql"
+    license_engine = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
+    assert season_roster_migration.is_file() and season_roster_validation.is_file(), "Missing contract-backed season roster lifecycle migrations"
+    roster_sql = season_roster_migration.read_text(encoding="utf-8")
+    validation_sql = season_roster_validation.read_text(encoding="utf-8")
+    for fragment in ["license_season_roster_snapshots", "license_season_team_snapshots", "economy_driver_contracts", "c.status='active'", "private.season_driver_effective_team", "approved_waiting_window", "license_round_standings", "driver_name_snapshot", "team_name_snapshot", "private.process_season_lifecycle"]:
+        assert fragment in roster_sql, f"Season roster lifecycle missing: {fragment}"
+    for fragment in ["calendar_period_sequence_invalid", "calendar_dates_not_contiguous", "race_period_round_count_invalid", "division_has_no_active_contracted_drivers"]:
+        assert fragment in validation_sql, f"Season activation validation missing: {fragment}"
+    assert "delete from public.license_round_standings" not in roster_sql.lower()
+    assert "delete from public.license_final_standings" not in roster_sql.lower()
+    assert "delete from public.license_team_final_standings" not in roster_sql.lower()
+    assert 'economy_driver_contracts' in license_engine and 'c.season_id===selectedSeason' in license_engine and 'c.team_id===d.team_id' in license_engine
+        print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
     main()
