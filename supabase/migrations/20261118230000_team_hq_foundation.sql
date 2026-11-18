@@ -100,21 +100,21 @@ drop policy if exists "Team members read own HQ facilities" on public.caleris_te
 create policy "Team members read own HQ facilities"
   on public.caleris_team_hq_facilities for select to authenticated
   using (exists (select 1 from public.profiles p join public.members m on m.id = p.member_id
-    where p.user_id = auth.uid() and m.team_id = team_id));
+    where p.user_id = auth.uid() and m.team_id = caleris_team_hq_facilities.team_id));
 
 drop policy if exists "Team owners manage own HQ facilities" on public.caleris_team_hq_facilities;
 create policy "Team owners manage own HQ facilities"
   on public.caleris_team_hq_facilities for all to authenticated
   using (exists (select 1 from public.profiles p join public.members m on m.id = p.member_id
-    where p.user_id = auth.uid() and m.team_id = team_id and m.role in ('Owner','Principal')))
+    where p.user_id = auth.uid() and m.team_id = caleris_team_hq_facilities.team_id and m.role in ('Owner','Principal')))
   with check (exists (select 1 from public.profiles p join public.members m on m.id = p.member_id
-    where p.user_id = auth.uid() and m.team_id = team_id and m.role in ('Owner','Principal')));
+    where p.user_id = auth.uid() and m.team_id = caleris_team_hq_projects.team_id and m.role in ('Owner','Principal')));
 
 drop policy if exists "Team members read own HQ projects" on public.caleris_team_hq_projects;
 create policy "Team members read own HQ projects"
   on public.caleris_team_hq_projects for select to authenticated
   using (exists (select 1 from public.profiles p join public.members m on m.id = p.member_id
-    where p.user_id = auth.uid() and m.team_id = team_id));
+    where p.user_id = auth.uid() and m.team_id = caleris_team_hq_projects.team_id));
 
 drop policy if exists "Team owners manage own HQ projects" on public.caleris_team_hq_projects;
 create policy "Team owners manage own HQ projects"
@@ -128,6 +128,6 @@ revoke all on public.caleris_team_hq_facility_configs from anon;
 revoke all on public.caleris_team_hq_facilities from anon;
 revoke all on public.caleris_team_hq_projects from anon;
 grant select on public.caleris_team_hq_facility_configs to authenticated;
-grant select, insert, update, delete on public.caleris_team_hq_facilities to authenticated;
-grant select, insert, update, delete on public.caleris_team_hq_projects to authenticated;
-grant all on public.caleris_team_hq_facility_configs to service_role;
+grant select on public.caleris_team_hq_facilities to authenticated;
+grant select on public.caleris_team_hq_projects to authenticated;
+grant select, insert, update, delete on public.caleris_team_hq_facility_configs to authenticated;\ngrant all on public.caleris_team_hq_facility_configs to service_role;
