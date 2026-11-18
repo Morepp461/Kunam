@@ -133,7 +133,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=''
-as $
+as $$
 declare
   v_division_id uuid;
   v_season_id uuid;
@@ -163,7 +163,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 drop trigger if exists license_round_standings_identity_snapshot on public.license_round_standings;
 create trigger license_round_standings_identity_snapshot
 before insert or update on public.license_round_standings
