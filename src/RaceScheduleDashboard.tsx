@@ -39,7 +39,7 @@ export default function RaceScheduleDashboard({session,memberId,isAdmin}:{sessio
  }
  void load();return()=>{live=false};
  },[memberId,session.user.id,isAdmin]);
- const next=races.find(r=>new Date(r.race_starts_at).getTime()+r.race_duration_minutes*60000>Date.now());
+ const next=races.find(r=>new Date(r.race_starts_at).getTime()>=now);
  const upcoming=useMemo(()=>races.filter(r=>new Date(r.race_starts_at).getTime()>=now).slice(0,6),[races,now]);
  const raceTime=(v:string)=>new Intl.DateTimeFormat("id-ID",{timeZone:"Asia/Jakarta",weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(v));
  return <section className="dashboard-race-schedule">
