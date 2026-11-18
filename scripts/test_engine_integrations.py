@@ -11,8 +11,8 @@ brand = source("supabase/migrations/20261117330000_brand_ecosystem_full_automati
 quest = source("supabase/migrations/20261117101347_quest_engine_wallet_rewards.sql")
 transfer = source("supabase/migrations/20261112184457_driver_transfer_workflows.sql")
 development = source("supabase/migrations/20261113110000_fixed_development_point_upgrade_cost.sql")
-payroll = source("supabase/migrations/20261118230000_caleris_race_payroll_atomic_automation.sql")
-notifications = source("supabase/migrations/20261118231000_caleris_notification_center.sql")
+payroll = source("supabase/migrations/20261118115643_caleris_race_payroll_atomic_automation.sql")
+notifications = source("supabase/migrations/20261118120232_caleris_notification_center.sql")
 
 checks = {
     "Race Control -> round processing": (race, "process_license_round"),
