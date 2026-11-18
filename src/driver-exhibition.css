@@ -72,3 +72,15 @@
 .driver-scene-loading>div{height:4px;overflow:hidden;border-radius:4px;background:#ffffff22}
 .driver-scene-loading i{display:block;height:100%;background:linear-gradient(90deg,#8b202b,#c9a76b);transition:width .2s ease}
 @media(max-width:760px){.driver-scene-loading{top:45%;padding:16px}}
+
+/* Dark cinematic luxury-hall finish: walnut vault, bronze details, controlled highlights. */
+.driver-exhibition-scene{background:#171411!important;box-shadow:0 30px 100px #000b,inset 0 0 0 1px #a17b4938!important}
+.driver-exhibition-webgl{background:radial-gradient(ellipse at 50% 8%,#4b3826 0%,#211b16 54%,#100f0e 100%)!important}
+.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.76),rgba(8,7,6,.24) 42%,transparent 78%),linear-gradient(0deg,rgba(5,5,5,.62),transparent 34%,rgba(5,5,5,.18))!important;box-shadow:inset 0 0 90px #0009!important}
+.driver-exhibition-heading h1{color:#f0e8d8!important;text-shadow:0 3px 24px #000b!important}
+.driver-exhibition-heading h1 em{color:#b8323b!important}
+.driver-exhibition-heading p{color:#c7bca9!important;text-shadow:0 2px 10px #000b}
+.driver-exhibition-heading>span,.driver-exhibition-brand span,.driver-exhibition-count span,.driver-exhibition-footer{color:#c5a66b!important}
+.driver-exhibition-scene .driver-exhibition-top .driver-exhibition-brand strong,.driver-exhibition-count strong{color:#f0e8d8!important}
+.driver-panel-avatar img{object-fit:cover;image-rendering:auto}
+@media(max-width:760px){.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.72),rgba(8,7,6,.2) 48%,transparent 80%),linear-gradient(0deg,rgba(5,5,5,.66),transparent 38%,rgba(5,5,5,.14))!important}}
