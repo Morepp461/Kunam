@@ -2,6 +2,8 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import {LoaderCircle,RefreshCw,Users,Flag,CheckCircle2} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import "./main-event-registration.css";
+import "./team-driver-registration.css";
+import "./team-contracts.css";
 
 type Application=Record<string,any>;
 type Member={id:string;role:string|null;team_id:string|null};
@@ -71,9 +73,9 @@ export default function TeamDriverApplications(){
   {notice&&<div className="mer-notice" role="status">{notice}</div>}
   <section className="workspace-card">
    <div className="section-title-row"><div><span className="section-eyebrow">FIA ROSTER SUBMISSION</span><h2>{team?.name||"Team"} · Driver Line-up</h2></div><Flag size={19}/></div>
-   <label className="license-select">Season<select value={seasonId} onChange={e=>setSeasonId(e.target.value)}><option value="">Pilih season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label>
-   {selectedSeason&&<p className="license-muted">Roster untuk {selectedSeason.title}. Hanya Driver dengan kontrak yang sudah disepakati dapat didaftarkan.</p>}
-   {loading?<div className="mer-panel"><LoaderCircle className="mer-spin"/> Memuat roster...</div>:!seasonId?<p className="team-contracts-muted">Belum ada season aktif atau draft.</p>:seasonContracts.length===0?<p className="team-contracts-muted">Belum ada kontrak Driver untuk season ini.</p>:<div className="license-list">{seasonContracts.map(c=><article key={c.id}><div><strong>{c.members?.character_name||"Driver"}</strong><small>{c.members?.license||"Lisensi belum tersedia"} · {cash(c.annual_salary)}/season</small><small>Status kontrak: {c.status==="pending_registration"?"Menunggu registrasi FIA":c.status}</small></div>{registered(c.member_id)?<span className="license-success"><CheckCircle2 size={15}/> Registered</span>:<button className="license-small-button" disabled={saving||!["pending_registration","active"].includes(c.status)} onClick={()=>void register(c.member_id)}>{saving?"Mengirim...":"Daftarkan ke FIA"}</button>}</article>)}</div>}
+   <label className="team-roster-select">Season<select value={seasonId} onChange={e=>setSeasonId(e.target.value)}><option value="">Pilih season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label>
+   {selectedSeason&&<p className="team-roster-muted">Roster untuk {selectedSeason.title}. Hanya Driver dengan kontrak yang sudah disepakati dapat didaftarkan.</p>}
+   {loading?<div className="mer-panel"><LoaderCircle className="mer-spin"/> Memuat roster...</div>:!seasonId?<p className="team-contracts-muted">Belum ada season aktif atau draft.</p>:seasonContracts.length===0?<p className="team-contracts-muted">Belum ada kontrak Driver untuk season ini.</p>:<div className="team-roster-list">{seasonContracts.map(c=><article key={c.id}><div><strong>{c.members?.character_name||"Driver"}</strong><small>{c.members?.license||"Lisensi belum tersedia"} · {cash(c.annual_salary)}/season</small><small>Status kontrak: {c.status==="pending_registration"?"Menunggu registrasi FIA":c.status}</small></div>{registered(c.member_id)?<span className="team-roster-success"><CheckCircle2 size={15}/> Registered</span>:<button className="team-roster-button" disabled={saving||!["pending_registration","active"].includes(c.status)} onClick={()=>void register(c.member_id)}>{saving?"Mengirim...":"Daftarkan ke FIA"}</button>}</article>)}</div>}
   </section>
   <section className="mer-panel">
    <div className="section-title-row"><div><span className="section-eyebrow">TEAM RECRUITMENT</span><h2>Driver Applications</h2></div><Users size={19}/></div>
