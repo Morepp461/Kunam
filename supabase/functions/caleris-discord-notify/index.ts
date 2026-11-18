@@ -96,7 +96,7 @@ Deno.serve(async (req: Request) => {
           description,
           url: safeUrl,
           color: 0x9B242B,
-          footer: { text: "CALERIS MASTERS · OFFICIAL BROADCAST" },
+          footer: { text: "VREEO PEDIA · CALERIS MASTERS NEWSROOM" },
           timestamp: new Date().toISOString(),
           fields: [{ name: "Event", value: event, inline: true }],
         }],
