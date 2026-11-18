@@ -103,3 +103,37 @@ for fragment in ['rpc("team_list_owned_engines")', 'rpc("team_set_engine_sale_li
     assert fragment in engine_market, f"Team Engine Market is missing: {fragment}"
 
 print("Main Event registration regression checks passed.")
+
+brand_migration = MIGRATIONS / "20261118120000_team_brand_identity.sql"
+assert brand_migration.is_file(), "Missing persistent team brand identity migration"
+brand_sql = brand_migration.read_text(encoding="utf-8").lower()
+for fragment in [
+    "add column if not exists main_color",
+    "add column if not exists secondary_color",
+    "team_main_color",
+    "team_secondary_color",
+    "main_color=v_main_color",
+    "secondary_color=v_secondary_color",
+    "v_registration.main_color",
+    "v_registration.secondary_color",
+    "'main_color',r.main_color",
+    "'secondary_color',r.secondary_color",
+    "create or replace view public.caleris_team_directory",
+]:
+    assert fragment in brand_sql, f"Team brand identity migration is missing: {fragment}"
+
+brand_form = (ROOT / "src" / "PaddockRoleDetails.tsx").read_text(encoding="utf-8")
+for fragment in ["TeamBrandColorPicker", "team_main_color:mainColor", "team_secondary_color:secondaryColor", "Main Color", "Secondary Color"]:
+    assert fragment in brand_form, f"Paddock Access team brand controls are missing: {fragment}"
+
+palette = (ROOT / "src" / "lib" / "teamColorPalette.ts").read_text(encoding="utf-8")
+assert "hueFamilies" in palette and "Caleris Classics" in palette and "length:13" in palette
+picker = (ROOT / "src" / "TeamBrandColorPicker.tsx").read_text(encoding="utf-8")
+assert "TEAM_COLOR_GROUPS" in picker and "onChange(color)" in picker
+
+driver = (ROOT / "src" / "DriverExhibition.tsx").read_text(encoding="utf-8")
+for fragment in ['useState<"cards" | "3d">("cards")', 'if (viewMode !== "3d") return;', "driver-graphic-card", "driver-card-detail-stats"]:
+    assert fragment in driver, f"Driver directory view is missing: {fragment}"
+assert 'viewMode === "cards"' in driver, "Cards mode must be the default directory view"
+
+print("Team brand identity and lightweight driver directory regression checks passed.")
