@@ -60,6 +60,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
  const config=(key:string)=>configs.find(x=>x.config_key===key)?.payload||{};
  const checkin=Number(config("scoring-daily-checkin").points||2);
  const inactivity=config("scoring-inactivity");
+ const zweiWdc=config("scoring-wdc-zwei");const premioWdc=config("scoring-wdc-premio");
  const milestones=configs.filter(x=>x.config_key.startsWith("scoring-milestone-")).map(x=>({threshold:Number(x.payload.minimum_standings_points||0),points:Number(x.payload.license_points||0)})).filter(x=>x.threshold>0&&x.points>0).sort((a,b)=>a.threshold-b.threshold);
 
  return <section className="workspace license-engine">
@@ -98,8 +99,10 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
     <article><small>RACE CHECK-IN</small><strong>+{checkin}</strong><span>poin lisensi per race</span></article>
     <article><small>INACTIVITY</small><strong>-{moneyless(Number(inactivity.penalty_points||10))}</strong><span>setiap {moneyless(Number(inactivity.absence_races||5))} race berturut-turut tanpa check-in</span></article>
     {milestones.map(x=><article key={x.threshold}><small>STANDINGS {moneyless(x.threshold)}</small><strong>+{moneyless(x.points)}</strong><span>poin lisensi otomatis</span></article>)}
+    <article><small>WDC ZWEI · TIER 2</small><strong>+{moneyless(Number(zweiWdc.points||0))}</strong><span>bonus permanen, sekali seumur hidup</span></article>
+    <article><small>WDC PREMIO · TIER 1</small><strong>+{moneyless(Number(premioWdc.points||0))}</strong><span>menggantikan nilai Zwei, bukan ditumpuk</span></article>
    </div>
-   <p className="license-muted">Poin musiman di-reset saat season baru. WDC diberikan sekali seumur hidup; pencapaian tier yang lebih tinggi memperbarui bonus permanen. Tidak ada input standings atau final WDC manual.</p>
+   <p className="license-muted">Poin musiman di-reset saat season baru. WDC diberikan sekali seumur hidup: Zwei +25, lalu Premio +35 menggantikan nilai Zwei (tidak ditumpuk). Perubahan nilai tier memperbarui ledger WDC yang sudah ada. Tidak ada input standings atau final WDC manual.</p>
   </section>
 
   <section className="workspace-card license-setup-history">
