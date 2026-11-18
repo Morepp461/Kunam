@@ -9,11 +9,11 @@ race = read("src/RaceControl.tsx")
 ocr = read("src/RaceOCR.tsx")
 schedule = read("src/RaceScheduleDashboard.tsx")
 season = read("src/AdminLicenseEngine.tsx")
-migration = read("supabase/migrations/20261118230000_caleris_race_payroll_atomic_automation.sql")
+migration = read("supabase/migrations/20261118115643_caleris_race_payroll_atomic_automation.sql")
 notifications = read("src/NotificationsCenter.tsx")
-notification_migration = read("supabase/migrations/20261118231000_caleris_notification_center.sql")
+notification_migration = read("supabase/migrations/20261118120232_caleris_notification_center.sql")
 health_ui = read("src/AdminEconomyAudit.tsx")
-health_migration = read("supabase/migrations/20261118232000_caleris_system_health_reconciliation.sql")
+health_migration = read("supabase/migrations/20261118120320_caleris_system_health_reconciliation.sql")
 
 assert 'type FinishStatus="finished"|"dnf"|"dns"|"dsq"' in race
 assert 'value="dns"' in race and 'value="dsq"' in race
