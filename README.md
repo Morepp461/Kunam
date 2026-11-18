@@ -1013,7 +1013,7 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 
 ## Notifications, System Health, and Regression Guards
 
-- Character notifications are stored against the permanent `member_id`, not the current team or role. Events include quest assignment/completion/reward, Driver Development upgrades, contract offers and counteroffers, transfer negotiation updates, payroll payment, and official race results. Scheduled reminders cover race H-24/H-1/start, check-in opening and closing, quest expiry, contract expiry, and loan installment due dates.
+- Character notifications are stored against the permanent `member_id`, not the current team or role. Events include quest assignment/completion/reward, Driver and Team Development upgrades, Development token shop purchases, contract offers and counteroffers, transfer negotiation updates, payroll payment, and official race results. Scheduled reminders cover race H-24/H-1/start, check-in opening and closing, quest expiry, contract expiry, and loan installment due dates.
 - Notification rows are idempotent and visible only to the matching signed-in character. The dashboard inbox supports unread counts, mark-read, and realtime inserts.
 - System Health runs every 15 minutes and checks wallet balance movement against a captured reconciliation baseline, failed cron executions in the last 24 hours, pending payroll, races awaiting FIA results, and active seasons without all 12 calendar periods.
 - Wallet reconciliation is forward-looking from the captured baseline. It does not claim to reconstruct historical opening balances that were not recorded.
