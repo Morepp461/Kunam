@@ -7,7 +7,7 @@ import RaceOCR from "./RaceOCR";
 type Round={id:string;round_number:number;title:string;season_division_id:string;status:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division?:{division_name:string;license_seasons?:{title:string}}};
 type Member={id:string;character_name:string|null;role:string|null;team_id:string|null;nationality:string|null};
 type Team={id:string;name:string};type Circuit={id:string;name:string;country_code:string};type Registration={member_id:string;season_division_id:string};
-type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";type FinishStatus="finished"|"dnf";
+type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";type FinishStatus="finished"|"dnf"|"dns"|"dsq";
 type Entry={memberId:string;driverName:string;teamName:string;driverNumber:string;country:string;flag:string;gridPosition:string;status:FinishStatus;position:string;timeOrLaps:string;gap:string;fastestLap:string;stints:Tyre[]};
 const TYRES:{value:Tyre;label:string}[]=[{value:"soft",label:"Soft"},{value:"medium",label:"Medium"},{value:"hard",label:"Hard"},{value:"intermediate",label:"Intermediate"},{value:"wet",label:"Wet"}];
 const draft=(m:Member,team:string):Entry=>({memberId:m.id,driverName:m.character_name||"Driver",teamName:team,driverNumber:"",country:m.nationality||"",flag:"",gridPosition:"",status:"finished",position:"",timeOrLaps:"",gap:"",fastestLap:"",stints:[]});
@@ -53,9 +53,9 @@ export default function RaceControl(){
   if(entries.some(x=>x.status==="dnf"&&x.position.trim())){fail("Driver DNF/DNS/DSQ tidak boleh memiliki finishing position.");return}
   if(entries.some(x=>x.status==="finished"&&!parseRaceTime(x.timeOrLaps))){fail("Race time wajib memakai format h:mm:ss.mmm atau m:ss.mmm.");return}
   if(entries.some(x=>x.status==="dnf"&&parseLaps(x.timeOrLaps)===null)){fail("Data DNF wajib mencantumkan laps behind, contoh +11 Laps.");return}
-  if(entries.some(x=>(x.status==="finished"&&!x.gap.trim())||(x.status==="finished"&&parseGap(x.gap)===null)||(x.status==="dnf"&&!x.gap.trim()))){fail("Gap wajib diisi: detik untuk finisher atau +11 Laps untuk DNF.");return}
+  if(entries.some(x=>(x.status==="finished"&&(!x.gap.trim()||parseGap(x.gap)===null))||(x.status==="dnf"&&!x.gap.trim()))){fail("Gap wajib diisi untuk Finished dan DNF.");return}
   if(entries.some(x=>!x.stints.length)){fail("Setiap Driver wajib memiliki minimal satu stint ban.");return}
-  if(entries.some(x=>x.fastestLap.trim()&&!parseLap(x.fastestLap))){fail("Fastest lap harus memakai format m:ss.mmm.");return}
+  if(entries.some(x=>x.fastestLap.trim()&&(x.status!=="finished"||!parseLap(x.fastestLap)))){fail("Fastest lap hanya boleh diisi untuk Driver Finished dan memakai format m:ss.mmm.");return}
   const fastestEntries=entries.filter(x=>x.fastestLap.trim());if(fastestEntries.length!==1){fail("Isi fastest lap untuk tepat satu Driver.");return}
   if(!pole){fail("Grid position 1 menentukan Pole Position.");return}
   const poleMs=parseLap(poleTime);if(!poleMs){fail("Pole time wajib memakai format m:ss.mmm.");return}
@@ -63,9 +63,13 @@ export default function RaceControl(){
   if(new Set(entries.map(x=>x.driverNumber)).size!==entries.length){fail("Nomor mobil tidak boleh duplikat.");return}
   const payload=entries.map(x=>({member_id:x.memberId,grid_position:+x.gridPosition,finish_status:x.status,finishing_position:x.status==="finished"?+x.position:null,finish_time_ms:x.status==="finished"?parseRaceTime(x.timeOrLaps):null,fastest_lap_ms:x.fastestLap.trim()?parseLap(x.fastestLap):null,stints:x.stints,driver_number:+x.driverNumber,driver_country:x.country.trim(),driver_flag:x.flag.trim(),laps_behind:x.status==="dnf"?parseLaps(x.timeOrLaps):null,gap_ms:x.status==="finished"?parseGap(x.gap):null}));
   setSaving(true);setNotice(null);
-  const {error}=await supabase.rpc("fia_submit_race_classification_v2",{p_round_id:round.id,p_entries:payload,p_driver_of_day_member_id:dotdId,p_pole_time_ms:poleMs,p_circuit_name:circuit.name,p_circuit_country_code:circuit.country_code});
+  const {data,error}=await supabase.rpc("fia_submit_race_classification_v2",{p_round_id:round.id,p_entries:payload,p_driver_of_day_member_id:dotdId,p_pole_time_ms:poleMs,p_circuit_name:circuit.name,p_circuit_country_code:circuit.country_code});
   setSaving(false);if(error){fail(error.message);return}
-  setNotice({kind:"success",text:`Race resmi disahkan. ${entries.length} Driver diproses; standings, poin, rewards, dan settlement dihitung oleh engine resmi.`});
+  const pending=[] as string[];
+  if(data?.prizepool?.status==="pending_configuration")pending.push("Prizepool menunggu konfigurasi");
+  if(data?.wealth_tax?.status==="pending_configuration")pending.push("Wealth Tax menunggu konfigurasi");
+  if(Number(data?.round_processing?.payroll?.pending||0)>0)pending.push(`${data.round_processing.payroll.pending} payroll tertunda`);
+  setNotice({kind:"success",text:`Race resmi disahkan. ${entries.length} Driver diproses.${pending.length?` Settlement: ${pending.join(", ")}.`:" Settlement yang tersedia berhasil diproses."}`});
   setRoundId("");setCircuitId("");setEntries([]);setDotdId("");setPoleTime("");await refresh();
  };
  const changeStatus=(x:Entry,status:FinishStatus)=>update(x.memberId,{status,position:"",timeOrLaps:"",gap:""});
@@ -90,10 +94,10 @@ export default function RaceControl(){
       <td><input aria-label={`Nomor mobil ${x.driverName}`} type="number" min="1" value={x.driverNumber} onChange={e=>update(x.memberId,{driverNumber:e.target.value})} placeholder="No." required/></td>
       <td><div className="race-country-fields"><input aria-label={`Negara ${x.driverName}`} value={x.country} onChange={e=>update(x.memberId,{country:e.target.value})} placeholder="Country" required/><input aria-label={`Flag ${x.driverName}`} value={x.flag} onChange={e=>update(x.memberId,{flag:e.target.value})} placeholder="🇮🇩" maxLength={8} required/></div></td>
       <td><input className="race-pos-input" aria-label={`Grid ${x.driverName}`} type="number" min="1" value={x.gridPosition} onChange={e=>update(x.memberId,{gridPosition:e.target.value})} required/></td>
-      <td><select aria-label={`Status ${x.driverName}`} value={x.status} onChange={e=>changeStatus(x,e.target.value as FinishStatus)}><option value="finished">Finished</option><option value="dnf">DNF</option></select></td>
+      <td><select aria-label={`Status ${x.driverName}`} value={x.status} onChange={e=>changeStatus(x,e.target.value as FinishStatus)}><option value="finished">Finished</option><option value="dnf">DNF</option><option value="dns">DNS</option><option value="dsq">DSQ</option></select></td>
       <td>{x.status==="finished"?<input className="race-pos-input" aria-label={`Posisi ${x.driverName}`} type="number" min="1" value={x.position} onChange={e=>update(x.memberId,{position:e.target.value})} required/>:<span className="race-status-label">{x.status.toUpperCase()}</span>}</td>
-      <td><input className="race-time-input" aria-label={`Race time / laps behind ${x.driverName}`} value={x.timeOrLaps} onChange={e=>update(x.memberId,{timeOrLaps:e.target.value})} placeholder={x.status==="finished"?"1:40:22.061":"+11 Laps"} required/></td>
-      <td><input className="race-gap-input" aria-label={`Gap ${x.driverName}`} value={x.gap} onChange={e=>update(x.memberId,{gap:e.target.value})} placeholder={x.status==="finished"?"+0.184":"+11 Laps"} required/></td>
+      <td>{x.status==="finished"||x.status==="dnf"?<input className="race-time-input" aria-label={`Race time / laps behind ${x.driverName}`} value={x.timeOrLaps} onChange={e=>update(x.memberId,{timeOrLaps:e.target.value})} placeholder={x.status==="finished"?"1:40:22.061":"+11 Laps"} required/>:<span className="race-status-label">—</span>}</td>
+      <td>{x.status==="finished"||x.status==="dnf"?<input className="race-gap-input" aria-label={`Gap ${x.driverName}`} value={x.gap} onChange={e=>update(x.memberId,{gap:e.target.value})} placeholder={x.status==="finished"?"+0.184":"+11 Laps"} required={x.status==="dnf"}/>:<span className="race-status-label">—</span>}</td>
       <td><input className="race-time-input" aria-label={`Fastest lap ${x.driverName}`} value={x.fastestLap} onChange={e=>update(x.memberId,{fastestLap:e.target.value})} placeholder="1:28.412"/></td>
       <td><div className="race-stints">{x.stints.map((stint,i)=><div className="race-stint" key={i}><span className={`race-tyre-dot ${stint}`}/><select aria-label={`Tyre stint ${i+1} ${x.driverName}`} value={stint} onChange={e=>updateStint(x.memberId,i,e.target.value as Tyre)}>{TYRES.map(t=><option key={t.value} value={t.value}>{t.label}</option>)}</select><button type="button" aria-label="Hapus stint" onClick={()=>setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,stints:y.stints.filter((_,j)=>j!==i)}:y))} disabled={x.stints.length===1}><Trash2 size={13}/></button></div>)}<button type="button" className="race-add-stint" onClick={()=>setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,stints:[...y.stints,"soft"]}:y))}><Plus size={13}/> Add stint</button></div></td>
      </tr>)}
@@ -109,9 +113,9 @@ export default function RaceControl(){
      <label>Fastest lap time (automatic)<input value={fastest?.fastestLap||"—"} readOnly/></label>
      <label>Driver of the Day<select value={dotdId} onChange={e=>setDotdId(e.target.value)} required><option value="">Pilih Driver of the Day</option>{entries.map(x=><option key={x.memberId} value={x.memberId}>{x.driverName} · {x.teamName}</option>)}</select></label>
     </div>
-    <p className="race-control-hint"><Timer size={16}/> Pole / fastest lap: m:ss.mmm. Race time: h:mm:ss.mmm atau m:ss.mmm. Gap dalam detik, contoh +3.381; DNF gunakan +11 Laps.</p>
+    <p className="race-control-hint"><Timer size={16}/> Pole / fastest lap: m:ss.mmm. Race time: h:mm:ss.mmm atau m:ss.mmm. Gap dalam detik, contoh +3.381; DNF gunakan +11 Laps; DNS dan DSQ tidak memerlukan race time atau gap.</p>
    </section>
-   <section className="race-submit-bar"><div><strong>{entries.length} Driver</strong><small>{entries.filter(x=>x.status==="finished").length} Classified · {entries.filter(x=>x.status==="dnf").length} DNF</small></div><button className="economy-primary-button race-submit" type="submit" disabled={saving||loading||!circuit||!entries.length}><Save size={16}/>{saving?"Mengesahkan race...":"Validate & Submit Official Result"}</button></section>
+   <section className="race-submit-bar"><div><strong>{entries.length} Driver</strong><small>{entries.filter(x=>x.status==="finished").length} Finished · {entries.filter(x=>x.status==="dnf").length} DNF · {entries.filter(x=>x.status==="dns").length} DNS · {entries.filter(x=>x.status==="dsq").length} DSQ</small></div><button className="economy-primary-button race-submit" type="submit" disabled={saving||loading||!circuit||!entries.length}><Save size={16}/>{saving?"Mengesahkan race...":"Validate & Submit Official Result"}</button></section>
   </form>}
   {!round&&<section className="workspace-card race-empty-state"><Trophy size={28}/><h2>{loading?"Memuat round...":"Tidak ada round yang siap diinput"}</h2><p>Round muncul setelah check-in berakhir, belum ditutup, dan round sebelumnya pada divisi yang sama sudah selesai.</p><button className="economy-secondary-button" type="button" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh round</button></section>}
   {notice&&<div className={`race-notice ${notice.kind}`} role="status">{notice.kind==="success"?<CheckCircle2 size={17}/>:<AlertTriangle size={17}/>}<span>{notice.text}</span></div>}
