@@ -42,3 +42,5 @@ jobs:
         run: python3 -B scripts/test_developer_api_security.py
       - name: Registration image optimization regression checks
         run: python3 -B scripts/test_image_optimization.py
+      - name: Race lifecycle and payroll automation regression checks
+        run: python3 -B scripts/test_race_payroll_automation.py
