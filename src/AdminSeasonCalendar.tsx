@@ -56,7 +56,7 @@ export default function AdminSeasonCalendar(){
   setShowReschedule(false);await load();
  };
  return <section className="workspace season-calendar">
-  <header className="season-calendar-heading"><div><span className="section-eyebrow">CALERIS MASTERS · SEASON OPERATIONS</span><h1>Season Calendar</h1><p>Kalender 12 periode dibuat otomatis saat season baru dibuat. Tidak perlu memilih round atau menyusun periode satu per satu.</p></div><span><ShieldCheck size={16}/> AUTOMATED</span></header>
+  <header className="season-calendar-heading"><div><span className="section-eyebrow">CALERIS MASTERS · SEASON OPERATIONS</span><h1>Season Calendar</h1><p>Struktur 12 periode sudah tetap. Race round dan sirkuit dipilih saat pembuatan jadwal; halaman ini menampilkan hasilnya.</p></div><span><ShieldCheck size={16}/> AUTOMATED</span></header>
   {notice&&<div className={"season-calendar-notice "+notice.kind}>{notice.text}</div>}
   <section className="season-calendar-card">
    <label>Season<select value={seasonId} onChange={e=>{setSeasonId(e.target.value);setPeriods([]);setMappings([]);setShowReschedule(false)}}><option value="">Pilih season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label>
