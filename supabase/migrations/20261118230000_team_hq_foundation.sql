@@ -84,7 +84,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $
+as $caleris$
 begin
   insert into public.caleris_team_hq_facilities (team_id, facility_key)
   select new.id, facility_key
@@ -92,7 +92,7 @@ begin
   on conflict (team_id, facility_key) do nothing;
   return new;
 end;
-$;
+$caleris$;
 
 drop trigger if exists caleris_seed_team_hq_facilities_after_team_insert on public.teams;
 create trigger caleris_seed_team_hq_facilities_after_team_insert
