@@ -352,6 +352,10 @@ def main():
     assert "driver-move-negotiation-limits" in negotiation_limits_fix.read_text(encoding="utf-8")
     assert "max_total_counters" in negotiation_limits_fix.read_text(encoding="utf-8")
     assert "max_counters_per_side" in negotiation_limits_fix.read_text(encoding="utf-8")
+    contracts_ui = (ROOT / "src/TeamDriverContracts.tsx").read_text(encoding="utf-8")
+    contracts_css = (ROOT / "src/team-contracts.css").read_text(encoding="utf-8")
+    assert "LEGACY DATA" in contracts_ui and "caleris_driver_salary_bands" in contracts_ui
+    assert ".team-contracts-legacy" in contracts_css
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
