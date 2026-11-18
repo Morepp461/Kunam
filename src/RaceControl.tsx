@@ -59,7 +59,7 @@ export default function RaceControl(){
   const fastestEntries=entries.filter(x=>x.fastestLap.trim());if(fastestEntries.length!==1){fail("Isi fastest lap untuk tepat satu Driver.");return}
   if(!pole){fail("Grid position 1 menentukan Pole Position.");return}
   const poleMs=parseLap(poleTime);if(!poleMs){fail("Pole time wajib memakai format m:ss.mmm.");return}
-  if(!dotdId||!entries.some(x=>x.memberId===dotdId)){fail("Driver of the Day wajib dipilih dari peserta race.");return}
+  if(!dotdId||!entries.some(x=>x.memberId===dotdId&&x.status==="finished")){fail("Driver of the Day harus dipilih dari Driver berstatus Finished.");return}
   if(new Set(entries.map(x=>x.driverNumber)).size!==entries.length){fail("Nomor mobil tidak boleh duplikat.");return}
   const payload=entries.map(x=>({member_id:x.memberId,grid_position:+x.gridPosition,finish_status:x.status,finishing_position:x.status==="finished"?+x.position:null,finish_time_ms:x.status==="finished"?parseRaceTime(x.timeOrLaps):null,fastest_lap_ms:x.fastestLap.trim()?parseLap(x.fastestLap):null,stints:x.stints,driver_number:+x.driverNumber,driver_country:x.country.trim(),driver_flag:x.flag.trim(),laps_behind:x.status==="dnf"?parseLaps(x.timeOrLaps):null,gap_ms:x.status==="finished"?parseGap(x.gap):null}));
   setSaving(true);setNotice(null);
@@ -111,7 +111,7 @@ export default function RaceControl(){
      <label>Pole lap time<input value={poleTime} onChange={e=>setPoleTime(e.target.value)} placeholder="1:41.158" required/></label>
      <label>Fastest lap driver (automatic)<input value={fastest?.driverName||"Isi fastest lap di tabel"} readOnly/></label>
      <label>Fastest lap time (automatic)<input value={fastest?.fastestLap||"—"} readOnly/></label>
-     <label>Driver of the Day<select value={dotdId} onChange={e=>setDotdId(e.target.value)} required><option value="">Pilih Driver of the Day</option>{entries.map(x=><option key={x.memberId} value={x.memberId}>{x.driverName} · {x.teamName}</option>)}</select></label>
+     <label>Driver of the Day<select value={dotdId} onChange={e=>setDotdId(e.target.value)} required><option value="">Pilih Driver of the Day</option>{entries.filter(x=>x.status==="finished").map(x=><option key={x.memberId} value={x.memberId}>{x.driverName} · {x.teamName}</option>)}</select></label>
     </div>
     <p className="race-control-hint"><Timer size={16}/> Pole / fastest lap: m:ss.mmm. Race time: h:mm:ss.mmm atau m:ss.mmm. Gap dalam detik, contoh +3.381; DNF gunakan +11 Laps; DNS dan DSQ tidak memerlukan race time atau gap.</p>
    </section>
