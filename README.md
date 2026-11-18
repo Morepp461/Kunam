@@ -153,9 +153,34 @@ The authenticated workspace now includes four additional navigation groups with 
 
 Global, Premio, and Zwei overview pages have separate card destinations. Premio and Zwei place Calendar and Results before the shared competition cards. Selected ranking and statistics pages include chart layouts; Transfer Market, Job Search, Take Over, Driver List, and Team List include directory/table structures and filter controls.
 
-Driver and team development pages include the requested attribute lists with a 50–100 value range. Team Summary documents a configuration-driven season timeline; race-period calendar counts and phase durations are not hardcoded.
+Driver and team development pages include the requested attribute lists with a 50–100 value range. Season Calendar uses a fixed 12-period season cycle with server-validated durations derived from the scheduled rounds.
 
 **Implementation status:** this is a UI/navigation scaffold only. Lists, charts, forms, sponsorship progress, quests, financial records, appeals, and FIA publication workflows do not yet read or write production data. No database schema or Supabase migration was added in this phase. Existing landing, account, profile, rules, and admin routes remain in place.
+
+## Season Lifecycle, Schedule, and Driver Market
+
+Each season follows the same 12-period loop:
+
+1. Pre Season
+2. Race Period 1
+3. Break Balancing Period 1
+4. Race Period 2
+5. Break Balancing Period 2
+6. Race Period 3
+7. Break Balancing Period 3
+8. Race Period 4
+9. Break Balancing Period 4
+10. Race Period 5
+11. End Season
+12. Off Season, followed by the next season's Pre Season
+
+Calendar dates are calculated from one Pre Season start date. Pre Season lasts 7 real-life days, each Break Balancing Period lasts 2 days, End Season lasts 5 days, and Off Season lasts 7 days. Each Race Period lasts one day per round number; Premio and Zwei rounds with the same round number are scheduled on the same day. Every division must have 3–5 rounds in each Race Period, and all rounds must be assigned exactly once. Server-side calendar RPCs validate the period sequence, durations, and non-overlapping dates.
+
+FIA prepares the next season as a draft during Off Season, including its divisions, rounds, schedule, and regulations. The lifecycle worker completes an active season during End Season only after all divisions have been finalized. A prepared 12-period draft season is activated automatically on the day after the previous season's Off Season ends. If FIA has not prepared a complete next season, the system does not invent one or activate an incomplete calendar.
+
+The Circuit selector in License Scoring Engine reads directly from the Circuit Pool view. Do not maintain a second hardcoded circuit list.
+
+Driver transfer negotiations are available only during End Season and Off Season. The server also enforces the window, so direct RPC calls cannot bypass it. A team with fewer than two active Drivers may recruit an unassigned Free Agent outside the normal transfer window. New Team Owner registrations remain available mid-season while the division quota has space. Current quota limits are 12 teams for Caleris Premio and 14 teams for Caleris Zwei; the registration RPC checks existing teams and pending Owner applications together.
 
 ## Panel Role Access
 
