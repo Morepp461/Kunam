@@ -917,10 +917,10 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           return <button type="button" className="driver-graphic-card" key={driver.id || driver.character_name || index} style={{"--driver-card-index":index,"--driver-card-main":main,"--driver-card-secondary":secondary} as any} onClick={() => { setDetailClosing(false); selectedRef.current = driver; setSelected(driver); }}>
             <div className="driver-graphic-card-top" style={{background:`linear-gradient(118deg, ${main} 0%, ${secondary} 100%)`}}>
               {driver.avatar_url && <img className="driver-graphic-card-portrait" src={driver.avatar_url} alt="" loading="lazy" referrerPolicy="no-referrer"/>}
-              <div className="driver-graphic-card-shade"/><span className="driver-graphic-card-index">{String(index+1).padStart(2,"0")} / {String(filteredDrivers.length).padStart(2,"0")}</span><span className="driver-graphic-card-orbit" aria-hidden="true"/><span className="driver-graphic-card-accent" aria-hidden="true"/>
+              <div className="driver-graphic-card-shade"/><span className="driver-graphic-card-index">{String(index+1).padStart(2,"0")} / {String(filteredDrivers.length).padStart(2,"0")}</span><span className="driver-graphic-card-orbit" aria-hidden="true"/><span className="driver-graphic-card-accent" aria-hidden="true"/><span className="driver-race-weekend-label">RACE WEEKEND <i/> DRIVER ENTRY</span><span className="driver-start-lights" aria-hidden="true"><i/><i/><i/><i/><i/></span><span className="driver-grid-line" aria-hidden="true"/>
               <h2>{driver.character_name || "Driver"}</h2>
             </div>
-            <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><strong>{driver.team?.name || "Independent"}</strong></div>
+            <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><strong>{driver.team?.name || "Independent"}</strong><span className="driver-timing-class">CALERIS MASTERS <i/> PADDOCK REGISTER</span></div>
           </button>;
         })}
       </div>
