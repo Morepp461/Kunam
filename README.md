@@ -205,7 +205,7 @@ Driver annual salary is fixed to the official license band and is stored in EUR 
 | Gold | €12,100,000 | €22,500,000 |
 | Super License | €22,600,000 | €45,000,000 |
 
-The database owns the fixed salary-band reference. Contract creation and every salary counter-offer are validated server-side against the Driver's current license. The same band table powers Driver vacancy validation: the minimum salary cannot be below the selected minimum license's floor, and the maximum salary cannot exceed the Super License ceiling of €45,000,000.
+The database owns the fixed salary-band reference. Contract creation and every salary counter-offer are validated server-side against the Driver's current license. The existing legacy license label `A` is normalized to Super License for salary validation and display, while the public vacancy dropdown exposes only the four official labels. The same band table powers Driver vacancy validation: the minimum salary cannot be below the selected minimum license's floor, and the maximum salary cannot exceed the Super License ceiling of €45,000,000.
 
 ### Contract and recruitment workflow
 
