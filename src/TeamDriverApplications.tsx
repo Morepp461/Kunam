@@ -31,7 +31,14 @@ export default function TeamDriverApplications(){
   ]);
   if(teamResult.error||seasonResult.error){setNotice(teamResult.error?.message||seasonResult.error?.message||"Gagal memuat roster.");setLoading(false);return;}
   const nextTeam=teamResult.data as Team|null,nextSeasons=(seasonResult.data||[]) as Season[];
-  setTeam(nextTeam);setSeasons(nextSeasons);setRows(Array.isArray(applicationResult.data)?applicationResult.data as Application[]:[]);
+  setTeam(nextTeam);setSeasons(nextSeasons);
+  const applicationRows=Array.isArray(applicationResult.data)?applicationResult.data as Application[]:[];
+  const withImages=await Promise.all(applicationRows.map(async row=>{
+   if(!row.avatar_path)return {...row,avatar_url:""};
+   const {data:signed}=await supabase.storage.from("profile-avatars").createSignedUrl(row.avatar_path,900);
+   return {...row,avatar_url:signed?.signedUrl||""};
+  }));
+  setRows(withImages);
   if(!seasonId&&nextSeasons.length)setSeasonId(nextSeasons[0].id);
   if(applicationResult.error)setNotice(applicationResult.error.message);
   if(!nextTeam){setContracts([]);setRegistrations([]);setLoading(false);return;}
