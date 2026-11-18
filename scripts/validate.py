@@ -297,6 +297,7 @@ def main():
     season_roster_validation = ROOT / "supabase/migrations/20261118170500_season_roster_calendar_validation.sql"
     season_contract_expiry = ROOT / "supabase/migrations/20261118171000_season_contract_expiry_on_end.sql"
     license_engine = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
+    stage5_panel = (ROOT / "src/Stage5Panel.tsx").read_text(encoding="utf-8")
     assert season_roster_migration.is_file() and season_roster_validation.is_file() and season_contract_expiry.is_file(), "Missing contract-backed season roster lifecycle migrations"
     roster_sql = season_roster_migration.read_text(encoding="utf-8")
     validation_sql = season_roster_validation.read_text(encoding="utf-8")
@@ -310,6 +311,7 @@ def main():
     assert "delete from public.license_team_final_standings" not in roster_sql.lower()
     assert 'economy_driver_contracts' in license_engine and 'c.season_id===selectedSeason' in license_engine and 'c.team_id===d.team_id' in license_engine
     assert "ended_contracts" in expiry_sql and "set status='ended'" in expiry_sql and "contracts_ended" in expiry_sql
+    assert "driver_name_snapshot" in stage5_panel and "team_name_snapshot" in stage5_panel and "r.team_name_snapshot" in stage5_panel
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
