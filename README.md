@@ -922,3 +922,10 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Memisahkan label race-weekend dari area nama driver dan nama tim agar tidak saling menimpa pada layar kecil.
 - Metadata tim pada kartu driver ditata dalam satu kolom teks di samping logo, dengan wrapping yang aman untuk nama panjang.
 - Lebar judul dan area portrait disesuaikan untuk menjaga jarak visual pada layout mobile.
+
+
+### Constructor standings points correction
+
+- Team Directory and Team Profile constructor points sum the official points awarded in each active-season round, attributed using the team snapshot stored on each official race-result entry.
+- Team points no longer subtract the previous round's total from the current round award; the prior calculation incorrectly displayed only the residual points instead of the constructor's season total.
+- Team Summary uses the same aggregation as the public Team Directory so both surfaces remain consistent. No schema, migration, or dependency change.
