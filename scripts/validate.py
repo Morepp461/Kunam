@@ -356,6 +356,23 @@ def main():
     contracts_css = (ROOT / "src/team-contracts.css").read_text(encoding="utf-8")
     assert "LEGACY DATA" in contracts_ui and "caleris_driver_salary_bands" in contracts_ui
     assert ".team-contracts-legacy" in contracts_css
+    auto_season_migration = ROOT / "supabase/migrations/20261118195000_automated_caleris_season_setup.sql"
+    auto_season_ui = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
+    auto_calendar_ui = (ROOT / "src/AdminSeasonCalendar.tsx").read_text(encoding="utf-8")
+    event_control_ui = (ROOT / "src/FIAEventControlCenter.tsx").read_text(encoding="utf-8")
+    assert auto_season_migration.is_file(), "Missing one-step CALERIS season setup migration"
+    auto_season_sql = auto_season_migration.read_text(encoding="utf-8")
+    for fragment in ["fia_create_caleris_season", "'Caleris Masters'", "'premio','Caleris Premio'", "'zwei','Caleris Zwei'", "for v_round_number in 1..15", "jsonb_build_array", "'pre_season'", "'end_season'", "'off_season'", "private.sync_season_roster", "not exists(select 1 from public.license_seasons prior where prior.status='completed')"]:
+        assert fragment in auto_season_sql, f"Automated season migration missing: {fragment}"
+    for fragment in ["fia_create_caleris_season", "CALERIS PREMIO", "CALERIS ZWEI", "ACTIVE SCORING RULES", "scoring-milestone-", "Tidak ada input standings atau final WDC manual"]:
+        assert fragment in auto_season_ui, f"Simplified License Engine missing: {fragment}"
+    for obsolete_control in ["saveRoundStanding", "saveFinalStanding", "registerDriver", "createRound", "standingPoints"]:
+        assert obsolete_control not in auto_season_ui, f"Manual scoring/round input remains in License Engine: {obsolete_control}"
+    for fragment in ["Reschedule seluruh kalender", "fia_reschedule_season_calendar", "12 periode", "30"]:
+        assert fragment in auto_calendar_ui, f"Automated Season Calendar missing: {fragment}"
+    assert "Satu kali setup" in event_control_ui and "kalender 12 periode" in event_control_ui
+    license_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "one-step season setup" in license_readme and "15 race rounds per division" in license_readme
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
