@@ -34,13 +34,12 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    if(profile?.member_id){const {data:member}=await supabase.from("members").select("team_id").eq("id",profile.member_id).maybeSingle();if(member?.team_id){const {data}=await supabase.from("teams").select("id,name,division_key").eq("id",member.team_id).maybeSingle();currentTeam=data as TeamInfo|null;}}
    setTeam(currentTeam);
    if(currentTeam){
-    const [walletRes,valueRes,repRes,devRes,sponsorRes,contractRes,loanRes,hqRes,profileRes,seasonRes]=await Promise.all([
+    const [walletRes,valueRes,repRes,devRes,sponsorRes,loanRes,hqRes,profileRes,seasonRes]=await Promise.all([
      supabase.from("economy_wallet_accounts").select("balance").eq("account_kind","team").eq("team_id",currentTeam.id).maybeSingle(),
      supabase.from("caleris_team_valuations").select("total_valuation").eq("team_id",currentTeam.id).order("assessed_at",{ascending:false}).limit(1).maybeSingle(),
      supabase.from("caleris_team_reputation").select("score").eq("team_id",currentTeam.id).maybeSingle(),
      supabase.from("caleris_team_development_parts").select("part_key,current_value").eq("team_id",currentTeam.id).order("part_key"),
      supabase.from("caleris_sponsorship_contracts").select("id,contract_amount,annual_contract_amount,status").eq("target_kind","team").eq("target_team_id",currentTeam.id).eq("status","active"),
-     supabase.from("economy_driver_contracts").select("id,member_id,annual_salary,status").eq("team_id",currentTeam.id).eq("status","active"),
      supabase.from("economy_cash_loans").select("total_due,amount_repaid,status").eq("loan_type","team").eq("team_id",currentTeam.id).in("status",["active","overdue"]),
      supabase.from("caleris_team_hq_facilities").select("facility_key,level,condition,asset_value").eq("team_id",currentTeam.id),
      supabase.from("caleris_team_profiles").select("vision,long_term_target").eq("team_id",currentTeam.id).maybeSingle(),
