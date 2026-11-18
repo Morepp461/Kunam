@@ -82,6 +82,9 @@ export default function TeamHQ() {
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
+  useEffect(() => {
+    if (activeProjects.some(project => project.completes_at && new Date(project.completes_at).getTime() <= clock)) void load();
+  }, [Math.floor(clock / 30000), activeProjects, load]);
 
   const maxLevel = useMemo(() => divisionMax(team?.division_key ?? null), [team?.division_key]);
   const facilityMap = useMemo(() => new Map(facilities.map((item) => [item.facility_key, item])), [facilities]);
