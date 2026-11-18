@@ -46,6 +46,7 @@ export const panelGroups: PanelGroup[] = [
     { path: "appeal", label: "Appeal", description: "Pengajuan dan riwayat banding tim." }
   ]},
   { path: "fia-panel", label: "FIA PANEL", tabs: [
+    { path: "event-control", label: "Event Control Center", description: "Pusat konfigurasi season, kalender, circuit, race, dan operasional FIA." },
     { path: "rules-input", label: "Rules Input", description: "Pengelolaan regulasi global dan divisi." },
     { path: "season-calendar", label: "Season Calendar", description: "Jadwal Off Season, Pre Season, Race Period, Break, dan End Season." },
     { path: "announcement-input", label: "Announcement Input", description: "Penyusunan dan publikasi pengumuman FIA." },
