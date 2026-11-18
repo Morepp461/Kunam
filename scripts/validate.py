@@ -344,6 +344,9 @@ def main():
     assert "new.annual_salary is distinct from old.annual_salary" in contract_lock_fix.read_text(encoding="utf-8")
     assert "on conflict(season_id,member_id) do nothing" in roster_registration_fix.read_text(encoding="utf-8")
     assert "v_actor.role<>'Owner'" in owner_negotiation_fix.read_text(encoding="utf-8")
+    legacy_license_alias = ROOT / "supabase/migrations/20261118192000_legacy_a_license_salary_alias.sql"
+    assert legacy_license_alias.is_file() and "'A','super',22600000,45000000" in legacy_license_alias.read_text(encoding="utf-8")
+    assert (ROOT / "src/team-job-advert.css").is_file() and (ROOT / "src/team-driver-registration.css").is_file()
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
