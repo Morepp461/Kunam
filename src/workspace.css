@@ -487,3 +487,24 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
 .fia-event-center-active{padding:0 0 4px;border-bottom:1px solid rgba(198,163,58,.2)}
 .fia-event-center-active h2{margin:5px 0 0;font-size:22px}
 @media(max-width:620px){.fia-event-center-grid{grid-template-columns:1fr}.fia-event-center-card{padding:17px}.fia-event-center-card>span:not(.fia-event-center-card-top){min-height:0}}
+
+
+/* Live race schedule */
+.dashboard-action-row{display:flex;justify-content:flex-end;align-items:center;gap:18px;flex-wrap:wrap;margin-bottom:12px}
+.dashboard-race-schedule{margin:0 0 18px;padding:18px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:12px;background:linear-gradient(135deg,rgba(255,255,255,.045),rgba(255,255,255,.012))}
+.dashboard-race-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;color:var(--muted,#aaa)}
+.dashboard-race-head h2{margin:4px 0 0;color:var(--text,#f4f4f4);font-size:18px}
+.dashboard-race-next{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:15px;border-radius:9px;background:rgba(190,42,48,.09);border:1px solid rgba(190,42,48,.25)}
+.dashboard-race-next>div:first-child{display:grid;gap:6px;min-width:0}
+.dashboard-race-next>div:first-child>span,.dashboard-race-count small{font-size:9px;letter-spacing:.13em;color:#d4b47a;font-weight:700}
+.dashboard-race-next strong{font-size:15px;color:var(--text,#fff)}
+.dashboard-race-next small{font-size:11px;color:var(--muted,#aaa)}
+.dashboard-race-count{display:grid;gap:6px;text-align:right;flex-shrink:0}
+.dashboard-race-count small{display:flex;align-items:center;justify-content:flex-end;gap:5px}
+.dashboard-race-count strong{font-size:clamp(18px,3vw,26px);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+.dashboard-race-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:12px}
+.dashboard-race-list article{display:grid;gap:5px;padding:11px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:8px;min-width:0}
+.dashboard-race-list article span{display:flex;align-items:center;gap:5px;color:#d4b47a;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+.dashboard-race-list article strong{font-size:12px;overflow-wrap:anywhere}
+.dashboard-race-list article small,.dashboard-race-muted{font-size:10px;color:var(--muted,#aaa)}
+@media(max-width:650px){.dashboard-action-row{justify-content:space-between}.dashboard-race-next{align-items:flex-start;flex-direction:column}.dashboard-race-count{text-align:left}.dashboard-race-count small{justify-content:flex-start}.dashboard-race-list{grid-template-columns:repeat(2,minmax(0,1fr))}}

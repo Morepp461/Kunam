@@ -12,6 +12,7 @@ type Circuit={id:string;name:string;country_code:string};
 type Config={config_key:string;payload:Record<string,number|string>;is_active:boolean};
 type Notice={kind:"success"|"error";text:string};
 type RaceSchedule={premio:string[];zwei:string[]};
+type RaceTimes=Record<string,string>;
 
 const todayJakarta=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
 const moneyless=(value:number)=>Number(value||0).toLocaleString("id-ID");
@@ -27,6 +28,8 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
  const [circuits,setCircuits]=useState<Circuit[]>([]);
  const [configs,setConfigs]=useState<Config[]>([]);
  const [schedule,setSchedule]=useState<RaceSchedule[]>(defaultSchedule);
+ const [raceTimes,setRaceTimes]=useState<RaceTimes>({});
+ const [raceDurations,setRaceDurations]=useState<Record<string,string>>({});
  const [startDate,setStartDate]=useState(todayJakarta());
  const [busy,setBusy]=useState(false);
  const [loading,setLoading]=useState(true);
@@ -64,6 +67,9 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
   const p=schedule.flatMap(x=>x.premio),z=schedule.flatMap(x=>x.zwei);
   return p.some((id,i)=>id&&p.indexOf(id)!==i)||z.some((id,i)=>id&&z.indexOf(id)!==i);
  },[schedule]);
+ const timeKey=(period:number,division:"premio"|"zwei",slot:number)=>`${period}:${division}:${slot}`;
+ const updateRaceTime=(period:number,division:"premio"|"zwei",slot:number,value:string)=>setRaceTimes(prev=>({...prev,[timeKey(period,division,slot)]:value}));
+ const updateRaceDuration=(period:number,division:"premio"|"zwei",slot:number,value:string)=>setRaceDurations(prev=>({...prev,[timeKey(period,division,slot)]:value}));
  const updateCircuit=(period:number,division:"premio"|"zwei",slot:number,value:string)=>{
   setSchedule(prev=>prev.map((item,i)=>i===period?{...item,[division]:item[division].map((id,j)=>j===slot?value:id)}:item));
  };
@@ -81,10 +87,27 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
   setBusy(true);setNotice(null);
   const payload=schedule.map((p,i)=>({period_number:i+1,premio_circuits:p.premio,zwei_circuits:p.zwei}));
   const {data,error}=await supabase.rpc("fia_create_caleris_season",{p_start_date:startDate,p_schedule:payload});
+  if(error){setBusy(false);setNotice({kind:"error",text:error.message});return}
+  const {data:divs,error:divError}=await supabase.from("license_season_divisions").select("id,division_key").eq("season_id",data.season_id);
+  if(divError){setBusy(false);setNotice({kind:"error",text:"Season dibuat, tetapi divisi gagal dimuat: "+divError.message});return}
+  const roundUpdates:any[]=[];
+  for(const division of (divs||[])){
+   const key=division.division_key==="premio"?"premio":"zwei";
+   const {data:roundRows,error:roundError}=await supabase.from("license_rounds").select("id,round_number").eq("season_division_id",division.id).order("round_number");
+   if(roundError){setBusy(false);setNotice({kind:"error",text:"Season dibuat, tetapi jadwal round gagal dimuat: "+roundError.message});return}
+   let index=0;
+   for(let period=0;period<schedule.length;period++){
+    for(let slot=0;slot<schedule[period][key].length;slot++){
+     const round=roundRows?.[index++];
+     if(round)roundUpdates.push({round_id:round.id,race_time:raceTimes[timeKey(period,key,slot)]||"19:00",duration_minutes:Number(raceDurations[timeKey(period,key,slot)]||90)});
+    }
+   }
+  }
+  const {error:scheduleError}=await supabase.rpc("fia_set_season_round_schedules",{p_schedules:roundUpdates});
   setBusy(false);
-  if(error){setNotice({kind:"error",text:error.message});return}
-  setNotice({kind:"success",text:String(data?.title||"Season CALERIS MASTERS berhasil dibuat")+". "+data?.premio_rounds+" race Premio, "+data?.zwei_rounds+" race Zwei, dan 12 periode sudah terjadwal."});
-  setSchedule(defaultSchedule());await load();
+  if(scheduleError){setNotice({kind:"error",text:"Season terbentuk, tetapi penyimpanan jam race gagal: "+scheduleError.message});return}
+  setNotice({kind:"success",text:String(data?.title||"Season CALERIS MASTERS berhasil dibuat")+". Jadwal Premio dan Zwei tersimpan terpisah."});
+  setSchedule(defaultSchedule());setRaceTimes({});setRaceDurations({});await load();
  };
  const config=(key:string)=>configs.find(x=>x.config_key===key)?.payload||{};
  const checkin=Number(config("scoring-daily-checkin").points||2);
@@ -128,6 +151,8 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
              <option value="">Pilih sirkuit {slot+1}</option>
              {circuits.map(c=><option key={c.id} value={c.id} disabled={used.has(c.id)}>{c.name} · {c.country_code}</option>)}
             </select>
+            <label className="license-race-time">Jam race (GMT+7)<input type="time" value={raceTimes[timeKey(raceIndex,division,slot)]||"19:00"} onChange={e=>updateRaceTime(raceIndex,division,slot,e.target.value)}/></label>
+            <label className="license-race-duration">Durasi (menit)<input type="number" min="1" max="600" value={raceDurations[timeKey(raceIndex,division,slot)]||"90"} onChange={e=>updateRaceDuration(raceIndex,division,slot,e.target.value)}/></label>
             {schedule[raceIndex][division].length>3&&<button type="button" title="Hapus race" onClick={()=>removeCircuitSlot(raceIndex,division,slot)}><Trash2 size={13}/></button>}
            </div>
           })}
