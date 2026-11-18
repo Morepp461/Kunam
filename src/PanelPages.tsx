@@ -56,7 +56,8 @@ export const panelGroups: PanelGroup[] = [
     { path: "race-input", label: "Race Input", description: "Input klasifikasi lengkap dan proses otomatis standings serta ekonomi." },
     { path: "punishment-input", label: "Punishment Input", description: "Pencatatan sanksi driver dan tim." },
     { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." },
-    { path: "circuit-pool-input", label: "Circuit Pool Input", description: "Input master circuit dan spesifikasi sirkuit." }
+    { path: "circuit-pool-input", label: "Circuit Pool Input", description: "Input master circuit dan spesifikasi sirkuit." },
+    { path: "team-hq-config", label: "Team HQ Configuration", description: "Konfigurasi fasilitas, biaya, durasi, maintenance, efek, dan unlock Team HQ." }
   ]}
 ];
 
@@ -143,6 +144,7 @@ export default function PanelPage() {
     return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><EmptyPanel title={title+" belum diaktifkan"} body={copy[tab.path]||tab.description}/></section>;
   }
   if(group.path==="fia-panel"){
+    if(tab.path==="team-hq-config")return <TeamHQ/>;
     if(tab.path==="rules-input")return <section className="workspace"><Heading eyebrow="FIA Panel" title={title} description={tab.description}/><CardGrid base={base} items={[[ "global-regulation","Global Regulation","Regulasi global seluruh kompetisi",FileText],["premio-regulation","Premio Regulation","Regulasi divisi Premio",FileText],["zwei-regulation","Zwei Regulation","Regulasi divisi Zwei",FileText]] as const}/>{detail&&<EmptyPanel title="Editor regulasi belum diaktifkan" body="Editor draft dan publikasi regulasi akan dibuat pada tahap implementasi berikutnya."/>}</section>;
     const copy:Record<string,string>={"announcement-input":"Form penyusunan announcement FIA. Pengumuman yang dipublikasikan akan tampil di Main Event → FIA Announcement.","punishment-input":"Form pencatatan punishment untuk driver atau tim, termasuk dasar regulasi dan status keputusan.","appeal-room":"Daftar pengajuan banding dari driver dan tim untuk ditinjau, diputuskan, dan dicatat riwayat hasilnya."};
     return <section className="workspace"><Heading eyebrow="FIA Panel" title={title} description={tab.description}/><EmptyPanel title={title+" belum diaktifkan"} body={copy[tab.path]||tab.description}/></section>;
