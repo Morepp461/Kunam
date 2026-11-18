@@ -907,3 +907,11 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Directory Driver menggunakan gradient dua warna tim pada bagian atas graphic card, sedangkan bagian bawah memakai panel hitam semi-transparan.
 - Driver Directory menggunakan Cards sebagai tampilan awal. Mode 3D Exhibition tetap tersedia dan baru memuat Three.js/Ara3D setelah dipilih.
 - Detail Driver hanya menampilkan statistik dari hasil kompetisi yang sudah dipublikasikan.
+
+
+### Grand Prix Directory Motion
+
+- Driver Directory memakai bahasa visual race weekend: starting-light gantry, grid marking, race-control label, dan reveal portrait yang mengikuti warna livery tim.
+- Team Directory memakai treatment constructor/pit wall terpisah: livery stripe berbasis warna tim, emblem reveal, dan pit-board label.
+- Motion hover hanya aktif pada perangkat dengan pointer presisi. Tampilan mobile tetap ringan dan tidak bergantung pada hover.
+- Animasi menghormati `prefers-reduced-motion`. Perubahan hanya pada presentasi frontend; tidak mengubah data, layout utama, dependency, atau database.
