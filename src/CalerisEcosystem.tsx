@@ -3,7 +3,7 @@ import { Activity, Award, BarChart3, Crown, Newspaper, RefreshCw, Trophy, Wallet
 import { supabase } from "./lib/supabase";
 import "./caleris-ecosystem.css";
 type Mode = "owner" | "finance" | "news" | "hall";
-type NewsItem = { id:string; title:string; body:string; category:string; date:string; source:string };
+type NewsItem = { id:string; title:string; body:string; category:string; date:string; source:string; imageUrl?:string|null; lead?:string; facts?:string[] };
 type TeamInfo = { id:string; name:string; division_key:string|null };
 type Standing = { id:string; final_position:number|null; final_points:number|null; driver_name_snapshot?:string|null; team_name_snapshot?:string|null; season_division_id:string };
 const currency=(v:number)=>"€"+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(v||0);
@@ -18,7 +18,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [loanRisk,setLoanRisk]=useState({active:0,overdue:0});
  const [teamTarget,setTeamTarget]=useState<{vision:string|null;long_term_target:string|null}>({vision:null,long_term_target:null});
  const [sponsors,setSponsors]=useState<{id:string;contract_amount:number;annual_contract_amount:number|null;status:string}[]>([]);
- const [news,setNews]=useState<NewsItem[]>([]);
+ const [news,setNews]=useState<NewsItem[]>([]),[selectedArticle,setSelectedArticle]=useState<NewsItem|null>(null);
  const [achievements,setAchievements]=useState<{id:string;title:string;description:string|null;awarded_at:string;target_kind:string}[]>([]);
  const [drivers,setDrivers]=useState<Standing[]>([]),[teams,setTeams]=useState<Standing[]>([]),[refreshKey,setRefreshKey]=useState(0);
  const [driverRecords,setDriverRecords]=useState<{name:string;starts:number;wins:number;podiums:number;fastestLaps:number}[]>([]);
@@ -68,15 +68,38 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    }else{setWallet(0);setValuation(null);setReputation(null);setDevelopment([]);setSponsors([]);setContracts([]);setRaceForm([]);setHqFacilities([]);setLoanRisk({active:0,overdue:0});setTeamTarget({vision:null,long_term_target:null});}
    if(mode==="news"){
     const [ann,stories,races]=await Promise.all([
-     supabase.from("caleris_announcements").select("id,title,body,category,published_at,created_at").eq("is_published",true).order("published_at",{ascending:false}).limit(30),
-     supabase.from("caleris_sponsorship_story_events").select("id,headline,body,event_type,visibility,created_at").eq("visibility","public").order("created_at",{ascending:false}).limit(20),
-     supabase.from("caleris_race_results").select("id,round_id,published_at").not("published_at","is",null).order("published_at",{ascending:false}).limit(20)
+     supabase.from("caleris_announcements").select("id,title,body,category,division_key,published_at,created_at").eq("is_published",true).order("published_at",{ascending:false}).limit(30),
+     supabase.from("caleris_sponsorship_story_events").select("id,headline,body,event_type,visibility,created_at,contract_id").eq("visibility","public").order("created_at",{ascending:false}).limit(20),
+     supabase.from("caleris_race_results").select("id,round_id,winner_member_id,pole_member_id,published_at").not("published_at","is",null).order("published_at",{ascending:false}).limit(20)
     ]);
     const items:NewsItem[]=[
-     ...(ann.data??[]).map((x:any)=>({id:x.id,title:x.title,body:x.body,category:x.category??"Announcement",date:x.published_at??x.created_at,source:"FIA Announcement"})),
-     ...(stories.data??[]).map((x:any)=>({id:x.id,title:x.headline,body:x.body,category:x.event_type??"Paddock Story",date:x.created_at,source:"Paddock Story"}))
+     ...(ann.data??[]).map((x:any)=>({id:x.id,title:x.title,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:x.category??"Announcement",date:x.published_at??x.created_at,source:"Official Bulletin",facts:[x.division_key?String(x.division_key).toUpperCase():"CALERIS MASTERS"]})),
+     ...(stories.data??[]).map((x:any)=>({id:x.id,title:x.headline,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:x.event_type??"Paddock Story",date:x.created_at,source:"Paddock Report"}))
     ];
-    if(races.data?.length){const roundIds=[...new Set(races.data.map((x:any)=>x.round_id).filter(Boolean))];const {data:rounds}=await supabase.from("license_rounds").select("id,title,circuit_name,round_number").in("id",roundIds);const roundMap=new Map((rounds??[]).map((x:any)=>[x.id,x]));for(const race of races.data as any[]){const round=roundMap.get(race.round_id) as any;items.push({id:race.id,title:round?.title??"Official race result",body:[round?.circuit_name,round?.round_number?"Round "+round.round_number:""].filter(Boolean).join(" · "),category:"Race Result",date:race.published_at,source:"Official Classification"});}}
+    if(races.data?.length){
+     const roundIds=[...new Set(races.data.map((x:any)=>x.round_id).filter(Boolean))];
+     const memberIds=[...new Set(races.data.flatMap((x:any)=>[x.winner_member_id,x.pole_member_id]).filter(Boolean))];
+     const [rounds,members]=await Promise.all([
+      supabase.from("license_rounds").select("id,title,circuit_name,round_number").in("id",roundIds),
+      supabase.from("members").select("id,character_name,team_id").in("id",memberIds)
+     ]);
+     const roundMap=new Map((rounds.data??[]).map((x:any)=>[x.id,x]));
+     const memberMap=new Map((members.data??[]).map((x:any)=>[x.id,x]));
+     const teamIds=[...new Set((members.data??[]).map((x:any)=>x.team_id).filter(Boolean))];
+     const [profiles,teamProfiles]=await Promise.all([
+      memberIds.length?supabase.from("profiles").select("member_id,avatar_url").in("member_id",memberIds):Promise.resolve({data:[] as any[]}),
+      teamIds.length?supabase.from("caleris_team_profiles").select("team_id,logo_url").in("team_id",teamIds):Promise.resolve({data:[] as any[]})
+     ]);
+     const avatarMap=new Map((profiles.data??[]).map((x:any)=>[x.member_id,x.avatar_url]));
+     const logoMap=new Map((teamProfiles.data??[]).map((x:any)=>[x.team_id,x.logo_url]));
+     for(const race of races.data as any[]){
+      const round=roundMap.get(race.round_id) as any,winner=memberMap.get(race.winner_member_id) as any,pole=memberMap.get(race.pole_member_id) as any;
+      const location=[round?.circuit_name,round?.round_number?"ROUND "+round.round_number:null].filter(Boolean).join(" · ");
+      const winnerName=winner?.character_name??"Winner not recorded";
+      const body=["The official classification for "+(round?.title??"this round")+" has been published.",winner?winnerName+" is recorded as the race winner.":null,pole?pole.character_name+" is credited with pole position.":null,location?"Venue and round: "+location+".":null].filter(Boolean).join("\n\n");
+      items.push({id:race.id,title:winner?winnerName+" wins "+(round?.title??"the round"):round?.title??"Official race classification",body,lead:winnerName+(pole?", with "+pole.character_name+" credited for pole position.":" is listed as the winner in the official classification."),category:"Official Classification",date:race.published_at,source:"Race Desk",imageUrl:avatarMap.get(race.winner_member_id)??(winner?.team_id?logoMap.get(winner.team_id):null)??null,facts:[location,winner?"WINNER · "+winnerName:null,pole?"POLE · "+pole.character_name:null].filter(Boolean) as string[]});
+     }
+    }
     setNews(items.sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()).slice(0,40));
    }
    if(mode==="hall"){
@@ -121,7 +144,27 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    <div className="ce-columns"><section className="workspace-card"><div className="ce-title"><h2>Active Sponsorship</h2><span>{sponsors.length} contracts</span></div>{sponsors.length?sponsors.map(s=><div className="ce-row" key={s.id}><strong>Contract</strong><span>{currency(Number(s.annual_contract_amount??s.contract_amount))} / season</span></div>):<p className="ce-empty">Belum ada kontrak sponsorship aktif.</p>}</section><section className="workspace-card"><div className="ce-title"><h2>Car Development</h2><span>{development.length} attributes</span></div>{development.slice(0,8).map(p=><div className="ce-development" key={p.part_key}><span>{p.part_key.replaceAll("_"," ")}</span><strong>{Number(p.current_value).toFixed(0)}</strong><i><b style={{width:Math.max(0,Math.min(100,Number(p.current_value)))+"%"}}/></i></div>)}{!development.length&&<p className="ce-empty">Data development belum tersedia.</p>}</section></div>
    <section className="workspace-card"><div className="ce-title"><h2>Financial Intelligence</h2><span>Official Economy Engine</span></div><p className="ce-note">Saldo diambil langsung dari wallet tim. Transaksi dan pembayaran tetap dikelola oleh Economy Engine, tidak ada saldo bayangan di dashboard ini.</p><div className="ce-finance-summary"><span>Available cash</span><strong>{currency(wallet)}</strong></div><div className="ce-finance-summary"><span>Active sponsor commitment</span><strong>{currency(sponsors.reduce((sum,s)=>sum+Number(s.annual_contract_amount??s.contract_amount),0))}</strong></div></section>
   </>}</>}
-  {mode==="news"&&<div className="ce-news-list">{news.map(item=><article className="ce-news-card" key={item.id}><div><span className="section-eyebrow">{item.source} · {item.category}</span><time>{dateLabel(item.date)}</time></div><h2>{item.title}</h2><p>{item.body}</p></article>)}{!news.length&&<div className="workspace-card ce-empty"><Newspaper/><strong>Belum ada berita yang dipublikasikan.</strong></div>}</div>}
+  {mode==="news"&&<div className="vp-newsroom">
+   <div className="vp-masthead"><div className="vp-masthead-side">PADDOCK MEDIA<br/>EST. CALERIS</div><div className="vp-masthead-title">Vreeo Pedia</div><div className="vp-masthead-side vp-masthead-right">THE OFFICIAL<br/>MOTORSPORT JOURNAL</div></div>
+   <div className="vp-edition"><span>CALERIS MASTERS · NEWS & CLASSIFIEDS</span><span>{news.length} STORIES IN THIS EDITION</span></div>
+   {news.length? <div className="vp-paper-grid">{news.map((item,index)=><button type="button" className={index===0?"vp-story vp-story-lead":"vp-story"} key={item.id} onClick={()=>setSelectedArticle(item)}>
+    <div className="vp-story-meta"><span>{item.source} / {item.category}</span><time>{dateLabel(item.date)}</time></div>
+    {item.imageUrl&&<img className="vp-story-image" src={item.imageUrl} alt="" loading="lazy"/>}
+    <h2>{item.title}</h2><p className="vp-story-leadtext">{item.lead||item.body.slice(0,220)}</p>
+    {item.facts?.length? <div className="vp-story-facts">{item.facts.map((fact,i)=><span key={i}>{fact}</span>)}</div>:null}
+    <span className="vp-read">READ FULL STORY ↗</span>
+   </button>)}</div>:<div className="vp-empty"><Newspaper/><strong>No stories in this edition</strong><span>Official reports and paddock coverage will appear here after publication.</span></div>}
+   {selectedArticle&&<div className="vp-reader-backdrop" role="presentation" onClick={()=>setSelectedArticle(null)}><article className="vp-reader" role="dialog" aria-modal="true" aria-labelledby="vp-reader-title" onClick={e=>e.stopPropagation()}>
+    <button type="button" className="vp-reader-close" onClick={()=>setSelectedArticle(null)}>CLOSE ✕</button><div className="vp-reader-masthead">VREEO PEDIA <span>PADDOCK MEDIA</span></div>
+    <div className="vp-reader-meta">{selectedArticle.source} · {selectedArticle.category} · {dateLabel(selectedArticle.date)}</div>
+    <h2 id="vp-reader-title">{selectedArticle.title}</h2>
+    {selectedArticle.imageUrl&&<img className="vp-reader-image" src={selectedArticle.imageUrl} alt=""/>}
+    {selectedArticle.lead&&<p className="vp-reader-lead">{selectedArticle.lead}</p>}
+    <div className="vp-reader-body">{selectedArticle.body.split("\n").map((paragraph,i)=><p key={i}>{paragraph}</p>)}</div>
+    {selectedArticle.facts?.length?<div className="vp-reader-facts"><h3>THE FACTS</h3>{selectedArticle.facts.map((fact,i)=><p key={i}>{fact}</p>)}</div>:null}
+    <footer>VREEO PEDIA · CALERIS MASTERS OFFICIAL PADDOCK MEDIA</footer>
+   </article></div>}
+  </div>}
   {mode==="hall"&&<div className="ce-hall-grid">
       <section className="workspace-card"><div className="ce-title"><h2>All-time Driver Records</h2><span>Official results</span></div>{driverRecords.map((r,i)=><div className="ce-hall-row" key={r.name}><Trophy/><div><strong>#{i+1} {r.name}</strong><small>{r.wins} wins · {r.podiums} podiums · {r.fastestLaps} fastest laps · {r.starts} starts</small></div></div>)}{!driverRecords.length&&<p className="ce-empty">Belum ada statistik historis resmi.</p>}</section>
       <section className="workspace-card"><div className="ce-title"><h2>All-time Constructor Records</h2><span>Official results</span></div>{teamRecords.map((r,i)=><div className="ce-hall-row" key={r.name}><Award/><div><strong>#{i+1} {r.name}</strong><small>{r.wins} wins · {r.podiums} podiums · {r.starts} entries</small></div></div>)}{!teamRecords.length&&<p className="ce-empty">Belum ada statistik konstruktor historis.</p>}</section>
