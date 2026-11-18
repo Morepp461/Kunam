@@ -9,6 +9,8 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
+const characterModelCache = new Map<string, Promise<AraCharacter>>();
+
 const numberFor = (name: string, index: number) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 33 + name.charCodeAt(i)) | 0;
@@ -55,13 +57,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const THREE = await import("three");
         const { createCharacter } = await import("ara3d");
         if (disposed || !host) return;
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+        renderer = new THREE.WebGLRenderer({ antialias: !mobile, alpha: false, powerPreference: "high-performance" });
         const mobile = window.matchMedia("(max-width: 760px)").matches;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.65));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.35));
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.82;
+        renderer.toneMappingExposure = 0.94;
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
@@ -85,7 +87,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const disposableGeometries: Three.BufferGeometry[] = [];
         const disposableMaterials: Three.Material[] = [];
         const textures: Three.Texture[] = [];
-        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer }> = [];
+        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer; root: Three.Group }> = [];
 
         const material = (color: number, roughness = 0.62, metalness = 0.12) => {
           const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -107,13 +109,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         scene.background = new THREE.Color(0x171411);
         scene.fog = new THREE.FogExp2(0x171411, 0.0021);
         renderer.toneMappingExposure = 0.82;
-        scene.add(new THREE.HemisphereLight(0xd9c4a0, 0x171310, 0.52));
-        const keyLight = new THREE.DirectionalLight(0xffd9a0, 1.05);
+        scene.add(new THREE.HemisphereLight(0xe8d5b5, 0x282019, 0.78));
+        const keyLight = new THREE.DirectionalLight(0xffdfb0, 1.45);
         keyLight.position.set(-7, 15, 8);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xb9c2d0, 0.28);
+        const fillLight = new THREE.DirectionalLight(0xc5c9d2, 0.42);
         fillLight.position.set(10, 8, -18);
         scene.add(fillLight);
 
@@ -270,10 +272,19 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               expression: "neutral",
             },
           };
-          const character = await createCharacter(characterInput, {
-            detail: mobile ? "low" : "high",
-            animations: ["idle", "look_around", "talk_gestures", "wave"],
-          });
+          const cacheKey = String(driver.id || driver.character_name || seed);
+          let characterPromise = characterModelCache.get(cacheKey);
+          if (!characterPromise) {
+            characterPromise = createCharacter(characterInput, {
+              detail: mobile ? "low" : "high",
+              animations: ["idle", "look_around", "talk_gestures", "wave"],
+            });
+            characterModelCache.set(cacheKey, characterPromise);
+            characterPromise.catch(() => {
+              if (characterModelCache.get(cacheKey) === characterPromise) characterModelCache.delete(cacheKey);
+            });
+          }
+          const character = await characterPromise;
           if (disposed) { character.dispose(); return; }
           const figure = new THREE.Group();
           figure.position.y = 0.36;
@@ -285,7 +296,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const mixer = new THREE.AnimationMixer(character.scene);
           character.playSequence(mixer, animationRoutines[index % animationRoutines.length], { fade: 0.55, repeat: true });
           mixer.setTime((index % animationRoutines.length) * 0.73);
-          driverMotions.push({ character, mixer });
+          driverMotions.push({ character, mixer, root });
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
@@ -517,7 +528,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           scene.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh && !obj.userData.araCharacterModel) (obj as Three.Mesh).geometry.dispose();
           });
-          driverMotions.forEach((motion) => motion.character.dispose());
+          driverMotions.forEach((motion) => { motion.mixer.stopAllAction(); motion.character.scene.removeFromParent(); });
           disposableGeometries.forEach((g) => g.dispose());
           disposableMaterials.forEach((m) => m.dispose());
           textures.forEach((t) => t.dispose());
