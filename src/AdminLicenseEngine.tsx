@@ -117,7 +117,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
      <tbody>
       {periodRows.map(({name,race:isRace,raceIndex,days,start,end})=>{
        return <tr key={name}>
-        <td><strong>{name}</strong><small>{isRace?"3–5 race per divisi":index===0?"7 hari":name==="End Season"?"5 hari":name==="Off Season"?"7 hari":"2 hari"}</small></td>
+        <td><strong>{name}</strong><small>{isRace?"3–5 race per divisi":name==="Pre Season"?"7 hari":name==="End Season"?"5 hari":name==="Off Season"?"7 hari":"2 hari"}</small></td>
         <td><span>{start} – {end}<small className="license-schedule-days">{days} hari</small></span></td>
         {isRace?(["premio","zwei"] as const).map(division=><td key={division}>
          <div className="license-circuit-select-list">
