@@ -100,13 +100,18 @@ export function CircuitPoolInput(){
  },[]);
  useEffect(()=>{
   if(!draftReady||saving)return;
-  const hasContent=Boolean(editingId||layoutFile||Object.values(form).some(Boolean));
-  const timer=window.setTimeout(()=>{
+  const persist=()=>{
+   const hasContent=Boolean(editingId||layoutFile||Object.values(form).some(Boolean));
    const draft:CircuitPoolDraft={key:CIRCUIT_DRAFT_KEY,form,editingId,layoutFile,layoutFileName:layoutFile?.name||null,layoutFileType:layoutFile?.type||null,layoutFileLastModified:layoutFile?.lastModified||null,layoutPreview:layoutFile?"":layoutPreview.startsWith("blob:")?"":layoutPreview};
    const operation=hasContent?writeCircuitDraft(draft):clearCircuitDraft();
    void operation.then(()=>setDraftError("")).catch(error=>setDraftError(error instanceof Error?error.message:"Draft gagal disimpan."));
-  },250);
-  return()=>window.clearTimeout(timer);
+  };
+  const timer=window.setTimeout(persist,250);
+  const flushOnHide=()=>persist();
+  const flushWhenHidden=()=>{if(document.visibilityState==="hidden")persist()};
+  window.addEventListener("pagehide",flushOnHide);
+  document.addEventListener("visibilitychange",flushWhenHidden);
+  return()=>{window.clearTimeout(timer);window.removeEventListener("pagehide",flushOnHide);document.removeEventListener("visibilitychange",flushWhenHidden)};
  },[draftReady,saving,form,editingId,layoutFile,layoutPreview]);
 
  const set=(key:keyof CircuitForm,value:string)=>setForm(v=>({...v,[key]:value}));
