@@ -12,7 +12,52 @@ const flag=(code:string)=>/^[A-Z]{2}$/.test(code)?String.fromCodePoint(...code.s
 const countryName=(code:string)=>new Intl.DisplayNames(["id"],{type:"region"}).of(code)||code;
 const time=(ms:number|null)=>{if(!ms)return "Belum ada record";const m=Math.floor(ms/60000),s=Math.floor(ms%60000/1000),v=ms%1000;return m+":"+String(s).padStart(2,"0")+","+String(v).padStart(3,"0")};
 const parseTime=(v:string)=>{const m=v.trim().match(/^(\d{1,3}):(\d{2})[.,](\d{3})$/);return m?Number(m[1])*60000+Number(m[2])*1000+Number(m[3]):null};
-async function convertAndUpload(file:File){if(!file.type.startsWith("image/"))throw new Error("Pilih file gambar yang valid.");if(file.size>15*1024*1024)throw new Error("Ukuran gambar sumber maksimal 15 MB.");const bitmap=await createImageBitmap(file);try{if(bitmap.width>5000||bitmap.height>5000)throw new Error("Resolusi gambar maksimal 5000 × 5000.");const canvas=document.createElement("canvas");canvas.width=bitmap.width;canvas.height=bitmap.height;const ctx=canvas.getContext("2d");if(!ctx)throw new Error("Konversi gambar tidak didukung browser.");ctx.drawImage(bitmap,0,0);const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Konversi WEBP gagal.")),"image/webp",0.86));if(blob.size>4*1024*1024)throw new Error("Ukuran WEBP maksimal 4 MB.");const path=crypto.randomUUID()+".webp";const uploaded=await supabase!.storage.from("circuit-layouts").upload(path,blob,{contentType:"image/webp",upsert:false});if(uploaded.error)throw uploaded.error;return {path,url:supabase!.storage.from("circuit-layouts").getPublicUrl(path).data.publicUrl};}finally{bitmap.close()}}
+async function decodeImageForCanvas(file:File):Promise<{source:CanvasImageSource;width:number;height:number;cleanup:()=>void;close?:()=>void}>{
+ if(typeof createImageBitmap==="function"){
+  try{
+   const bitmap=await createImageBitmap(file);
+   return {source:bitmap,width:bitmap.width,height:bitmap.height,cleanup:()=>bitmap.close(),close:()=>bitmap.close()};
+  }catch{
+   // Some Android browsers can preview an image but fail to decode it via createImageBitmap.
+  }
+ }
+ const objectUrl=URL.createObjectURL(file);
+ try{
+  const image=await new Promise<HTMLImageElement>((resolve,reject)=>{
+   const element=new Image();
+   element.onload=()=>resolve(element);
+   element.onerror=()=>reject(new Error("Browser gagal membaca gambar. Coba simpan ulang gambar sebagai PNG, JPG, atau WEBP."));
+   element.src=objectUrl;
+  });
+  return {source:image,width:image.naturalWidth,height:image.naturalHeight,cleanup:()=>URL.revokeObjectURL(objectUrl)};
+ }catch(error){
+  URL.revokeObjectURL(objectUrl);
+  throw error;
+ }
+}
+async function convertAndUpload(file:File){
+ if(!file.type.startsWith("image/"))throw new Error("Pilih file gambar yang valid.");
+ if(file.size>15*1024*1024)throw new Error("Ukuran gambar sumber maksimal 15 MB.");
+ const decoded=await decodeImageForCanvas(file);
+ try{
+  if(!decoded.width||!decoded.height)throw new Error("Dimensi gambar tidak valid atau gambar gagal dibaca.");
+  if(decoded.width>5000||decoded.height>5000)throw new Error("Resolusi gambar maksimal 5000 × 5000.");
+  const canvas=document.createElement("canvas");
+  canvas.width=decoded.width;canvas.height=decoded.height;
+  const ctx=canvas.getContext("2d");
+  if(!ctx)throw new Error("Konversi gambar tidak didukung browser.");
+  ctx.drawImage(decoded.source,0,0);
+  const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Konversi WEBP gagal.")),"image/webp",0.86));
+  if(blob.type!=="image/webp")throw new Error("Browser tidak mendukung konversi WEBP. Gunakan browser yang lebih baru atau unggah gambar WEBP.");
+  if(blob.size>4*1024*1024)throw new Error("Ukuran WEBP maksimal 4 MB.");
+  const path=crypto.randomUUID()+".webp";
+  const uploaded=await supabase!.storage.from("circuit-layouts").upload(path,blob,{contentType:"image/webp",upsert:false});
+  if(uploaded.error)throw uploaded.error;
+  return {path,url:supabase!.storage.from("circuit-layouts").getPublicUrl(path).data.publicUrl};
+ }finally{
+  decoded.cleanup();
+ }
+}
 function oldImagePath(url:string|null){if(!url)return null;const marker="/object/public/circuit-layouts/";const i=url.indexOf(marker);return i<0?null:decodeURIComponent(url.slice(i+marker.length))}
 export function CircuitPool(){
  const [rows,setRows]=useState<Circuit[]>([]),[selected,setSelected]=useState<Circuit|null>(null),[loading,setLoading]=useState(true),[error,setError]=useState("");
