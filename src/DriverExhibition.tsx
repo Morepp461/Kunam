@@ -806,7 +806,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     setResolvedAvatar("");
     if (!selected) return () => { active = false; };
     const direct = selected.avatar_url || selected.profile?.avatar_url || selected.profiles?.avatar_url || selected.member?.avatar_url || selected.member?.profile?.avatar_url || selected.avatarUrl || "";
-    if (typeof direct === "string" && /^https?:\\/\\//i.test(direct)) { setResolvedAvatar(direct); return () => { active = false; }; }
+    if (typeof direct === "string" && (direct.startsWith("https://") || direct.startsWith("http://"))) { setResolvedAvatar(direct); return () => { active = false; }; }
     const path = selected.avatar_path || selected.profile?.avatar_path || selected.profiles?.avatar_path || selected.member?.avatar_path || selected.member?.profile?.avatar_path;
     const memberId = selected.member_id || selected.member?.id || selected.member?.member_id;
     const resolve = async () => {
@@ -814,7 +814,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       let avatarPath = typeof path === "string" ? path : "";
       if (!avatarPath && memberId) {
         const { data } = await supabase.from("profiles").select("avatar_url,avatar_path").eq("member_id", memberId).maybeSingle();
-        if (typeof data?.avatar_url === "string" && /^https?:\\/\\//i.test(data.avatar_url)) { if (active) setResolvedAvatar(data.avatar_url); return; }
+        if (typeof data?.avatar_url === "string" && (data.avatar_url.startsWith("https://") || data.avatar_url.startsWith("http://"))) { if (active) setResolvedAvatar(data.avatar_url); return; }
         avatarPath = typeof data?.avatar_path === "string" ? data.avatar_path : "";
       }
       if (!avatarPath) return;
