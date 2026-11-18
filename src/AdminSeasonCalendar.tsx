@@ -117,7 +117,7 @@ export default function AdminSeasonCalendar(){
    starts_on:d.starts_on,ends_on:d.ends_on,
    assignments:d.period_type==="race_period"?seasonDivisions.map(div=>({season_division_id:div.id,round_ids:d.rounds[div.id]||[]})):[]
   }));
-  const {data,error}=await supabase.rpc("fia_create_season_calendar",{p_season_id:seasonId,p_periods:payload});
+  const {error}=await supabase.rpc("fia_create_season_calendar",{p_season_id:seasonId,p_periods:payload});
   setBusy(false);
   if(error){setNotice({kind:"error",text:error.message});return}
   setNotice({kind:"success",text:"12 periode berhasil dibentuk. Durasi setiap periode dihitung dari jadwal race dan aturan hari real-life."});
