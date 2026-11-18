@@ -110,6 +110,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const apiRef = useRef<SceneApi | null>(null);
   const [selected, setSelected] = useState<DriverRow | null>(null);
+  const [viewMode, setViewMode] = useState<"cards" | "3d">("cards");
   const [query, setQuery] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
   const [sceneError, setSceneError] = useState("");
@@ -117,7 +118,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [loadingCount, setLoadingCount] = useState(0);
   const selectedRef = useRef<DriverRow | null>(null);
   const visibleIdsRef = useRef<Set<string>>(new Set());
-  const sceneSignature = JSON.stringify(drivers.map((driver) => ({ id: driver.id, name: driver.character_name, gender: driver.gender ?? driver.character_gender, team: driver.team?.name, division: driver.team?.division_key })));
+  const sceneSignature = JSON.stringify(drivers.map((driver) => ({ id: driver.id, name: driver.character_name, gender: driver.gender ?? driver.character_gender, team: driver.team?.name, division: driver.team?.division_key, mainColor: driver.team?.main_color, secondaryColor: driver.team?.secondary_color })));
   const [resolvedAvatar, setResolvedAvatar] = useState("");
   const filteredDrivers = useMemo(() => drivers.filter((d) => {
     const term = query.trim().toLowerCase();
@@ -127,6 +128,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const teams = useMemo(() => [...new Set(drivers.map((d) => d.team?.name).filter(Boolean))].sort(), [drivers]);
 
   useEffect(() => {
+    if (viewMode !== "3d") return;
     let disposed = false;
     let frame = 0;
     let renderer: Three.WebGLRenderer | null = null;
@@ -798,7 +800,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       cancelAnimationFrame(frame);
       cleanup?.();
     };
-  }, [sceneSignature]);
+  }, [sceneSignature, viewMode]);
 
   useEffect(() => {
     const handle = (event: Event) => {
@@ -888,6 +890,52 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const scopeLabel = scope === "caleris-premio" ? "PREMIO" : scope === "caleris-zwei" ? "ZWEI" : "GLOBAL";
 
   return <section className="driver-exhibition">
+    <div className="driver-exhibition-modebar">
+      <div><span>CALERIS MASTERS</span><strong>DRIVER DIRECTORY</strong></div>
+      <div className="driver-exhibition-mode-switch" role="group" aria-label="Driver profile view">
+        <button type="button" className={viewMode === "cards" ? "active" : ""} onClick={() => { setViewMode("cards"); setSelected(null); selectedRef.current = null; }}><UserRound size={15}/> Cards</button>
+        <button type="button" className={viewMode === "3d" ? "active" : ""} onClick={() => { setSelected(null); selectedRef.current = null; setViewMode("3d"); }}><Camera size={15}/> 3D Experience</button>
+      </div>
+    </div>
+    {viewMode === "cards" ? <>
+      <div className="driver-card-toolbar">
+        <label><Search size={15}/><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search driver..." aria-label="Search driver"/></label>
+        <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)} aria-label="Filter team"><option value="all">ALL TEAMS</option>{teams.map((team) => <option key={team} value={team}>{team}</option>)}</select>
+        <span>{filteredDrivers.length} DRIVERS</span>
+      </div>
+      <div className="driver-card-grid">
+        {filteredDrivers.map((driver, index) => {
+          const main = /^#[0-9A-Fa-f]{6}$/.test(String(driver.team?.main_color || "")) ? driver.team.main_color : "#7A263A";
+          const secondary = /^#[0-9A-Fa-f]{6}$/.test(String(driver.team?.secondary_color || "")) ? driver.team.secondary_color : "#C6A33A";
+          const teamLogo = driver.profile?.logo_url || "";
+          return <button type="button" className="driver-graphic-card" key={driver.id || driver.character_name || index} onClick={() => { selectedRef.current = driver; setSelected(driver); }}>
+            <div className="driver-graphic-card-top" style={{background:`linear-gradient(118deg, ${main} 0%, ${secondary} 100%)`}}>
+              {driver.avatar_url && <img className="driver-graphic-card-portrait" src={driver.avatar_url} alt="" loading="lazy" referrerPolicy="no-referrer"/>}
+              <div className="driver-graphic-card-shade"/>
+              <h2>{driver.character_name || "Driver"}</h2>
+            </div>
+            <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><strong>{driver.team?.name || "Independent"}</strong></div>
+          </button>;
+        })}
+      </div>
+      {filteredDrivers.length === 0 && <div className="driver-no-results">{drivers.length === 0 ? "Belum ada driver yang terdaftar di divisi ini." : "Tidak ada driver yang cocok dengan pencarian."}</div>}
+      {selected && <div className="driver-card-detail-backdrop" role="presentation" onClick={() => { setSelected(null); selectedRef.current = null; }}>
+        <section className="driver-card-detail" role="dialog" aria-modal="true" aria-label={`Detail ${selected.character_name || "driver"}`} onClick={(event) => event.stopPropagation()}>
+          <button type="button" className="driver-card-detail-close" onClick={() => { setSelected(null); selectedRef.current = null; }} aria-label="Tutup detail"><X size={18}/></button>
+          <div className="driver-card-detail-banner" style={{background:`linear-gradient(118deg, ${selected.team?.main_color || "#7A263A"}, ${selected.team?.secondary_color || "#C6A33A"})`}}>
+            {selected.avatar_url && <img src={selected.avatar_url} alt="" referrerPolicy="no-referrer"/>}
+            <div><span>DRIVER PROFILE</span><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"}</p></div>
+          </div>
+          <div className="driver-card-detail-body">
+            <div className="driver-card-detail-team">{selected.profile?.logo_url && <img src={selected.profile.logo_url} alt=""/>}<strong>{selected.team?.name || "Independent"}</strong><span>{selected.license || "License belum tersedia"}</span></div>
+            {([selected.points,selected.wins,selected.poles,selected.finishes,selected.dnf].some(value => Number(value || 0) > 0)) ? <div className="driver-card-detail-stats">
+              <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div><div><span>WINS</span><strong>{Number(selected.wins || 0)}</strong></div><div><span>POLES</span><strong>{Number(selected.poles || 0)}</strong></div><div><span>FINISHES</span><strong>{Number(selected.finishes || 0)}</strong></div><div><span>DNF</span><strong>{Number(selected.dnf || 0)}</strong></div>
+            </div> : <p className="driver-card-detail-empty">Statistik belum tersedia pada hasil pertandingan yang dipublikasikan.</p>}
+            <p className="driver-card-detail-scope">Data mengikuti hasil resmi yang tersedia untuk season aktif dan cakupan divisi ini.</p>
+          </div>
+        </section>
+      </div>}
+    </> : <>
     <div className={`driver-exhibition-scene${fullscreenFallback ? " driver-exhibition-fullscreen-fallback" : ""}`} ref={sceneCardRef}>
       <div className="driver-exhibition-webgl" ref={mountRef} />
       {sceneLoading && <div className="driver-scene-loading"><strong>BUILDING DRIVER MODELS</strong><span>{loadingCount} / {drivers.length} · REALISTIC 3D CHARACTERS</span><div><i style={{ width: `${drivers.length ? loadingCount / drivers.length * 100 : 0}%` }}/></div></div>}
@@ -936,5 +984,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       <div className="driver-exhibition-footer"><span>CALERIS MASTERS · OFFICIAL DRIVER REGISTER</span><span>3D PADDOCK EXPERIENCE</span></div>
     </div>
     {filteredDrivers.length === 0 && <div className="driver-no-results">{drivers.length === 0 ? "No drivers are registered in this division yet." : "No drivers match your search."}</div>}
+    </>}
   </section>;
 }

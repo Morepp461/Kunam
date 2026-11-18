@@ -123,3 +123,49 @@
   .driver-camera-hint { font-size:8px; gap:7px; }
   .driver-exhibition-scene:has(.driver-selected-panel) .driver-mobile-joystick { opacity:1; }
 }
+
+.driver-exhibition-modebar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 16px;padding:13px 15px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:10px;background:rgba(8,10,13,.84)}
+.driver-exhibition-modebar>div:first-child{display:flex;flex-direction:column;gap:4px}
+.driver-exhibition-modebar>div:first-child span{font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.2em;color:#c6a33a}
+.driver-exhibition-modebar>div:first-child strong{font:700 18px 'Barlow Condensed',sans-serif;letter-spacing:.08em;color:#f1eee7}
+.driver-exhibition-mode-switch{display:flex;gap:5px;padding:4px;border:1px solid rgba(198,163,58,.2);border-radius:7px;background:#080a0dcc}
+.driver-exhibition-mode-switch button{display:inline-flex;align-items:center;gap:7px;min-height:36px;padding:0 12px;border:1px solid transparent;border-radius:5px;background:transparent;color:#aeb2b6;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.08em;cursor:pointer}
+.driver-exhibition-mode-switch button.active{border-color:rgba(198,163,58,.38);background:rgba(198,163,58,.12);color:#ead18b}
+.driver-card-toolbar{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.driver-card-toolbar label{display:flex;align-items:center;gap:8px;flex:1;min-width:0;height:40px;padding:0 12px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:7px;background:rgba(10,13,17,.82);color:#c6a33a}
+.driver-card-toolbar input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:var(--text,#f3f0e8);font:12px Inter,sans-serif}
+.driver-card-toolbar select{height:40px;max-width:180px;padding:0 10px;border:1px solid var(--line,rgba(255,255,255,.12));border-radius:7px;background:#0b0e12;color:#e9e4d9;font:700 10px 'Barlow Condensed',sans-serif}
+.driver-card-toolbar>span{color:var(--muted,#92989e);font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.1em;white-space:nowrap}
+.driver-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.driver-graphic-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:220px;overflow:hidden;padding:0;border:1px solid rgba(255,255,255,.1);border-radius:11px;background:#101216;text-align:left;cursor:pointer;box-shadow:0 12px 30px rgba(0,0,0,.22);transition:transform .2s ease,border-color .2s ease}
+.driver-graphic-card:hover{transform:translateY(-2px);border-color:rgba(198,163,58,.45)}
+.driver-graphic-card-top{position:relative;display:flex;align-items:flex-end;min-height:148px;overflow:hidden;padding:18px;background:#7a263a}
+.driver-graphic-card-portrait{position:absolute;right:0;bottom:0;width:58%;height:115%;object-fit:contain;object-position:right bottom;opacity:.82;filter:drop-shadow(0 8px 12px rgba(0,0,0,.22))}
+.driver-graphic-card-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.34),transparent 72%),linear-gradient(0deg,rgba(0,0,0,.18),transparent 48%);pointer-events:none}
+.driver-graphic-card-top h2{position:relative;z-index:1;max-width:72%;margin:0;color:#fff;font:700 clamp(22px,3vw,32px)/.95 Anton,'Barlow Condensed',sans-serif;letter-spacing:.015em;text-shadow:0 3px 16px rgba(0,0,0,.28);overflow-wrap:anywhere}
+.driver-graphic-card-base{display:flex;align-items:center;gap:12px;flex:1;min-height:70px;padding:11px 16px;background:rgba(8,10,13,.94);color:#f2eee5}
+.driver-graphic-card-logo{display:grid;place-items:center;flex:none;width:43px;height:43px;overflow:hidden;border:1px solid rgba(255,255,255,.14);border-radius:6px;background:rgba(255,255,255,.045);color:#b7bbc0}
+.driver-graphic-card-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.driver-graphic-card-base strong{color:#e9e5dc;font:700 14px 'Barlow Condensed',sans-serif;letter-spacing:.06em;text-transform:uppercase;overflow-wrap:anywhere}
+.driver-card-detail-backdrop{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px)}
+.driver-card-detail{position:relative;width:min(620px,100%);max-height:min(88vh,820px);overflow:auto;border:1px solid rgba(198,163,58,.28);border-radius:12px;background:#111419;box-shadow:0 28px 90px rgba(0,0,0,.58)}
+.driver-card-detail-close{position:absolute;z-index:3;right:12px;top:12px;display:grid;place-items:center;width:34px;height:34px;border:1px solid rgba(255,255,255,.28);border-radius:6px;background:rgba(0,0,0,.48);color:#fff}
+.driver-card-detail-banner{position:relative;display:flex;align-items:flex-end;min-height:220px;overflow:hidden;padding:24px;background:#7a263a;color:#fff}
+.driver-card-detail-banner:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.12)),linear-gradient(0deg,rgba(0,0,0,.35),transparent)}
+.driver-card-detail-banner>img{position:absolute;right:0;bottom:0;height:115%;max-width:60%;object-fit:contain;object-position:right bottom}
+.driver-card-detail-banner>div{position:relative;z-index:1;max-width:70%}
+.driver-card-detail-banner span{font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.2em}
+.driver-card-detail-banner h2{margin:8px 0;color:#fff;font:700 clamp(30px,6vw,46px)/.95 Anton,'Barlow Condensed',sans-serif}
+.driver-card-detail-banner p{margin:8px 0 0;color:rgba(255,255,255,.82);font-size:12px}
+.driver-card-detail-body{padding:20px}
+.driver-card-detail-team{display:flex;align-items:center;gap:10px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.1);color:#f3efe5}
+.driver-card-detail-team img{width:38px;height:38px;object-fit:contain}
+.driver-card-detail-team strong{font:700 14px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.driver-card-detail-team span{margin-left:auto;color:#aeb4ba;font-size:11px}
+.driver-card-detail-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:16px}
+.driver-card-detail-stats>div{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:7px;background:rgba(255,255,255,.035)}
+.driver-card-detail-stats span{color:#9ba2a8;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.12em}
+.driver-card-detail-stats strong{color:#f4efe4;font:700 23px 'Barlow Condensed',sans-serif}
+.driver-card-detail-empty,.driver-card-detail-scope{margin:15px 0 0;color:#a6adb2;font-size:11px;line-height:1.6}
+@media(max-width:640px){.driver-exhibition-modebar{align-items:flex-start;flex-direction:column}.driver-exhibition-mode-switch{width:100%}.driver-exhibition-mode-switch button{flex:1;justify-content:center}.driver-card-toolbar{flex-wrap:wrap}.driver-card-toolbar label{flex:1 1 100%}.driver-card-toolbar select{flex:1;max-width:none}.driver-card-grid{gap:9px}.driver-graphic-card{min-height:190px}.driver-graphic-card-top{min-height:126px;padding:12px}.driver-graphic-card-top h2{font-size:clamp(17px,5vw,25px);max-width:80%}.driver-graphic-card-portrait{width:62%;height:110%}.driver-graphic-card-base{min-height:62px;gap:8px;padding:8px 10px}.driver-graphic-card-logo{width:34px;height:34px}.driver-graphic-card-base strong{font-size:11px}.driver-card-detail-backdrop{padding:10px}.driver-card-detail-banner{min-height:180px;padding:18px}.driver-card-detail-body{padding:15px}.driver-card-detail-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(prefers-reduced-motion:reduce){.driver-graphic-card{transition:none}.driver-graphic-card:hover{transform:none}}
