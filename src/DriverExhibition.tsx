@@ -9,6 +9,8 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
+const characterModelCache = new Map<string, Promise<AraCharacter>>();
+
 const numberFor = (name: string, index: number) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = (hash * 33 + name.charCodeAt(i)) | 0;
@@ -55,13 +57,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const THREE = await import("three");
         const { createCharacter } = await import("ara3d");
         if (disposed || !host) return;
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
         const mobile = window.matchMedia("(max-width: 760px)").matches;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1.25 : 1.65));
+        renderer = new THREE.WebGLRenderer({ antialias: !mobile, alpha: false, powerPreference: "high-performance" });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, mobile ? 1 : 1.35));
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 0.82;
+        renderer.toneMappingExposure = 0.94;
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
@@ -85,7 +87,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const disposableGeometries: Three.BufferGeometry[] = [];
         const disposableMaterials: Three.Material[] = [];
         const textures: Three.Texture[] = [];
-        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer }> = [];
+        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer; root: Three.Group }> = [];
 
         const material = (color: number, roughness = 0.62, metalness = 0.12) => {
           const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -107,23 +109,61 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         scene.background = new THREE.Color(0x171411);
         scene.fog = new THREE.FogExp2(0x171411, 0.0021);
         renderer.toneMappingExposure = 0.82;
-        scene.add(new THREE.HemisphereLight(0xd9c4a0, 0x171310, 0.52));
-        const keyLight = new THREE.DirectionalLight(0xffd9a0, 1.05);
+        scene.add(new THREE.HemisphereLight(0xe8d5b5, 0x282019, 0.78));
+        const keyLight = new THREE.DirectionalLight(0xffdfb0, 1.45);
         keyLight.position.set(-7, 15, 8);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xb9c2d0, 0.28);
+        const fillLight = new THREE.DirectionalLight(0xc5c9d2, 0.42);
         fillLight.position.set(10, 8, -18);
         scene.add(fillLight);
 
-        const floorMat = material(0x282522, 0.32, 0.22);
+        const carpetCanvas = document.createElement("canvas");
+        carpetCanvas.width = 1024; carpetCanvas.height = 1024;
+        const carpetCtx = carpetCanvas.getContext("2d");
+        if (carpetCtx) {
+          carpetCtx.fillStyle = "#24212a"; carpetCtx.fillRect(0, 0, 1024, 1024);
+          let seed = 712367;
+          const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+          for (let i = 0; i < 12500; i++) {
+            carpetCtx.fillStyle = ["#514b4b", "#71665c", "#393541", "#857c68", "#b0a17d"][Math.floor(rand() * 5)];
+            carpetCtx.globalAlpha = 0.2 + rand() * 0.34;
+            carpetCtx.fillRect(rand() * 1024, rand() * 1024, 1 + rand() * 2.2, 1 + rand() * 2.2);
+          }
+          carpetCtx.globalAlpha = 0.72; carpetCtx.strokeStyle = "#85834d"; carpetCtx.lineWidth = 4;
+          for (let i = 0; i < 7; i++) {
+            const offset = i * 19; carpetCtx.beginPath(); carpetCtx.moveTo(-80, 640 + offset);
+            carpetCtx.bezierCurveTo(190, 420 - offset, 280, 930 + offset, 520, 680 - offset);
+            carpetCtx.bezierCurveTo(760, 420 + offset, 820, 930 - offset, 1110, 590 + offset); carpetCtx.stroke();
+          }
+          carpetCtx.strokeStyle = "#b2a36d"; carpetCtx.lineWidth = 1.5;
+          for (let i = 0; i < 34; i++) {
+            const y = 570 + i * 9; carpetCtx.beginPath(); carpetCtx.moveTo(-30, y);
+            carpetCtx.bezierCurveTo(180, y - 110, 300, y + 170, 500, y);
+            carpetCtx.bezierCurveTo(700, y - 170, 830, y + 120, 1050, y - 35); carpetCtx.stroke();
+          }
+          carpetCtx.globalAlpha = 0.55; carpetCtx.strokeStyle = "#b8aa79"; carpetCtx.lineWidth = 2;
+          for (let x = 40; x < 1024; x += 128) for (let y = 40; y < 1024; y += 128) {
+            carpetCtx.beginPath(); carpetCtx.ellipse(x, y, 22, 10, Math.PI / 4, 0, Math.PI * 2); carpetCtx.stroke();
+            carpetCtx.beginPath(); carpetCtx.arc(x, y, 5, 0, Math.PI * 2); carpetCtx.stroke();
+          }
+          carpetCtx.globalAlpha = 1;
+        }
+        const carpetTexture = new THREE.CanvasTexture(carpetCanvas);
+        carpetTexture.colorSpace = THREE.SRGBColorSpace;
+        carpetTexture.wrapS = THREE.RepeatWrapping; carpetTexture.wrapT = THREE.RepeatWrapping;
+        carpetTexture.repeat.set(5, 7);
+        carpetTexture.anisotropy = Math.min(4, renderer!.capabilities.getMaxAnisotropy());
+        textures.push(carpetTexture);
+        const floorMat = material(0xffffff, 0.88, 0.02);
+        floorMat.map = carpetTexture;
         const wallMat = material(0x292521, 0.7, 0.12);
         const darkMetal = material(0x262321, 0.3, 0.78);
         const redMetal = material(0x651d25, 0.42, 0.48);
         const goldMetal = material(0x8b7045, 0.3, 0.68);
         const woodMat = material(0x302319, 0.38, 0.12);
-        const ledMat = new THREE.MeshStandardMaterial({ color: 0xc39a5a, emissive: 0x9a6730, emissiveIntensity: 0.55, roughness: 0.32, metalness: 0.45 });
+        const ledMat = new THREE.MeshStandardMaterial({ color: 0xc39a5a, emissive: 0x9a6730, emissiveIntensity: 1.65, roughness: 0.28, metalness: 0.25 });
         disposableMaterials.push(ledMat);
         const floor = mesh(new THREE.PlaneGeometry(100, 150), floorMat, scene, [0, 0, -35]);
         floor.rotation.x = -Math.PI / 2;
@@ -270,11 +310,20 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               expression: "neutral",
             },
           };
-          const character = await createCharacter(characterInput, {
-            detail: mobile ? "low" : "high",
-            animations: ["idle", "look_around", "talk_gestures", "wave"],
-          });
-          if (disposed) { character.dispose(); return; }
+          const cacheKey = `${String(driver.id || driver.character_name || seed)}:race-suit-v2`;
+          let characterPromise = characterModelCache.get(cacheKey);
+          if (!characterPromise) {
+            characterPromise = createCharacter(characterInput, {
+              detail: mobile ? "low" : "high",
+              animations: ["idle", "look_around", "talk_gestures", "wave"],
+            });
+            characterModelCache.set(cacheKey, characterPromise);
+            characterPromise.catch(() => {
+              if (characterModelCache.get(cacheKey) === characterPromise) characterModelCache.delete(cacheKey);
+            });
+          }
+          const character = await characterPromise;
+          if (disposed) return;
           const figure = new THREE.Group();
           figure.position.y = 0.36;
           root.add(figure);
@@ -285,7 +334,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const mixer = new THREE.AnimationMixer(character.scene);
           character.playSequence(mixer, animationRoutines[index % animationRoutines.length], { fade: 0.55, repeat: true });
           mixer.setTime((index % animationRoutines.length) * 0.73);
-          driverMotions.push({ character, mixer });
+          driverMotions.push({ character, mixer, root });
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
@@ -320,6 +369,23 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           light.position.set((i % 4 - 1.5) * 10.2, 9.5, -Math.floor(i / 4) * 22 - 2);
           light.target.position.set(light.position.x, 0, light.position.z - 1);
           scene.add(light, light.target);
+        }
+
+        // Warm luminous fixtures and downlights mounted along the crown of the vaulted ceiling.
+        for (let z = 2; z >= -82; z -= 16) {
+          const fixture = new THREE.Group();
+          fixture.position.set(0, 18.25, z);
+          scene.add(fixture);
+          const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.58, 0.16, 20), darkMetal);
+          fixture.add(housing);
+          const diffuserMat = new THREE.MeshStandardMaterial({ color: 0xffe0ad, emissive: 0xffb95f, emissiveIntensity: 2.2, roughness: 0.25 });
+          disposableMaterials.push(diffuserMat);
+          const diffuser = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.42, 0.055, 20), diffuserMat);
+          diffuser.position.y = -0.11; fixture.add(diffuser);
+          const down = new THREE.PointLight(0xffd39a, mobile ? 15 : 24, 30, 1.7);
+          down.position.set(0, -0.4, 0); fixture.add(down);
+          const sideGlow = new THREE.PointLight(0xffbd75, 7, 18, 2);
+          sideGlow.position.set(-5, -0.7, 0); fixture.add(sideGlow);
         }
 
         // Premium paddock wall: framed driver and team-owner portraits, motorsport memorabilia and brand plaques.
@@ -478,6 +544,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
           driverMotions.forEach((motion) => {
+            if (!motion.root.visible || camera.position.distanceTo(motion.root.position) > 42) return;
             motion.mixer.update(delta);
             motion.character.update(delta);
           });
@@ -517,7 +584,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           scene.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh && !obj.userData.araCharacterModel) (obj as Three.Mesh).geometry.dispose();
           });
-          driverMotions.forEach((motion) => motion.character.dispose());
+          driverMotions.forEach((motion) => { motion.mixer.stopAllAction(); motion.character.scene.removeFromParent(); });
           disposableGeometries.forEach((g) => g.dispose());
           disposableMaterials.forEach((m) => m.dispose());
           textures.forEach((t) => t.dispose());
