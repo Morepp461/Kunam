@@ -1,99 +1,118 @@
-import {useCallback,useEffect,useMemo,useState} from "react";
-import type {FormEvent} from "react";
-import {ArrowLeft,CalendarDays,CheckCircle2,Flag,Plus,RefreshCw,ShieldCheck,Trophy,Users} from "lucide-react";
-import {Link} from "react-router-dom";
+import {useCallback,useEffect,useState} from "react";
+import {CalendarDays,CheckCircle2,Flag,RefreshCw,ShieldCheck,Trophy} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
+import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
 
 type Season={id:string;season_key:string;title:string;starts_on:string;ends_on:string;status:"draft"|"active"|"completed"};
-type Division={id:string;season_id:string;division_key:string;division_name:string;status:"draft"|"active"|"completed"};
-type Driver={id:string;character_name:string|null;license:string|null;team_id:string|null};
-type DriverContract={season_id:string;member_id:string;team_id:string;status:string};
-type Registration={id:string;season_id:string;season_division_id:string;member_id:string;is_hiatus:boolean;preserved_license:string|null;members?:{character_name:string|null;license:string|null}};
-type Round={id:string;season_division_id:string;round_number:number;title:string;circuit_name:string|null;circuit_country_code:string|null;checkin_opens_at:string;checkin_closes_at:string;status:string};
-type Circuit={id:string;name:string;country_code:string|null};
+type Division={id:string;season_id:string;division_key:string;division_name:string;status:string};
+type Period={id:string;season_id:string;period_type:string;period_number:number|null;starts_on:string;ends_on:string};
+type Round={id:string;season_division_id:string};
+type Config={config_key:string;payload:Record<string,number|string>;is_active:boolean};
 type Notice={kind:"success"|"error";text:string};
-const slug=(v:string)=>v.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 
-export default function AdminLicenseEngine({session}:{session:Session}){
- const [seasons,setSeasons]=useState<Season[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[drivers,setDrivers]=useState<Driver[]>([]),[contracts,setContracts]=useState<DriverContract[]>([]),[registrations,setRegistrations]=useState<Registration[]>([]),[rounds,setRounds]=useState<Round[]>([]),[circuits,setCircuits]=useState<Circuit[]>([]);
- const [selectedSeason,setSelectedSeason]=useState(""),[selectedDivision,setSelectedDivision]=useState(""),[selectedRound,setSelectedRound]=useState("");
- const [memberId,setMemberId]=useState(""),[standingMember,setStandingMember]=useState(""),[standingPoints,setStandingPoints]=useState(""),[finalMember,setFinalMember]=useState(""),[finalPoints,setFinalPoints]=useState(""),[finalPosition,setFinalPosition]=useState("");
- const [seasonTitle,setSeasonTitle]=useState(""),[seasonKey,setSeasonKey]=useState(""),[seasonStart,setSeasonStart]=useState(""),[divisionName,setDivisionName]=useState("");
- const [roundNumber,setRoundNumber]=useState("1"),[roundTitle,setRoundTitle]=useState(""),[roundCircuitId,setRoundCircuitId]=useState(""),[editCircuitId,setEditCircuitId]=useState(""),[roundOpen,setRoundOpen]=useState(""),[roundClose,setRoundClose]=useState("");
- const [busy,setBusy]=useState(false),[notice,setNotice]=useState<Notice|null>(null);
+const todayJakarta=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Jakarta",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const moneyless=(value:number)=>Number(value||0).toLocaleString("id-ID");
+
+export default function AdminLicenseEngine({session:_session}:{session:Session}){
+ const [seasons,setSeasons]=useState<Season[]>([]);
+ const [divisions,setDivisions]=useState<Division[]>([]);
+ const [periods,setPeriods]=useState<Period[]>([]);
+ const [rounds,setRounds]=useState<Round[]>([]);
+ const [configs,setConfigs]=useState<Config[]>([]);
+ const [startDate,setStartDate]=useState(todayJakarta());
+ const [busy,setBusy]=useState(false);
+ const [loading,setLoading]=useState(true);
+ const [notice,setNotice]=useState<Notice|null>(null);
+
  const load=useCallback(async()=>{
-  if(!supabase)return;const db=supabase;
-  const [s,d,m,r,ro,c,ct]=await Promise.all([
-   db.from("license_seasons").select("*").order("created_at",{ascending:false}),
-   db.from("license_season_divisions").select("*").order("created_at",{ascending:false}),
-   db.from("members").select("id,character_name,license,team_id").eq("role","Driver").order("character_name"),
-   db.from("license_season_members").select("*,members!license_season_members_member_id_fkey(character_name,license)").order("created_at",{ascending:false}),
-   db.from("license_rounds").select("*").order("round_number"),
-   db.from("caleris_circuit_pool").select("id,name,country_code").order("name"),
-   db.from("economy_driver_contracts").select("season_id,member_id,team_id,status").eq("status","active")
+  if(!supabase){setLoading(false);return}
+  setLoading(true);
+  const [s,d,p,r,c]=await Promise.all([
+   supabase.from("license_seasons").select("id,season_key,title,starts_on,ends_on,status").order("created_at",{ascending:false}),
+   supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,status"),
+   supabase.from("season_calendar_periods").select("id,season_id,period_type,period_number,starts_on,ends_on").order("sort_order"),
+   supabase.from("license_rounds").select("id,season_division_id"),
+   supabase.from("caleris_configurations").select("config_key,payload,is_active").eq("category","license").eq("is_active",true)
   ]);
-  const err=s.error||d.error||m.error||r.error||ro.error||c.error||ct.error;if(err)setNotice({kind:"error",text:err.message});
-  setSeasons((s.data||[]) as Season[]);setDivisions((d.data||[]) as Division[]);setDrivers((m.data||[]) as Driver[]);setContracts((ct.data||[]) as DriverContract[]);setRegistrations((r.data||[]) as Registration[]);setRounds((ro.data||[]) as Round[]);setCircuits((c.data||[]) as Circuit[]);
-  if(!selectedSeason&&s.data?.length)setSelectedSeason(s.data.find(x=>x.status==="active")?.id||s.data[0].id);
-  if(!selectedDivision&&d.data?.length)setSelectedDivision(d.data[0].id);
-  if(!selectedRound&&ro.data?.length)setSelectedRound(ro.data[0].id);
- },[selectedSeason,selectedDivision,selectedRound]);
+  const error=s.error||d.error||p.error||r.error||c.error;
+  if(error)setNotice({kind:"error",text:error.message});
+  setSeasons((s.data||[]) as Season[]);setDivisions((d.data||[]) as Division[]);
+  setPeriods((p.data||[]) as Period[]);setRounds((r.data||[]) as Round[]);setConfigs((c.data||[]) as Config[]);
+  const active=(s.data||[]).find(x=>x.status==="active");
+  if(active){
+   const off=(p.data||[]).find(x=>x.season_id===active.id&&x.period_type==="off_season");
+   if(off)setStartDate(new Date(new Date(off.ends_on+"T00:00:00Z").getTime()+86400000).toISOString().slice(0,10));
+  }
+  setLoading(false);
+ },[]);
  useEffect(()=>{void load()},[load]);
- const activeSeason=seasons.find(s=>s.id===selectedSeason),activeDivision=divisions.find(d=>d.id===selectedDivision),activeRound=rounds.find(r=>r.id===selectedRound);
- const divisionOptions=useMemo(()=>divisions.filter(d=>d.season_id===selectedSeason),[divisions,selectedSeason]);
- const divisionRegistrations=registrations.filter(r=>r.season_division_id===selectedDivision),divisionRounds=rounds.filter(r=>r.season_division_id===selectedDivision);
- const assignedIds=new Set(divisionRegistrations.map(r=>r.member_id)),availableDrivers=drivers.filter(d=>!assignedIds.has(d.id)&&contracts.some(c=>c.season_id===selectedSeason&&c.member_id===d.id&&c.team_id===d.team_id&&c.status==="active"));
- const run=async(fn:()=>PromiseLike<{error:{message:string}|null}>,success:string)=>{setBusy(true);setNotice(null);const result=await fn();setBusy(false);if(result.error){setNotice({kind:"error",text:result.error.message});return false}setNotice({kind:"success",text:success});await load();return true};
- const createSeason=async(e:FormEvent)=>{e.preventDefault();if(!supabase)return;const ok=await run(()=>supabase!.from("license_seasons").insert({season_key:slug(seasonKey||seasonTitle),title:seasonTitle.trim(),starts_on:seasonStart,ends_on:seasonStart,status:"draft",created_by:session.user.id}),"Season draft berhasil dibuat.");if(ok){setSeasonTitle("");setSeasonKey("");setSeasonStart("");}};
- const createDivision=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!selectedSeason)return;const key=slug(divisionName);await run(()=>supabase!.from("license_season_divisions").insert({season_id:selectedSeason,division_key:key,division_name:divisionName.trim(),status:activeSeason?.status==="draft"?"draft":"active"}),"Divisi dibuat. Atur poin WDC untuk key divisi ini di Configuration Center.");setDivisionName("")};
- const registerDriver=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!activeDivision||!activeSeason||!memberId)return;const driver=drivers.find(d=>d.id===memberId);const ok=await run(()=>supabase!.from("license_season_members").insert({season_id:activeSeason.id,season_division_id:activeDivision.id,member_id:memberId,preserved_license:driver?.license||null}),"Driver berhasil didaftarkan.");if(ok)setMemberId("")};
- const createRound=async(e:FormEvent)=>{e.preventDefault();const circuit=circuits.find(x=>x.id===roundCircuitId);if(!supabase||!activeDivision||!circuit)return;const ok=await run(()=>supabase!.from("license_rounds").insert({season_division_id:activeDivision.id,round_number:Number(roundNumber),title:roundTitle.trim()||("Round "+roundNumber),circuit_name:circuit.name,circuit_country_code:circuit.country_code,checkin_opens_at:new Date(roundOpen).toISOString(),checkin_closes_at:new Date(roundClose).toISOString(),status:"open"}),"Round berhasil dibuat.");if(ok){setRoundTitle("");setRoundCircuitId("");setRoundOpen("");setRoundClose("")}};
- const saveRoundCircuit=async(e:FormEvent)=>{e.preventDefault();const circuit=circuits.find(x=>x.id===editCircuitId);if(!supabase||!activeRound||!circuit)return;await run(()=>supabase!.from("license_rounds").update({circuit_name:circuit.name,circuit_country_code:circuit.country_code}).eq("id",activeRound.id),"Data circuit round diperbarui.")};
- useEffect(()=>{setEditCircuitId(circuits.find(c=>c.name===activeRound?.circuit_name&&c.country_code===activeRound?.circuit_country_code)?.id||"")},[selectedRound,activeRound?.circuit_name,activeRound?.circuit_country_code,circuits]);
- const saveRoundStanding=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!activeRound||!standingMember)return;const ok=await run(()=>supabase!.from("license_round_standings").upsert({round_id:activeRound.id,member_id:standingMember,points_total:Number(standingPoints),updated_by:session.user.id},{onConflict:"round_id,member_id"}),"Standings tersimpan. Milestone lisensi diperiksa otomatis.");if(ok)setStandingPoints("")};
- const saveFinalStanding=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!activeDivision||!finalMember)return;const ok=await run(()=>supabase!.from("license_final_standings").upsert({season_division_id:activeDivision.id,member_id:finalMember,final_points:Number(finalPoints),final_position:Number(finalPosition),updated_by:session.user.id},{onConflict:"season_division_id,member_id"}),"Baris final standings tersimpan.");if(ok){setFinalPoints("");setFinalPosition("")}};
- const processRound=async(r:Round)=>{if(!supabase)return;setBusy(true);setNotice(null);const {data,error}=await supabase.rpc("process_license_round",{p_round_id:r.id});setBusy(false);if(error){setNotice({kind:"error",text:error.message});return}const payroll=data?.payroll as {paid?:number;pending?:number;skipped?:string}|undefined;const payrollMessage=payroll?.skipped?(" Payroll tidak dijalankan: "+payroll.skipped+"."):payroll?(" Payroll: "+String(payroll.paid??0)+" dibayar, "+String(payroll.pending??0)+" menunggu saldo Team Wallet."): "";setNotice({kind:"success",text:"Round diproses. "+String(data?.drivers_processed??0)+" driver diperiksa melalui daily check-in."+payrollMessage});await load()};
- const finalize=async()=>{if(!supabase||!activeDivision)return;setBusy(true);setNotice(null);const {data,error}=await supabase.rpc("finalize_license_division",{p_season_division_id:activeDivision.id});setBusy(false);if(error){setNotice({kind:"error",text:error.message});return}setNotice({kind:"success",text:"WDC disahkan. Bonus "+String(data?.wdc_points)+" poin diberikan satu kali."});await load()};
- const toggleHiatus=async(row:Registration)=>{if(!supabase)return;const driver=drivers.find(d=>d.id===row.member_id);await run(()=>supabase!.from("license_season_members").update({is_hiatus:!row.is_hiatus,preserved_license:row.is_hiatus?row.preserved_license:(driver?.license||row.preserved_license)}).eq("id",row.id),row.is_hiatus?"Status hiatus dinonaktifkan.":"Hiatus aktif. Lisensi terakhir disimpan.")};
- const closeSeason=async()=>{if(!supabase||!activeSeason)return;const list=divisions.filter(d=>d.season_id===activeSeason.id);if(!list.length||list.some(d=>d.status!=="completed")){setNotice({kind:"error",text:"Semua divisi harus difinalisasi sebelum season ditutup."});return}await run(()=>supabase!.from("license_seasons").update({status:"completed"}).eq("id",activeSeason.id),"Season ditutup. Skor musiman baru dimulai pada season berikutnya; poin WDC tetap tersimpan.")};
+
+ const createSeason=async()=>{
+  if(!supabase||!startDate)return;
+  setBusy(true);setNotice(null);
+  const {data,error}=await supabase.rpc("fia_create_caleris_season",{p_start_date:startDate});
+  setBusy(false);
+  if(error){setNotice({kind:"error",text:error.message});return}
+  setNotice({kind:"success",text:String(data?.title||"Season CALERIS MASTERS berhasil dibuat")+". Dua divisi, 30 race round, dan kalender 12 periode sudah dibuat otomatis."});
+  await load();
+ };
+ const activeSeason=seasons.find(s=>s.status==="active");
+ const latestSeason=activeSeason||seasons.find(s=>s.status==="draft")||seasons[0];
+ const latestDivisions=divisions.filter(d=>d.season_id===latestSeason?.id);
+ const latestPeriods=periods.filter(p=>p.season_id===latestSeason?.id);
+ const latestRounds=rounds.filter(r=>latestDivisions.some(d=>d.id===r.season_division_id));
+ const config=(key:string)=>configs.find(x=>x.config_key===key)?.payload||{};
+ const checkin=Number(config("scoring-daily-checkin").points||2);
+ const inactivity=config("scoring-inactivity");
+ const milestones=configs.filter(x=>x.config_key.startsWith("scoring-milestone-")).map(x=>({threshold:Number(x.payload.minimum_standings_points||0),points:Number(x.payload.license_points||0)})).filter(x=>x.threshold>0&&x.points>0).sort((a,b)=>a.threshold-b.threshold);
+
  return <section className="workspace license-engine">
-  <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
-  <header className="page-heading"><span className="section-eyebrow">FIA OPERATIONS · ADMIN ACCESS</span><h1 className="page-title">License Scoring Engine</h1><p className="page-description">Kelola season, divisi, periode check-in, standings, dan pengesahan WDC. Seluruh poin dibaca dari License Configuration.</p></header>
-  <div className="license-engine-callout"><ShieldCheck size={18}/><p>Atur poin Daily Check-in, inactivity, milestone, dan bonus WDC per divisi melalui <Link to="/admin/configuration">Configuration Center</Link>. WDC hanya diberikan setelah final standings lengkap dan tervalidasi.</p></div>
-  <div className="license-engine-grid">
-   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">01 · SEASON</span><h2>Buat season</h2></div><CalendarDays size={19}/></div>
-    <form onSubmit={createSeason} className="license-form"><label>Nama season<input required value={seasonTitle} onChange={e=>setSeasonTitle(e.target.value)} placeholder="Contoh: Caleris Masters Season 1"/></label><label>Season key<input required value={seasonKey} onChange={e=>setSeasonKey(e.target.value)} placeholder="Contoh: season-1"/></label><label>Mulai Pre Season<input required type="date" value={seasonStart} onChange={e=>setSeasonStart(e.target.value)}/></label><p className="license-muted">Tanggal akhir season dihitung otomatis setelah FIA menyusun 12 periode dan memilih seluruh jadwal race.</p><button className="action primary" disabled={busy}><Plus size={15}/> Buat season draft</button><p className="license-muted">Season baru tetap draft sampai kalender 12 periode lengkap dan Off Season sebelumnya berakhir. Tanggal akhir akan dihitung otomatis dari kalender.</p></form>
-    <label className="license-select">Season / riwayat<select value={selectedSeason} onChange={e=>{setSelectedSeason(e.target.value);setSelectedDivision("")}}><option value="">Pilih season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label>
-    {activeSeason&&<p className="license-muted">{activeSeason.starts_on} sampai {activeSeason.ends_on}</p>}
-    <div className="license-divider"/><div className="section-title-row"><div><span className="section-eyebrow">02 · DIVISION</span><h2>Divisi season</h2></div><Flag size={19}/></div>
-    <form onSubmit={createDivision} className="license-form"><label>Nama divisi<input required value={divisionName} onChange={e=>setDivisionName(e.target.value)} placeholder="Premio / Zwei"/></label><button className="action primary" disabled={busy||!selectedSeason}><Plus size={15}/> Tambah divisi</button></form>
-    <label className="license-select">Pilih divisi<select value={selectedDivision} onChange={e=>{setSelectedDivision(e.target.value);setSelectedRound("")}}><option value="">Pilih divisi</option>{divisionOptions.map(d=><option key={d.id} value={d.id}>{d.division_name} · {d.status}</option>)}</select></label>
-    {activeDivision&&<p className="license-muted">Key: <code>{activeDivision.division_key}</code> · WDC config: <code>scoring-wdc-{activeDivision.division_key}</code></p>}
-   </section>
-   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">03 · DRIVER REGISTRATION</span><h2>Driver divisi</h2></div><Users size={19}/></div>
-    <p className="license-muted">Roster draft hanya menerima Driver dengan kontrak aktif pada season ini dan tim yang masih sesuai. Kontrak season sebelumnya tidak otomatis diwariskan.</p>
-    <form onSubmit={registerDriver} className="license-form"><label>Driver<select required value={memberId} onChange={e=>setMemberId(e.target.value)}><option value="">Pilih driver</option>{availableDrivers.map(d=><option key={d.id} value={d.id}>{d.character_name||"Driver"} · {d.license||"Tanpa lisensi"}</option>)}</select></label><button className="action primary" disabled={busy||!selectedDivision||!memberId}><Plus size={15}/> Daftarkan driver</button></form>
-    <div className="license-list">{divisionRegistrations.map(r=><article key={r.id}><div><strong>{r.members?.character_name||drivers.find(d=>d.id===r.member_id)?.character_name||"Driver"}</strong><small>Lisensi terakhir: {r.preserved_license||r.members?.license||"Belum diatur"}</small></div><label className="license-hiatus"><input type="checkbox" checked={r.is_hiatus} disabled={seasons.find(s=>s.id===r.season_id)?.status!=="completed"} onChange={()=>void toggleHiatus(r)}/> Hiatus</label></article>)}</div>
-    <p className="license-muted">Hiatus hanya dapat ditetapkan setelah season selesai. Sistem menyimpan snapshot lisensi terakhir; driver hiatus tidak diproses untuk inactivity maupun final standings.</p>
-    <div className="license-divider"/><div className="section-title-row"><div><span className="section-eyebrow">04 · ROUND WINDOWS</span><h2>Round & check-in</h2></div><CalendarDays size={19}/></div>
-    <form onSubmit={createRound} className="license-form"><label>Nomor round<input required type="number" min="1" step="1" value={roundNumber} onChange={e=>setRoundNumber(e.target.value)}/></label><label>Nama round<input value={roundTitle} onChange={e=>setRoundTitle(e.target.value)} placeholder="Nama round (opsional)"/></label><label>Circuit Pool<select required value={roundCircuitId} onChange={e=>setRoundCircuitId(e.target.value)}><option value="">Pilih circuit dari Circuit Pool</option>{circuits.map(c=><option key={c.id} value={c.id}>{c.name}{c.country_code?" · "+c.country_code:""}</option>)}</select></label><div className="license-form-row"><label>Check-in dibuka<input required type="datetime-local" value={roundOpen} onChange={e=>setRoundOpen(e.target.value)}/></label><label>Check-in ditutup<input required type="datetime-local" value={roundClose} onChange={e=>setRoundClose(e.target.value)}/></label></div><button className="action primary" disabled={busy||!selectedDivision}><Plus size={15}/> Tambah round</button></form>
-    <div className="license-list">{divisionRounds.map(r=><article key={r.id}><div><strong>{r.title} · {r.circuit_name||"Circuit belum diatur"}</strong><small>Round {r.round_number} · {r.circuit_country_code||"Negara belum diatur"} · {new Date(r.checkin_opens_at).toLocaleString("id-ID")} - {new Date(r.checkin_closes_at).toLocaleString("id-ID")}</small><small>Status: {r.status}</small></div>{r.status!=="closed"&&<button className="license-small-button" disabled={busy||new Date(r.checkin_closes_at)>new Date()} onClick={()=>void processRound(r)}>Proses round</button>}</article>)}</div>
-    <form onSubmit={saveRoundCircuit} className="license-form"><strong>Edit circuit round</strong><label>Round<select required value={selectedRound} onChange={e=>setSelectedRound(e.target.value)}><option value="">Pilih round</option>{divisionRounds.map(r=><option key={r.id} value={r.id}>{r.title}</option>)}</select></label><label>Circuit Pool<select required value={editCircuitId} onChange={e=>setEditCircuitId(e.target.value)}><option value="">Pilih circuit dari Circuit Pool</option>{circuits.map(c=><option key={c.id} value={c.id}>{c.name}{c.country_code?" · "+c.country_code:""}</option>)}</select></label><button className="action primary" disabled={busy||!selectedRound}>Simpan circuit</button></form>
-   </section>
-   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">05 · STANDINGS MILESTONES</span><h2>Update poin klasemen</h2></div><Trophy size={19}/></div>
-    <form onSubmit={saveRoundStanding} className="license-form"><label>Round<select required value={selectedRound} onChange={e=>setSelectedRound(e.target.value)}><option value="">Pilih round</option>{divisionRounds.map(r=><option key={r.id} value={r.id}>{r.title}</option>)}</select></label><label>Driver<select required value={standingMember} onChange={e=>setStandingMember(e.target.value)}><option value="">Pilih driver</option>{divisionRegistrations.filter(r=>!r.is_hiatus).map(r=><option key={r.member_id} value={r.member_id}>{r.members?.character_name||drivers.find(d=>d.id===r.member_id)?.character_name||"Driver"}</option>)}</select></label><label>Total poin klasemen kumulatif<input required type="number" min="0" step="any" value={standingPoints} onChange={e=>setStandingPoints(e.target.value)} placeholder="Total poin saat ini"/></label><button className="action primary" disabled={busy||!selectedRound||!standingMember}>Simpan standings</button></form>
-    <p className="license-muted">Masukkan total poin klasemen kumulatif setelah round. Semua milestone aktif diperiksa otomatis dari konfigurasi License.</p>
-   </section>
-   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">06 · OFFICIAL WDC</span><h2>Final standings & WDC</h2></div><Trophy size={19}/></div>
-    <form onSubmit={saveFinalStanding} className="license-form"><label>Driver<select required value={finalMember} onChange={e=>setFinalMember(e.target.value)}><option value="">Pilih driver</option>{divisionRegistrations.filter(r=>!r.is_hiatus).map(r=><option key={r.member_id} value={r.member_id}>{r.members?.character_name||drivers.find(d=>d.id===r.member_id)?.character_name||"Driver"}</option>)}</select></label><div className="license-form-row"><label>Poin akhir<input required type="number" min="0" step="any" value={finalPoints} onChange={e=>setFinalPoints(e.target.value)}/></label><label>Posisi akhir<input required type="number" min="1" step="1" value={finalPosition} onChange={e=>setFinalPosition(e.target.value)}/></label></div><button className="action primary" disabled={busy||!selectedDivision||activeDivision?.status==="completed"}>Simpan hasil akhir</button></form>
-    <p className="license-muted">Masukkan seluruh driver aktif, bukan hanya juara. Posisi harus unik dan poin tertinggi harus dimiliki satu driver.</p>
-    <button className="action primary license-finalize" disabled={busy||!activeDivision||activeDivision.status==="completed"} onClick={()=>void finalize()}><ShieldCheck size={16}/> Validasi & sahkan WDC</button>
-    {activeDivision?.status==="completed"&&<p className="license-success"><CheckCircle2 size={15}/> WDC disahkan dan bonus terkunci.</p>}
-   </section>
-  </div>
-  {activeSeason?.status==="active"&&<section className="license-season-close"><div><strong>Tutup season</strong><small>Semua divisi harus disahkan. Poin WDC tetap permanen.</small></div><button className="license-small-button" disabled={busy||!divisions.filter(d=>d.season_id===activeSeason.id).length||divisions.filter(d=>d.season_id===activeSeason.id).some(d=>d.status!=="completed")} onClick={()=>void closeSeason()}>Tutup season</button></section>}
-  {notice&&<div className={"license-notice "+notice.kind} role="status">{notice.text}</div>}
-  <div className="license-engine-footer"><button className="license-small-button" onClick={()=>void load()} disabled={busy}><RefreshCw size={14}/> Refresh data</button><span>Admin: {session.user.email||session.user.id}</span></div>
+  <Link className="back-link" to="/dashboard">← Dashboard</Link>
+  <header className="page-heading"><span className="section-eyebrow">CALERIS MASTERS · FIA AUTOMATION</span><h1 className="page-title">Season & License Engine</h1><p className="page-description">Cukup jadwalkan season. Divisi, kalender, race round, standings, dan scoring lisensi saling terhubung otomatis.</p></header>
+
+  <section className="license-setup-event">
+   <div className="license-setup-event-main"><span className="section-eyebrow">OFFICIAL EVENT</span><h2>CALERIS MASTERS</h2><p>Motorsport Roleplay Championship</p></div>
+   <div className="license-setup-division-grid">
+    <article><span> TIER 1 </span><strong>CALERIS PREMIO</strong><small>Premio · Division 1</small></article>
+    <article><span> TIER 2 </span><strong>CALERIS ZWEI</strong><small>Zwei · Division 2</small></article>
+   </div>
+  </section>
+
+  <section className="workspace-card license-setup-create">
+   <div className="section-title-row"><div><span className="section-eyebrow">SEASON SETUP</span><h2>Buat season baru</h2></div><CalendarDays size={20}/></div>
+   <p className="license-muted">Nama event dan dua divisi sudah tetap. Sistem otomatis membuat 12 periode, lima Race Period, empat Break Balancing, 15 race per divisi, End Season, dan Off Season.</p>
+   <label className="license-setup-date">Mulai Pre Season<input type="date" value={startDate} min={todayJakarta()} onChange={e=>setStartDate(e.target.value)}/></label>
+   <button className="action primary license-setup-submit" type="button" disabled={busy||loading||!startDate} onClick={()=>void createSeason()}>{busy?"Membentuk season...":"Buat Caleris Masters Season"}</button>
+   {notice&&<div className={"license-notice "+notice.kind}>{notice.kind==="success"?<CheckCircle2 size={16}/>:<ShieldCheck size={16}/>} {notice.text}</div>}
+  </section>
+
+  <section className="license-setup-automation">
+   <div className="section-title-row"><div><span className="section-eyebrow">CONNECTED ENGINES</span><h2>Semua berjalan otomatis</h2></div><ShieldCheck size={20}/></div>
+   <div className="license-setup-flow">
+    <article><Flag size={18}/><strong>Season & Division</strong><small>Premio dan Zwei dibuat otomatis</small></article>
+    <article><CalendarDays size={18}/><strong>12-Period Calendar</strong><small>Jadwal 42 hari dan 30 race round</small></article>
+    <article><Trophy size={18}/><strong>Race & Standings</strong><small>Hasil resmi mengisi poin klasemen kumulatif</small></article>
+    <article><ShieldCheck size={18}/><strong>License Scoring</strong><small>Check-in, milestone, inactivity, dan WDC</small></article>
+   </div>
+  </section>
+
+  <section className="workspace-card license-setup-scoring">
+   <div className="section-title-row"><div><span className="section-eyebrow">ACTIVE SCORING RULES</span><h2>Scoring lisensi</h2></div><Trophy size={20}/></div>
+   <div className="license-setup-score-grid">
+    <article><small>RACE CHECK-IN</small><strong>+{checkin}</strong><span>poin lisensi per race</span></article>
+    <article><small>INACTIVITY</small><strong>-{moneyless(Number(inactivity.penalty_points||10))}</strong><span>setiap {moneyless(Number(inactivity.absence_races||5))} race berturut-turut tanpa check-in</span></article>
+    {milestones.map(x=><article key={x.threshold}><small>STANDINGS {moneyless(x.threshold)}</small><strong>+{moneyless(x.points)}</strong><span>poin lisensi otomatis</span></article>)}
+   </div>
+   <p className="license-muted">Poin musiman di-reset saat season baru. WDC diberikan sekali seumur hidup; pencapaian tier yang lebih tinggi memperbarui bonus permanen. Tidak ada input standings atau final WDC manual.</p>
+  </section>
+
+  <section className="workspace-card license-setup-history">
+   <div className="section-title-row"><div><span className="section-eyebrow">SEASON HISTORY</span><h2>Riwayat season</h2></div><button className="license-small-button" type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
+   {loading?<p className="license-muted">Memuat season...</p>:seasons.length===0?<p className="license-muted">Belum ada season CALERIS MASTERS.</p>:seasons.map(s=>{
+    const ds=divisions.filter(d=>d.season_id===s.id),ps=periods.filter(p=>p.season_id===s.id),rs=rounds.filter(r=>ds.some(d=>d.id===r.season_division_id));
+    return <article className="license-setup-season-row" key={s.id}><div><strong>{s.title}</strong><small>{s.starts_on} – {s.ends_on} · {ds.length} divisi · {rs.length} race round · {ps.length}/12 periode</small></div><span className={"license-setup-status "+s.status}>{s.status==="active"?"ACTIVE":s.status==="draft"?"SCHEDULED":"COMPLETED"}</span></article>
+   })}
+  </section>
  </section>;
 }
