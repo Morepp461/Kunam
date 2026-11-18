@@ -229,7 +229,7 @@ def main():
     assert "Quest Engine" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "payroll" in edge_source and "process_payroll_pending" in edge_source
     assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
-    assert 'import AdminSeasonCalendar from "./AdminSeasonCalendar"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
+    assert 'import FIAEventControlCenter from "./FIAEventControlCenter"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
