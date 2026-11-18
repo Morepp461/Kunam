@@ -74,7 +74,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
   setSchedule(prev=>prev.map((item,i)=>i===period?{...item,[division]:item[division].filter((_,j)=>j!==slot)}:item));
  };
  const usedInDivision=(division:"premio"|"zwei",currentPeriod:number,currentSlot:number)=>{
-  return new Set(schedule[currentPeriod][division].filter((id,j)=>Boolean(id)&&j!==currentSlot));
+  return new Set(schedule.flatMap((period,periodIndex)=>period[division].filter((id,slotIndex)=>Boolean(id)&&(periodIndex!==currentPeriod||slotIndex!==currentSlot))));
  };
  const createSeason=async()=>{
   if(!supabase||!startDate||!scheduleReady||duplicates||totals.premio>25||totals.zwei>25)return;
@@ -106,7 +106,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
 
   <section className="workspace-card license-setup-create">
    <div className="section-title-row"><div><span className="section-eyebrow">SEASON SETUP</span><h2>Buat season & jadwal</h2></div><CalendarDays size={20}/></div>
-   <p className="license-muted">Tabel berisi 12 periode tetap. Pilih 3–5 sirkuit untuk setiap Race Period di masing-masing divisi. Maksimal 25 race per divisi.</p>
+   <p className="license-muted">Tabel berisi 12 periode tetap. Setiap sirkuit hanya boleh dipakai sekali per divisi dalam satu season. Premio dan Zwei boleh memakai sirkuit yang sama pada tanggal yang sama. Maksimal 25 race per divisi.</p>
    <label className="license-setup-date">Mulai Pre Season<input type="date" value={startDate} min={todayJakarta()} onChange={e=>setStartDate(e.target.value)}/></label>
    <div className="license-schedule-summary">
     <span>Premio <strong>{totals.premio}/25</strong> race</span><span>Zwei <strong>{totals.zwei}/25</strong> race</span><span><strong>12</strong> periode</span>
@@ -141,7 +141,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
    </div>
    {circuits.length===0&&<div className="license-notice error">Belum ada sirkuit di Circuit Pool. Tambahkan sirkuit terlebih dahulu.</div>}
    {(totals.premio>25||totals.zwei>25)&&<div className="license-notice error">Maksimal 25 race per divisi.</div>}
-   {duplicates&&<div className="license-notice error">Sirkuit yang sama boleh digunakan kembali pada Race Period berbeda, tetapi tidak boleh dua kali dalam satu Race Period.</div>}
+   {duplicates&&<div className="license-notice error">Sirkuit hanya boleh dipakai satu kali per season di setiap divisi. Sirkuit yang sama tetap boleh dipakai oleh Premio dan Zwei pada tanggal yang sama.</div>}
    <button className="action primary license-setup-submit" type="button" disabled={busy||loading||!startDate||!scheduleReady||duplicates||totals.premio>25||totals.zwei>25} onClick={()=>void createSeason()}>{busy?"Membentuk jadwal & season...":"Buat Caleris Masters Season"}</button>
    {notice&&<div className={"license-notice "+notice.kind}>{notice.kind==="success"?<CheckCircle2 size={16}/>:<ShieldCheck size={16}/>} {notice.text}</div>}
   </section>
