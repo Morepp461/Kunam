@@ -39,7 +39,7 @@ type AutomationRun = {
   wealth_tax_seasons_processed: number;
   wealth_tax_assessments_paid: number;
   pending_items: number;
-  details: Array<{ kind?: string; status?: string; error?: string }>;
+  details: Array<{ kind?: string; status?: string; detail?: string; error?: string }>;
   error: string | null;
 };
 type PayrollRun={id:string;started_at:string;status:string;payroll_paid:number;payroll_pending:number;error:string|null};
