@@ -1,4 +1,5 @@
 import TeamJobAdvert from "./TeamJobAdvert";
+import TeamHQ from "./TeamHQ";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -35,6 +36,7 @@ export const panelGroups: PanelGroup[] = [
   ]},
   { path: "team-panel", label: "TEAM PANEL", tabs: [
     { path: "team-summary", label: "Team Summary", description: "Profil, susunan driver, dan statistik tim." },
+    { path: "team-hq", label: "Team HQ", description: "Fasilitas, aset, maintenance, dan konfigurasi headquarters tim." },
     { path: "driver-contracts", label: "Driver Contracts", description: "Kontrak gaji tahunan dan payroll Driver." },
     { path: "development", label: "Development", description: "Pengembangan enam belas atribut mobil." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target tim." },
@@ -134,6 +136,7 @@ export default function PanelPage() {
   }
   if(group.path==="team-panel"){
     if(tab.path==="development")return <section className="workspace"><AttributePage title="Team Car Development" attributes={carAttributes}/></section>;
+    if(tab.path==="team-hq")return <TeamHQ/>;
     if(tab.path==="team-summary")return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">TEAM IDENTITY</span><h2>Team Profile</h2><EmptyPanel title="Profil tim belum terhubung" body="Nama, logo, engine, divisi, dan profil tim akan tampil di sini."/></div><div className="workspace-card"><span className="section-eyebrow">DRIVER LINE-UP</span><h2>Driver Statistics</h2><EmptyPanel title="Line-up belum tersedia" body="Profil dan statistik kedua driver akan ditampilkan di sini."/></div></div><div className="workspace-card panel-season-note"><span className="section-eyebrow">SEASON TIMELINE</span><h2>Season Period Configuration</h2><p>Off season, pre season, race periods, balancing breaks, dan end season akan mengikuti konfigurasi periode aktif. Jumlah kalender per race period serta durasi setiap fase tidak ditetapkan secara hardcode.</p><span className="empty-tag">CONFIGURATION-DRIVEN</span></div></section>;
     if(tab.path==="place-job-advert")return <TeamJobAdvert/>;
     const copy:Record<string,string>={sponsorship:"Daftar sponsor tim, penawaran brand, target, dan progress pencapaian.", "driver-registration":"Form pendaftaran driver yang akan dikirim untuk peninjauan FIA dan Admin.",quest:"Daily Quest dan Period Quest dengan reward saldo Owner.",scout:"Pencarian driver tim lain berdasarkan lisensi, atribut, performa, dan status kontrak.","affiliate-team":"Daftar affiliate, request masuk/keluar, serta detail perjanjian setiap tim.",appeal:"Pengajuan banding, hasil keputusan FIA, dan riwayat banding tim."};
