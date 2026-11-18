@@ -99,6 +99,20 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       ownMember = m.data as Row | null;
     }
     setMember(ownMember);
+    const directoryMembers = (membersQ.data || []) as Row[];
+    const avatarPaths = [...new Set(directoryMembers.map((m: Row) => String(m.avatar_path || "")).filter(Boolean))];
+    const avatarUrlByPath = new Map<string, string>();
+    if (avatarPaths.length) {
+      const { data: signedAvatars, error: avatarError } = await supabase.storage.from("profile-avatars").createSignedUrls(avatarPaths, 3600);
+      if (avatarError) setNotice(avatarError.message);
+      (signedAvatars || []).forEach((item: Row) => {
+        if (item.path && item.signedUrl) avatarUrlByPath.set(item.path, item.signedUrl);
+      });
+    }
+    const membersWithAvatars = directoryMembers.map((m: Row) => ({
+      ...m,
+      avatar_url: m.avatar_path ? avatarUrlByPath.get(m.avatar_path) || null : null,
+    }));
     const seasons = (seasonsQ.data || []) as Row[];
     const activeSeason = seasons.find(s => s.status === "active") || seasons[0] || null;
     const divisions = (divisionsQ.data || []) as Row[];
@@ -125,7 +139,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       ledgerEntries = (le.data || []) as Row[];
     }
     setData({
-      seasons, activeSeason, teams: teamsQ.data || [], members: membersQ.data || [], divisions, activeDivisions, rounds, activeRounds,
+      seasons, activeSeason, teams: teamsQ.data || [], members: membersWithAvatars, divisions, activeDivisions, rounds, activeRounds,
       roundPoints: roundPointsQ.data || [], finalStandings: finalQ.data || [], registrations: registrationsQ.data || [],
       raceResults: raceResultsQ.data || [], resultEntries: resultEntriesQ.data || [], teamProfiles: teamProfilesQ.data || [],
       attributes: attributesQ.data || [], achievements: achievementsQ.data || [], engines: enginesQ.data || [], teamEngines,
@@ -163,7 +177,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     return map;
   }, [data.roundPoints, data.finalStandings, data.activeDivisions, scopedRoundIds]);
   const driverRows = useMemo(() => members.filter((m: Row) => m.role === "Driver" && inDivision(m.team_id)).map((m: Row) => ({
-    ...m, avatar_url: m.avatar_path && supabase ? supabase.storage.from("profile-avatars").getPublicUrl(m.avatar_path).data.publicUrl : null, points: roundPoints.get(m.id) || 0, team: teamOf(m.team_id), profile: teamProfile(m.team_id),
+    ...m, avatar_url: m.avatar_url || null, points: roundPoints.get(m.id) || 0, team: teamOf(m.team_id), profile: teamProfile(m.team_id),
     wins: (data.raceResults || []).filter((r: Row) => r.winner_member_id === m.id && (data.activeRoundIds || []).includes(r.round_id)).length,
     poles: (data.raceResults || []).filter((r: Row) => r.pole_member_id === m.id && (data.activeRoundIds || []).includes(r.round_id)).length,
     finishes: (data.resultEntries || []).filter((r: Row) => r.member_id === m.id && r.finish_status === "finished" && (data.activeRoundIds || []).includes(r.round_id)).length,
@@ -366,7 +380,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     const resultsDetail = detail === "results";
     const driverListDetail = detail === "driver-list";
     const teamListDetail = detail === "team-list";
-    if (driverListDetail) return <section className="workspace s5-workspace">{heading("MAIN EVENT · " + scope, data.activeSeason?.title || "Caleris Masters", "Jelajahi seluruh driver Caleris Masters dalam 3D exhibition hall.")}<DriverExhibition drivers={driverRows} gallery={members.filter((m: Row) => (m.role === "Driver" || m.role === "Owner") && inDivision(m.team_id)).map((m: Row) => ({ ...m, avatar_url: m.avatar_path && supabase ? supabase.storage.from("profile-avatars").getPublicUrl(m.avatar_path).data.publicUrl : null, team: teamOf(m.team_id) }))} scope={tab}/></section>;
+    if (driverListDetail) return <section className="workspace s5-workspace">{heading("MAIN EVENT · " + scope, data.activeSeason?.title || "Caleris Masters", "Jelajahi seluruh driver Caleris Masters dalam 3D exhibition hall.")}<DriverExhibition drivers={driverRows} gallery={members.filter((m: Row) => (m.role === "Driver" || m.role === "Owner") && inDivision(m.team_id)).map((m: Row) => ({ ...m, avatar_url: m.avatar_url || null, team: teamOf(m.team_id) }))} scope={tab}/></section>;
     return <section className="workspace s5-workspace">{heading("MAIN EVENT · "+scope, data.activeSeason?.title||"Caleris Masters", "Klasemen, statistik, jadwal, dan performa resmi "+scope.toLowerCase()+".")}<div className="s5-main-tabs"><Link to={"/main-event/"+tab+"/driver-ranking"}>Driver Ranking</Link><Link to={"/main-event/"+tab+"/rookie-of-the-season"}>Rookie of the Season</Link><Link to={"/main-event/"+tab+"/team-ranking"}>Team Ranking</Link><Link to={"/main-event/"+tab+"/engine-ranking"}>Engine Ranking</Link><Link to={"/main-event/"+tab+"/statistic"}>Statistics</Link><Link to={"/main-event/"+tab+"/comparison"}>Comparison</Link><Link to={"/main-event/"+tab+"/calendar"}>Schedule</Link><Link to={"/main-event/"+tab+"/results"}>Results</Link><Link to={"/main-event/"+tab+"/driver-list"}>Driver List</Link><Link to={"/main-event/"+tab+"/team-list"}>Team List</Link></div>
       {(!detail||driverDetail)&&<Card title="Driver Ranking" eyebrow="OFFICIAL CHAMPIONSHIP STANDINGS"><Table headers={["POS","DRIVER","TEAM / LOGO","POINTS"]} rows={standingsRows}/></Card>}
       {(!detail||rookieDetail)&&<Card title="Rookie of the Season" eyebrow="BEST-PLACED DEBUTANT"><div className="s5-rookie">{currentRookie?<><Medal/><div><span>{(data.finalStandings||[]).some((standing: Row)=>(data.activeDivisions||[]).some((division: Row)=>division.id===standing.season_division_id))?"ROOKIE OF THE SEASON":"PROVISIONAL ROOKIE LEADER"}</span><h3>{currentRookie.character_name}</h3><p>{currentRookie.team?.name||"Independent"} · {currentRookie.points} points</p></div></>:<Empty>Belum ada debutant yang memenuhi kriteria pada season ini.</Empty>}</div></Card>}
