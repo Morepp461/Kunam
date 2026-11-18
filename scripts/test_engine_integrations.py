@@ -13,6 +13,7 @@ transfer = source("supabase/migrations/20261112184457_driver_transfer_workflows.
 development = source("supabase/migrations/20261113110000_fixed_development_point_upgrade_cost.sql")
 payroll = source("supabase/migrations/20261118115643_caleris_race_payroll_atomic_automation.sql")
 notifications = source("supabase/migrations/20261118120232_caleris_notification_center.sql")
+reminders = source("supabase/migrations/20261118120500_caleris_notification_reminders.sql")
 
 checks = {
     "Race Control -> round processing": (race, "process_license_round"),
@@ -33,4 +34,7 @@ for label, (content, fragment) in checks.items():
 for fragment in ["notify_driver_development", "notify_contract_offer", "notify_driver_move_status", "notify_payroll_paid", "notify_race_result"]:
     assert fragment in notifications, f"Missing notification event: {fragment}"
 
-print(f"{len(checks)} engine integration contracts and 6 notification event hooks passed.")
+for fragment in ["race-reminder:", "checkin-reminder:", "quest-expiry:", "contract-expiry:", "loan-installment-due:"]:
+    assert fragment in reminders, f"Missing scheduled reminder: {fragment}"
+
+print(f"{len(checks)} engine integration contracts, 6 notification event hooks, and 5 reminder types passed.")
