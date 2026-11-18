@@ -466,3 +466,24 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
   flex:0 0 auto;
   min-height:max-content;
 }
+
+
+/* Unified FIA Event Control Center */
+.fia-event-center{display:grid;gap:18px}
+.fia-event-center-status{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border:1px solid rgba(198,163,58,.35);border-radius:12px;background:rgba(198,163,58,.055);color:#e8d8ae}
+.fia-event-center-status>svg{flex:none;margin-top:2px}
+.fia-event-center-status div{display:grid;gap:5px}
+.fia-event-center-status strong{font-size:14px}
+.fia-event-center-status span{font-size:12px;line-height:1.6;color:#bcb7aa}
+.fia-event-center-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.fia-event-center-card{display:grid;gap:15px;min-width:0;text-align:left;padding:19px;border:1px solid rgba(198,163,58,.24);border-radius:13px;background:linear-gradient(145deg,rgba(27,28,31,.92),rgba(9,10,12,.9));color:#f2f0e9;cursor:pointer;transition:border-color .18s ease,transform .18s ease,background .18s ease}
+.fia-event-center-card:hover{border-color:rgba(214,180,103,.7);transform:translateY(-2px);background:linear-gradient(145deg,rgba(39,34,28,.95),rgba(12,12,13,.94))}
+.fia-event-center-card-top{display:flex;align-items:center;justify-content:space-between;color:#d6b66f}
+.fia-event-center-card-top small{font-size:9px;letter-spacing:.16em;font-weight:800}
+.fia-event-center-card>strong{font-size:19px;line-height:1.2}
+.fia-event-center-card>span:not(.fia-event-center-card-top){font-size:12px;line-height:1.65;color:#aaa9a5;min-height:40px}
+.fia-event-center-card>i{display:flex;align-items:center;gap:7px;font-style:normal;font-size:9px;letter-spacing:.13em;font-weight:800;color:#d6b66f}
+.fia-event-center-back{display:inline-flex;align-items:center;gap:8px;width:max-content;padding:9px 12px;border:1px solid rgba(198,163,58,.32);border-radius:8px;background:rgba(255,255,255,.035);color:inherit;cursor:pointer;font-size:12px}
+.fia-event-center-active{padding:0 0 4px;border-bottom:1px solid rgba(198,163,58,.2)}
+.fia-event-center-active h2{margin:5px 0 0;font-size:22px}
+@media(max-width:620px){.fia-event-center-grid{grid-template-columns:1fr}.fia-event-center-card{padding:17px}.fia-event-center-card>span:not(.fia-event-center-card-top){min-height:0}}
