@@ -3,6 +3,8 @@ import type {FormEvent} from "react";
 import {BriefcaseBusiness,LoaderCircle,Send} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import "./marketplace-directory.css";
+import "./team-contracts.css";
+import "./team-job-advert.css";
 
 type SalaryBand={license_label:string;license_tier:string;salary_min_eur:number;salary_max_eur:number;sort_order:number};
 type Row=Record<string,any>;
@@ -82,15 +84,15 @@ export default function TeamJobAdvert(){
    <section className="workspace-card">
     <div className="section-title-row"><div><span className="section-eyebrow">RECRUITMENT FORM</span><h2>Publish Team Vacancy</h2></div><BriefcaseBusiness size={20}/></div>
     <div className="team-contracts-muted">Tim: <strong>{team.name}</strong> · {team.division_key||"Divisi belum ditetapkan"}</div>
-    <form className="license-form" onSubmit={publish}>
+    <form className="team-job-advert-form" onSubmit={publish}>
      <label>Position<select required value={position} onChange={e=>changePosition(e.target.value as "Driver"|"Team Owner")}><option value="Driver">Driver</option><option value="Team Owner">Team Owner</option></select></label>
      {position==="Driver"&&<>
       <label>Minimum driver license<select required value={license} onChange={e=>changeLicense(e.target.value)}><option value="">Pilih lisensi minimum</option>{bands.map(b=><option key={b.license_label} value={b.license_label}>{b.license_label}</option>)}</select></label>
-      <div className="license-form-row">
+      <div className="team-job-advert-row">
        <label>Salary minimum (€)<input required type="number" min={selectedBand?.salary_min_eur||1} max={salaryCeiling||undefined} step="1000" value={salaryMin} onChange={e=>setSalaryMin(e.target.value)} placeholder="Minimum salary"/></label>
        <label>Salary maximum (€)<input required type="number" min={salaryMin||selectedBand?.salary_min_eur||1} max={salaryCeiling||undefined} step="1000" value={salaryMax} onChange={e=>setSalaryMax(e.target.value)} placeholder="Maximum salary"/></label>
       </div>
-      {selectedBand&&<p className="license-muted">Lisensi {selectedBand.license_label}: minimum {euro(Number(selectedBand.salary_min_eur))}. Batas maksimum lowongan mengikuti Super License: {euro(salaryCeiling)}.</p>}
+      {selectedBand&&<p className="team-job-advert-muted">Lisensi {selectedBand.license_label}: minimum {euro(Number(selectedBand.salary_min_eur))}. Batas maksimum lowongan mengikuti Super License: {euro(salaryCeiling)}.</p>}
      </>}
      <label>Advert title<input value={title} onChange={e=>setTitle(e.target.value)} placeholder="Opsional"/></label>
      <label>Description<textarea rows={3} value={description} onChange={e=>setDescription(e.target.value)} placeholder="Informasi tambahan (opsional)"/></label>
@@ -99,7 +101,7 @@ export default function TeamJobAdvert(){
      <label>Available from<input type="date" value={availableFrom} onChange={e=>setAvailableFrom(e.target.value)}/></label>
      <button className="action primary" disabled={saving||!team|| (position==="Driver"&&(!selectedBand||!salaryMin||!salaryMax))}><Send size={15}/>{saving?"Publishing...":"Publish to Job Search"}</button>
     </form>
-    {notice&&<p className="license-notice" role="status">{notice}</p>}
+    {notice&&<p className="team-job-advert-notice" role="status">{notice}</p>}
    </section>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">YOUR TEAM LISTINGS</span><h2>Published vacancies</h2></div><span className="empty-tag">{adverts.length} listing</span></div>
     {adverts.length===0?<p className="team-contracts-muted">Belum ada lowongan dari {team.name}.</p>:adverts.map(advert=><article className="team-contract-row" key={advert.id}><div><strong>{advert.title}</strong><small>{advert.position_kind}{advert.minimum_license?" · "+advert.minimum_license:""}</small><small>{advert.salary_min==null?"Tanpa salary":euro(Number(advert.salary_min))+" – "+euro(Number(advert.salary_max))} · {advert.open_seats} seat · {advert.status}</small></div></article>)}
