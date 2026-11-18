@@ -364,7 +364,7 @@ def main():
     auto_season_sql = auto_season_migration.read_text(encoding="utf-8")
     for fragment in ["fia_create_caleris_season", "p_schedule jsonb", "jsonb_array_length(v_premio_circuits) not between 3 and 5", "jsonb_array_length(v_zwei_circuits) not between 3 and 5", "v_premio_total>25 or v_zwei_total>25", "caleris_circuits", "circuit_name", "fia_create_season_calendar", "periods_created"]:
         assert fragment in auto_season_sql, f"Automated season migration missing: {fragment}"
-    for fragment in ["fia_create_caleris_season", "p_schedule jsonb", "jsonb_array_length(v_premio_circuits) not between 3 and 5", "jsonb_array_length(v_zwei_circuits) not between 3 and 5", "v_premio_total>25 or v_zwei_total>25", "caleris_circuits", "circuit_name", "fia_create_season_calendar", "periods_created"]:
+    for fragment in ["fia_create_caleris_season", "CALERIS PREMIO", "CALERIS ZWEI", "ACTIVE SCORING RULES", "scoring-milestone-", "Tidak ada input standings atau final WDC manual", "p_schedule:payload", "caleris_circuits", "license-schedule-table", "Tambah race"]:
         assert fragment in auto_season_ui, f"Simplified License Engine missing: {fragment}"
     for obsolete_control in ["saveRoundStanding", "saveFinalStanding", "registerDriver", "createRound", "standingPoints"]:
         assert obsolete_control not in auto_season_ui, f"Manual scoring/round input remains in License Engine: {obsolete_control}"
