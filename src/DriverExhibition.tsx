@@ -9,7 +9,73 @@ type DriverRow = Record<string, any>;
 type Props = { drivers: DriverRow[]; gallery?: DriverRow[]; scope: string };
 type SceneApi = { reset: () => void; focus: (id: string) => void; move: (key: string, active: boolean) => void; stick: (x: number, y: number) => void };
 
-const characterModelCache = new Map<string, Promise<AraCharacter>>();
+type PersistentCharacterRecord = { key: string; driverId: string; fingerprint: string; glb: ArrayBuffer; savedAt: number };
+const CHARACTER_CACHE_DB = "caleris-driver-model-cache";
+const CHARACTER_CACHE_STORE = "models";
+const CHARACTER_CACHE_VERSION = 1;
+const characterModelCache = new Map<string, Promise<ArrayBuffer>>();
+
+const openCharacterCache = (): Promise<IDBDatabase> => new Promise((resolve, reject) => {
+  if (!("indexedDB" in window)) { reject(new Error("IndexedDB unavailable")); return; }
+  const request = indexedDB.open(CHARACTER_CACHE_DB, CHARACTER_CACHE_VERSION);
+  request.onupgradeneeded = () => {
+    const db = request.result;
+    if (!db.objectStoreNames.contains(CHARACTER_CACHE_STORE)) db.createObjectStore(CHARACTER_CACHE_STORE, { keyPath: "key" });
+  };
+  request.onsuccess = () => resolve(request.result);
+  request.onerror = () => reject(request.error || new Error("Could not open character cache"));
+});
+
+const readCharacterCache = async (key: string): Promise<PersistentCharacterRecord | null> => {
+  const db = await openCharacterCache();
+  try {
+    return await new Promise((resolve, reject) => {
+      const request = db.transaction(CHARACTER_CACHE_STORE, "readonly").objectStore(CHARACTER_CACHE_STORE).get(key);
+      request.onsuccess = () => resolve((request.result as PersistentCharacterRecord | undefined) || null);
+      request.onerror = () => reject(request.error);
+    });
+  } finally { db.close(); }
+};
+
+const writeCharacterCache = async (record: PersistentCharacterRecord): Promise<void> => {
+  const db = await openCharacterCache();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(CHARACTER_CACHE_STORE, "readwrite");
+      tx.objectStore(CHARACTER_CACHE_STORE).put(record);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Character cache write aborted"));
+    });
+  } finally { db.close(); }
+};
+
+const pruneCharacterCache = async (activeDriverIds: Set<string>): Promise<void> => {
+  const db = await openCharacterCache();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(CHARACTER_CACHE_STORE, "readwrite");
+      const request = tx.objectStore(CHARACTER_CACHE_STORE).openCursor();
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) return;
+        const record = cursor.value as PersistentCharacterRecord;
+        if (!activeDriverIds.has(record.driverId)) cursor.delete();
+        cursor.continue();
+      };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error || new Error("Character cache cleanup aborted"));
+    });
+  } finally { db.close(); }
+};
+
+const toArrayBuffer = async (value: unknown): Promise<ArrayBuffer | null> => {
+  if (value instanceof Blob) return value.arrayBuffer();
+  if (value instanceof ArrayBuffer) return value.slice(0);
+  if (ArrayBuffer.isView(value)) return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength) as ArrayBuffer;
+  return null;
+};
 
 const numberFor = (name: string, index: number) => {
   let hash = 0;
