@@ -310,7 +310,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               expression: "neutral",
             },
           };
-          const cacheKey = String(driver.id || driver.character_name || seed);
+          const cacheKey = `${String(driver.id || driver.character_name || seed)}:race-suit-v2`;
           let characterPromise = characterModelCache.get(cacheKey);
           if (!characterPromise) {
             characterPromise = createCharacter(characterInput, {
@@ -323,7 +323,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             });
           }
           const character = await characterPromise;
-          if (disposed) { character.dispose(); return; }
+          if (disposed) return;
           const figure = new THREE.Group();
           figure.position.y = 0.36;
           root.add(figure);
@@ -544,6 +544,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
           driverMotions.forEach((motion) => {
+            if (!motion.root.visible || camera.position.distanceTo(motion.root.position) > 42) return;
             motion.mixer.update(delta);
             motion.character.update(delta);
           });
