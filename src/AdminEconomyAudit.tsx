@@ -136,7 +136,7 @@ export default function AdminEconomyAudit() {
             <div className="economy-audit-amount"><strong>{run.repayments_paid} angsuran dibayar</strong><small>{run.repayments_overdue} overdue · {run.pending_items} tertunda</small></div>
             <p>Finalisasi divisi {run.divisions_finalized} · Prizepool {run.prizepool_divisions_paid} · Wealth Tax {run.wealth_tax_assessments_paid} assessment dibayar</p>
             {run.repayment_periods_waiting > 0 && <p>{run.repayment_periods_waiting} Race Period menunggu seluruh divisi/payroll selesai.</p>}
-            {run.details?.slice(0, 5).map((item, index) => <p className={item.error?"economy-audit-error":""} key={index}>{item.kind}: {item.status||"processed"}{item.error?` · ${item.error}`:""}</p>)}
+            {run.details?.slice(0, 5).map((item, index) => <p className={item.error?"economy-audit-error":""} key={index}>{item.kind}: {item.status||"processed"}{item.detail?` · ${item.detail}`:item.error?` · ${item.error}`:""}</p>)}
             {run.error && <p className="economy-audit-error">{run.error}</p>}
           </article>)}</div>}
       </div>
