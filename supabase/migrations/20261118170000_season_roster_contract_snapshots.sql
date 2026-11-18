@@ -35,10 +35,6 @@ grant select on public.license_season_team_snapshots to authenticated;
 drop policy if exists "Authenticated members read season team snapshots" on public.license_season_team_snapshots;
 create policy "Authenticated members read season team snapshots"
   on public.license_season_team_snapshots for select to authenticated using (true);
-drop trigger if exists license_season_team_snapshot_immutable on public.license_season_team_snapshots;
-create trigger license_season_team_snapshot_immutable
-before update or delete on public.license_season_team_snapshots
-for each row execute function private.guard_season_roster_snapshot_immutable();
 alter table public.license_season_roster_snapshots enable row level security;
 revoke all on public.license_season_roster_snapshots from public,anon,authenticated,service_role;
 grant select on public.license_season_roster_snapshots to authenticated;
@@ -58,6 +54,10 @@ $$;
 drop trigger if exists license_season_roster_snapshot_immutable on public.license_season_roster_snapshots;
 create trigger license_season_roster_snapshot_immutable
 before update or delete on public.license_season_roster_snapshots
+for each row execute function private.guard_season_roster_snapshot_immutable();
+drop trigger if exists license_season_team_snapshot_immutable on public.license_season_team_snapshots;
+create trigger license_season_team_snapshot_immutable
+before update or delete on public.license_season_team_snapshots
 for each row execute function private.guard_season_roster_snapshot_immutable();
 
 -- Keep display labels and team assignment stable even if a character or team
