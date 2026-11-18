@@ -5,6 +5,7 @@ on:
       - main
       - "feat/**"
       - "fix/**"
+      - "security/**"
   pull_request:
     branches: [main]
 jobs:
@@ -16,7 +17,11 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - name: Dependency security audit (report-only)
+      - name: Production dependency security gate
+        run: npm audit --omit=dev --audit-level=high
+      - name: Report resolved Picomatch dependency paths
+        run: npm ls picomatch --all || true
+      - name: Full dependency security audit (report-only)
         run: npm audit --audit-level=high
         continue-on-error: true
       - run: npm run check
