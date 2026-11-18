@@ -710,12 +710,19 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const loadDriversProgressively = async () => {
           for (const [index, driver] of drivers.entries()) {
             if (disposed) return;
+            if (index >= 4) {
+              const row = Math.floor(index / 4);
+              const targetZ = -row * 11.2 - 1;
+              while (!disposed && Math.abs(camera.position.z - targetZ) > 26) await new Promise((resolve) => window.setTimeout(resolve, 350));
+              if (disposed) return;
+            }
             try { await createDriver(driver, index); }
             catch (error) {
               console.error("Could not build realistic driver model:", driver.character_name, error);
               if (!disposed) setSceneError("Sebagian model 3D tidak berhasil dimuat. Periksa koneksi lalu muat ulang halaman.");
             }
             if (!disposed) setLoadingCount(index + 1);
+            if (!disposed && (index === 3 || index === drivers.length - 1)) setSceneLoading(false);
           }
           if (!disposed) setSceneLoading(false);
           const activeCacheKeys = new Set(drivers.flatMap((driver) => {
