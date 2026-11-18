@@ -110,6 +110,12 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const apiRef = useRef<SceneApi | null>(null);
   const [selected, setSelected] = useState<DriverRow | null>(null);
+  const [detailClosing, setDetailClosing] = useState(false);
+  const closeDriverDetail = () => {
+    if (!selected || detailClosing) return;
+    setDetailClosing(true);
+    window.setTimeout(() => { setSelected(null); selectedRef.current = null; setDetailClosing(false); }, 260);
+  };
   const [viewMode, setViewMode] = useState<"cards" | "3d">("cards");
   const [query, setQuery] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
@@ -908,10 +914,10 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const main = /^#[0-9A-Fa-f]{6}$/.test(String(driver.team?.main_color || "")) ? driver.team.main_color : "#7A263A";
           const secondary = /^#[0-9A-Fa-f]{6}$/.test(String(driver.team?.secondary_color || "")) ? driver.team.secondary_color : "#C6A33A";
           const teamLogo = driver.profile?.logo_url || "";
-          return <button type="button" className="driver-graphic-card" key={driver.id || driver.character_name || index} onClick={() => { selectedRef.current = driver; setSelected(driver); }}>
+          return <button type="button" className="driver-graphic-card" key={driver.id || driver.character_name || index} style={{"--driver-card-index":index,"--driver-card-main":main,"--driver-card-secondary":secondary} as any} onClick={() => { setDetailClosing(false); selectedRef.current = driver; setSelected(driver); }}>
             <div className="driver-graphic-card-top" style={{background:`linear-gradient(118deg, ${main} 0%, ${secondary} 100%)`}}>
               {driver.avatar_url && <img className="driver-graphic-card-portrait" src={driver.avatar_url} alt="" loading="lazy" referrerPolicy="no-referrer"/>}
-              <div className="driver-graphic-card-shade"/>
+              <div className="driver-graphic-card-shade"/><span className="driver-graphic-card-index">{String(index+1).padStart(2,"0")} / {String(filteredDrivers.length).padStart(2,"0")}</span><span className="driver-graphic-card-orbit" aria-hidden="true"/><span className="driver-graphic-card-accent" aria-hidden="true"/>
               <h2>{driver.character_name || "Driver"}</h2>
             </div>
             <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><strong>{driver.team?.name || "Independent"}</strong></div>
@@ -919,9 +925,9 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         })}
       </div>
       {filteredDrivers.length === 0 && <div className="driver-no-results">{drivers.length === 0 ? "Belum ada driver yang terdaftar di divisi ini." : "Tidak ada driver yang cocok dengan pencarian."}</div>}
-      {selected && <div className="driver-card-detail-backdrop" role="presentation" onClick={() => { setSelected(null); selectedRef.current = null; }}>
-        <section className="driver-card-detail" role="dialog" aria-modal="true" aria-label={`Detail ${selected.character_name || "driver"}`} onClick={(event) => event.stopPropagation()}>
-          <button type="button" className="driver-card-detail-close" onClick={() => { setSelected(null); selectedRef.current = null; }} aria-label="Tutup detail"><X size={18}/></button>
+      {selected && <div className={`driver-card-detail-backdrop team-detail-motion${detailClosing?" is-closing":""}`} role="presentation" onClick={closeDriverDetail}>
+        <section className="driver-card-detail team-detail-motion-panel" role="dialog" aria-modal="true" aria-label={`Detail ${selected.character_name || "driver"}`} onClick={(event) => event.stopPropagation()}>
+          <button type="button" className="driver-card-detail-close" onClick={closeDriverDetail} aria-label="Tutup detail"><X size={18}/></button>
           <div className="driver-card-detail-banner" style={{background:`linear-gradient(118deg, ${selected.team?.main_color || "#7A263A"}, ${selected.team?.secondary_color || "#C6A33A"})`}}>
             {selected.avatar_url && <img src={selected.avatar_url} alt="" referrerPolicy="no-referrer"/>}
             <div><span>DRIVER PROFILE</span><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"}</p></div>
