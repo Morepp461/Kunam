@@ -259,7 +259,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const darkMetal = material(0x262321, 0.3, 0.78);
         const redMetal = material(0x651d25, 0.42, 0.48);
         const goldMetal = material(0x8b7045, 0.3, 0.68);
-        const woodMat = material(0x302319, 0.38, 0.12);
+        const vaultWoodMat = new THREE.MeshStandardMaterial({ color: 0x51402d, emissive: 0x21170d, emissiveIntensity: 0.72, roughness: 0.76, metalness: 0.08 });
+        disposableMaterials.push(vaultWoodMat);
         const ledMat = new THREE.MeshStandardMaterial({ color: 0xc39a5a, emissive: 0x9a6730, emissiveIntensity: 1.65, roughness: 0.28, metalness: 0.25 });
         disposableMaterials.push(ledMat);
         const floor = mesh(new THREE.PlaneGeometry(100, 150), floorMat, scene, [0, 0, -35]);
@@ -286,7 +287,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           shell.lineTo(22, 9.65);
           shell.quadraticCurveTo(0, 19.35, -22, 9.65);
           shell.closePath();
-          const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shell, { depth: 8, bevelEnabled: false, steps: 1 }), woodMat);
+          const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shell, { depth: 8, bevelEnabled: false, steps: 1 }), vaultWoodMat);
           roof.position.z = z - 8;
           roof.receiveShadow = !mobile;
           scene.add(roof);
@@ -477,17 +478,27 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         }
 
         // Transverse light bands follow the vault from its left edge to its right edge.
-        const vaultLightMat = new THREE.MeshStandardMaterial({ color: 0xffe2b4, emissive: 0xffb85e, emissiveIntensity: 3.1, roughness: 0.22, metalness: 0.08 });
-        disposableMaterials.push(vaultLightMat);
+        const vaultLightMat = new THREE.MeshBasicMaterial({ color: 0xffd28a, toneMapped: false });
         const vaultTrimMat = material(0x8b7045, 0.28, 0.72);
+        disposableMaterials.push(vaultLightMat);
         for (let z = 2; z >= -82; z -= 8) {
-          const crossPoints = Array.from({ length: 65 }, (_, i) => { const x = -21.7 + (43.4 * i) / 64; const y = 10.15 + 9.3 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2)); return new THREE.Vector3(x, y - 0.42, z); });
+          // The light bars sit below the lower inner surface of the roof shell, not inside the roof mesh.
+          const crossPoints = Array.from({ length: 65 }, (_, i) => {
+            const x = -21.7 + (43.4 * i) / 64;
+            const innerRoofY = 19.35 - 9.7 * (x / 22) ** 2;
+            return new THREE.Vector3(x, innerRoofY - 0.62, z + 0.18);
+          });
           const crossCurve = new THREE.CatmullRomCurve3(crossPoints);
-          const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.16, 8, false), vaultTrimMat);
-          const crossDiffuser = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.075, 8, false), vaultLightMat);
+          const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.22, 8, false), vaultTrimMat);
+          const crossDiffuser = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.13, 8, false), vaultLightMat);
+          crossHousing.renderOrder = 2; crossDiffuser.renderOrder = 3;
           scene.add(crossHousing, crossDiffuser);
           disposableGeometries.push(crossHousing.geometry, crossDiffuser.geometry);
-          if (Math.abs(z) % 16 < 1) { const vaultWash = new THREE.PointLight(0xffca8a, mobile ? 9 : 14, 34, 1.8); vaultWash.position.set(0, 15.8, z - 0.8); scene.add(vaultWash); }
+          if (Math.abs(z) % 16 < 1) {
+            const vaultWash = new THREE.PointLight(0xffbd70, mobile ? 24 : 32, 38, 1.55);
+            vaultWash.position.set(0, 17.1, z - 0.5);
+            scene.add(vaultWash);
+          }
         }
         // Warm luminous fixtures and downlights mounted along the crown of the vaulted ceiling.
         for (let z = 2; z >= -82; z -= 16) {
@@ -554,7 +565,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             disposableGeometries.push(logo.geometry);
           }, undefined, (error) => console.warn("Official wall logo failed to load:", src, error));
         };
-        loadWallLogo("/assets/Add%20a%20heading_20260907_003952_0000.png", 12.5, 4.8, [0, 8.0, -46.85]);
+        loadWallLogo("/assets/Add%20a%20heading_20260907_003952_0000.png", 17.5, 6.2, [0, 8.0, -86.65]);
         loadWallLogo("/assets/Untitled%20design_20261103_142659_0000.png", 6.2, 3.8, [-23.0, 7.8, -28], Math.PI / 2);
         for (let z = -8; z >= -78; z -= 18) {
           const tyre = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.16, 12, 28), darkMetal);
@@ -808,18 +819,36 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     const direct = selected.avatar_url || selected.profile?.avatar_url || selected.profiles?.avatar_url || selected.member?.avatar_url || selected.member?.profile?.avatar_url || selected.avatarUrl || "";
     if (typeof direct === "string" && (direct.startsWith("https://") || direct.startsWith("http://"))) { setResolvedAvatar(direct); return () => { active = false; }; }
     const path = selected.avatar_path || selected.profile?.avatar_path || selected.profiles?.avatar_path || selected.member?.avatar_path || selected.member?.profile?.avatar_path;
-    const memberId = selected.member_id || selected.member?.id || selected.member?.member_id;
+    const memberId = selected.member_id || selected.member?.id || selected.member?.member_id || selected.id;
     const resolve = async () => {
       if (!supabase) return;
       let avatarPath = typeof path === "string" ? path : "";
       if (!avatarPath && memberId) {
-        const { data } = await supabase.from("profiles").select("avatar_url,avatar_path").eq("member_id", memberId).maybeSingle();
-        if (typeof data?.avatar_url === "string" && (data.avatar_url.startsWith("https://") || data.avatar_url.startsWith("http://"))) { if (active) setResolvedAvatar(data.avatar_url); return; }
+        // The public exhibition must read the dedicated public directory view, not the private profiles table.
+        const { data, error } = await supabase.from("caleris_member_directory").select("avatar_path").eq("id", memberId).maybeSingle();
+        if (error) throw error;
         avatarPath = typeof data?.avatar_path === "string" ? data.avatar_path : "";
       }
+      if (!avatarPath && memberId) {
+        // A signed-in owner may use their OAuth avatar when the character has no uploaded profile portrait.
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData.user;
+        if (user) {
+          const { data: ownProfile } = await supabase.from("profiles").select("member_id").eq("user_id", user.id).maybeSingle();
+          if (ownProfile?.member_id === memberId) {
+            const metadata = user.user_metadata || {};
+            const oauthAvatar = metadata.avatar_url || metadata.picture;
+            if (typeof oauthAvatar === "string" && (oauthAvatar.startsWith("https://") || oauthAvatar.startsWith("http://"))) {
+              if (active) setResolvedAvatar(oauthAvatar);
+              return;
+            }
+          }
+        }
+      }
       if (!avatarPath) return;
-      const { data } = await supabase.storage.from("profile-avatars").createSignedUrl(avatarPath, 3600);
-      if (active && data?.signedUrl) setResolvedAvatar(data.signedUrl);
+      if (avatarPath.startsWith("https://") || avatarPath.startsWith("http://")) { if (active) setResolvedAvatar(avatarPath); return; }
+      const { data } = supabase.storage.from("profile-avatars").getPublicUrl(avatarPath);
+      if (active && data?.publicUrl) setResolvedAvatar(data.publicUrl);
     };
     void resolve().catch((error) => console.warn("Driver avatar could not be resolved:", error));
     return () => { active = false; };
