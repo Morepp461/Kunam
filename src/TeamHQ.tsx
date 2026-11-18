@@ -14,7 +14,7 @@ type FacilityConfig = {
   maintenance_required: boolean; unlock_rules: Record<string, unknown>;
 };
 type Facility = { id: string; team_id: string; facility_key: string; level: number; condition: number; asset_value: number; last_maintenance_at: string | null };
-type Project = { id: string; facility_key: string; target_level: number; status: string; cost: number; completes_at: string | null; created_at: string };
+type Project = { id: string; facility_key: string; target_level: number; status: string; cost: number; started_at: string | null; completes_at: string | null; completed_at: string | null; created_at: string };
 type Team = { id: string; name: string; division_key: string | null };
 
 const jsonFields = [
@@ -42,6 +42,9 @@ export default function TeamHQ() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [confirmConfig, setConfirmConfig] = useState<FacilityConfig | null>(null);
+  const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
+  const [clock, setClock] = useState(Date.now());
 
   const load = useCallback(async () => {
     if (!supabase) { setError("Koneksi Supabase belum tersedia."); setLoading(false); return; }
@@ -78,9 +81,41 @@ export default function TeamHQ() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { const timer = window.setInterval(() => setClock(Date.now()), 1000); return () => window.clearInterval(timer); }, []);
 
   const maxLevel = useMemo(() => divisionMax(team?.division_key ?? null), [team?.division_key]);
   const facilityMap = useMemo(() => new Map(facilities.map((item) => [item.facility_key, item])), [facilities]);
+  const activeProjects = useMemo(() => projects.filter(p => p.status === "queued" || p.status === "in_progress"), [projects]);
+  useEffect(() => {
+    if (activeProjects.some(project => project.completes_at && new Date(project.completes_at).getTime() <= clock)) void load();
+  }, [Math.floor(clock / 30000), activeProjects, load]);
+  const formatRemaining = (milliseconds: number) => {
+    const seconds = Math.max(0, Math.floor(milliseconds / 1000));
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return days > 0 ? `${days}h ${hours}j ${minutes}m` : `${hours}j ${minutes}m ${secs}d`;
+  };
+  const progressFor = (project: Project) => {
+    if (!project.started_at || !project.completes_at) return 0;
+    const start = new Date(project.started_at).getTime();
+    const end = new Date(project.completes_at).getTime();
+    return Math.max(0, Math.min(100, ((clock - start) / Math.max(1, end - start)) * 100));
+  };
+  const startUpgrade = async () => {
+    if (!supabase || !confirmConfig || submittingUpgrade) return;
+    setSubmittingUpgrade(true); setError(""); setNotice("");
+    const { error: upgradeError } = await supabase.rpc("member_start_team_hq_project", {
+      p_facility_key: confirmConfig.facility_key,
+      p_idempotency_key: crypto.randomUUID()
+    });
+    setSubmittingUpgrade(false);
+    if (upgradeError) { setError(upgradeError.message); return; }
+    setConfirmConfig(null);
+    setNotice("Proyek upgrade berhasil dimulai. Biaya telah dipindahkan ke VreeoBank.");
+    await load();
+  };
 
   const beginEdit = (config: FacilityConfig) => {
     setEditing(config.facility_key); setDraft({ ...config });
@@ -125,7 +160,7 @@ export default function TeamHQ() {
       <button className="team-hq-refresh" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button>
     </div>
     {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
-    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{projects.filter(p => p.status === "queued" || p.status === "in_progress").length}/2</strong></div></div>}
+    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{activeProjects.length}/2</strong></div></div>}
     <div className="team-hq-section-title"><div><span className="section-eyebrow">FACILITY DIRECTORY</span><h2>{isFia ? "Facility Configuration" : "Facilities"}</h2></div><span className="empty-tag">9 FACILITIES</span></div>
     <div className="team-hq-grid">
       {configs.map((config) => {
@@ -138,11 +173,31 @@ export default function TeamHQ() {
           {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div></>}
           {config.maintenance_required && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance diperlukan</small>}
           {isFia && <button className="team-hq-edit" onClick={() => beginEdit(config)}>Edit configuration</button>}
-          {team && isOwner && <small className="team-hq-lock-note">Upgrade akan tersedia setelah integrasi transaksi Economy Engine.</small>}
+          {team && (() => {
+            const activeProject = activeProjects.find(p => p.facility_key === config.facility_key);
+            const nextLevel = level + 1;
+            const nextCost = Number(config.construction_cost_by_level?.[String(nextLevel)] ?? 0);
+            const nextDays = Number(config.construction_days_by_level?.[String(nextLevel)] ?? 0);
+            const canUpgrade = isOwner && config.is_enabled && level < limit && nextCost > 0 && nextDays > 0 && !activeProject && activeProjects.length < 2;
+            return <>
+              {level < limit && <div className="team-hq-upgrade-info">
+                <div><span>UPGRADE BERIKUTNYA · LEVEL {nextLevel}</span><strong>€{money(nextCost)}</strong></div>
+                <div><span>DURASI PENGERJAAN</span><strong>{nextDays} hari</strong></div>
+              </div>}
+              {activeProject && <div className="team-hq-construction">
+                <div className="team-hq-construction-head"><strong>UPGRADE LEVEL {activeProject.target_level}</strong><b>{Math.floor(progressFor(activeProject))}%</b></div>
+                <div className="team-hq-progress team-hq-progress-construction"><i style={{ width: progressFor(activeProject) + "%" }}/></div>
+                <div className="team-hq-timer">{activeProject.completes_at ? (new Date(activeProject.completes_at).getTime() > clock ? "Sisa " + formatRemaining(new Date(activeProject.completes_at).getTime() - clock) : "Menunggu penyelesaian otomatis") : "Menunggu jadwal pengerjaan"}</div>
+              </div>}
+              {isOwner && level < limit && <button className="team-hq-upgrade" disabled={!canUpgrade} onClick={() => setConfirmConfig(config)}> {activeProject ? "Sedang diupgrade" : activeProjects.length >= 2 ? "Slot proyek penuh" : "Upgrade fasilitas"} </button>}
+              {isOwner && level >= limit && <small className="team-hq-lock-note">Level maksimum divisi tercapai.</small>}
+            </>;
+          })()}
         </article>;
       })}
     </div>
     {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">CONSTRUCTION PIPELINE</span><h2>Project History</h2></div><span className="empty-tag">LATEST 10</span></div>{projects.length ? projects.map(project => <div className="team-hq-project-row" key={project.id}><strong>{configs.find(c => c.facility_key === project.facility_key)?.title ?? project.facility_key}</strong><span>Target level {project.target_level}</span><span>{project.status.replaceAll("_"," ")}</span><span>€{money(project.cost)}</span></div>) : <p className="team-hq-empty">Belum ada proyek pembangunan atau upgrade.</p>}</section>}
+    {confirmConfig && team && <div className="team-hq-modal-backdrop" role="presentation" onClick={() => !submittingUpgrade && setConfirmConfig(null)}><section className="team-hq-confirm" role="dialog" aria-modal="true" aria-labelledby="team-hq-confirm-title" onClick={e => e.stopPropagation()}><span className="section-eyebrow">KONFIRMASI UPGRADE</span><h2 id="team-hq-confirm-title">{confirmConfig.title}</h2><p>Pastikan rincian pembangunan fasilitas berikut sudah benar.</p><div className="team-hq-confirm-row"><span>Level</span><strong>{(facilityMap.get(confirmConfig.facility_key)?.level ?? 0)} → {(facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1}</strong></div><div className="team-hq-confirm-row"><span>Biaya</span><strong>€{money(Number(confirmConfig.construction_cost_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0))}</strong></div><div className="team-hq-confirm-row"><span>Durasi</span><strong>{confirmConfig.construction_days_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0} hari</strong></div><div className="team-hq-confirm-row"><span>Pembayaran</span><strong>Team Wallet → VreeoBank</strong></div><p className="team-hq-confirm-note">Pembayaran dilakukan langsung saat proyek dimulai dan tidak dapat dibatalkan melalui halaman ini.</p><div className="team-hq-actions"><button className="team-hq-cancel" disabled={submittingUpgrade} onClick={() => setConfirmConfig(null)}>Kembali</button><button className="team-hq-save" disabled={submittingUpgrade} onClick={() => void startUpgrade()}>{submittingUpgrade ? "Memproses..." : "Konfirmasi & mulai upgrade"}</button></div></section></div>}
     {editing && draft && <div className="team-hq-editor"><div className="team-hq-section-title"><div><span className="section-eyebrow">FIA CONTROL</span><h2>Edit {draft.title}</h2></div></div>
       <label>Nama fasilitas<input value={draft.title} onChange={e => setDraft(v => v ? { ...v, title: e.target.value } : v)}/></label>
       <label>Deskripsi<textarea value={draft.description} onChange={e => setDraft(v => v ? { ...v, description: e.target.value } : v)}/></label>
