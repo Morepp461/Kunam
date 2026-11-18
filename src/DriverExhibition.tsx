@@ -259,7 +259,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const darkMetal = material(0x262321, 0.3, 0.78);
         const redMetal = material(0x651d25, 0.42, 0.48);
         const goldMetal = material(0x8b7045, 0.3, 0.68);
-        const woodMat = material(0x302319, 0.38, 0.12);
         const vaultWoodMat = new THREE.MeshStandardMaterial({ color: 0x51402d, emissive: 0x21170d, emissiveIntensity: 0.72, roughness: 0.76, metalness: 0.08 });
         disposableMaterials.push(vaultWoodMat);
         const ledMat = new THREE.MeshStandardMaterial({ color: 0xc39a5a, emissive: 0x9a6730, emissiveIntensity: 1.65, roughness: 0.28, metalness: 0.25 });
@@ -486,8 +485,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           // The light bars sit below the lower inner surface of the roof shell, not inside the roof mesh.
           const crossPoints = Array.from({ length: 65 }, (_, i) => {
             const x = -21.7 + (43.4 * i) / 64;
-            const innerRoofY = 9.65 + 9.7 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2));
-            return new THREE.Vector3(x, innerRoofY - 0.95, z + 0.18);
+            const innerRoofY = 19.35 - 9.7 * (x / 22) ** 2;
+            return new THREE.Vector3(x, innerRoofY - 0.62, z + 0.18);
           });
           const crossCurve = new THREE.CatmullRomCurve3(crossPoints);
           const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.22, 8, false), vaultTrimMat);
@@ -829,6 +828,22 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const { data, error } = await supabase.from("caleris_member_directory").select("avatar_path").eq("id", memberId).maybeSingle();
         if (error) throw error;
         avatarPath = typeof data?.avatar_path === "string" ? data.avatar_path : "";
+      }
+      if (!avatarPath && memberId) {
+        // A signed-in owner may use their OAuth avatar when the character has no uploaded profile portrait.
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData.user;
+        if (user) {
+          const { data: ownProfile } = await supabase.from("profiles").select("member_id").eq("user_id", user.id).maybeSingle();
+          if (ownProfile?.member_id === memberId) {
+            const metadata = user.user_metadata || {};
+            const oauthAvatar = metadata.avatar_url || metadata.picture;
+            if (typeof oauthAvatar === "string" && (oauthAvatar.startsWith("https://") || oauthAvatar.startsWith("http://"))) {
+              if (active) setResolvedAvatar(oauthAvatar);
+              return;
+            }
+          }
+        }
       }
       if (!avatarPath) return;
       if (avatarPath.startsWith("https://") || avatarPath.startsWith("http://")) { if (active) setResolvedAvatar(avatarPath); return; }
