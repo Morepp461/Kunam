@@ -915,3 +915,10 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Team Directory memakai treatment constructor/pit wall terpisah: livery stripe berbasis warna tim, emblem reveal, dan pit-board label.
 - Motion hover hanya aktif pada perangkat dengan pointer presisi. Tampilan mobile tetap ringan dan tidak bergantung pada hover.
 - Animasi menghormati `prefers-reduced-motion`. Perubahan hanya pada presentasi frontend; tidak mengubah data, layout utama, dependency, atau database.
+
+
+### Perbaikan keterbacaan Driver & Team Directory
+
+- Memisahkan label race-weekend dari area nama driver dan nama tim agar tidak saling menimpa pada layar kecil.
+- Metadata tim pada kartu driver ditata dalam satu kolom teks di samping logo, dengan wrapping yang aman untuk nama panjang.
+- Lebar judul dan area portrait disesuaikan untuk menjaga jarak visual pada layout mobile.
