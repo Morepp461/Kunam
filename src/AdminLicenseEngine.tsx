@@ -86,27 +86,15 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
   if(!supabase||!startDate||!scheduleReady||duplicates||totals.premio>25||totals.zwei>25)return;
   setBusy(true);setNotice(null);
   const payload=schedule.map((p,i)=>({period_number:i+1,premio_circuits:p.premio,zwei_circuits:p.zwei}));
-  const {data,error}=await supabase.rpc("fia_create_caleris_season",{p_start_date:startDate,p_schedule:payload});
-  if(error){setBusy(false);setNotice({kind:"error",text:error.message});return}
-  const {data:divs,error:divError}=await supabase.from("license_season_divisions").select("id,division_key").eq("season_id",data.season_id);
-  if(divError){setBusy(false);setNotice({kind:"error",text:"Season dibuat, tetapi divisi gagal dimuat: "+divError.message});return}
-  const roundUpdates:any[]=[];
-  for(const division of (divs||[])){
-   const key=division.division_key==="premio"?"premio":"zwei";
-   const {data:roundRows,error:roundError}=await supabase.from("license_rounds").select("id,round_number").eq("season_division_id",division.id).order("round_number");
-   if(roundError){setBusy(false);setNotice({kind:"error",text:"Season dibuat, tetapi jadwal round gagal dimuat: "+roundError.message});return}
-   let index=0;
-   for(let period=0;period<schedule.length;period++){
-    for(let slot=0;slot<schedule[period][key].length;slot++){
-     const round=roundRows?.[index++];
-     if(round)roundUpdates.push({round_id:round.id,race_time:raceTimes[timeKey(period,key,slot)]||"19:00",duration_minutes:Number(raceDurations[timeKey(period,key,slot)]||90)});
-    }
-   }
-  }
-  const {error:scheduleError}=await supabase.rpc("fia_set_season_round_schedules",{p_schedules:roundUpdates});
+  let premioRound=0,zweiRound=0;
+  const raceSchedules=schedule.flatMap((period,periodIndex)=>[
+   ...period.premio.map((_,slot)=>({division_key:"premio",round_number:++premioRound,race_time:raceTimes[timeKey(periodIndex,"premio",slot)]||"19:00",duration_minutes:Number(raceDurations[timeKey(periodIndex,"premio",slot)]||90)})),
+   ...period.zwei.map((_,slot)=>({division_key:"zwei",round_number:++zweiRound,race_time:raceTimes[timeKey(periodIndex,"zwei",slot)]||"19:00",duration_minutes:Number(raceDurations[timeKey(periodIndex,"zwei",slot)]||90)}))
+  ]);
+  const {data,error}=await supabase.rpc("fia_create_caleris_season_atomic",{p_start_date:startDate,p_schedule:payload,p_race_schedules:raceSchedules});
   setBusy(false);
-  if(scheduleError){setNotice({kind:"error",text:"Season terbentuk, tetapi penyimpanan jam race gagal: "+scheduleError.message});return}
-  setNotice({kind:"success",text:String(data?.title||"Season CALERIS MASTERS berhasil dibuat")+". Jadwal Premio dan Zwei tersimpan terpisah."});
+  if(error){setNotice({kind:"error",text:error.message});return}
+  setNotice({kind:"success",text:String(data?.title||"Season CALERIS MASTERS berhasil dibuat")+". Season, rounds, kalender, dan jadwal Premio/Zwei tersimpan dalam satu transaksi."});
   setSchedule(defaultSchedule());setRaceTimes({});setRaceDurations({});await load();
  };
  const config=(key:string)=>configs.find(x=>x.config_key===key)?.payload||{};

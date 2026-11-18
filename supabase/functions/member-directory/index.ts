@@ -109,7 +109,8 @@ Deno.serve(async (req: Request) => {
       if (!/^[A-Z0-9]{12,16}$/.test(memberId)) return respond(400, { error: "Member ID tidak valid." });
       const { data: p, error } = await admin.from("profiles")
         .select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
-        .eq("public_member_id", memberId).maybeSingle();
+        .eq("public_member_id", memberId)
+        .in("account_status", ["public", "active", "admin"]).maybeSingle();
       if (error) return respond(500, { error: "Profil member gagal dimuat." });
       if (!p) return respond(404, { error: "Profil member tidak ditemukan." });
       const publicProfile = await withAvatar(p as ProfileRow);

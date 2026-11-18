@@ -508,3 +508,22 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
 .dashboard-race-list article strong{font-size:12px;overflow-wrap:anywhere}
 .dashboard-race-list article small,.dashboard-race-muted{font-size:10px;color:var(--muted,#aaa)}
 @media(max-width:650px){.dashboard-action-row{justify-content:space-between}.dashboard-race-next{align-items:flex-start;flex-direction:column}.dashboard-race-count{text-align:left}.dashboard-race-count small{justify-content:flex-start}.dashboard-race-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.dashboard-race-next.state-awaiting_result{background:rgba(190,142,54,.09);border-color:rgba(190,142,54,.38)}
+.dashboard-race-next.state-result_confirmed{background:rgba(190,142,54,.07);border-color:rgba(190,142,54,.3)}
+.dashboard-race-next.state-completed{background:rgba(255,255,255,.025);border-color:var(--line,rgba(255,255,255,.14))}
+
+.notifications-center{margin:0 0 18px}
+.notifications-center-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.notifications-center-head h2{display:flex;align-items:center;gap:8px;margin:4px 0 0;font-size:17px}
+.notifications-center-head h2>span{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:rgba(190,42,48,.18);color:#e2b2a5;font-size:10px}
+.notifications-center-head>button,.notifications-list article>button{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line,rgba(255,255,255,.14));border-radius:7px;background:transparent;color:var(--muted,#aaa);padding:7px 9px;font-size:10px;cursor:pointer}
+.notifications-list{display:grid;gap:7px}
+.notifications-list article{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 12px;border:1px solid var(--line,rgba(255,255,255,.1));border-radius:8px}
+.notifications-list article.is-unread{border-color:rgba(190,42,48,.3);background:rgba(190,42,48,.045)}
+.notifications-copy{display:grid;gap:5px;min-width:0}
+.notifications-copy>span{font-size:9px;letter-spacing:.08em;color:var(--muted,#aaa)}
+.notifications-copy strong{font-size:12px;color:var(--text,#fff)}
+.notifications-copy p,.notifications-empty{margin:0;color:var(--muted,#aaa);font-size:11px;line-height:1.5}
+.notifications-copy a{display:inline-flex;align-items:center;gap:5px;width:max-content;color:#d4b47a;font-size:10px;text-decoration:none}
+.notifications-error{color:#df8888;font-size:11px}

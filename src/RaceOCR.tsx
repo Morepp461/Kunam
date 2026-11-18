@@ -1,7 +1,7 @@
 import {useState} from "react";
 import {createWorker} from "tesseract.js";
 type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";
-type Entry={memberId:string;driverName:string;teamName:string;driverNumber:string;country:string;flag:string;gridPosition:string;status:"finished"|"dnf";position:string;timeOrLaps:string;gap:string;fastestLap:string;stints:Tyre[]};
+type Entry={memberId:string;driverName:string;teamName:string;driverNumber:string;country:string;flag:string;gridPosition:string;status:"finished"|"dnf"|"dns"|"dsq";position:string;timeOrLaps:string;gap:string;fastestLap:string;stints:Tyre[]};
 type Driver={id:string;character_name:string|null;team_id:string|null;nationality:string|null};
 type Team={id:string;name:string};
 const norm=(s:string)=>s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
@@ -12,7 +12,7 @@ export default function RaceOCR({entries,drivers,teams,onDraft}:{entries:Entry[]
  const run=async(file:File)=>{if(!file.type.startsWith("image/")){setMessage("Pilih file gambar hasil race.");return}if(file.size>12*1024*1024){setMessage("Ukuran gambar maksimal 12 MB.");return}setBusy(true);setMessage("");setRaw("");setProgress(0);let worker:any;
   try{worker=await createWorker("eng",1,{logger:(m:any)=>{if(m.status==="recognizing text")setProgress(Math.round((m.progress||0)*100))}});const result=await worker.recognize(file);const text=String(result.data.text||"");setRaw(text);const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const next=[...entries];let matched=0;
    for(const line of lines){const n=norm(line);const driver=drivers.map(d=>({d,name:norm(d.character_name||"")})).filter(x=>x.name.length>2&&n.includes(x.name)).sort((a,b)=>b.name.length-a.name.length)[0]?.d;if(!driver)continue;const idx=next.findIndex(x=>x.memberId===driver.id);if(idx<0)continue;const team=teams.find(t=>t.id===driver.team_id);const tokens=timeTokens(line);const tyre=tyreFrom(line);const current=next[idx];const pos=Number((line.match(/^\s*(\d{1,2})\b/)||[])[1]||"");const car=Number((line.match(/#\s*(\d{1,3})/)||[])[1]||"");
-    next[idx]={...current,driverName:driver.character_name||current.driverName,teamName:team?.name||"Unassigned",position:pos>0?String(pos):current.position,driverNumber:car>0?String(car):current.driverNumber,timeOrLaps:tokens[0]||current.timeOrLaps,gap:tokens[1]||current.gap,fastestLap:tokens[2]||current.fastestLap,stints:tyre.length?tyre:current.stints,status:/\bDNF\b/i.test(line)?"dnf":"finished"};matched++}
+    next[idx]={...current,driverName:driver.character_name||current.driverName,teamName:team?.name||"Unassigned",position:pos>0?String(pos):current.position,driverNumber:car>0?String(car):current.driverNumber,timeOrLaps:tokens[0]||current.timeOrLaps,gap:tokens[1]||current.gap,fastestLap:tokens[2]||current.fastestLap,stints:tyre.length?tyre:current.stints,status:/\bDSQ\b/i.test(line)?"dsq":/\bDNS\b/i.test(line)?"dns":/\bDNF\b/i.test(line)?"dnf":"finished"};matched++}
    onDraft(next);setMessage(matched?"OCR selesai. "+matched+" baris Driver berhasil dicocokkan ke database. Periksa dan koreksi seluruh kolom sebelum submit.":"Teks berhasil dibaca, tetapi belum ada nama Driver yang cocok dengan database. Gunakan hasil OCR sebagai referensi dan pilih Driver secara manual di tabel.");
   }catch(e){setMessage(e instanceof Error?e.message:"OCR gagal membaca gambar.")}finally{if(worker)await worker.terminate();setBusy(false)}
  };

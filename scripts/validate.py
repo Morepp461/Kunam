@@ -274,7 +274,7 @@ def main():
     retry_source = retry_ui.read_text(encoding="utf-8")
     for fragment in ["retry_pending_economy_rewards", "caleris_economy_retry_runs", "admin_get_economy_audit_snapshot", "caleris-economy-pending-retry"]:
         assert fragment in retry_sql, f"Economy retry migration missing: {fragment}"
-    for fragment in ["pending_payroll", "recent_runs", "pending_items", "Payroll tetap mengikuti pemrosesan round"]:
+    for fragment in ["pending_payroll", "recent_runs", "pending_items", "Automated Payroll Preparation", "payroll_pending"]:
         assert fragment in retry_source, f"Economy Audit Center missing: {fragment}"
     assert "admin_get_economy_audit_snapshot" in retry_source
     assert "process_license_round" not in retry_sql, "Payroll must remain tied to round processing, not a scheduler."

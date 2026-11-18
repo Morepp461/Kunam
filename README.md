@@ -85,7 +85,7 @@
 - Pending daily rewards and all-role race check-in rewards are retried automatically every five minutes through locked, idempotent database workers. Quest rewards require an explicit member claim and are excluded from automatic retry.
 - Each retry cycle records attempted, paid, pending, and failed outcomes in `caleris_economy_retry_runs`; individual reward claims retain attempt count and last error.
 - The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
-- Payroll remains tied to round processing. Pending payroll is visible in the audit center and remains recoverable through the existing Admin payroll recovery action; it is intentionally excluded from the scheduled retry worker.
+- Payroll is prepared after the final round mapped to each Race Period. Annual salary is divided across the five Race Periods, with the final period reconciling any rounding remainder. Pending payroll claims are retried automatically every five minutes through the existing idempotent Economy Engine claim processor; the worker never creates a second claim or pays salary before the period's final round.
 
 ## Supabase
 
@@ -999,3 +999,30 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Waktu mulai race dan durasi disimpan per round di `license_rounds`; jadwal check-in tetap terpisah.
 - Dashboard menampilkan countdown dan daftar race mendatang sesuai divisi tim karakter. Akun Admin dapat melihat jadwal seluruh divisi.
 - FIA Event Control menyediakan export satu workbook Excel dengan sheet DRIVERS dan TEAMS, termasuk atribut driver dan car development parts. Akses export dibatasi untuk Admin/FIA.
+
+
+## Race Lifecycle and Atomic Season Setup
+
+- Race check-in continues to close at 23:59:59 Asia/Jakarta. FIA can confirm a classification as soon as check-in has closed; the scheduled race duration never blocks or delays official result confirmation.
+- Each round has an independent race lifecycle: Upcoming, In Progress, Awaiting Result, Result Confirmed, and Completed. The In Progress and Result Confirmed views count down to the configured race-duration end. Duration is a calendar/timer boundary only, not a classification authority.
+- The lifecycle worker refreshes persisted round state every minute. A missing FIA result after the scheduled duration is shown as Awaiting Result; only FIA/Admin classification confirmation closes the round.
+- Season creation now creates the season, divisions, rounds, 12-period calendar, and Premio/Zwei race start times and durations through one database transaction. Any invalid schedule rolls back the complete season setup.
+- Characters without a team assignment use Caleris Premio as their default race-calendar division. Assigned characters see only their team's division; FIA/Admin can inspect both divisions.
+- Race Control supports Finished, DNF, DNS, and DSQ. OCR remains draft-only and every classification must be reviewed and confirmed by FIA/Admin.
+
+
+## Notifications, System Health, and Regression Guards
+
+- Character notifications are stored against the permanent `member_id`, not the current team or role. Events include quest assignment/completion/reward, Driver and Team Development upgrades, Development token shop purchases, contract offers and counteroffers, transfer negotiation updates, payroll payment, and official race results. Scheduled reminders cover race H-24/H-1/start, check-in opening and closing, quest expiry, contract expiry, and loan installment due dates.
+- Notification rows are idempotent and visible only to the matching signed-in character. The dashboard inbox supports unread counts, mark-read, and realtime inserts.
+- System Health runs every 15 minutes and checks wallet balance movement against a captured reconciliation baseline, failed cron executions in the last 24 hours, pending payroll, races awaiting FIA results, and active seasons without all 12 calendar periods.
+- Wallet reconciliation is forward-looking from the captured baseline. It does not claim to reconstruct historical opening balances that were not recorded.
+- CI includes cross-engine integration contract checks and a Supabase schema fingerprint comparison. Remote schema comparison runs when both `SUPABASE_PRODUCTION_DB_URL` and `SUPABASE_TESTING_DB_URL` GitHub secrets are configured. Historical migration-ledger differences are reported separately because the existing repository contains legacy duplicate migration prefixes. The current Production/Testing routine comparison also contains three manually reviewed, non-behavioral differences: local variable naming in `guard_caleris_job_advert`, a comment in `fia_review_team_takeover`, and an error-message wording difference in `license_apply_standings_milestones`. The parity fingerprint normalizes SQL whitespace and explicitly records this reviewed allowlist.
+
+
+## Edge Function Authentication Boundaries
+
+- `member-directory` intentionally serves public profile/search requests without requiring a user session. Its privileged `update_member_id` action separately validates the bearer token and `site_admins` membership. Public profile lookup is restricted to `public`, `active`, and `admin` account statuses.
+- `caleris-integrations` authenticates with its hashed `cm_live_` API key, so gateway JWT verification is not its authentication mechanism.
+- `complete-paddock-access` validates the user's JWT inside the function. Admin and Economy Edge Functions retain gateway JWT verification and their own authorization checks.
+- Both environments now pin `member-directory.verify_jwt=false`, allowing the intended anonymous profile/search flow. Testing was aligned to Production; Production's setting was retained. The privileged member-ID update still requires a valid user JWT and `site_admins` membership. CORS origin checks are not an authentication boundary, and public directory rate limiting remains a separate hardening item.
