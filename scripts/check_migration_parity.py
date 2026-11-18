@@ -59,6 +59,8 @@ from (
   select 'rls|' || c.relname || '|' || c.relrowsecurity::text || '|' || c.relforcerowsecurity::text
   from pg_class c join pg_namespace n on n.oid=c.relnamespace
   where n.nspname='public' and c.relkind='r'
+  union all
+  select 'cron|' || jobname || '|' || schedule || '|' || command from cron.job where jobname like 'caleris-%'
 ) schema_items;
 """
 
