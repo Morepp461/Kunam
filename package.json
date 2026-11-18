@@ -7,7 +7,11 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "check": "tsc -b",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
@@ -19,7 +23,8 @@
     "tesseract.js": "6.0.1",
     "three": "0.187.0",
     "ara3d": "0.7.4",
-    "fflate": "0.8.3"
+    "fflate": "0.8.3",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/react": "19.1.12",
@@ -27,6 +32,8 @@
     "@types/three": "0.187.0",
     "@vitejs/plugin-react": "5.0.2",
     "typescript": "5.9.2",
-    "vite": "7.3.8"
+    "vite": "7.3.8",
+    "@playwright/test": "1.65.1",
+    "vitest": "5.1.1"
   }
 }
