@@ -76,6 +76,15 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
      ...(ann.data??[]).map((x:any)=>({id:x.id,title:x.title,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:x.category??"Announcement",date:x.published_at??x.created_at,source:"Official Bulletin",facts:[x.division_key?String(x.division_key).toUpperCase():"CALERIS MASTERS"]})),
      ...(stories.data??[]).map((x:any)=>({id:x.id,title:x.headline,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:x.event_type??"Paddock Story",date:x.created_at,source:"Paddock Report"}))
     ];
+    if(stories.data?.length){
+     const contractIds=[...new Set(stories.data.map((x:any)=>x.contract_id).filter(Boolean))];
+     const {data:storyContracts}=contractIds.length?await supabase.from("caleris_sponsorship_contracts").select("id,target_team_id").in("id",contractIds):{data:[] as any[]};
+     const storyTeamIds=[...new Set((storyContracts??[]).map((x:any)=>x.target_team_id).filter(Boolean))];
+     const {data:storyTeams}=storyTeamIds.length?await supabase.from("caleris_team_profiles").select("team_id,logo_url").in("team_id",storyTeamIds):{data:[] as any[]};
+     const contractMap=new Map((storyContracts??[]).map((x:any)=>[x.id,x.target_team_id]));
+     const logoMap=new Map((storyTeams??[]).map((x:any)=>[x.team_id,x.logo_url]));
+     for(const item of items.filter(x=>x.source==="Paddock Report")){const source=(stories.data??[]).find((x:any)=>x.id===item.id);const teamId=contractMap.get(source?.contract_id);item.imageUrl=teamId?logoMap.get(teamId)??null:null;}
+    }
     if(races.data?.length){
      const roundIds=[...new Set(races.data.map((x:any)=>x.round_id).filter(Boolean))];
      const memberIds=[...new Set(races.data.flatMap((x:any)=>[x.winner_member_id,x.pole_member_id]).filter(Boolean))];
