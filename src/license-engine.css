@@ -24,3 +24,35 @@
 .license-checkin .workspace-card{padding:18px;background:rgba(10,13,17,.92);border:1px solid #a68a503d;border-radius:5px}.license-history{display:grid}.license-history article{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid #ffffff16}.license-history article>div{display:grid;gap:4px}.license-history strong{font-size:11px}.license-history small{font-size:10px;color:#999}.license-history b{font-size:13px;white-space:nowrap}.license-history b.positive{color:#b9d8b4}.license-history b.negative{color:#e6a39a}
 @media(max-width:850px){.license-engine-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.license-form-row{grid-template-columns:1fr}.license-checkin-hero{align-items:flex-start;flex-direction:column}.license-score-grid{grid-template-columns:1fr}.license-engine-footer,.license-season-close{align-items:flex-start;flex-direction:column}.license-list article{align-items:flex-start;flex-direction:column}.license-hiatus{align-self:flex-end}}
+
+.license-setup-event{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,1.2fr);gap:18px;align-items:center;margin:18px 0;padding:clamp(18px,3vw,28px);border:1px solid #a68a5052;border-radius:7px;background:linear-gradient(115deg,rgba(10,12,15,.98),rgba(24,22,17,.94))}
+.license-setup-event-main h2{margin:7px 0 4px;font-size:clamp(25px,4vw,38px);letter-spacing:.06em}
+.license-setup-event-main p{margin:0;color:#aeb0b1;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.license-setup-division-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.license-setup-division-grid article{display:grid;gap:7px;padding:14px;border:1px solid #9e824b55;border-radius:5px;background:#111416}
+.license-setup-division-grid article>span{color:#d4b46c;font-size:9px;font-weight:900;letter-spacing:.16em}
+.license-setup-division-grid strong{font-size:13px;letter-spacing:.04em}
+.license-setup-division-grid small{color:#9ea1a2;font-size:10px}
+.license-setup-create,.license-setup-automation,.license-setup-scoring,.license-setup-history{margin-top:15px;padding:clamp(16px,2.4vw,24px);background:rgba(10,13,17,.92);border:1px solid #a68a503d;border-radius:5px}
+.license-setup-date{display:grid;gap:7px;max-width:420px;margin-top:15px;color:#d5d3cd;font-size:11px;font-weight:700}
+.license-setup-date input{width:100%;padding:12px;background:#080a0c;color:#f2f0eb;border:1px solid #786744;border-radius:4px;color-scheme:dark;font:inherit}
+.license-setup-submit{margin-top:13px;min-height:44px}
+.license-setup-flow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.license-setup-flow article{display:grid;gap:8px;padding:14px;border:1px solid #ffffff18;border-radius:5px;background:#111416}
+.license-setup-flow svg{color:#d2b477}
+.license-setup-flow strong{font-size:12px}
+.license-setup-flow small{font-size:10px;line-height:1.5;color:#a5a7a8}
+.license-setup-score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-top:14px}
+.license-setup-score-grid article{display:grid;gap:6px;padding:13px;border:1px solid #ffffff18;border-radius:5px;background:#111416}
+.license-setup-score-grid small{color:#c9ad72;font-size:9px;font-weight:800;letter-spacing:.1em}
+.license-setup-score-grid strong{font-size:25px;color:#e0c18a;font-variant-numeric:tabular-nums}
+.license-setup-score-grid span{font-size:10px;line-height:1.5;color:#a5a7a8}
+.license-setup-season-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #ffffff17}
+.license-setup-season-row>div{display:grid;gap:5px;min-width:0}
+.license-setup-season-row strong{font-size:12px}
+.license-setup-season-row small{color:#a5a7a8;font-size:10px;line-height:1.5}
+.license-setup-status{flex:none;padding:5px 8px;border:1px solid #786744;border-radius:3px;color:#d9c18c;font-size:9px;font-weight:900;letter-spacing:.08em}
+.license-setup-status.active{border-color:#4a7658;color:#a9d4b2}
+.license-setup-status.completed{border-color:#5c6267;color:#b5b8ba}
+@media(max-width:760px){.license-setup-event{grid-template-columns:1fr}.license-setup-flow{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.license-setup-division-grid{grid-template-columns:1fr 1fr}.license-setup-flow{grid-template-columns:1fr 1fr}.license-setup-season-row{align-items:flex-start;flex-direction:column}.license-setup-status{align-self:flex-start}}

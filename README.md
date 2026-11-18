@@ -330,11 +330,14 @@ License scoring is processed by Supabase triggers and immutable score-ledger tra
 
 - Daily check-in points and inactivity penalty settings are seeded from the supplied rules.
 - Standings milestone records are independent, configurable entries. The engine reads all active scoring-milestone-* records; it does not contain threshold values in application logic.
-- Premio and Zwei WDC settings are seeded inactive with zero points. Admin must set and activate each division's WDC value before finalization.
+- Lifetime WDC defaults are active automatically: Zwei gives 25 points and Premio gives 35 points. A later Premio title replaces the Zwei award rather than stacking; future tier-value edits automatically synchronize existing WDC ledger values.
 - Driver Panel → Daily Check-in is the only attendance source. One check-in is allowed per Jakarta calendar day.
 - The five-race inactivity rule is processed from configured round check-in windows. A round with any daily check-in breaks the absence streak; every configured streak interval applies the configured penalty, floored at the driver's remaining seasonal score.
-- Admin Control → License Scoring Engine manages seasons, divisions, driver registrations, round windows, cumulative standings, final standings, hiatus flags, round processing, and WDC finalization.
-- WDC finalization requires an active season, every configured round closed, a complete final classification for all non-hiatus registered drivers, exactly one first-place entry, a unique highest final-points total, an active registered Driver champion, and an active positive WDC setting for that division. A unique database constraint prevents more than one WDC award per division-season.
+- Admin Control → License Scoring Engine is a one-step season setup. Event name is fixed to **Caleris Masters** with two fixed divisions: **Caleris Premio (Tier 1)** and **Caleris Zwei (Tier 2)**. Admin only selects the Pre Season start date.
+- Season creation automatically creates both divisions, 15 race rounds per division, and the complete 12-period calendar: Pre Season, five Race Periods, four Break Balancing periods, End Season, and Off Season. Each Race Period contains three race dates per division; the complete cycle spans 42 days. Calendar dates can be rescheduled together while the season is draft.
+- Season activation remains automatic through the five-minute season lifecycle worker after the start date and only when the contract-backed roster is valid for both divisions. The initial season can activate without a completed predecessor; later seasons must follow the prior season's Off Season.
+- FIA submits official race classification through Race Control. The same round ID automatically connects race points, cumulative standings, license milestones, check-in attendance, inactivity processing, final standings, WDC, payroll, prizepool, and end-season workflows. Admin no longer enters cumulative standings or final WDC manually.
+- WDC finalization requires a complete official final classification for all non-hiatus registered drivers, exactly one first-place entry, a unique highest final-points total, an active registered Driver champion, and an active positive WDC setting for that division. A unique database constraint prevents more than one WDC award per division-season.
 - Seasonal points are scoped by season. WDC ledger points are permanent. Hiatus preserves the last-license snapshot and excludes the driver from inactivity and final classification.
 - Final standings are locked after WDC finalization. Official results are entered by Admin because the current project has no external race-results feed.
 
@@ -400,10 +403,10 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 ## Season Calendar & Team Payroll
 
 - FIA Panel exposes Rules Input, Season Calendar, Announcement Input, Punishment Input, and Appeal Room. FIA can configure season operations, process rounds, publish official rules and notices, issue punishments, and decide appeals. License Scoring Engine is Admin Control only. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
-- FIA Panel → Season Calendar builds the complete season timeline in one form: exactly one Off Season, one Pre Season, one End Season, one or more Race Periods, and zero or more Break Race Periods.
-- Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
-- Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
-- Reschedule updates a period's dates and records an immutable calendar revision.
+- Admin → License Scoring Engine creates the Caleris Masters season with one input: Pre Season start date. Event name and divisions are fixed to Caleris Masters, Caleris Premio (Tier 1), and Caleris Zwei (Tier 2).
+- The database automatically creates both divisions, 15 race rounds per division, and the 12-period calendar. Five Race Periods each contain three race dates per division, separated by four two-day Break Balancing periods. Pre Season is seven days, End Season five days, and Off Season seven days.
+- FIA Panel → Season Calendar is now a read-only calendar view. Admin can reschedule the complete draft calendar from one new Pre Season start date; individual periods and round mappings are not manually configured.
+- Calendar creation and round assignments are atomic. Every generated round is assigned exactly once to the correct Race Period.
 - Team Panel → Driver Contracts is a read-only view of the team's agreed Driver contracts and payroll history. Salary is set through the validated two-party negotiation workflow, enforced by the fixed license salary bands, and cannot be edited directly on the contracts page. Historical contracts outside the current band are labeled as legacy data; existing Testing fixtures are not silently rewritten.
 - Payroll is calculated as annual salary divided by the actual number of Race Periods configured for that season. Two-decimal rounding differences are reconciled in the final Race Period so total season salary equals the contract amount.
 - Payroll runs automatically after FIA/Admin processes the final round of a Race Period. Funds move directly from the matching Team Wallet to the Driver Wallet through the immutable double-entry ledger.

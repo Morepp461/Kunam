@@ -204,8 +204,8 @@ def main():
     contracts_source = contracts_component.read_text(encoding="utf-8")
     for fragment in ["season_calendar_periods", "season_period_rounds", "economy_driver_contracts", "economy_payroll_claims", "fia_create_season_calendar", "payroll_for_period_round", "admin_process_pending_economy_payroll", "is_caleris_fia_or_admin"]:
         assert fragment in calendar_sql, f"Season calendar/payroll migration missing: {fragment}"
-    for fragment in ["Off Season", "Pre Season", "Race Periode", "Break Balancing Periode", "End Season", "Reschedule", "3–5 round", "fia_create_season_calendar", "PERIOD_SEQUENCE"]:
-        assert fragment in calendar_source, f"Season calendar UI missing: {fragment}"
+    for fragment in ["Off Season", "Pre Season", "Race Period", "Break Balancing", "End Season", "Reschedule", "fia_reschedule_season_calendar", "12 periode"]:
+        assert fragment in calendar_source, f"Automated Season Calendar UI missing: {fragment}"
     assert "annual_salary" in contracts_source and "economy_driver_contracts" in contracts_source
 
     quest_page = ROOT / "src/QuestPage.tsx"
@@ -222,7 +222,7 @@ def main():
         assert fragment in quest_source, f"Quest board missing: {fragment}"
     for fragment in ["admin_update_quest_reward_amounts", "Nominal berdasarkan kesulitan"]:
         assert fragment in quest_admin_source, f"Quest Admin missing: {fragment}"
-    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "member_claim_quest_reward", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='driver'", "account_kind='team_owner'", "PERIOD_SEQUENCE"]:
+    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "member_claim_quest_reward", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='driver'", "account_kind='team_owner'", "const sequence="]:
         assert fragment in quest_sql or fragment in calendar_source, f"Quest Engine migration missing: {fragment}"
     assert "admin_process_pending_quest_rewards" not in quest_admin_source, "Admin Quest Engine must not pay unclaimed member rewards"
     assert 'path="/driver-panel/quest"' in app and 'path="/team-panel/quest"' in app and 'path="/admin/quest-engine"' in app
@@ -231,7 +231,7 @@ def main():
     assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
     assert 'import FIAEventControlCenter from "./FIAEventControlCenter"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
-    assert "FIA OPERATIONS · ADMIN ACCESS" in license_engine_source and "payrollMessage" in license_engine_source
+    assert "CALERIS MASTERS · FIA AUTOMATION" in license_engine_source and "fia_create_caleris_season" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to="/admin/license-engine"' in app, "License Scoring Engine must be Admin-only"
 
@@ -309,7 +309,7 @@ def main():
     assert "delete from public.license_round_standings" not in roster_sql.lower()
     assert "delete from public.license_final_standings" not in roster_sql.lower()
     assert "delete from public.license_team_final_standings" not in roster_sql.lower()
-    assert 'economy_driver_contracts' in license_engine and 'c.season_id===selectedSeason' in license_engine and 'c.team_id===d.team_id' in license_engine
+    assert "fia_create_caleris_season" in license_engine and "CALERIS PREMIO" in license_engine and "CALERIS ZWEI" in license_engine
     assert "ended_contracts" in expiry_sql and "set status='ended'" in expiry_sql and "contracts_ended" in expiry_sql
     assert "driver_name_snapshot" in stage5_panel and "team_name_snapshot" in stage5_panel and "r.team_name_snapshot" in stage5_panel
     recruitment_migration = ROOT / "supabase/migrations/20261118190000_license_salary_and_team_recruitment_workflows.sql"
@@ -356,6 +356,31 @@ def main():
     contracts_css = (ROOT / "src/team-contracts.css").read_text(encoding="utf-8")
     assert "LEGACY DATA" in contracts_ui and "caleris_driver_salary_bands" in contracts_ui
     assert ".team-contracts-legacy" in contracts_css
+    auto_season_migration = ROOT / "supabase/migrations/20261118195000_automated_caleris_season_setup.sql"
+    auto_season_ui = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
+    auto_calendar_ui = (ROOT / "src/AdminSeasonCalendar.tsx").read_text(encoding="utf-8")
+    event_control_ui = (ROOT / "src/FIAEventControlCenter.tsx").read_text(encoding="utf-8")
+    assert auto_season_migration.is_file(), "Missing one-step CALERIS season setup migration"
+    auto_season_sql = auto_season_migration.read_text(encoding="utf-8")
+    for fragment in ["fia_create_caleris_season", "'Caleris Masters'", "'premio','Caleris Premio'", "'zwei','Caleris Zwei'", "for v_round_number in 1..15", "jsonb_build_array", "'pre_season'", "'end_season'", "'off_season'", "private.sync_season_roster", "not exists(select 1 from public.license_seasons prior where prior.status='completed')"]:
+        assert fragment in auto_season_sql, f"Automated season migration missing: {fragment}"
+    for fragment in ["fia_create_caleris_season", "CALERIS PREMIO", "CALERIS ZWEI", "ACTIVE SCORING RULES", "scoring-milestone-", "Tidak ada input standings atau final WDC manual"]:
+        assert fragment in auto_season_ui, f"Simplified License Engine missing: {fragment}"
+    for obsolete_control in ["saveRoundStanding", "saveFinalStanding", "registerDriver", "createRound", "standingPoints"]:
+        assert obsolete_control not in auto_season_ui, f"Manual scoring/round input remains in License Engine: {obsolete_control}"
+    for fragment in ["Reschedule seluruh kalender", "fia_reschedule_season_calendar", "12 periode", "30"]:
+        assert fragment in auto_calendar_ui, f"Automated Season Calendar missing: {fragment}"
+    assert "Satu kali setup" in event_control_ui and "kalender 12 periode" in event_control_ui
+    license_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    assert "one-step season setup" in license_readme and "15 race rounds per division" in license_readme
+    wdc_defaults_migration = ROOT / "supabase/migrations/20261118200000_activate_lifetime_wdc_defaults.sql"
+    assert wdc_defaults_migration.is_file(), "Missing approved lifetime WDC defaults migration"
+    wdc_defaults_sql = wdc_defaults_migration.read_text(encoding="utf-8")
+    for fragment in ["to_jsonb(25)", "to_jsonb(35)", "requires_admin_setup", "is_active=true", "scoring-wdc-zwei", "scoring-wdc-premio"]:
+        assert fragment in wdc_defaults_sql, f"Lifetime WDC defaults migration missing: {fragment}"
+    assert "WDC ZWEI · TIER 2" in auto_season_ui and "WDC PREMIO · TIER 1" in auto_season_ui
+    assert "Zwei +25" in auto_season_ui and "Premio +35" in auto_season_ui
+    assert "Zwei gives 25 points and Premio gives 35 points" in license_readme
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
