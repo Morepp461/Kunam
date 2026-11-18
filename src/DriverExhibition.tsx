@@ -61,7 +61,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         renderer.setSize(host.clientWidth, host.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.08;
+        renderer.toneMappingExposure = 0.82;
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
@@ -69,8 +69,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         host.appendChild(renderer.domElement);
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xd9d3c8);
-        scene.fog = new THREE.FogExp2(0xd9d3c8, 0.0035);
+        scene.background = new THREE.Color(0x171411);
+        scene.fog = new THREE.FogExp2(0x171411, 0.0021);
         const camera = new THREE.PerspectiveCamera(56, host.clientWidth / host.clientHeight, 0.1, 180);
         camera.position.set(0, 3.8, 15);
         let yaw = 0;
@@ -104,45 +104,76 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           mesh(new THREE.BoxGeometry(...size), mat, parent, pos);
         const cylinder = (parent: Three.Object3D, radiusTop: number, radiusBottom: number, height: number, pos: [number, number, number], mat: Three.Material) =>
           mesh(new THREE.CylinderGeometry(radiusTop, radiusBottom, height, 16), mat, parent, pos);
-        scene.add(new THREE.HemisphereLight(0xfff8ea, 0x777064, 1.55));
-        const keyLight = new THREE.DirectionalLight(0xfff0d8, 2.35);
-        keyLight.position.set(-8, 16, 10);
+        scene.background = new THREE.Color(0x171411);
+        scene.fog = new THREE.FogExp2(0x171411, 0.0021);
+        renderer.toneMappingExposure = 0.82;
+        scene.add(new THREE.HemisphereLight(0xd9c4a0, 0x171310, 0.52));
+        const keyLight = new THREE.DirectionalLight(0xffd9a0, 1.05);
+        keyLight.position.set(-7, 15, 8);
         keyLight.castShadow = !mobile;
         keyLight.shadow.mapSize.set(1024, 1024);
         scene.add(keyLight);
-        const fillLight = new THREE.DirectionalLight(0xf0f5ff, 1.05);
-        fillLight.position.set(12, 8, -18);
+        const fillLight = new THREE.DirectionalLight(0xb9c2d0, 0.28);
+        fillLight.position.set(10, 8, -18);
         scene.add(fillLight);
 
-        const floorMat = material(0xc9c3b8, 0.2, 0.18);
-        const wallMat = material(0xe4ded2, 0.58, 0.08);
-        const darkMetal = material(0x77736b, 0.28, 0.72);
-        const redMetal = material(0x8e2932, 0.34, 0.55);
-        const goldMetal = material(0xc4a66a, 0.22, 0.72);
+        const floorMat = material(0x282522, 0.32, 0.22);
+        const wallMat = material(0x292521, 0.7, 0.12);
+        const darkMetal = material(0x262321, 0.3, 0.78);
+        const redMetal = material(0x651d25, 0.42, 0.48);
+        const goldMetal = material(0x8b7045, 0.3, 0.68);
+        const woodMat = material(0x302319, 0.38, 0.12);
+        const ledMat = new THREE.MeshStandardMaterial({ color: 0xc39a5a, emissive: 0x9a6730, emissiveIntensity: 0.55, roughness: 0.32, metalness: 0.45 });
+        disposableMaterials.push(ledMat);
         const floor = mesh(new THREE.PlaneGeometry(100, 150), floorMat, scene, [0, 0, -35]);
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = !mobile;
-        box(scene, [48, 12, 2], [0, 6, -48], wallMat);
+        // Deep walnut side walls with repeated bronze pilasters and restrained wall washers.
         box(scene, [2, 12, 105], [-24, 6, -38], wallMat);
         box(scene, [2, 12, 105], [24, 6, -38], wallMat);
-        box(scene, [48, 1, 105], [0, 12, -38], wallMat);
-        for (let z = 5; z >= -84; z -= 12) {
-          box(scene, [0.12, 0.025, 10], [0, 0.025, z], goldMetal);
-          for (const x of [-22.8, 22.8]) {
-            box(scene, [1.8, 0.3, 0.8], [x, 0.16, z], redMetal);
+        box(scene, [48, 2, 2], [0, 1, -88], wallMat);
+        for (const x of [-23.05, 23.05]) {
+          for (let z = 2; z >= -82; z -= 9) {
+            box(scene, [0.16, 10.4, 0.34], [x, 5.4, z], goldMetal);
+            box(scene, [0.42, 0.16, 0.62], [x * 0.985, 8.4, z], darkMetal);
+            const sconce = new THREE.PointLight(0xffbd73, 1.15, 8, 2);
+            sconce.position.set(x * 0.96, 8.1, z);
+            scene.add(sconce);
           }
         }
-        for (const x of [-21, 21]) {
-          for (let z = 2; z >= -78; z -= 18) {
-            box(scene, [1.1, 11, 1.1], [x, 5.5, z], darkMetal);
-            box(scene, [1.35, 0.12, 1.35], [x, 10.9, z], goldMetal);
-          }
+        // Curved vaulted ceiling: dark walnut shell panels, bronze ribs and warm indirect LED lines.
+        for (let z = 6; z >= -84; z -= 8) {
+          const shell = new THREE.Shape();
+          shell.moveTo(-22, 10.2);
+          shell.quadraticCurveTo(0, 20.1, 22, 10.2);
+          shell.lineTo(22, 9.65);
+          shell.quadraticCurveTo(0, 19.35, -22, 9.65);
+          shell.closePath();
+          const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(shell, { depth: 8, bevelEnabled: false, steps: 1 }), woodMat);
+          roof.position.z = z - 8;
+          roof.receiveShadow = !mobile;
+          scene.add(roof);
+          disposableGeometries.push(roof.geometry);
+          const points = Array.from({ length: 49 }, (_, i) => {
+            const x = -21.8 + (43.6 * i) / 48;
+            return new THREE.Vector3(x, 10.0 + 9.35 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2)), z - 0.12);
+          });
+          const arch = new THREE.CatmullRomCurve3(points);
+          const rib = new THREE.Mesh(new THREE.TubeGeometry(arch, 64, 0.12, 8, false), goldMetal);
+          scene.add(rib);
+          disposableGeometries.push(rib.geometry);
+          const ledPoints = points.map((p) => new THREE.Vector3(p.x, p.y + 0.2, p.z));
+          const ledCurve = new THREE.CatmullRomCurve3(ledPoints);
+          const led = new THREE.Mesh(new THREE.TubeGeometry(ledCurve, 64, 0.035, 6, false), ledMat);
+          scene.add(led);
+          disposableGeometries.push(led.geometry);
         }
-        for (let z = 2; z >= -82; z -= 10) {
-          box(scene, [48, 0.18, 0.28], [0, 11.35, z], darkMetal);
+        // Recessed ceiling coffers and subtle gold floor inlays. No banquet furniture.
+        for (let z = 2; z >= -82; z -= 8) {
+          box(scene, [0.08, 0.025, 7.2], [0, 0.025, z], goldMetal);
         }
-        box(scene, [14, 0.2, 0.35], [0, 10.8, 2], redMetal);
-        box(scene, [8, 0.12, 0.25], [0, 10.55, 2], goldMetal);
+        box(scene, [14, 0.2, 0.35], [0, 10.65, 2], redMetal);
+        box(scene, [8, 0.12, 0.25], [0, 10.4, 2], goldMetal);
 
         const createLabel = (name: string, team: string, number: string) => {
           const canvas = document.createElement("canvas");
@@ -208,7 +239,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             params: {
               name: driver.character_name || `Caleris Driver ${index + 1}`,
               seed,
-              ageYears: 24 + (index % 17),
+              age: 0.48 + (index % 9) * 0.012,
               gender: isFemale ? 0 : 1,
               muscle: 0.58 + (index % 4) * 0.09,
               weight: 0.38 + (index % 5) * 0.055,
@@ -220,9 +251,17 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               hair: hairStyles[index % hairStyles.length],
               hairColor: ["#211812", "#34251d", "#171717", "#3b2922"][index % 4],
               facialHair: isFemale ? "none" : (index % 3 === 0 ? "stubble" : "none"),
-              outfit: isFemale ? "female_sportsuit01" : "male_worksuit01",
+              outfit: "none",
+              top: "techwear_jacket",
+              jacket: "none",
+              bottom: "techwear_pants",
+              underwear: true,
+              garmentStyles: {
+                techwear_jacket: { pattern: "solid", color: "#8b202b", color2: "#17191d" },
+                techwear_pants: { pattern: "solid", color: "#24272c", color2: "#8b202b" },
+              },
               outfitTint: "#8b202b",
-              shoes: "shoes03",
+              shoes: "combat_boots",
               rig: "game",
               faceBones: true,
               faceShapes: true,
@@ -277,7 +316,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         window.addEventListener("caleris-driver-filter", onFilter);
         const lightCount = Math.max(4, Math.min(8, Math.ceil(drivers.length / 4)));
         for (let i = 0; i < lightCount; i++) {
-          const light = new THREE.SpotLight(0xffe2b6, 58, 25, Math.PI / 5, 0.7, 1.4);
+          const light = new THREE.SpotLight(0xffd39a, 12, 22, Math.PI / 5, 0.78, 1.5);
           light.position.set((i % 4 - 1.5) * 10.2, 9.5, -Math.floor(i / 4) * 22 - 2);
           light.target.position.set(light.position.x, 0, light.position.z - 1);
           scene.add(light, light.target);
@@ -580,7 +619,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       {selected && <aside className="driver-selected-panel">
         <button className="driver-panel-close" onClick={() => setSelected(null)} aria-label="Close driver information"><X size={17}/></button>
         <span className="driver-panel-eyebrow"><Crosshair size={13}/> SELECTED DRIVER</span>
-        <div className="driver-panel-identity"><div className="driver-panel-avatar">{selected.avatar_url ? <img src={selected.avatar_url} alt="" loading="lazy"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
+        <div className="driver-panel-identity"><div className="driver-panel-avatar">{(selected.avatar_url || selected.profile?.avatar_url || selected.avatarUrl) ? <img src={selected.avatar_url || selected.profile?.avatar_url || selected.avatarUrl} alt={`Foto ${selected.character_name || "driver"}`} loading="eager" referrerPolicy="no-referrer"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
         <div className="driver-panel-license"><span>LICENSE</span><strong>{selected.license || "UNASSIGNED"}</strong></div>
         <div className="driver-panel-stats">
           <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div>
