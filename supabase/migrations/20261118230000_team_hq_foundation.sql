@@ -63,15 +63,43 @@ values
   ('simulator_facility','Simulator Facility','Mendukung persiapan dan evaluasi program Development.',false),
   ('engineering_department','Engineering Department','Mendukung proyek Development komponen mobil.',false),
   ('rd_center','R&D Center','Mendukung riset dan kapabilitas Development.',false),
-  ('factory','Factory','Mendukung kapasitas proyek Development komponen.',true),
-  ('marketing_department','Marketing Department','Mendukung reputasi dan daya tarik komersial tim.',true),
-  ('commercial_department','Commercial Department','Mendukung pengelolaan sponsorship dan komersial.',true),
+  ('factory','Factory','Mendukung kapasitas proyek Development komponen.',false),
+  ('marketing_department','Marketing Department','Mendukung reputasi dan daya tarik komersial tim.',false),
+  ('commercial_department','Commercial Department','Mendukung pengelolaan sponsorship dan komersial.',false),
   ('data_analytics_center','Data Analytics Center','Mendukung analisis dan evaluasi Development.',false),
-  ('pit_crew_training_center','Pit Crew Training Center','Mendukung kapabilitas operasional tim.',true)
+  ('pit_crew_training_center','Pit Crew Training Center','Mendukung kapabilitas operasional tim.',false)
 on conflict (facility_key) do update
 set title = excluded.title,
     description = excluded.description,
     maintenance_required = excluded.maintenance_required;
+
+insert into public.caleris_team_hq_facilities (team_id, facility_key)
+select t.id, c.facility_key
+from public.teams t
+cross join public.caleris_team_hq_facility_configs c
+on conflict (team_id, facility_key) do nothing;
+
+create or replace function public.caleris_seed_team_hq_facilities()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $
+begin
+  insert into public.caleris_team_hq_facilities (team_id, facility_key)
+  select new.id, facility_key
+  from public.caleris_team_hq_facility_configs
+  on conflict (team_id, facility_key) do nothing;
+  return new;
+end;
+$;
+
+drop trigger if exists caleris_seed_team_hq_facilities_after_team_insert on public.teams;
+create trigger caleris_seed_team_hq_facilities_after_team_insert
+after insert on public.teams
+for each row execute function public.caleris_seed_team_hq_facilities();
+
+revoke all on function public.caleris_seed_team_hq_facilities() from public, anon, authenticated;
 
 alter table public.caleris_team_hq_facility_configs enable row level security;
 alter table public.caleris_team_hq_facilities enable row level security;
