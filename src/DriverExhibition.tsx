@@ -356,8 +356,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
 
           const genderLabel = String(driver.gender ?? driver.character_gender ?? "").toLowerCase();
           const isFemale = driver.gender === 0 || /female|woman|perempuan/.test(genderLabel);
-          const seed = Math.abs((index + 1) * 7919 + String(driver.id || driver.character_name || index).split("").reduce((n, c) => (n * 31 + c.charCodeAt(0)) | 0, 7)) % 1000000000;
-          const stableDriverId = String(driver.id || driver.character_name || seed);
+          const stableDriverId = String(driver.id || driver.character_name || index);
+          const seed = [...stableDriverId].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7919) % 1000000000;
           const stableVariant = [...stableDriverId].reduce((hash, char) => (hash * 31 + char.charCodeAt(0)) >>> 0, 7);
           const ethnicity = stableVariant % 3;
           const characterInput = {
@@ -638,9 +638,10 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         resizeObserver = new ResizeObserver(resize);
         resizeObserver.observe(host);
         let last = 0;
+        let animate: (time: number) => void;
         const onVisibilityChange = () => { if (!document.hidden && !disposed) { last = 0; if (!frame) frame = requestAnimationFrame(animate); } };
         document.addEventListener("visibilitychange", onVisibilityChange);
-        const animate = (time: number) => {
+        animate = (time: number) => {
           frame = 0;
           if (disposed || !renderer) return;
           if (document.hidden) return;
