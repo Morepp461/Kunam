@@ -85,7 +85,7 @@
 - Pending daily rewards and all-role race check-in rewards are retried automatically every five minutes through locked, idempotent database workers. Quest rewards require an explicit member claim and are excluded from automatic retry.
 - Each retry cycle records attempted, paid, pending, and failed outcomes in `caleris_economy_retry_runs`; individual reward claims retain attempt count and last error.
 - The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
-- Payroll remains tied to round processing. Pending payroll is visible in the audit center and remains recoverable through the existing Admin payroll recovery action; it is intentionally excluded from the scheduled retry worker.
+- Payroll is prepared after the final round mapped to each Race Period. Annual salary is divided across the five Race Periods, with the final period reconciling any rounding remainder. Pending payroll claims are retried automatically every five minutes through the existing idempotent Economy Engine claim processor; the worker never creates a second claim or pays salary before the period's final round.
 
 ## Supabase
 
@@ -999,3 +999,13 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Waktu mulai race dan durasi disimpan per round di `license_rounds`; jadwal check-in tetap terpisah.
 - Dashboard menampilkan countdown dan daftar race mendatang sesuai divisi tim karakter. Akun Admin dapat melihat jadwal seluruh divisi.
 - FIA Event Control menyediakan export satu workbook Excel dengan sheet DRIVERS dan TEAMS, termasuk atribut driver dan car development parts. Akses export dibatasi untuk Admin/FIA.
+
+
+## Race Lifecycle and Atomic Season Setup
+
+- Race check-in continues to close at 23:59:59 Asia/Jakarta. FIA can confirm a classification as soon as check-in has closed; the scheduled race duration never blocks or delays official result confirmation.
+- Each round has an independent race lifecycle: Upcoming, In Progress, Awaiting Result, Result Confirmed, and Completed. The In Progress and Result Confirmed views count down to the configured race-duration end. Duration is a calendar/timer boundary only, not a classification authority.
+- The lifecycle worker refreshes persisted round state every minute. A missing FIA result after the scheduled duration is shown as Awaiting Result; only FIA/Admin classification confirmation closes the round.
+- Season creation now creates the season, divisions, rounds, 12-period calendar, and Premio/Zwei race start times and durations through one database transaction. Any invalid schedule rolls back the complete season setup.
+- Characters without a team assignment use Caleris Premio as their default race-calendar division. Assigned characters see only their team's division; FIA/Admin can inspect both divisions.
+- Race Control supports Finished, DNF, DNS, and DSQ. OCR remains draft-only and every classification must be reviewed and confirmed by FIA/Admin.
