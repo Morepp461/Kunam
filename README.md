@@ -1009,3 +1009,12 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Season creation now creates the season, divisions, rounds, 12-period calendar, and Premio/Zwei race start times and durations through one database transaction. Any invalid schedule rolls back the complete season setup.
 - Characters without a team assignment use Caleris Premio as their default race-calendar division. Assigned characters see only their team's division; FIA/Admin can inspect both divisions.
 - Race Control supports Finished, DNF, DNS, and DSQ. OCR remains draft-only and every classification must be reviewed and confirmed by FIA/Admin.
+
+
+## Notifications, System Health, and Regression Guards
+
+- Character notifications are stored against the permanent `member_id`, not the current team or role. Events include quest assignment/completion/reward, Driver Development upgrades, contract offers and counteroffers, transfer negotiation updates, payroll payment, and official race results.
+- Notification rows are idempotent and visible only to the matching signed-in character. The dashboard inbox supports unread counts, mark-read, and realtime inserts.
+- System Health runs every 15 minutes and checks wallet balance movement against a captured reconciliation baseline, failed cron executions in the last 24 hours, pending payroll, races awaiting FIA results, and active seasons without all 12 calendar periods.
+- Wallet reconciliation is forward-looking from the captured baseline. It does not claim to reconstruct historical opening balances that were not recorded.
+- CI includes cross-engine integration contract checks and a Supabase schema fingerprint comparison. Remote schema comparison runs when both `SUPABASE_PRODUCTION_DB_URL` and `SUPABASE_TESTING_DB_URL` GitHub secrets are configured. Historical migration-ledger differences are reported separately because the existing repository contains legacy duplicate migration prefixes.
