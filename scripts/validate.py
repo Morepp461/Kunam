@@ -383,6 +383,13 @@ def main():
         assert fragment in wdc_defaults_sql, f"Lifetime WDC defaults migration missing: {fragment}"
     assert "WDC ZWEI · TIER 2" in auto_season_ui and "WDC PREMIO · TIER 1" in auto_season_ui
     assert "Zwei +25" in auto_season_ui and "Premio +35" in auto_season_ui
+    circuit_reuse_migration = ROOT / "supabase/migrations/20261118210000_season_circuit_usage_rules.sql"
+    assert circuit_reuse_migration.is_file(), "Missing per-season circuit usage migration"
+    circuit_reuse_sql = circuit_reuse_migration.read_text(encoding="utf-8")
+    assert "schedule.flatMap((period,periodIndex)" in auto_season_ui
+    assert "Sirkuit hanya boleh dipakai satu kali per season" in auto_season_ui
+    assert "group by c.value" in circuit_reuse_sql and "Caleris Premio" in circuit_reuse_sql and "Caleris Zwei" in circuit_reuse_sql
+    assert "Premio dan Zwei boleh memakai sirkuit yang sama pada tanggal yang sama" in auto_season_ui
     assert "Zwei gives 25 points and Premio gives 35 points" in license_readme
     print("Caleris QA static checks passed.")
 
