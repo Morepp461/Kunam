@@ -356,7 +356,7 @@ def main():
     contracts_css = (ROOT / "src/team-contracts.css").read_text(encoding="utf-8")
     assert "LEGACY DATA" in contracts_ui and "caleris_driver_salary_bands" in contracts_ui
     assert ".team-contracts-legacy" in contracts_css
-    auto_season_migration = ROOT / "supabase/migrations/20261118201500_allow_circuit_reuse_across_race_periods.sql"
+    auto_season_migration = ROOT / "supabase/migrations/20261118203000_configurable_caleris_circuit_schedule.sql"
     auto_season_ui = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     auto_calendar_ui = (ROOT / "src/AdminSeasonCalendar.tsx").read_text(encoding="utf-8")
     event_control_ui = (ROOT / "src/FIAEventControlCenter.tsx").read_text(encoding="utf-8")
