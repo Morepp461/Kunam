@@ -9,7 +9,7 @@ import FIAOperations from "./FIAOperations";
 
 type Tab="setup"|"calendar"|"circuits"|"results"|"fia";
 const cards:Array<{id:Tab;title:string;description:string;eyebrow:string;icon:typeof CalendarDays}>=[
- {id:"setup",title:"Season & Divisions",description:"Satu kali setup: Premio, Zwei, kalender, dan race round dibuat otomatis.",eyebrow:"01 · FOUNDATION",icon:Flag},
+ {id:"setup",title:"Season Setup",description:"Satu kali setup: Premio, Zwei, kalender, dan race round dibuat otomatis.",eyebrow:"01 · FOUNDATION",icon:Flag},
  {id:"calendar",title:"12-Period Calendar",description:"Lihat kalender 12 periode yang sudah dibentuk otomatis; cukup reschedule jika diperlukan.",eyebrow:"02 · SEASON FLOW",icon:CalendarDays},
  {id:"circuits",title:"Circuit Pool",description:"Kelola master circuit. Schedule memilih sirkuit dari database yang sama.",eyebrow:"03 · CIRCUIT DATABASE",icon:Route},
  {id:"results",title:"Race Results",description:"Input klasifikasi, fastest lap, pole, dan hasil resmi race.",eyebrow:"04 · RACE CONTROL",icon:Trophy},
