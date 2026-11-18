@@ -157,6 +157,12 @@ Driver and team development pages include the requested attribute lists with a 5
 
 **Implementation status:** this is a UI/navigation scaffold only. Lists, charts, forms, sponsorship progress, quests, financial records, appeals, and FIA publication workflows do not yet read or write production data. No database schema or Supabase migration was added in this phase. Existing landing, account, profile, rules, and admin routes remain in place.
 
+## FIA Event Control Center
+
+FIA event configuration is grouped in one card-based Event Control Center. Its modules open Season & Divisions, the fixed 12-period calendar, Circuit Pool, Race Results, and FIA Operations without splitting the workflow across unrelated navigation pages. Legacy FIA operation routes lead back to this center. Circuit selection continues to use the existing Circuit Pool data source.
+
+Circuit Pool Input keeps an automatic local draft in the browser IndexedDB, including the selected layout image file. The draft is restored if a mobile browser discards the tab and is flushed when the page is backgrounded. Drafts remain on the same device/browser and are cleared after a successful save or an explicit form reset.
+
 ## Season Lifecycle, Schedule, and Driver Market
 
 Each season follows the same 12-period loop:
