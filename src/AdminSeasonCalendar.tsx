@@ -46,7 +46,6 @@ export default function AdminSeasonCalendar(){
  const seasonRounds=useMemo(()=>rounds.filter(r=>seasonDivisions.some(d=>d.id===r.season_division_id)),[rounds,seasonDivisions]);
  const hasCalendar=periods.length>0;
  const validCalendar=periods.length===12&&periods.every((p,i)=>p.period_type===sequence[i]);
- const countRounds=(periodId:string,divisionId:string)=>mappings.filter(m=>m.period_id===periodId&&m.season_division_id===divisionId).length;
  const saveReschedule=async()=>{
   if(!supabase||!seasonId||!rescheduleStart)return;
   setBusy(true);setNotice(null);
@@ -65,7 +64,7 @@ export default function AdminSeasonCalendar(){
    {!loading&&!hasCalendar&&<div className="season-calendar-notice error">Season ini belum memiliki kalender otomatis. Season legacy tidak diubah; gunakan setup season baru untuk membuat kalender lengkap.</div>}
    {loading?<p className="season-calendar-muted">Memuat kalender...</p>:hasCalendar&&<div className="season-calendar-periods">{periods.map(p=><article key={p.id} className="season-calendar-period">
     <div className="season-calendar-period-main"><span>{labels[p.period_type]}{p.period_number?" "+p.period_number:""}</span><strong>{p.title}</strong><small>{p.starts_on} → {p.ends_on} · {Math.round((new Date(p.ends_on+"T00:00:00Z").getTime()-new Date(p.starts_on+"T00:00:00Z").getTime())/86400000)+1} hari</small>
-     {p.period_type==="race_period"&&seasonDivisions.map(d=><small key={d.id}>{d.division_name}: {seasonRounds.filter(r=>mappings.some(m=>m.period_id===p.id&&m.season_division_id===d.id&&m.round_id===r.id)).sort((a,b)=>a.round_number-b.round_number).map(r=>r.circuit_name||r.title).join(" · ")}</small>)}
+     {p.period_type==="race_period"&&seasonDivisions.map(d=><small key={d.id}>{d.division_name}: {seasonRounds.filter(r=>mappings.some(m=>m.period_id===p.id&&m.season_division_id===d.id&&m.round_id===r.id)).sort((a,b)=>a.round_number-b.round_number).map(r=>"R"+r.round_number+" · "+(r.circuit_name||r.title)).join(" · ")}</small>)}
     </div>
    </article>)}</div>}
    {hasCalendar&&!validCalendar&&<div className="season-calendar-notice error">Struktur kalender legacy tidak sesuai urutan 12 periode CALERIS. Data historis tidak ditimpa otomatis.</div>}
