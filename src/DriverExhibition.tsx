@@ -153,7 +153,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         const disposableGeometries: Three.BufferGeometry[] = [];
         const disposableMaterials: Three.Material[] = [];
         const textures: Three.Texture[] = [];
-        const driverMotions: Array<{ character: AraCharacter; mixer: Three.AnimationMixer; root: Three.Group }> = [];
+        const driverMotions: Array<{ character: AraCharacter | null; modelScene: Three.Group; mixer: Three.AnimationMixer; root: Three.Group; clips: Three.AnimationClip[]; elapsed: number; nextClipAt: number; activeAction: Three.AnimationAction | null }> = [];
 
         const material = (color: number, roughness = 0.62, metalness = 0.12) => {
           const m = new THREE.MeshStandardMaterial({ color, roughness, metalness });
@@ -376,31 +376,45 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               expression: "neutral",
             },
           };
-          const cacheKey = `${String(driver.id || driver.character_name || seed)}:race-suit-v2`;
-          let characterPromise = characterModelCache.get(cacheKey);
-          if (!characterPromise) {
-            characterPromise = createCharacter(characterInput, {
-              detail: mobile ? "low" : "high",
-              animations: ["idle", "look_around", "talk_gestures", "wave"],
-            });
-            characterModelCache.set(cacheKey, characterPromise);
-            characterPromise.catch(() => {
-              if (characterModelCache.get(cacheKey) === characterPromise) characterModelCache.delete(cacheKey);
-            });
+          const stableDriverId = String(driver.id || driver.character_name || seed);
+          const detail = mobile ? "low" : "high";
+          const cacheKey = stableDriverId + ":" + detail + ":race-suit-v3";
+          const fingerprint = JSON.stringify({ generator: "ara3d@0.7.4", detail, characterInput });
+          let cachedBytes = characterModelCache.get(cacheKey);
+          if (!cachedBytes) {
+            cachedBytes = (async () => {
+              const saved = await readCharacterCache(cacheKey).catch(() => null);
+              if (saved?.fingerprint === fingerprint && saved.glb?.byteLength) return saved.glb;
+              const character = await createCharacter(characterInput, { detail, animations: ["idle", "look_around", "talk_gestures", "wave"] });
+              const bytes = await toArrayBuffer((character as AraCharacter & { glb?: unknown }).glb);
+              if (!bytes) { character.dispose(); throw new Error("Ara3D did not return a reusable GLB model"); }
+              await writeCharacterCache({ key: cacheKey, driverId: stableDriverId, fingerprint, glb: bytes, savedAt: Date.now() }).catch((error) => console.warn("Could not persist driver model cache:", error));
+              character.dispose();
+              return bytes;
+            })();
+            characterModelCache.set(cacheKey, cachedBytes);
+            cachedBytes.catch(() => { if (characterModelCache.get(cacheKey) === cachedBytes) characterModelCache.delete(cacheKey); });
           }
-          const character = await characterPromise;
+          const glbBytes = await cachedBytes;
+          if (disposed) return;
+          const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
+          const loader = new GLTFLoader();
+          const gltf = await loader.parseAsync(glbBytes.slice(0), "");
           if (disposed) return;
           const figure = new THREE.Group();
           figure.position.y = 0.36;
           root.add(figure);
-          character.scene.scale.setScalar(1);
-          character.scene.position.set(0, 0, 0);
-          figure.add(character.scene);
-          character.scene.traverse((obj) => { obj.userData.araCharacterModel = true; });
-          const mixer = new THREE.AnimationMixer(character.scene);
-          character.playSequence(mixer, animationRoutines[index % animationRoutines.length], { fade: 0.55, repeat: true });
-          mixer.setTime((index % animationRoutines.length) * 0.73);
-          driverMotions.push({ character, mixer, root });
+          const modelScene = gltf.scene;
+          modelScene.scale.setScalar(1);
+          modelScene.position.set(0, 0, 0);
+          figure.add(modelScene);
+          modelScene.traverse((obj) => { obj.userData.araCharacterModel = true; });
+          const mixer = new THREE.AnimationMixer(modelScene);
+          const clips = gltf.animations || [];
+          const preferredIdle = clips.find((clip) => /idle/i.test(clip.name)) || clips[0];
+          const initialAction = preferredIdle ? mixer.clipAction(preferredIdle) : null;
+          initialAction?.play();
+          driverMotions.push({ character: null, modelScene, mixer, root, clips, elapsed: 0, nextClipAt: 5 + (index % 4) * 1.4, activeAction: initialAction });
           root.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh) {
               obj.userData.driverId = driver.id;
