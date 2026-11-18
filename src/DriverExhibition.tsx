@@ -436,6 +436,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           if (!disposed) setLoadingCount(index + 1);
         }
         if (!disposed) setSceneLoading(false);
+        const activeDriverIds = new Set(drivers.map((driver) => String(driver.id || driver.character_name || "")));
+        void pruneCharacterCache(activeDriverIds).catch((error) => console.warn("Could not prune removed driver cache entries:", error));
 
         driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
         const onFilter = (event: Event) => {
@@ -623,10 +625,24 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           frame = requestAnimationFrame(animate);
           const delta = Math.min((time - last) / 1000 || 0.016, 0.04);
           last = time;
-          driverMotions.forEach((motion) => {
+          driverMotions.forEach((motion, motionIndex) => {
             if (!motion.root.visible || camera.position.distanceTo(motion.root.position) > 42) return;
             motion.mixer.update(delta);
-            motion.character.update(delta);
+            if (motion.character) motion.character.update(delta);
+            else {
+              motion.elapsed += delta;
+              if (motion.elapsed >= motion.nextClipAt && motion.clips.length > 1) {
+                const candidates = motion.clips.filter((clip) => clip !== motion.activeAction?.getClip());
+                const nextClip = candidates[(motionIndex + Math.floor(motion.elapsed)) % Math.max(1, candidates.length)];
+                if (nextClip) {
+                  const nextAction = motion.mixer.clipAction(nextClip);
+                  nextAction.reset().fadeIn(0.65).play();
+                  motion.activeAction?.fadeOut(0.65);
+                  motion.activeAction = nextAction;
+                }
+                motion.nextClipAt = motion.elapsed + 4 + ((motionIndex * 7) % 5);
+              }
+            }
           });
           yaw += (targetYaw - yaw) * Math.min(1, delta * 7);
           pitch += (targetPitch - pitch) * Math.min(1, delta * 7);
@@ -664,7 +680,21 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           scene.traverse((obj) => {
             if ((obj as Three.Mesh).isMesh && !obj.userData.araCharacterModel) (obj as Three.Mesh).geometry.dispose();
           });
-          driverMotions.forEach((motion) => { motion.mixer.stopAllAction(); motion.character.scene.removeFromParent(); });
+          driverMotions.forEach((motion) => {
+            motion.mixer.stopAllAction();
+            motion.modelScene.removeFromParent();
+            if (motion.character) motion.character.dispose();
+            else motion.modelScene.traverse((obj) => {
+              const mesh = obj as Three.Mesh;
+              if (!mesh.isMesh) return;
+              mesh.geometry.dispose();
+              const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+              materials.forEach((mat) => {
+                Object.values(mat).forEach((value) => { if (value && typeof value === "object" && "isTexture" in value) (value as Three.Texture).dispose(); });
+                mat.dispose();
+              });
+            });
+          });
           disposableGeometries.forEach((g) => g.dispose());
           disposableMaterials.forEach((m) => m.dispose());
           textures.forEach((t) => t.dispose());
