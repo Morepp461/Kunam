@@ -337,6 +337,13 @@ def main():
     assert 'if(tab.path==="place-job-advert")return <TeamJobAdvert/>' in panel_pages.read_text(encoding="utf-8")
     assert "panelTabIcons[group.path+\"/\"+tab.path]" in app, "Panel navigation must use distinct per-tab icons"
     assert "Fixed Driver License Salary Bands" in (ROOT / "README.md").read_text(encoding="utf-8")
+    contract_lock_fix = ROOT / "supabase/migrations/20261118190500_contract_salary_lock_lifecycle_fix.sql"
+    roster_registration_fix = ROOT / "supabase/migrations/20261118191000_fix_active_season_roster_registration.sql"
+    owner_negotiation_fix = ROOT / "supabase/migrations/20261118191500_restrict_free_agent_contract_negotiation_to_owner.sql"
+    assert all(path.is_file() for path in [contract_lock_fix,roster_registration_fix,owner_negotiation_fix]), "Missing contract lifecycle and roster registration hardening migrations"
+    assert "new.annual_salary is distinct from old.annual_salary" in contract_lock_fix.read_text(encoding="utf-8")
+    assert "on conflict(season_id,member_id) do nothing" in roster_registration_fix.read_text(encoding="utf-8")
+    assert "v_actor.role<>'Owner'" in owner_negotiation_fix.read_text(encoding="utf-8")
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
