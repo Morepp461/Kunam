@@ -222,7 +222,7 @@ def main():
         assert fragment in quest_source, f"Quest board missing: {fragment}"
     for fragment in ["admin_update_quest_reward_amounts", "Nominal berdasarkan kesulitan"]:
         assert fragment in quest_admin_source, f"Quest Admin missing: {fragment}"
-    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "member_claim_quest_reward", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='driver'", "account_kind='team_owner'", "PERIOD_SEQUENCE"]:
+    for fragment in ["caleris_quest_catalog", "caleris_quest_assignments", "caleris_quest_difficulty_rewards", "member_get_quest_board", "member_claim_quest_reward", "admin_update_quest_reward_amounts", "bank_reward", "account_kind='driver'", "account_kind='team_owner'", "const sequence="]:
         assert fragment in quest_sql or fragment in calendar_source, f"Quest Engine migration missing: {fragment}"
     assert "admin_process_pending_quest_rewards" not in quest_admin_source, "Admin Quest Engine must not pay unclaimed member rewards"
     assert 'path="/driver-panel/quest"' in app and 'path="/team-panel/quest"' in app and 'path="/admin/quest-engine"' in app
