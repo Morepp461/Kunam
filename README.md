@@ -1018,3 +1018,11 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - System Health runs every 15 minutes and checks wallet balance movement against a captured reconciliation baseline, failed cron executions in the last 24 hours, pending payroll, races awaiting FIA results, and active seasons without all 12 calendar periods.
 - Wallet reconciliation is forward-looking from the captured baseline. It does not claim to reconstruct historical opening balances that were not recorded.
 - CI includes cross-engine integration contract checks and a Supabase schema fingerprint comparison. Remote schema comparison runs when both `SUPABASE_PRODUCTION_DB_URL` and `SUPABASE_TESTING_DB_URL` GitHub secrets are configured. Historical migration-ledger differences are reported separately because the existing repository contains legacy duplicate migration prefixes. The current Production/Testing routine comparison also contains three manually reviewed, non-behavioral differences: local variable naming in `guard_caleris_job_advert`, a comment in `fia_review_team_takeover`, and an error-message wording difference in `license_apply_standings_milestones`. The parity fingerprint normalizes SQL whitespace and explicitly records this reviewed allowlist.
+
+
+## Edge Function Authentication Boundaries
+
+- `member-directory` intentionally serves public profile/search requests without requiring a user session. Its privileged `update_member_id` action separately validates the bearer token and `site_admins` membership. Public profile lookup is restricted to `public`, `active`, and `admin` account statuses.
+- `caleris-integrations` authenticates with its hashed `cm_live_` API key, so gateway JWT verification is not its authentication mechanism.
+- `complete-paddock-access` validates the user's JWT inside the function. Admin and Economy Edge Functions retain gateway JWT verification and their own authorization checks.
+- Production currently has `member-directory.verify_jwt=false`; Testing has it enabled. This means anonymous profile/search behavior can differ. No JWT configuration was changed in this release. CORS origin checks are not an authentication boundary, and public directory rate limiting remains a separate hardening item.
