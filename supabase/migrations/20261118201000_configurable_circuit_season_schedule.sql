@@ -91,25 +91,6 @@ begin
   if (select count(distinct (x->>'period_number')::integer) from jsonb_array_elements(p_schedule) x)<>5 then
     raise exception 'Setiap Race Period 1 sampai 5 wajib diisi tepat satu kali.';
   end if;
-  if exists(
-    select 1
-    from (
-      select value::uuid circuit_id
-      from jsonb_array_elements(p_schedule) p,
-           jsonb_array_elements_text(p->'premio_circuits')
-    ) x
-    group by circuit_id having count(*)>1
-  ) or exists(
-    select 1
-    from (
-      select value::uuid circuit_id
-      from jsonb_array_elements(p_schedule) p,
-           jsonb_array_elements_text(p->'zwei_circuits')
-    ) x
-    group by circuit_id having count(*)>1
-  ) then
-    raise exception 'Satu sirkuit tidak boleh dijadwalkan dua kali dalam divisi yang sama.';
-  end if;
 
   select count(*)+1 into v_season_number from public.license_seasons;
   v_season_key:='caleris-masters-season-'||v_season_number;
