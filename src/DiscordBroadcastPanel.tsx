@@ -32,7 +32,7 @@ export default function DiscordBroadcastPanel() {
       <label>Link resmi (opsional)<input type="url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="https://calerismastersnewgen-mu.vercel.app/"/></label>
       {message&&<p className={failed?"discord-broadcast-error":"discord-broadcast-success"} role="status">{message}</p>}
       <button className="action primary" onClick={()=>void send()} disabled={sending||!title.trim()||!description.trim()}><Send size={16}/>{sending?"Mengirim...":"Kirim ke Discord"}</button>
-      <p className="discord-broadcast-footnote"><ShieldCheck size={15}/> Endpoint hanya menerima sesi FIA/Admin. Mention Discord dinonaktifkan untuk mencegah ping massal. Tambahkan DISCORD_WEBHOOK_URL pada Supabase Function Secrets agar pengiriman aktif.</p>
+      <p className="discord-broadcast-footnote"><ShieldCheck size={15}/> Akses dibatasi untuk sesi FIA/Admin. Mention Discord dinonaktifkan untuk mencegah ping massal.</p>
     </div>
   </section>;
 }

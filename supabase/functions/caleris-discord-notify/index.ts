@@ -46,7 +46,8 @@ Deno.serve(async (req: Request) => {
   try {
     const url = Deno.env.get("SUPABASE_URL");
     const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEYS");
-    const token = (req.headers.get("Authorization") || "").replace(/^Bearer\\s+/i, "").trim();
+    const authorization = req.headers.get("Authorization") || "";
+    const token = authorization.replace(/^Bearer\s+/i, "").trim();
     if (!url || !anon || !token) return json({ error: "Authenticated session required." }, 401, origin);
     const anonKey = anon.startsWith("{") ? JSON.parse(anon).default : anon;
     const authClient = createClient(url, anonKey, { auth: { autoRefreshToken: false, persistSession: false } });
