@@ -72,7 +72,7 @@ begin
     v_retry_after := greatest(
       1,
       pg_catalog.ceil(
-        pg_catalog.extract(epoch from (
+        extract(epoch from (
           v_window_started_at + pg_catalog.make_interval(secs => p_window_seconds) - v_now
         ))
       )::integer
