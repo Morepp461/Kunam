@@ -373,6 +373,14 @@ def main():
     assert "Satu kali setup" in event_control_ui and "kalender 12 periode" in event_control_ui
     license_readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "one-step season setup" in license_readme and "15 race rounds per division" in license_readme
+    wdc_defaults_migration = ROOT / "supabase/migrations/20261118200000_activate_lifetime_wdc_defaults.sql"
+    assert wdc_defaults_migration.is_file(), "Missing approved lifetime WDC defaults migration"
+    wdc_defaults_sql = wdc_defaults_migration.read_text(encoding="utf-8")
+    for fragment in ["to_jsonb(25)", "to_jsonb(35)", "requires_admin_setup", "is_active=true", "scoring-wdc-zwei", "scoring-wdc-premio"]:
+        assert fragment in wdc_defaults_sql, f"Lifetime WDC defaults migration missing: {fragment}"
+    assert "WDC ZWEI · TIER 2" in auto_season_ui and "WDC PREMIO · TIER 1" in auto_season_ui
+    assert "Zwei +25" in auto_season_ui and "Premio +35" in auto_season_ui
+    assert "Zwei gives 25 points and Premio gives 35 points" in license_readme
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
