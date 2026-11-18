@@ -103,8 +103,7 @@ begin
   end if;
   return v_result;
 end;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.admin_review_member_registration(p_registration_id uuid, p_decision text, p_review_note text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -183,8 +182,7 @@ begin
     review_note=nullif(btrim(p_review_note),''),updated_at=now() where id=p_registration_id;
   return jsonb_build_object('ok',true,'status','approved','member_id',v_member_id,'team_id',v_team_id);
 end;
-$function$
-
+$function$;
 CREATE OR REPLACE FUNCTION public.admin_list_member_registrations_v2()
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -218,9 +216,7 @@ begin
   left join public.caleris_engines e on e.id=r.selected_engine_id;
   return coalesce(v_result,'[]'::jsonb);
 end;
-$function$
-
-
+$function$;
 create or replace view public.caleris_team_directory as
 select t.id,t.name,t.division_key,t.takeover_listed,
   ((select v.total_valuation from public.caleris_team_valuations v where v.team_id=t.id order by v.assessed_at desc,v.id desc limit 1))::numeric as latest_valuation,
