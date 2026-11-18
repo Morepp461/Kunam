@@ -89,3 +89,72 @@
 .driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.46),rgba(8,7,6,.12) 42%,transparent 78%),linear-gradient(0deg,rgba(5,5,5,.34),transparent 34%,rgba(5,5,5,.06))!important;box-shadow:inset 0 0 70px #0006!important}
 .driver-exhibition-webgl{background:radial-gradient(ellipse at 50% 5%,#745333 0%,#30241a 55%,#171411 100%)!important}
 @media(max-width:760px){.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.42),rgba(8,7,6,.08) 48%,transparent 80%),linear-gradient(0deg,rgba(5,5,5,.4),transparent 38%,rgba(5,5,5,.05))!important}}
+
+
+/* Desktop analog movement control: shares the same camera input as the touch joystick. */
+@media (min-width: 761px) {
+  .driver-mobile-joystick {
+    position: absolute;
+    z-index: 4;
+    left: 26px;
+    bottom: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: grab;
+  }
+  .driver-mobile-joystick:active { cursor: grabbing; }
+  .driver-joystick-base {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #dfc77b99;
+    border-radius: 50%;
+    background: radial-gradient(circle, #8b79502b 0 34%, #111820d9 38% 100%);
+    box-shadow: 0 7px 28px #0009, inset 0 0 22px #ffffff16;
+    touch-action: none;
+  }
+  .driver-joystick-base:before,
+  .driver-joystick-base:after {
+    content: "";
+    position: absolute;
+    background: #e1c87b55;
+    pointer-events: none;
+  }
+  .driver-joystick-base:before { width: 1px; height: 72%; left: 50%; top: 14%; }
+  .driver-joystick-base:after { height: 1px; width: 72%; left: 14%; top: 50%; }
+  .driver-joystick-knob {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    margin: -22px 0 0 -22px;
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #f0d99b;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #756957, #25282b);
+    color: #fff0c1;
+    box-shadow: 0 4px 13px #000b;
+    will-change: transform;
+    pointer-events: none;
+  }
+  .driver-mobile-joystick > span {
+    font: 700 9px 'Barlow Condensed', Arial, sans-serif;
+    letter-spacing: .22em;
+    color: #e8d69f;
+    text-shadow: 0 1px 5px #000;
+  }
+  .driver-exhibition-controls { left: 150px; bottom: 58px; }
+  .driver-control-pad { display: none; }
+  .driver-camera-hint { font-size: 8px; gap: 7px; }
+  .driver-exhibition-scene:has(.driver-selected-panel) .driver-mobile-joystick { opacity: 1; }
+}
