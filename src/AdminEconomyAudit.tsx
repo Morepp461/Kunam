@@ -97,7 +97,7 @@ export default function AdminEconomyAudit() {
           <div className="economy-audit-list">{snapshot.pending_items.map(item => <article key={item.kind + item.id}>
             <div><strong>{item.kind === "daily_reward" ? "Daily reward" : item.kind === "race_checkin" ? "Race check-in" : "Payroll"}</strong><small>{item.member_id} · {date(item.created_at)}</small></div>
             <div className="economy-audit-amount"><strong>{money(item.amount)}</strong><small>{item.attempts} percobaan</small></div>
-            <p>{item.last_error || (item.kind === "payroll" ? "Menunggu pemrosesan payroll oleh Admin setelah hasil round." : "Menunggu retry otomatis berikutnya.")}</p>
+            <p>{item.last_error || (item.kind === "payroll" ? "Payroll claim menunggu retry otomatis setelah final round Race Period." : "Menunggu retry otomatis berikutnya.")}</p>
             {item.last_attempt_at && <small>Retry terakhir: {date(item.last_attempt_at)}</small>}
           </article>)}</div>}
       </div>
