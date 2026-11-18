@@ -23,6 +23,16 @@
 - Rules page with an admin editor supporting draft and publish states.
 - Admin-managed Discord community invite URL.
 
+### 3D Driver Exhibition
+
+- Interactive Three.js exhibition hall presenting registered Caleris Masters drivers as realistic 3D characters.
+- Desktop camera navigation supports mouse drag to look around, scroll to zoom, WASD keyboard movement, and an on-screen analog joystick for continuous directional movement. The joystick supports mouse and pointer input and returns to its neutral position when released.
+- Mobile camera navigation uses a touch analog joystick, drag-to-look, scroll/pinch-compatible zoom behavior, and on-screen directional controls.
+- Driver search and team filters update the visible exhibition lineup; selecting a character opens the driver information panel.
+- Character GLB assets are fingerprinted and cached in IndexedDB, with progressive model loading and browser-memory cleanup to reduce repeated generation and peak rendering load.
+- Fullscreen mode is supported where the browser permits it, with an in-page fallback for embedded browsers.
+- The exhibition is frontend-only and does not introduce a separate database schema or reward/scoring workflow.
+
 ### Main Event Registration Image Optimization
 
 - Registration accepts PNG, JPG/JPEG, and WebP source images, then converts them in the browser to WebP before any Supabase Storage upload.
