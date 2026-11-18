@@ -15,6 +15,7 @@ notification_migration = read("supabase/migrations/20261118120232_caleris_notifi
 health_ui = read("src/AdminEconomyAudit.tsx")
 health_migration = read("supabase/migrations/20261118120320_caleris_system_health_reconciliation.sql")
 reminders = read("supabase/migrations/20261118120500_caleris_notification_reminders.sql")
+team_development_notifications = read("supabase/migrations/20261118121500_team_development_notifications.sql")
 
 assert 'type FinishStatus="finished"|"dnf"|"dns"|"dsq"' in race
 assert 'value="dns"' in race and 'value="dsq"' in race
@@ -49,5 +50,8 @@ for fragment in ["caleris_wallet_reconciliation_baselines", "run_system_health_r
 
 for fragment in ["process_caleris_notification_reminders", "race-reminder:", "checkin-reminder:", "quest-expiry:", "contract-expiry:", "loan-installment-due:", "caleris-notification-reminders"]:
     assert fragment in reminders, f"Scheduled reminder missing: {fragment}"
+
+assert "notify_team_development" in team_development_notifications
+assert "notify_development_shop_purchase" in team_development_notifications
 
 print("Race, payroll, notifications, reminders, and system health automation checks passed.")
