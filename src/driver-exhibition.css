@@ -318,6 +318,7 @@
   72%{opacity:1;clip-path:inset(0);filter:blur(0)}
   100%{opacity:1;transform:translate3d(0,0,0) scale(1);clip-path:inset(0)}
 }
+@keyframes driver-portrait-reveal{0%{opacity:0;transform:translate3d(24px,16px,0) scale(1.07);filter:brightness(.68) saturate(.72)}100%{opacity:.92;transform:translate3d(0,0,0) scale(1);filter:brightness(1) saturate(1)}}
 @keyframes gp-lights-sequence{
   0%,12%{opacity:.18;filter:brightness(.55)}
   22%,100%{opacity:1;filter:brightness(1.2)}
