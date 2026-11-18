@@ -1,0 +1,12 @@
+.team-roster-select{display:flex;flex-direction:column;gap:7px;margin:16px 0;color:#b7b3ab;font-size:12px}
+.team-roster-select select{width:100%;min-height:44px;padding:11px 13px;border:1px solid rgba(198,163,58,.32);border-radius:7px;background:#090c0f;color:#f1eee5;font:12px Inter,sans-serif}
+.team-roster-list{display:grid;gap:10px;margin-top:15px}
+.team-roster-list article{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px;border:1px solid rgba(198,163,58,.2);border-radius:7px;background:rgba(255,255,255,.025)}
+.team-roster-list article>div{display:grid;gap:5px;min-width:0}
+.team-roster-list strong{color:#eee9dc;font-size:13px}
+.team-roster-list small,.team-roster-muted{color:#aeb1b4;font-size:10px;line-height:1.6}
+.team-roster-button{display:inline-flex;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid #d5b85c;border-radius:5px;background:linear-gradient(135deg,#dfc36f,#a17d2c);color:#17130a;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}
+.team-roster-button:disabled{opacity:.55;cursor:not-allowed}
+.team-roster-success{display:inline-flex;align-items:center;gap:6px;color:#d8c278;font-size:10px;white-space:nowrap}
+.team-roster-muted{margin:10px 0}
+@media(max-width:600px){.team-roster-list article{align-items:flex-start;flex-direction:column}.team-roster-button{width:100%}}
