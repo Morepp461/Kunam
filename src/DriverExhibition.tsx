@@ -476,34 +476,43 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           scene.add(light, light.target);
         }
 
-        // Transverse light bands follow the vault from its left edge to its right edge.
-        const vaultLightMat = new THREE.MeshStandardMaterial({ color: 0xffe2b4, emissive: 0xffb85e, emissiveIntensity: 3.1, roughness: 0.22, metalness: 0.08 });
-        disposableMaterials.push(vaultLightMat);
-        const vaultTrimMat = material(0x8b7045, 0.28, 0.72);
-        for (let z = 2; z >= -82; z -= 8) {
-          const crossPoints = Array.from({ length: 65 }, (_, i) => { const x = -21.7 + (43.4 * i) / 64; const y = 10.15 + 9.3 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2)); return new THREE.Vector3(x, y - 0.42, z); });
-          const crossCurve = new THREE.CatmullRomCurve3(crossPoints);
-          const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.16, 8, false), vaultTrimMat);
-          const crossDiffuser = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.075, 8, false), vaultLightMat);
-          scene.add(crossHousing, crossDiffuser);
-          disposableGeometries.push(crossHousing.geometry, crossDiffuser.geometry);
-          if (Math.abs(z) % 16 < 1) { const vaultWash = new THREE.PointLight(0xffca8a, mobile ? 9 : 14, 34, 1.8); vaultWash.position.set(0, 15.8, z - 0.8); scene.add(vaultWash); }
+        // Bright, visible transverse ceiling luminaires mounted below the inner vault surface.
+        // Basic materials keep the warm diffusers visible on low-power mobile GPUs.
+        const vaultDiffuserMat = new THREE.MeshBasicMaterial({ color: 0xffd28a, toneMapped: false });
+        const vaultBulbMat = new THREE.MeshBasicMaterial({ color: 0xffedc7, toneMapped: false });
+        const vaultHousingMat = material(0x6e5435, 0.34, 0.72);
+        disposableMaterials.push(vaultDiffuserMat, vaultBulbMat);
+        const bulbGeometry = new THREE.SphereGeometry(0.115, 8, 6);
+        disposableGeometries.push(bulbGeometry);
+        for (let z = 2; z >= -82; z -= 4.5) {
+          const points = Array.from({ length: 65 }, (_, i) => {
+            const x = -21.55 + (43.1 * i) / 64;
+            const vaultY = 10.15 + 9.3 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2));
+            return new THREE.Vector3(x, vaultY - 1.35, z);
+          });
+          const curve = new THREE.CatmullRomCurve3(points);
+          const housing = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.19, 8, false), vaultHousingMat);
+          const diffuser = new THREE.Mesh(new THREE.TubeGeometry(curve, 96, 0.105, 8, false), vaultDiffuserMat);
+          scene.add(housing, diffuser);
+          disposableGeometries.push(housing.geometry, diffuser.geometry);
+          for (let lamp = 0; lamp < 9; lamp++) {
+            const x = -19.5 + lamp * 4.875;
+            const vaultY = 10.15 + 9.3 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2));
+            const bulb = new THREE.Mesh(bulbGeometry, vaultBulbMat);
+            bulb.position.set(x, vaultY - 1.12, z);
+            scene.add(bulb);
+          }
+          if (Math.round(Math.abs(z)) % 18 < 2) {
+            const wash = new THREE.SpotLight(0xffc987, mobile ? 22 : 30, 38, Math.PI / 3.2, 0.72, 1.2);
+            wash.position.set(0, 17.4, z);
+            wash.target.position.set(0, 1.4, z - 2);
+            scene.add(wash, wash.target);
+          }
         }
-        // Warm luminous fixtures and downlights mounted along the crown of the vaulted ceiling.
-        for (let z = 2; z >= -82; z -= 16) {
-          const fixture = new THREE.Group();
-          fixture.position.set(0, 18.25, z);
-          scene.add(fixture);
-          const housing = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.58, 0.16, 20), darkMetal);
-          fixture.add(housing);
-          const diffuserMat = new THREE.MeshStandardMaterial({ color: 0xffe0ad, emissive: 0xffb95f, emissiveIntensity: 2.2, roughness: 0.25 });
-          disposableMaterials.push(diffuserMat);
-          const diffuser = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.42, 0.055, 20), diffuserMat);
-          diffuser.position.y = -0.11; fixture.add(diffuser);
-          const down = new THREE.PointLight(0xffd39a, mobile ? 15 : 24, 30, 1.7);
-          down.position.set(0, -0.4, 0); fixture.add(down);
-          const sideGlow = new THREE.PointLight(0xffbd75, 7, 18, 2);
-          sideGlow.position.set(-5, -0.7, 0); fixture.add(sideGlow);
+        for (let z = 0; z >= -72; z -= 18) {
+          const down = new THREE.PointLight(0xffc987, mobile ? 11 : 17, 26, 1.7);
+          down.position.set(0, 16.4, z);
+          scene.add(down);
         }
 
         // Premium paddock wall: framed driver and team-owner portraits, motorsport memorabilia and brand plaques.
