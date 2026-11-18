@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, RefreshCw, Save, ShieldCheck, Wrench } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import "./team-hq.css";
 
 type FacilityConfig = {
   facility_key: string; title: string; description: string; is_enabled: boolean;
