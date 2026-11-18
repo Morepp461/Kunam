@@ -14,6 +14,12 @@ workflows = read("supabase/functions/economy-workflows/index.ts")
 
 assert '.in("account_status", ["public", "active", "admin"]).maybeSingle()' in directory
 assert 'if (!userId || !isAdmin)' in directory
+assert 'resolveClientIp(req)' in directory
+assert 'cf-connecting-ip' in directory and 'x-forwarded-for' in directory
+assert 'crypto.subtle.importKey' in directory and 'HMAC' in directory
+assert 'consume_member_directory_rate_limit' in directory
+assert 'Retry-After' in directory and 'respond(429' in directory
+assert directory.index('if (!userId || !isAdmin)') < directory.index('member-directory:update_member_id:admin:')
 assert 'authClient.auth.getUser(jwt)' in directory
 assert 'cm_live_' in integrations and 'sha256(token)' in integrations
 assert 'authClient.auth.getUser(jwt)' in paddock

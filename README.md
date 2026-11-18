@@ -52,6 +52,7 @@
   - Published pages/content.
   - Local page shortcuts and card headings.
 - Search suggestions are displayed while typing; the directory lookup is handled by the `member-directory` Supabase Edge Function.
+- Public profile/search actions use hashed IP-scoped rate limits; administrator Member ID changes retain JWT + `site_admins` authorization and have an additional per-admin quota. The limiter stores keyed hashes, not raw IP addresses.
 - Search service permissions are granted to `service_role`; public and authenticated table access is not broadened by that grant.
 
 ### Paddock Access and Security
@@ -137,7 +138,7 @@ python3 -B scripts/validate.py
 ## Quality Checks and Deployment
 
 - GitHub Actions workflow: **Caleris CI**.
-- CI checks dependency installation, a report-only dependency security audit, TypeScript/application checks, production build, and project validation script.
+- CI checks dependency installation, a blocking production-dependency audit, a report-only full dependency audit, TypeScript/application checks, production build, and project validation script. The full-tree Picomatch advisory is currently confined to Vite 7.3.8's development dependency chain (`fdir` and `tinyglobby`); the blocking production-dependency audit reports zero vulnerabilities. A forced audit fix proposes a breaking downgrade to Vite 6.2.7, so no forced dependency changes are applied while no patched Picomatch release is published. Resolved versions are printed in CI for review.
 - Changes are developed on a dedicated branch and merged into `main` only after CI passes.
 - Vercel deploys the production application from `main`.
 - Supabase database changes must be represented by versioned migrations and applied to the connected project.

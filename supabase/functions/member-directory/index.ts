@@ -9,6 +9,7 @@ const cors = (origin: string) => ({
   "Access-Control-Allow-Origin": allowedOrigin(origin) ? origin : "https://calerismastersnewgen-mu.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Expose-Headers": "Retry-After",
   "Content-Type": "application/json",
   "Vary": "Origin",
 });
@@ -26,11 +27,26 @@ type ProfileRow = {
 const displayName = (p: ProfileRow) =>
   p.web_nickname || [p.first_name, p.last_name].filter(Boolean).join(" ") || p.driver_nickname || "Caleris Member";
 
+const resolveClientIp = (req: Request): string | null => {
+  const isIpLiteral = (value: string) => value.length <= 64 && /^[0-9a-f:.]+$/i.test(value);
+  const cloudflareIp = req.headers.get("cf-connecting-ip")?.trim();
+  if (cloudflareIp && isIpLiteral(cloudflareIp)) return cloudflareIp;
+
+  // Supabase edge proxy appends the connecting address to X-Forwarded-For.
+  // Use the last entry, not the client-controlled first entry.
+  const forwarded = req.headers.get("x-forwarded-for");
+  if (forwarded) {
+    const candidates = forwarded.split(",").map((value) => value.trim()).filter(isIpLiteral);
+    if (candidates.length) return candidates[candidates.length - 1];
+  }
+  return null;
+};
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin") ?? "";
   const headers = cors(origin);
-  const respond = (status: number, body: Record<string, unknown>) =>
-    new Response(JSON.stringify(body), { status, headers });
+  const respond = (status: number, body: Record<string, unknown>, extraHeaders: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), { status, headers: { ...headers, ...extraHeaders } });
 
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return respond(405, { error: "Method not allowed." });
@@ -72,6 +88,48 @@ Deno.serve(async (req: Request) => {
         },
       } : {}),
     });
+    const clientIp = resolveClientIp(req);
+    const hmacBucketKey = async (value: string) => {
+      const key = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(serviceKey),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"],
+      );
+      const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value));
+      return Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    };
+    const consumeRateLimit = async (bucketKey: string, limit: number, windowSeconds: number) => {
+      const { data, error } = await admin.rpc("consume_member_directory_rate_limit", {
+        p_bucket_key: bucketKey,
+        p_limit: limit,
+        p_window_seconds: windowSeconds,
+      });
+      if (error) {
+        // Fail open to preserve public directory availability if the limiter
+        // is temporarily unavailable; emit an operational signal for follow-up.
+        console.error("Member directory rate limiter unavailable:", error.message);
+        return { allowed: true, retryAfterSeconds: 0 };
+      }
+      const result = Array.isArray(data) ? data[0] : data;
+      return {
+        allowed: result?.allowed === true,
+        retryAfterSeconds: Math.max(1, Number(result?.retry_after_seconds ?? 1)),
+      };
+    };
+    const enforceIpLimit = async (actionName: string, limit: number, windowSeconds: number) => {
+      if (!clientIp) {
+        console.warn("Member directory request has no trusted client IP header; IP rate limit skipped.");
+        return null;
+      }
+      const ipHash = await hmacBucketKey(`ip:${clientIp}`);
+      const result = await consumeRateLimit(`member-directory:${actionName}:ip:${ipHash}`, limit, windowSeconds);
+      if (result.allowed) return null;
+      return respond(429, { error: "Terlalu banyak permintaan. Coba lagi sebentar." }, {
+        "Retry-After": String(result.retryAfterSeconds),
+      });
+    };
 
     let userId: string | null = null;
     if (jwt) {
@@ -86,6 +144,26 @@ Deno.serve(async (req: Request) => {
 
     const body = await req.json();
     const action = typeof body.action === "string" ? body.action : "";
+    if (action === "profile") {
+      const limited = await enforceIpLimit("profile", 60, 60);
+      if (limited) return limited;
+    } else if (action === "search") {
+      const limited = await enforceIpLimit("search", 120, 60);
+      if (limited) return limited;
+    } else if (action === "update_member_id") {
+      // Keep the existing authorization boundary ahead of the admin quota.
+      if (!userId || !isAdmin) return respond(403, { error: "Akses administrator diperlukan." });
+      const ipLimited = await enforceIpLimit("update_member_id", 30, 300);
+      if (ipLimited) return ipLimited;
+      const adminHash = await hmacBucketKey(`admin:${userId}`);
+      const adminLimit = await consumeRateLimit(`member-directory:update_member_id:admin:${adminHash}`, 10, 300);
+      if (!adminLimit.allowed) {
+        return respond(429, { error: "Batas perubahan Member ID administrator tercapai. Coba lagi nanti." }, {
+          "Retry-After": String(adminLimit.retryAfterSeconds),
+        });
+      }
+    }
+
 
     const withAvatar = async (p: ProfileRow) => {
       let avatarUrl: string | null = null;
@@ -221,7 +299,6 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "update_member_id") {
-      if (!userId || !isAdmin) return respond(403, { error: "Akses administrator diperlukan." });
       const targetMemberId = typeof body.targetMemberId === "string" ? body.targetMemberId.trim().toUpperCase() : "";
       const newMemberId = typeof body.newMemberId === "string" ? body.newMemberId.trim().toUpperCase() : "";
       if (!/^[A-Z0-9]{12,16}$/.test(targetMemberId)) return respond(400, { error: "Member ID target tidak valid." });

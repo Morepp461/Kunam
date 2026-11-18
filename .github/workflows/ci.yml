@@ -5,6 +5,7 @@ on:
       - main
       - "feat/**"
       - "fix/**"
+      - "security/**"
   pull_request:
     branches: [main]
 jobs:
@@ -16,7 +17,11 @@ jobs:
         with:
           node-version: 22
       - run: npm install
-      - name: Dependency security audit (report-only)
+      - name: Production dependency security gate
+        run: npm audit --omit=dev --audit-level=high
+      - name: Report resolved Picomatch dependency paths
+        run: npm ls picomatch --all || true
+      - name: Full dependency security audit (report-only)
         run: npm audit --audit-level=high
         continue-on-error: true
       - run: npm run check
@@ -48,6 +53,8 @@ jobs:
         run: python3 -B scripts/test_engine_integrations.py
       - name: Edge Function JWT and profile privacy checks
         run: python3 -B scripts/test_edge_function_auth_boundaries.py
+      - name: Member Directory rate-limit regression checks
+        run: python3 -B scripts/test_member_directory_rate_limits.py
       - name: Supabase schema parity guard
         env:
           SUPABASE_PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}

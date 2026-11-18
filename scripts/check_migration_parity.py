@@ -82,7 +82,35 @@ try:
     prod_ledger = query(production, ledger_sql).splitlines()
     test_ledger = query(testing, ledger_sql).splitlines()
     if prod_ledger != test_ledger:
-        print("WARNING: migration ledgers differ even though schema fingerprints match; reconcile historical migration lineage before the next schema release.")
+        prod_map = defaultdict(list)
+        test_map = defaultdict(list)
+        for entry in prod_ledger:
+            version, name = entry.split(":", 1)
+            prod_map[name].append(version)
+        for entry in test_ledger:
+            version, name = entry.split(":", 1)
+            test_map[name].append(version)
+        shared_names = set(prod_map) & set(test_map)
+        version_drift = sorted(
+            (name, prod_map[name], test_map[name])
+            for name in shared_names
+            if prod_map[name] != test_map[name]
+        )
+        prod_only_names = sorted(set(prod_map) - set(test_map))
+        test_only_names = sorted(set(test_map) - set(prod_map))
+        print(
+            "WARNING: migration ledgers differ despite matching schema fingerprints: "
+            f"production={len(prod_ledger)}, testing={len(test_ledger)}, "
+            f"shared_names_with_version_drift={len(version_drift)}, "
+            f"production_only_names={len(prod_only_names)}, testing_only_names={len(test_only_names)}."
+        )
+        for name, prod_versions, test_versions in version_drift:
+            print(f"  VERSION DRIFT {name}: production={prod_versions}, testing={test_versions}")
+        for name in prod_only_names:
+            print(f"  PRODUCTION ONLY {name}: {prod_map[name]}")
+        for name in test_only_names:
+            print(f"  TESTING ONLY {name}: {test_map[name]}")
+        print("Do not edit schema_migrations directly until each entry is mapped to canonical SQL and its effects are verified.")
     else:
         print("Supabase migration ledgers match.")
 except subprocess.CalledProcessError:
