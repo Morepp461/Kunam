@@ -330,7 +330,7 @@ License scoring is processed by Supabase triggers and immutable score-ledger tra
 
 - Daily check-in points and inactivity penalty settings are seeded from the supplied rules.
 - Standings milestone records are independent, configurable entries. The engine reads all active scoring-milestone-* records; it does not contain threshold values in application logic.
-- Premio and Zwei WDC settings are seeded inactive with zero points. Admin must set and activate each division's WDC value before finalization.
+- Lifetime WDC defaults are active automatically: Zwei gives 25 points and Premio gives 35 points. A later Premio title replaces the Zwei award rather than stacking; future tier-value edits automatically synchronize existing WDC ledger values.
 - Driver Panel → Daily Check-in is the only attendance source. One check-in is allowed per Jakarta calendar day.
 - The five-race inactivity rule is processed from configured round check-in windows. A round with any daily check-in breaks the absence streak; every configured streak interval applies the configured penalty, floored at the driver's remaining seasonal score.
 - Admin Control → License Scoring Engine is a one-step season setup. Event name is fixed to **Caleris Masters** with two fixed divisions: **Caleris Premio (Tier 1)** and **Caleris Zwei (Tier 2)**. Admin only selects the Pre Season start date.
