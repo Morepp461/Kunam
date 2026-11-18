@@ -991,3 +991,11 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Team Directory and Team Profile constructor points sum the official points awarded in each active-season round, attributed using the team snapshot stored on each official race-result entry.
 - Team points no longer subtract the previous round's total from the current round award; the prior calculation incorrectly displayed only the residual points instead of the constructor's season total.
 - Team Summary uses the same aggregation as the public Team Directory so both surfaces remain consistent. No schema, migration, or dependency change.
+
+
+### Race schedule, countdown, and FIA data export
+
+- Season Setup menetapkan jam mulai race per round untuk Caleris Premio dan Caleris Zwei secara terpisah. Default jam race adalah 19:00 GMT+7 (Asia/Jakarta), dengan durasi default 90 menit yang dapat disesuaikan.
+- Waktu mulai race dan durasi disimpan per round di `license_rounds`; jadwal check-in tetap terpisah.
+- Dashboard menampilkan countdown dan daftar race mendatang sesuai divisi tim karakter. Akun Admin dapat melihat jadwal seluruh divisi.
+- FIA Event Control menyediakan export satu workbook Excel dengan sheet DRIVERS dan TEAMS, termasuk atribut driver dan car development parts. Akses export dibatasi untuk Admin/FIA.
