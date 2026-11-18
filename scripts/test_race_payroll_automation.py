@@ -10,6 +10,10 @@ ocr = read("src/RaceOCR.tsx")
 schedule = read("src/RaceScheduleDashboard.tsx")
 season = read("src/AdminLicenseEngine.tsx")
 migration = read("supabase/migrations/20261118230000_caleris_race_payroll_atomic_automation.sql")
+notifications = read("src/NotificationsCenter.tsx")
+notification_migration = read("supabase/migrations/20261118231000_caleris_notification_center.sql")
+health_ui = read("src/AdminEconomyAudit.tsx")
+health_migration = read("supabase/migrations/20261118232000_caleris_system_health_reconciliation.sql")
 
 assert 'type FinishStatus="finished"|"dnf"|"dns"|"dsq"' in race
 assert 'value="dns"' in race and 'value="dsq"' in race
@@ -33,4 +37,13 @@ assert "public.admin_process_pending_economy_payroll(v_actor_id)" in migration
 assert "'caleris-race-lifecycle'" in migration
 assert "'caleris-payroll-pending-retry'" in migration
 
-print("Race classification, division countdown, atomic season setup, and payroll automation checks passed.")
+assert "caleris_notifications" in notifications and "postgres_changes" in notifications
+assert "NotificationsCenter memberId=" in read("src/App.tsx")
+for fragment in ["notify_quest_assignment", "notify_driver_development", "notify_contract_offer", "notify_driver_move_status", "notify_payroll_paid", "notify_race_result", "idempotency_key"]:
+    assert fragment in notification_migration, f"Notification trigger missing: {fragment}"
+for fragment in ["SYSTEM HEALTH & FINANCIAL RECONCILIATION", "wallet_mismatches", "cron_failures_24h"]:
+    assert fragment in health_ui, f"System health UI missing: {fragment}"
+for fragment in ["caleris_wallet_reconciliation_baselines", "run_system_health_reconciliation", "admin_get_system_health_snapshot", "caleris-system-health-reconciliation"]:
+    assert fragment in health_migration, f"System health migration missing: {fragment}"
+
+print("Race, payroll, notifications, and system health automation checks passed.")
