@@ -312,6 +312,31 @@ def main():
     assert 'economy_driver_contracts' in license_engine and 'c.season_id===selectedSeason' in license_engine and 'c.team_id===d.team_id' in license_engine
     assert "ended_contracts" in expiry_sql and "set status='ended'" in expiry_sql and "contracts_ended" in expiry_sql
     assert "driver_name_snapshot" in stage5_panel and "team_name_snapshot" in stage5_panel and "r.team_name_snapshot" in stage5_panel
+    recruitment_migration = ROOT / "supabase/migrations/20261118190000_license_salary_and_team_recruitment_workflows.sql"
+    recruitment_market = ROOT / "src/DriverTransferMarket.tsx"
+    recruitment_contracts = ROOT / "src/TeamDriverContracts.tsx"
+    recruitment_registration = ROOT / "src/TeamDriverApplications.tsx"
+    recruitment_advert = ROOT / "src/TeamJobAdvert.tsx"
+    panel_pages = ROOT / "src/PanelPages.tsx"
+    assert all(path.is_file() for path in [recruitment_migration,recruitment_market,recruitment_contracts,recruitment_registration,recruitment_advert]), "Missing license salary and recruitment workflow files"
+    recruitment_sql = recruitment_migration.read_text(encoding="utf-8")
+    recruitment_market_source = recruitment_market.read_text(encoding="utf-8")
+    recruitment_contract_source = recruitment_contracts.read_text(encoding="utf-8")
+    recruitment_registration_source = recruitment_registration.read_text(encoding="utf-8")
+    recruitment_advert_source = recruitment_advert.read_text(encoding="utf-8")
+    for fragment in ["caleris_driver_salary_bands", "5000000", "7500000", "7600000", "12000000", "12100000", "22500000", "22600000", "45000000", "member_start_free_agent_contract_negotiation", "member_respond_free_agent_contract_negotiation", "team_register_driver_to_fia", "pending_registration", "guard_caleris_job_advert", "revoke all on function public.member_sign_free_agent"]:
+        assert fragment in recruitment_sql, f"Recruitment migration missing: {fragment}"
+    for fragment in ["member_start_free_agent_contract_negotiation", "member_respond_free_agent_contract_negotiation", "FREE AGENT CONTRACT DESK", "Transfer Window"]:
+        assert fragment in recruitment_market_source, f"Free Agent negotiation UI missing: {fragment}"
+    for fragment in ["AGREED CONTRACTS", "pending_registration", "economy_driver_contracts"]:
+        assert fragment in recruitment_contract_source, f"Read-only Driver Contracts UI missing: {fragment}"
+    for fragment in ["team_register_driver_to_fia", "FIA ROSTER SUBMISSION", "license_season_members"]:
+        assert fragment in recruitment_registration_source, f"FIA roster registration UI missing: {fragment}"
+    for fragment in ["caleris_driver_salary_bands", "minimum_license", "salary_min", "salary_max", "member.team_id", "position"]:
+        assert fragment in recruitment_advert_source, f"Team-scoped Job Advert UI missing: {fragment}"
+    assert 'if(tab.path==="place-job-advert")return <TeamJobAdvert/>' in panel_pages.read_text(encoding="utf-8")
+    assert "panelTabIcons[group.path+\"/\"+tab.path]" in app, "Panel navigation must use distinct per-tab icons"
+    assert "Fixed Driver License Salary Bands" in (ROOT / "README.md").read_text(encoding="utf-8")
     print("Caleris QA static checks passed.")
 
 if __name__ == "__main__":
