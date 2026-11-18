@@ -55,7 +55,8 @@ export default function RaceScheduleDashboard({session,memberId,isAdmin}:{sessio
  const awaiting=races.find(r=>getRaceState(r,now)==="awaiting_result");
  const confirmed=races.find(r=>getRaceState(r,now)==="result_confirmed");
  const next=races.find(r=>getRaceState(r,now)==="upcoming");
- const primary=active||awaiting||confirmed||next;
+ const completed=[...races].reverse().find(r=>getRaceState(r,now)==="completed");
+ const primary=active||awaiting||confirmed||next||completed;
  const primaryState=primary?getRaceState(primary,now):null;
  const start=primary?new Date(primary.race_starts_at).getTime():0;
  const end=primary?start+primary.race_duration_minutes*60000:0;
