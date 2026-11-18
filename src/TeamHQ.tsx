@@ -125,7 +125,7 @@ export default function TeamHQ() {
       <button className="team-hq-refresh" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button>
     </div>
     {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
-    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{projects.filter(p => p.status === "queued" || p.status === "in_progress").length}/1</strong></div></div>}
+    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{projects.filter(p => p.status === "queued" || p.status === "in_progress").length}/2</strong></div></div>}
     <div className="team-hq-section-title"><div><span className="section-eyebrow">FACILITY DIRECTORY</span><h2>{isFia ? "Facility Configuration" : "Facilities"}</h2></div><span className="empty-tag">9 FACILITIES</span></div>
     <div className="team-hq-grid">
       {configs.map((config) => {
