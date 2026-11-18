@@ -502,26 +502,38 @@ as $$
 declare
   v_today date:=(now() at time zone 'Asia/Jakarta')::date;
   v_completed integer:=0;
+  v_contracts_ended integer:=0;
   v_activated integer:=0;
   v_candidate uuid;
   v_candidates integer;
   v_roster jsonb;
 begin
-  update public.license_seasons s
-  set status='completed'
-  where s.status='active'
-    and exists(
-      select 1 from public.season_calendar_periods p
-      where p.season_id=s.id
-        and p.period_type='end_season'
-        and v_today between p.starts_on and p.ends_on
-    )
-    and exists(select 1 from public.license_season_divisions d where d.season_id=s.id)
-    and not exists(
-      select 1 from public.license_season_divisions d
-      where d.season_id=s.id and d.status<>'completed'
-    );
-  get diagnostics v_completed=row_count;
+  with completed_seasons as (
+    update public.license_seasons s
+    set status='completed'
+    where s.status='active'
+      and exists(
+        select 1 from public.season_calendar_periods p
+        where p.season_id=s.id
+          and p.period_type='end_season'
+          and v_today between p.starts_on and p.ends_on
+      )
+      and exists(select 1 from public.license_season_divisions d where d.season_id=s.id)
+      and not exists(
+        select 1 from public.license_season_divisions d
+        where d.season_id=s.id and d.status<>'completed'
+      )
+    returning s.id
+  ), ended_contracts as (
+    update public.economy_driver_contracts c
+    set status='ended',updated_at=now()
+    where c.status='active'
+      and c.season_id in (select id from completed_seasons)
+    returning c.id
+  )
+  select (select count(*) from completed_seasons),
+         (select count(*) from ended_contracts)
+  into v_completed,v_contracts_ended;
 
   if not exists(select 1 from public.license_seasons where status='active') then
     select count(*),(array_agg(next_season.id))[1]
@@ -561,6 +573,7 @@ begin
   return jsonb_build_object(
     'today',v_today,
     'seasons_completed',v_completed,
+    'contracts_ended',v_contracts_ended,
     'seasons_activated',v_activated,
     'roster_sync',v_roster
   );
