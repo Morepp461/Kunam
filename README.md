@@ -403,10 +403,10 @@ This stage establishes the wallet, accounting, security, and check-in reward fou
 ## Season Calendar & Team Payroll
 
 - FIA Panel exposes Rules Input, Season Calendar, Announcement Input, Punishment Input, and Appeal Room. FIA can configure season operations, process rounds, publish official rules and notices, issue punishments, and decide appeals. License Scoring Engine is Admin Control only. Admin includes all FIA permissions; FIA does not receive Admin privileges, Admin Control, or Economy Engine access.
-- FIA Panel → Season Calendar builds the complete season timeline in one form: exactly one Off Season, one Pre Season, one End Season, one or more Race Periods, and zero or more Break Race Periods.
-- Each period has manually configured start and end dates. Race Periods and Break Race Periods can repeat; Off Season, Pre Season, and End Season are limited to one each per season.
-- Each Race Period must contain 3–5 existing rounds for every division in that season. Every round must be assigned exactly once. Calendar creation and round assignments are atomic.
-- Reschedule updates a period's dates and records an immutable calendar revision.
+- Admin → License Scoring Engine creates the Caleris Masters season with one input: Pre Season start date. Event name and divisions are fixed to Caleris Masters, Caleris Premio (Tier 1), and Caleris Zwei (Tier 2).
+- The database automatically creates both divisions, 15 race rounds per division, and the 12-period calendar. Five Race Periods each contain three race dates per division, separated by four two-day Break Balancing periods. Pre Season is seven days, End Season five days, and Off Season seven days.
+- FIA Panel → Season Calendar is now a read-only calendar view. Admin can reschedule the complete draft calendar from one new Pre Season start date; individual periods and round mappings are not manually configured.
+- Calendar creation and round assignments are atomic. Every generated round is assigned exactly once to the correct Race Period.
 - Team Panel → Driver Contracts is a read-only view of the team's agreed Driver contracts and payroll history. Salary is set through the validated two-party negotiation workflow, enforced by the fixed license salary bands, and cannot be edited directly on the contracts page. Historical contracts outside the current band are labeled as legacy data; existing Testing fixtures are not silently rewritten.
 - Payroll is calculated as annual salary divided by the actual number of Race Periods configured for that season. Two-decimal rounding differences are reconciled in the final Race Period so total season salary equals the contract amount.
 - Payroll runs automatically after FIA/Admin processes the final round of a Race Period. Funds move directly from the matching Team Wallet to the Driver Wallet through the immutable double-entry ledger.
