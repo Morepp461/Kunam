@@ -6,10 +6,9 @@ import "./team-driver-registration.css";
 import "./team-contracts.css";
 
 type Application=Record<string,any>;
-type Member={id:string;role:string|null;team_id:string|null};
 type Team={id:string;name:string;division_key:string|null};
 type Season={id:string;title:string;status:string};
-type Contract={id:string;season_id:string;member_id:string;annual_salary:number;status:string;members?:{character_name:string|null;license:string|null;team_id:string|null}};
+type Contract={id:string;season_id:string;member_id:string;annual_salary:number;status:string;members?:{character_name:string|null;license:string|null;team_id:string|null}[]};
 type Registration={season_id:string;member_id:string};
 
 export default function TeamDriverApplications(){
@@ -37,7 +36,7 @@ export default function TeamDriverApplications(){
   const applicationRows=Array.isArray(applicationResult.data)?applicationResult.data as Application[]:[];
   const withImages=await Promise.all(applicationRows.map(async row=>{
    if(!row.avatar_path)return {...row,avatar_url:""};
-   const {data:signed}=await supabase.storage.from("profile-avatars").createSignedUrl(row.avatar_path,900);
+   const {data:signed}=await supabase!.storage.from("profile-avatars").createSignedUrl(row.avatar_path,900);
    return {...row,avatar_url:signed?.signedUrl||""};
   }));
   setRows(withImages);
@@ -75,7 +74,7 @@ export default function TeamDriverApplications(){
    <div className="section-title-row"><div><span className="section-eyebrow">FIA ROSTER SUBMISSION</span><h2>{team?.name||"Team"} · Driver Line-up</h2></div><Flag size={19}/></div>
    <label className="team-roster-select">Season<select value={seasonId} onChange={e=>setSeasonId(e.target.value)}><option value="">Pilih season</option>{seasons.map(s=><option key={s.id} value={s.id}>{s.title} · {s.status}</option>)}</select></label>
    {selectedSeason&&<p className="team-roster-muted">Roster untuk {selectedSeason.title}. Hanya Driver dengan kontrak yang sudah disepakati dapat didaftarkan.</p>}
-   {loading?<div className="mer-panel"><LoaderCircle className="mer-spin"/> Memuat roster...</div>:!seasonId?<p className="team-contracts-muted">Belum ada season aktif atau draft.</p>:seasonContracts.length===0?<p className="team-contracts-muted">Belum ada kontrak Driver untuk season ini.</p>:<div className="team-roster-list">{seasonContracts.map(c=><article key={c.id}><div><strong>{c.members?.character_name||"Driver"}</strong><small>{c.members?.license||"Lisensi belum tersedia"} · {cash(c.annual_salary)}/season</small><small>Status kontrak: {c.status==="pending_registration"?"Menunggu registrasi FIA":c.status}</small></div>{registered(c.member_id)?<span className="team-roster-success"><CheckCircle2 size={15}/> Registered</span>:<button className="team-roster-button" disabled={saving||!["pending_registration","active"].includes(c.status)} onClick={()=>void register(c.member_id)}>{saving?"Mengirim...":"Daftarkan ke FIA"}</button>}</article>)}</div>}
+   {loading?<div className="mer-panel"><LoaderCircle className="mer-spin"/> Memuat roster...</div>:!seasonId?<p className="team-contracts-muted">Belum ada season aktif atau draft.</p>:seasonContracts.length===0?<p className="team-contracts-muted">Belum ada kontrak Driver untuk season ini.</p>:<div className="team-roster-list">{seasonContracts.map(c=><article key={c.id}><div><strong>{c.members?.[0]?.character_name||"Driver"}</strong><small>{c.members?.[0]?.license||"Lisensi belum tersedia"} · {cash(c.annual_salary)}/season</small><small>Status kontrak: {c.status==="pending_registration"?"Menunggu registrasi FIA":c.status}</small></div>{registered(c.member_id)?<span className="team-roster-success"><CheckCircle2 size={15}/> Registered</span>:<button className="team-roster-button" disabled={saving||!["pending_registration","active"].includes(c.status)} onClick={()=>void register(c.member_id)}>{saving?"Mengirim...":"Daftarkan ke FIA"}</button>}</article>)}</div>}
   </section>
   <section className="mer-panel">
    <div className="section-title-row"><div><span className="section-eyebrow">TEAM RECRUITMENT</span><h2>Driver Applications</h2></div><Users size={19}/></div>
