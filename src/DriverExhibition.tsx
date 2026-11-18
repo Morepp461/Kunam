@@ -50,7 +50,7 @@ const writeCharacterCache = async (record: PersistentCharacterRecord): Promise<v
   } finally { db.close(); }
 };
 
-const pruneCharacterCache = async (activeDriverIds: Set<string>): Promise<void> => {
+const pruneCharacterCache = async (activeCacheKeys: Set<string>): Promise<void> => {
   const db = await openCharacterCache();
   try {
     await new Promise<void>((resolve, reject) => {
@@ -60,7 +60,7 @@ const pruneCharacterCache = async (activeDriverIds: Set<string>): Promise<void> 
         const cursor = request.result;
         if (!cursor) return;
         const record = cursor.value as PersistentCharacterRecord;
-        if (!activeDriverIds.has(record.driverId)) cursor.delete();
+        if (!activeCacheKeys.has(record.key)) cursor.delete();
         cursor.continue();
       };
       tx.oncomplete = () => resolve();
@@ -436,8 +436,12 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           if (!disposed) setLoadingCount(index + 1);
         }
         if (!disposed) setSceneLoading(false);
-        const activeDriverIds = new Set(drivers.map((driver) => String(driver.id || driver.character_name || "")));
-        void pruneCharacterCache(activeDriverIds).catch((error) => console.warn("Could not prune removed driver cache entries:", error));
+        const activeCacheKeys = new Set(drivers.flatMap((driver) => {
+          const id = String(driver.id || driver.character_name || "");
+          return [id + ":low:race-suit-v3", id + ":high:race-suit-v3"];
+        }));
+        void pruneCharacterCache(activeCacheKeys).catch((error) => console.warn("Could not prune removed or outdated driver cache entries:", error));
+        if (navigator.storage && navigator.storage.persist) void navigator.storage.persist().catch(() => false);
 
         driverObjects.forEach((root, id) => { root.visible = visibleIdsRef.current.has(id); });
         const onFilter = (event: Event) => {
