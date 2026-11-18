@@ -311,13 +311,6 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
 
         // Ara 3D Gen: CC0 MakeHuman anatomy, photo-based skin textures, fitted clothing,
         // facial blendshapes and a game-ready rig with motion clips.
-        const animationRoutines = [
-          "idle 5s, look_around 3s, idle 4s, talk_gestures 4s",
-          "idle 4s, wave, idle 6s, look_around 3s",
-          "idle 6s, talk_gestures 4s, idle 5s, look_around 3s",
-          "idle 4s, look_around 3s, idle 4s, wave, idle 5s",
-          "idle 5s, talk_gestures 3s, idle 5s, wave",
-        ];
         const hairStyles = ["short02", "short04", "buzz", "cornrows", "box_braids"];
         const createDriver = async (driver: DriverRow, index: number) => {
           const root = new THREE.Group();
