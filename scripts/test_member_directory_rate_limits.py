@@ -21,7 +21,7 @@ assert 'member-directory:update_member_id:admin:' in directory
 assert 'if (!userId || !isAdmin)' in directory
 assert directory.index('if (!userId || !isAdmin)') < directory.index('member-directory:update_member_id:admin:')
 assert 'respond(429' in directory and '"Retry-After"' in directory
-assert "fail open to preserve public directory availability" in directory
+assert "Fail open to preserve public directory availability" in directory
 
 assert "private.member_directory_rate_limits" in migration
 assert "pg_advisory_xact_lock" in migration
