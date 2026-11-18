@@ -10,7 +10,6 @@ type Period={id:string;season_id:string;period_type:string;period_number:number|
 type Mapping={id:string;period_id:string;season_division_id:string;round_id:string};
 const labels:Record<string,string>={off_season:"Off Season",pre_season:"Pre Season",race_period:"Race Period",race_break:"Break Balancing",end_season:"End Season"};
 const sequence=["pre_season","race_period","race_break","race_period","race_break","race_period","race_break","race_period","race_break","race_period","end_season","off_season"];
-const addDays=(value:string,days:number)=>{const d=new Date(value+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
 
 export default function AdminSeasonCalendar(){
  const [seasons,setSeasons]=useState<Season[]>([]),[divisions,setDivisions]=useState<Division[]>([]);
