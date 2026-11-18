@@ -57,11 +57,6 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
   setNotice({kind:"success",text:String(data?.title||"Season CALERIS MASTERS berhasil dibuat")+". Dua divisi, 30 race round, dan kalender 12 periode sudah dibuat otomatis."});
   await load();
  };
- const activeSeason=seasons.find(s=>s.status==="active");
- const latestSeason=activeSeason||seasons.find(s=>s.status==="draft")||seasons[0];
- const latestDivisions=divisions.filter(d=>d.season_id===latestSeason?.id);
- const latestPeriods=periods.filter(p=>p.season_id===latestSeason?.id);
- const latestRounds=rounds.filter(r=>latestDivisions.some(d=>d.id===r.season_division_id));
  const config=(key:string)=>configs.find(x=>x.config_key===key)?.payload||{};
  const checkin=Number(config("scoring-daily-checkin").points||2);
  const inactivity=config("scoring-inactivity");
