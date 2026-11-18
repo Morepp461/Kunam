@@ -897,3 +897,12 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Admin Quest Engine hanya mengelola nominal reward. Tidak ada aksi Admin untuk membayar reward yang belum diklaim.
 - Nominal aktif: Easy €100.000, Normal €200.000, Hard €400.000, Elite €750.000. Admin dapat mengubahnya melalui Admin Control → Quest Engine.
 - Migration: `20261118130000_quest_manual_member_claims.sql`.
+
+
+## Team Brand Identity
+
+- Paddock Access tahap 2 menyediakan pilihan Main Color dan Secondary Color melalui library swatch, bukan input JSON atau teks HEX.
+- Identitas warna disimpan pada profil tim dan ikut dipertahankan saat proses approval Team Owner.
+- Directory Driver menggunakan gradient dua warna tim pada bagian atas graphic card, sedangkan bagian bawah memakai panel hitam semi-transparan.
+- Driver Directory menggunakan Cards sebagai tampilan awal. Mode 3D Exhibition tetap tersedia dan baru memuat Three.js/Ara3D setelah dipilih.
+- Detail Driver hanya menampilkan statistik dari hasil kompetisi yang sudah dipublikasikan.
