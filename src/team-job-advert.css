@@ -1,0 +1,9 @@
+.team-job-advert-form{display:flex;flex-direction:column;gap:14px;margin-top:18px}
+.team-job-advert-form label{display:flex;flex-direction:column;gap:7px;color:var(--muted,#b7b3ab);font-size:13px}
+.team-job-advert-form input,.team-job-advert-form select,.team-job-advert-form textarea{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--line-bright,rgba(214,184,95,.28));border-radius:9px;padding:12px;background:rgba(8,10,14,.78);color:var(--text,#f5f5f5);font:inherit}
+.team-job-advert-form select option{background:#151515;color:#f5f5f5}
+.team-job-advert-form textarea{resize:vertical;min-height:90px}
+.team-job-advert-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.team-job-advert-muted{margin:0;color:var(--muted,#aaa);font-size:12px;line-height:1.6}
+.team-job-advert-notice{margin-top:14px;padding:12px;border:1px solid var(--line,rgba(255,255,255,.15));border-radius:8px;color:var(--text,#eee);font-size:12px}
+@media(max-width:620px){.team-job-advert-row{grid-template-columns:1fr}}
