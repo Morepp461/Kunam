@@ -76,3 +76,5 @@
 .license-add-race{justify-self:start;padding:6px 8px;font-size:9px}
 .license-circuit-select-row button:hover,.license-add-race:hover{border-color:#b79b65}
 @media(max-width:700px){.license-schedule-table-wrap{margin-left:-2px;margin-right:-2px}.license-schedule-summary{gap:12px}}
+
+.license-schedule-days{display:block;margin-top:4px;color:#9b9b9b;font-size:9px}
