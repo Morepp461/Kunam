@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type * as Three from "three";
 import type { AraCharacter } from "ara3d";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { supabase } from "./lib/supabase";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Gamepad2, Maximize2, Minimize2, Search, UserRound, X } from "lucide-react";
 import "./driver-exhibition.css";
 
@@ -116,6 +117,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [loadingCount, setLoadingCount] = useState(0);
   const selectedRef = useRef<DriverRow | null>(null);
   const visibleIdsRef = useRef<Set<string>>(new Set());
+  const sceneSignature = JSON.stringify(drivers.map((driver) => ({ id: driver.id, name: driver.character_name, gender: driver.gender ?? driver.character_gender, team: driver.team?.name, division: driver.team?.division_key })));
+  const [resolvedAvatar, setResolvedAvatar] = useState("");
   const filteredDrivers = useMemo(() => drivers.filter((d) => {
     const term = query.trim().toLowerCase();
     const matchesQuery = !term || [d.character_name, d.team?.name, d.license].some((v) => String(v || "").toLowerCase().includes(term));
@@ -150,6 +153,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
         renderer.shadowMap.enabled = !mobile;
         renderer.shadowMap.type = THREE.PCFShadowMap;
         renderer.domElement.className = "driver-exhibition-canvas";
+        renderer.domElement.addEventListener("webglcontextlost", (event) => { event.preventDefault(); if (!disposed) { setSceneLoading(false); setSceneError("Memori grafis perangkat penuh. Tutup tab lain lalu muat ulang Driver Exhibition."); } });
         renderer.domElement.setAttribute("aria-label", "Interactive 3D Caleris driver exhibition hall. Drag to look around and select a driver.");
         host.appendChild(renderer.domElement);
 
@@ -426,10 +430,11 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
             cachedBytes.catch(() => { if (characterModelCache.get(memoryCacheKey) === cachedBytes) characterModelCache.delete(memoryCacheKey); });
           }
           const glbBytes = await cachedBytes;
-          if (disposed) return;
+          if (disposed) { characterModelCache.delete(memoryCacheKey); return; }
           const { GLTFLoader } = await import("three/addons/loaders/GLTFLoader.js");
           const loader = new GLTFLoader();
           const gltf = await loader.parseAsync(glbBytes.slice(0), "");
+          if (characterModelCache.get(memoryCacheKey) === cachedBytes) characterModelCache.delete(memoryCacheKey);
           if (disposed) return;
           const figure = new THREE.Group();
           figure.position.y = 0.36;
@@ -471,6 +476,19 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           scene.add(light, light.target);
         }
 
+        // Transverse light bands follow the vault from its left edge to its right edge.
+        const vaultLightMat = new THREE.MeshStandardMaterial({ color: 0xffe2b4, emissive: 0xffb85e, emissiveIntensity: 3.1, roughness: 0.22, metalness: 0.08 });
+        disposableMaterials.push(vaultLightMat);
+        const vaultTrimMat = material(0x8b7045, 0.28, 0.72);
+        for (let z = 2; z >= -82; z -= 8) {
+          const crossPoints = Array.from({ length: 65 }, (_, i) => { const x = -21.7 + (43.4 * i) / 64; const y = 10.15 + 9.3 * Math.sqrt(Math.max(0, 1 - (x / 22) ** 2)); return new THREE.Vector3(x, y - 0.42, z); });
+          const crossCurve = new THREE.CatmullRomCurve3(crossPoints);
+          const crossHousing = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.16, 8, false), vaultTrimMat);
+          const crossDiffuser = new THREE.Mesh(new THREE.TubeGeometry(crossCurve, 96, 0.075, 8, false), vaultLightMat);
+          scene.add(crossHousing, crossDiffuser);
+          disposableGeometries.push(crossHousing.geometry, crossDiffuser.geometry);
+          if (Math.abs(z) % 16 < 1) { const vaultWash = new THREE.PointLight(0xffca8a, mobile ? 9 : 14, 34, 1.8); vaultWash.position.set(0, 15.8, z - 0.8); scene.add(vaultWash); }
+        }
         // Warm luminous fixtures and downlights mounted along the crown of the vaulted ceiling.
         for (let z = 2; z >= -82; z -= 16) {
           const fixture = new THREE.Group();
@@ -757,7 +775,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       cancelAnimationFrame(frame);
       cleanup?.();
     };
-  }, [drivers]);
+  }, [sceneSignature]);
 
   useEffect(() => {
     const handle = (event: Event) => {
@@ -775,6 +793,30 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
     visibleIdsRef.current = visible;
     window.dispatchEvent(new CustomEvent("caleris-driver-filter", { detail: [...visible] }));
   }, [filteredDrivers]);
+
+  useEffect(() => {
+    let active = true;
+    setResolvedAvatar("");
+    if (!selected) return () => { active = false; };
+    const direct = selected.avatar_url || selected.profile?.avatar_url || selected.profiles?.avatar_url || selected.member?.avatar_url || selected.member?.profile?.avatar_url || selected.avatarUrl || "";
+    if (typeof direct === "string" && /^https?:\\/\\//i.test(direct)) { setResolvedAvatar(direct); return () => { active = false; }; }
+    const path = selected.avatar_path || selected.profile?.avatar_path || selected.profiles?.avatar_path || selected.member?.avatar_path || selected.member?.profile?.avatar_path;
+    const memberId = selected.member_id || selected.member?.id || selected.member?.member_id;
+    const resolve = async () => {
+      if (!supabase) return;
+      let avatarPath = typeof path === "string" ? path : "";
+      if (!avatarPath && memberId) {
+        const { data } = await supabase.from("profiles").select("avatar_url,avatar_path").eq("member_id", memberId).maybeSingle();
+        if (typeof data?.avatar_url === "string" && /^https?:\\/\\//i.test(data.avatar_url)) { if (active) setResolvedAvatar(data.avatar_url); return; }
+        avatarPath = typeof data?.avatar_path === "string" ? data.avatar_path : "";
+      }
+      if (!avatarPath) return;
+      const { data } = await supabase.storage.from("profile-avatars").createSignedUrl(avatarPath, 3600);
+      if (active && data?.signedUrl) setResolvedAvatar(data.signedUrl);
+    };
+    void resolve().catch((error) => console.warn("Driver avatar could not be resolved:", error));
+    return () => { active = false; };
+  }, [selected]);
 
   const resetCamera = () => { apiRef.current?.reset(); setSelected(null); selectedRef.current = null; };
   const move = (key: string, active: boolean) => apiRef.current?.move(key, active);
@@ -840,7 +882,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       {selected && <aside className="driver-selected-panel">
         <button className="driver-panel-close" onClick={() => setSelected(null)} aria-label="Close driver information"><X size={17}/></button>
         <span className="driver-panel-eyebrow"><Crosshair size={13}/> SELECTED DRIVER</span>
-        <div className="driver-panel-identity"><div className="driver-panel-avatar">{(selected.avatar_url || selected.profile?.avatar_url || selected.avatarUrl) ? <img src={selected.avatar_url || selected.profile?.avatar_url || selected.avatarUrl} alt={`Foto ${selected.character_name || "driver"}`} loading="eager" referrerPolicy="no-referrer"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
+        <div className="driver-panel-identity"><div className="driver-panel-avatar">{resolvedAvatar ? <img src={resolvedAvatar} alt={`Foto ${selected.character_name || "driver"}`} loading="eager" referrerPolicy="no-referrer"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
         <div className="driver-panel-license"><span>LICENSE</span><strong>{selected.license || "UNASSIGNED"}</strong></div>
         <div className="driver-panel-stats">
           <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div>
