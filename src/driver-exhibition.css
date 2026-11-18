@@ -262,3 +262,49 @@
  .team-graphic-card:before,.team-graphic-card-orbit,.team-graphic-card-logo,.team-graphic-card-accent,.team-graphic-card-top:before{transition:none!important}
  .team-graphic-card:hover{transform:none}
 }
+
+
+/* Driver card motion mirrors the team directory without changing card geometry. */
+.driver-graphic-card{
+  isolation:isolate;
+  animation:team-card-arrive .58s cubic-bezier(.2,.75,.25,1) both;
+  animation-delay:calc(min(var(--driver-card-index,0),10) * 42ms);
+  transform-origin:50% 85%;
+}
+.driver-graphic-card:before{
+  content:"";position:absolute;z-index:4;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(112deg,transparent 28%,rgba(255,255,255,.13) 46%,transparent 62%);
+  transform:translateX(-125%);transition:transform .72s cubic-bezier(.2,.7,.2,1);
+}
+.driver-graphic-card:hover:before{transform:translateX(125%)}
+.driver-graphic-card-top{isolation:isolate}
+.driver-graphic-card-top:before{
+  content:"";position:absolute;z-index:0;inset:-45% -20%;pointer-events:none;
+  background:repeating-linear-gradient(135deg,transparent 0 17px,rgba(255,255,255,.07) 18px 19px,transparent 20px 37px);
+  transform:rotate(-7deg);opacity:.5;transition:transform .7s cubic-bezier(.2,.7,.2,1),opacity .35s ease;
+}
+.driver-graphic-card:hover .driver-graphic-card-top:before{transform:translate(3%,-5%) rotate(-2deg);opacity:.9}
+.driver-graphic-card-index{
+  position:absolute;z-index:2;top:12px;left:14px;color:rgba(255,255,255,.72);
+  font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.2em;
+}
+.driver-graphic-card-orbit{
+  position:absolute;z-index:1;right:8%;top:9%;width:108px;aspect-ratio:1;border:1px solid rgba(255,255,255,.23);
+  border-radius:50%;opacity:.65;transform:scale(.86) rotate(-24deg);transition:transform .65s cubic-bezier(.2,.7,.2,1),opacity .35s ease;
+}
+.driver-graphic-card-orbit:before,.driver-graphic-card-orbit:after{content:"";position:absolute;border:1px solid rgba(255,255,255,.16);border-radius:50%;inset:12%}
+.driver-graphic-card-orbit:after{inset:27%;border-style:dashed}
+.driver-graphic-card:hover .driver-graphic-card-orbit{transform:scale(1.08) rotate(18deg);opacity:.95}
+.driver-graphic-card-accent{
+  position:absolute;z-index:1;right:0;top:0;width:5px;height:0;background:var(--driver-card-secondary,#d4b66d);
+  transition:height .45s cubic-bezier(.2,.7,.2,1);
+}
+.driver-graphic-card:hover .driver-graphic-card-accent{height:100%}
+.driver-graphic-card-portrait{transition:transform .6s cubic-bezier(.2,.7,.2,1),filter .6s ease;transform-origin:bottom right}
+.driver-graphic-card:hover .driver-graphic-card-portrait{transform:translateY(-4px) scale(1.045);filter:drop-shadow(0 12px 18px rgba(0,0,0,.32))}
+.driver-graphic-card-base{transition:background .3s ease}
+.driver-graphic-card:hover .driver-graphic-card-base{background:rgba(15,18,22,.98)}
+@media(prefers-reduced-motion:reduce){
+ .driver-graphic-card,.driver-graphic-card:before,.driver-graphic-card-top:before{animation:none!important;transition:none!important}
+ .driver-graphic-card:hover{transform:none}
+}
