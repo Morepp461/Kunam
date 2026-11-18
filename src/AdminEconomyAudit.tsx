@@ -43,6 +43,7 @@ type AutomationRun = {
   error: string | null;
 };
 type PayrollRun={id:string;started_at:string;status:string;payroll_paid:number;payroll_pending:number;error:string|null};
+type SystemHealth={id:string;started_at:string;finished_at:string|null;status:string;wallet_mismatches:number;cron_failures_24h:number;pending_payroll:number;races_awaiting_result:number;seasons_missing_calendar:number;snapshot:Record<string,any>;error:string|null};
 type Snapshot = {
   pending_rewards: number;
   pending_member_checkins: number;
@@ -60,17 +61,19 @@ const date = (value: string | null) => value ? new Intl.DateTimeFormat("id-ID", 
 export default function AdminEconomyAudit() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [payrollRuns,setPayrollRuns]=useState<PayrollRun[]>([]);
+  const [systemHealth,setSystemHealth]=useState<SystemHealth|null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(async () => {
     if (!supabase) { setError("Koneksi Supabase belum tersedia."); setLoading(false); return; }
     setLoading(true);
-    const [{ data, error: requestError },{data:payrollData,error:payrollError}]=await Promise.all([
+    const [{ data, error: requestError },{data:payrollData,error:payrollError},{data:healthData,error:healthError}]=await Promise.all([
       supabase.rpc("admin_get_economy_audit_snapshot"),
-      supabase.from("caleris_payroll_automation_runs").select("id,started_at,status,payroll_paid,payroll_pending,error").order("started_at",{ascending:false}).limit(8)
+      supabase.from("caleris_payroll_automation_runs").select("id,started_at,status,payroll_paid,payroll_pending,error").order("started_at",{ascending:false}).limit(8),
+      supabase.rpc("admin_get_system_health_snapshot")
     ]);
-    if (requestError||payrollError) setError(requestError?.message||payrollError?.message||"Gagal memuat audit.");
-    else { setSnapshot(data as Snapshot);setPayrollRuns((payrollData||[]) as PayrollRun[]); setError(null); }
+    if (requestError||payrollError||healthError) setError(requestError?.message||payrollError?.message||healthError?.message||"Gagal memuat audit.");
+    else { setSnapshot(data as Snapshot);setPayrollRuns((payrollData||[]) as PayrollRun[]);setSystemHealth(healthData as SystemHealth); setError(null); }
     setLoading(false);
   }, []);
   useEffect(() => { void refresh(); }, [refresh]);
@@ -81,6 +84,18 @@ export default function AdminEconomyAudit() {
       <div><span className="section-eyebrow">MONITORING · IMMUTABLE RUN LOG</span><h2>Economy Audit Center</h2></div>
       <button className="economy-secondary-button" type="button" onClick={() => void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh audit</button>
     </div>
+    {systemHealth&&<section className="economy-audit-health">
+      <div className="economy-audit-health-head"><div><span className="section-eyebrow">SYSTEM HEALTH & FINANCIAL RECONCILIATION</span><h3>{systemHealth.status==="healthy"?"Semua pemeriksaan normal":systemHealth.status==="attention"?"Perlu perhatian":"Pemeriksaan belum berjalan"}</h3><small>Terakhir diperiksa: {date(systemHealth.finished_at||systemHealth.started_at)}</small></div><span className={"economy-audit-health-state "+systemHealth.status}>{systemHealth.status.toUpperCase()}</span></div>
+      <div className="economy-audit-health-grid">
+        <article><span>Wallet mismatch</span><strong>{systemHealth.wallet_mismatches}</strong></article>
+        <article><span>Cron gagal · 24 jam</span><strong>{systemHealth.cron_failures_24h}</strong></article>
+        <article><span>Payroll pending</span><strong>{systemHealth.pending_payroll}</strong></article>
+        <article><span>Race menunggu hasil</span><strong>{systemHealth.races_awaiting_result}</strong></article>
+        <article><span>Season calendar tidak lengkap</span><strong>{systemHealth.seasons_missing_calendar}</strong></article>
+      </div>
+      <p>{String(systemHealth.snapshot?.baseline_scope||"Rekonsiliasi wallet menggunakan baseline yang tercatat dan memeriksa perubahan ledger setelah baseline tersebut.")}</p>
+      {systemHealth.error&&<p className="economy-audit-error">{systemHealth.error}</p>}
+    </section>}
     <div className="economy-audit-summary">
       <article><span>Pending total</span><strong>{loading ? "—" : pendingTotal}</strong></article>
       <article><span>Daily reward</span><strong>{loading ? "—" : snapshot?.pending_rewards ?? 0}</strong></article>
