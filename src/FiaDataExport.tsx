@@ -69,7 +69,7 @@ export default function FiaDataExport({isAdmin,isFia}:{isAdmin:boolean;isFia:boo
     files["xl/worksheets/sheet"+(index+1)+".xml"]=strToU8(xml);
    });
    const buffer=zipSync(files,{level:6});
-   const blob=new Blob([buffer.buffer.slice(buffer.byteOffset,buffer.byteOffset+buffer.byteLength)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+   const blob=new Blob([new Uint8Array(buffer).buffer as ArrayBuffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
    const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="caleris-masters-live-data.xlsx";a.click();URL.revokeObjectURL(url);
    setNotice("Workbook berhasil dibuat: "+driverSheet.length+" driver dan "+teamSheet.length+" tim.");
   }catch(error:any){setNotice(error?.message||"Export gagal. Periksa akses database.");}
