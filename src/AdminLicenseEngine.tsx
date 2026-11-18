@@ -7,7 +7,8 @@ import {supabase} from "./lib/supabase";
 
 type Season={id:string;season_key:string;title:string;starts_on:string;ends_on:string;status:"draft"|"active"|"completed"};
 type Division={id:string;season_id:string;division_key:string;division_name:string;status:"draft"|"active"|"completed"};
-type Driver={id:string;character_name:string|null;license:string|null};
+type Driver={id:string;character_name:string|null;license:string|null;team_id:string|null};
+type DriverContract={season_id:string;member_id:string;team_id:string;status:string};
 type Registration={id:string;season_id:string;season_division_id:string;member_id:string;is_hiatus:boolean;preserved_license:string|null;members?:{character_name:string|null;license:string|null}};
 type Round={id:string;season_division_id:string;round_number:number;title:string;circuit_name:string|null;circuit_country_code:string|null;checkin_opens_at:string;checkin_closes_at:string;status:string};
 type Circuit={id:string;name:string;country_code:string|null};
@@ -15,7 +16,7 @@ type Notice={kind:"success"|"error";text:string};
 const slug=(v:string)=>v.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 
 export default function AdminLicenseEngine({session}:{session:Session}){
- const [seasons,setSeasons]=useState<Season[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[drivers,setDrivers]=useState<Driver[]>([]),[registrations,setRegistrations]=useState<Registration[]>([]),[rounds,setRounds]=useState<Round[]>([]),[circuits,setCircuits]=useState<Circuit[]>([]);
+ const [seasons,setSeasons]=useState<Season[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[drivers,setDrivers]=useState<Driver[]>([]),[contracts,setContracts]=useState<DriverContract[]>([]),[registrations,setRegistrations]=useState<Registration[]>([]),[rounds,setRounds]=useState<Round[]>([]),[circuits,setCircuits]=useState<Circuit[]>([]);
  const [selectedSeason,setSelectedSeason]=useState(""),[selectedDivision,setSelectedDivision]=useState(""),[selectedRound,setSelectedRound]=useState("");
  const [memberId,setMemberId]=useState(""),[standingMember,setStandingMember]=useState(""),[standingPoints,setStandingPoints]=useState(""),[finalMember,setFinalMember]=useState(""),[finalPoints,setFinalPoints]=useState(""),[finalPosition,setFinalPosition]=useState("");
  const [seasonTitle,setSeasonTitle]=useState(""),[seasonKey,setSeasonKey]=useState(""),[seasonStart,setSeasonStart]=useState(""),[divisionName,setDivisionName]=useState("");
@@ -23,16 +24,17 @@ export default function AdminLicenseEngine({session}:{session:Session}){
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState<Notice|null>(null);
  const load=useCallback(async()=>{
   if(!supabase)return;const db=supabase;
-  const [s,d,m,r,ro,c]=await Promise.all([
+  const [s,d,m,r,ro,c,ct]=await Promise.all([
    db.from("license_seasons").select("*").order("created_at",{ascending:false}),
    db.from("license_season_divisions").select("*").order("created_at",{ascending:false}),
-   db.from("members").select("id,character_name,license").eq("role","Driver").order("character_name"),
+   db.from("members").select("id,character_name,license,team_id").eq("role","Driver").order("character_name"),
    db.from("license_season_members").select("*,members!license_season_members_member_id_fkey(character_name,license)").order("created_at",{ascending:false}),
    db.from("license_rounds").select("*").order("round_number"),
-   db.from("caleris_circuit_pool").select("id,name,country_code").order("name")
+   db.from("caleris_circuit_pool").select("id,name,country_code").order("name"),
+   db.from("economy_driver_contracts").select("season_id,member_id,team_id,status").eq("status","active")
   ]);
-  const err=s.error||d.error||m.error||r.error||ro.error||c.error;if(err)setNotice({kind:"error",text:err.message});
-  setSeasons((s.data||[]) as Season[]);setDivisions((d.data||[]) as Division[]);setDrivers((m.data||[]) as Driver[]);setRegistrations((r.data||[]) as Registration[]);setRounds((ro.data||[]) as Round[]);setCircuits((c.data||[]) as Circuit[]);
+  const err=s.error||d.error||m.error||r.error||ro.error||c.error||ct.error;if(err)setNotice({kind:"error",text:err.message});
+  setSeasons((s.data||[]) as Season[]);setDivisions((d.data||[]) as Division[]);setDrivers((m.data||[]) as Driver[]);setContracts((ct.data||[]) as DriverContract[]);setRegistrations((r.data||[]) as Registration[]);setRounds((ro.data||[]) as Round[]);setCircuits((c.data||[]) as Circuit[]);
   if(!selectedSeason&&s.data?.length)setSelectedSeason(s.data.find(x=>x.status==="active")?.id||s.data[0].id);
   if(!selectedDivision&&d.data?.length)setSelectedDivision(d.data[0].id);
   if(!selectedRound&&ro.data?.length)setSelectedRound(ro.data[0].id);
@@ -41,7 +43,7 @@ export default function AdminLicenseEngine({session}:{session:Session}){
  const activeSeason=seasons.find(s=>s.id===selectedSeason),activeDivision=divisions.find(d=>d.id===selectedDivision),activeRound=rounds.find(r=>r.id===selectedRound);
  const divisionOptions=useMemo(()=>divisions.filter(d=>d.season_id===selectedSeason),[divisions,selectedSeason]);
  const divisionRegistrations=registrations.filter(r=>r.season_division_id===selectedDivision),divisionRounds=rounds.filter(r=>r.season_division_id===selectedDivision);
- const assignedIds=new Set(divisionRegistrations.map(r=>r.member_id)),availableDrivers=drivers.filter(d=>!assignedIds.has(d.id));
+ const assignedIds=new Set(divisionRegistrations.map(r=>r.member_id)),availableDrivers=drivers.filter(d=>!assignedIds.has(d.id)&&contracts.some(c=>c.season_id===selectedSeason&&c.member_id===d.id&&c.team_id===d.team_id&&c.status==="active"));
  const run=async(fn:()=>PromiseLike<{error:{message:string}|null}>,success:string)=>{setBusy(true);setNotice(null);const result=await fn();setBusy(false);if(result.error){setNotice({kind:"error",text:result.error.message});return false}setNotice({kind:"success",text:success});await load();return true};
  const createSeason=async(e:FormEvent)=>{e.preventDefault();if(!supabase)return;const ok=await run(()=>supabase!.from("license_seasons").insert({season_key:slug(seasonKey||seasonTitle),title:seasonTitle.trim(),starts_on:seasonStart,ends_on:seasonStart,status:"draft",created_by:session.user.id}),"Season draft berhasil dibuat.");if(ok){setSeasonTitle("");setSeasonKey("");setSeasonStart("");}};
  const createDivision=async(e:FormEvent)=>{e.preventDefault();if(!supabase||!selectedSeason)return;const key=slug(divisionName);await run(()=>supabase!.from("license_season_divisions").insert({season_id:selectedSeason,division_key:key,division_name:divisionName.trim(),status:activeSeason?.status==="draft"?"draft":"active"}),"Divisi dibuat. Atur poin WDC untuk key divisi ini di Configuration Center.");setDivisionName("")};
@@ -70,6 +72,7 @@ export default function AdminLicenseEngine({session}:{session:Session}){
     {activeDivision&&<p className="license-muted">Key: <code>{activeDivision.division_key}</code> · WDC config: <code>scoring-wdc-{activeDivision.division_key}</code></p>}
    </section>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">03 · DRIVER REGISTRATION</span><h2>Driver divisi</h2></div><Users size={19}/></div>
+    <p className="license-muted">Roster draft hanya menerima Driver dengan kontrak aktif pada season ini dan tim yang masih sesuai. Kontrak season sebelumnya tidak otomatis diwariskan.</p>
     <form onSubmit={registerDriver} className="license-form"><label>Driver<select required value={memberId} onChange={e=>setMemberId(e.target.value)}><option value="">Pilih driver</option>{availableDrivers.map(d=><option key={d.id} value={d.id}>{d.character_name||"Driver"} · {d.license||"Tanpa lisensi"}</option>)}</select></label><button className="action primary" disabled={busy||!selectedDivision||!memberId}><Plus size={15}/> Daftarkan driver</button></form>
     <div className="license-list">{divisionRegistrations.map(r=><article key={r.id}><div><strong>{r.members?.character_name||drivers.find(d=>d.id===r.member_id)?.character_name||"Driver"}</strong><small>Lisensi terakhir: {r.preserved_license||r.members?.license||"Belum diatur"}</small></div><label className="license-hiatus"><input type="checkbox" checked={r.is_hiatus} disabled={seasons.find(s=>s.id===r.season_id)?.status!=="completed"} onChange={()=>void toggleHiatus(r)}/> Hiatus</label></article>)}</div>
     <p className="license-muted">Hiatus hanya dapat ditetapkan setelah season selesai. Sistem menyimpan snapshot lisensi terakhir; driver hiatus tidak diproses untuk inactivity maupun final standings.</p>
