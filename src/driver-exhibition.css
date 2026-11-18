@@ -89,3 +89,20 @@
 .driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.46),rgba(8,7,6,.12) 42%,transparent 78%),linear-gradient(0deg,rgba(5,5,5,.34),transparent 34%,rgba(5,5,5,.06))!important;box-shadow:inset 0 0 70px #0006!important}
 .driver-exhibition-webgl{background:radial-gradient(ellipse at 50% 5%,#745333 0%,#30241a 55%,#171411 100%)!important}
 @media(max-width:760px){.driver-exhibition-vignette{background:linear-gradient(90deg,rgba(8,7,6,.42),rgba(8,7,6,.08) 48%,transparent 80%),linear-gradient(0deg,rgba(5,5,5,.4),transparent 38%,rgba(5,5,5,.05))!important}}
+
+
+/* Desktop analog camera controller. Mobile keeps its existing compact joystick. */
+.driver-desktop-joystick{display:none}
+@media(min-width:761px){
+  .driver-desktop-joystick{position:absolute;z-index:5;left:26px;bottom:66px;display:flex;flex-direction:column;align-items:center;gap:7px;touch-action:none;user-select:none;-webkit-user-select:none;pointer-events:auto}
+  .driver-desktop-joystick .driver-joystick-base{width:116px;height:116px;border:1px solid #dfc77b99;background:radial-gradient(circle,#9a88602b 0 35%,#111820d9 38% 100%);box-shadow:0 8px 30px #000a,inset 0 0 24px #ffffff18;backdrop-filter:blur(8px);cursor:grab}
+  .driver-desktop-joystick .driver-joystick-base:active{cursor:grabbing}
+  .driver-desktop-joystick .driver-joystick-knob{width:48px;height:48px;margin:-24px 0 0 -24px;border-color:#f3d994;background:linear-gradient(145deg,#82745b,#25282b);box-shadow:0 4px 14px #000b,0 0 16px #d7b66a25}
+  .driver-desktop-joystick>span{font:700 9px 'Barlow Condensed',Arial,sans-serif;letter-spacing:.24em;color:#e8d69f;text-shadow:0 2px 5px #000}
+  .driver-exhibition-scene:has(.driver-selected-panel) .driver-desktop-joystick{opacity:.9}
+}
+@media(min-width:761px) and (max-height:620px){
+  .driver-desktop-joystick{left:18px;bottom:48px}
+  .driver-desktop-joystick .driver-joystick-base{width:92px;height:92px}
+  .driver-desktop-joystick .driver-joystick-knob{width:42px;height:42px;margin:-21px 0 0 -21px}
+}
