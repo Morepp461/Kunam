@@ -373,6 +373,9 @@ def main():
     assert "Satu kali setup" in event_control_ui and "kalender 12 periode" in event_control_ui
     license_readme = (ROOT / "README.md").read_text(encoding="utf-8")
     assert "one-step season setup" in license_readme and "15–25 race rounds per division" in license_readme and "Circuit Pool" in license_readme
+    remove_legacy_season_creator = ROOT / "supabase/migrations/20261118203100_remove_legacy_season_creator.sql"
+    assert remove_legacy_season_creator.is_file(), "Legacy one-input season creator must be removed"
+    assert "drop function if exists public.fia_create_caleris_season(date)" in remove_legacy_season_creator.read_text(encoding="utf-8")
     wdc_defaults_migration = ROOT / "supabase/migrations/20261118200000_activate_lifetime_wdc_defaults.sql"
     assert wdc_defaults_migration.is_file(), "Missing approved lifetime WDC defaults migration"
     wdc_defaults_sql = wdc_defaults_migration.read_text(encoding="utf-8")
