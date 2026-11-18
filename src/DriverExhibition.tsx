@@ -373,7 +373,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const detail = mobile ? "low" : "high";
           const cacheKey = stableDriverId + ":" + detail + ":race-suit-v3";
           const fingerprint = JSON.stringify({ generator: "ara3d@0.7.4", detail, characterInput });
-          let cachedBytes = characterModelCache.get(cacheKey);
+          const memoryCacheKey = cacheKey + ":" + fingerprint;
+          let cachedBytes = characterModelCache.get(memoryCacheKey);
           if (!cachedBytes) {
             cachedBytes = (async () => {
               const saved = await readCharacterCache(cacheKey).catch(() => null);
@@ -385,8 +386,8 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               character.dispose();
               return bytes;
             })();
-            characterModelCache.set(cacheKey, cachedBytes);
-            cachedBytes.catch(() => { if (characterModelCache.get(cacheKey) === cachedBytes) characterModelCache.delete(cacheKey); });
+            characterModelCache.set(memoryCacheKey, cachedBytes);
+            cachedBytes.catch(() => { if (characterModelCache.get(memoryCacheKey) === cachedBytes) characterModelCache.delete(memoryCacheKey); });
           }
           const glbBytes = await cachedBytes;
           if (disposed) return;
