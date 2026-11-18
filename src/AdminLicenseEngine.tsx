@@ -59,7 +59,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
 
  const totals=useMemo(()=>schedule.reduce((acc,p)=>({premio:acc.premio+p.premio.length,zwei:acc.zwei+p.zwei.length}),{premio:0,zwei:0}),[schedule]);
  const scheduleReady=circuits.length>0&&schedule.every(p=>p.premio.length>=3&&p.premio.length<=5&&p.zwei.length>=3&&p.zwei.length<=5&&p.premio.every(Boolean)&&p.zwei.every(Boolean));
- const periodRows=useMemo(()=>{let offset=0;return periodSequence.map((name,index)=>{const race=name.startsWith("Race Period");const raceIndex=Math.floor(index/2);const days=race?Math.max(schedule[raceIndex].premio.length,schedule[raceIndex].zwei.length):index===0?7:name==="End Season"?5:name==="Off Season"?7:2;const start=addDays(startDate,offset);const end=addDays(start,days-1);offset+=days;return {name,index,race,raceIndex,days,start,end}})},[startDate,schedule]);
+ const periodRows=useMemo(()=>{let offset=0;return periodSequence.map((name,index)=>{const race=name.startsWith("Race Period");const raceIndex=Math.floor(index/2);const days=race?Math.max(schedule[raceIndex].premio.length,schedule[raceIndex].zwei.length):index===0?7:name==="End Season"?5:name==="Off Season"?7:2;const start=addDays(startDate,offset);const end=addDays(start,days-1);offset+=days;return {name,race,raceIndex,days,start,end}})},[startDate,schedule]);
  const duplicates=useMemo(()=>{
   const p=schedule.flatMap(x=>x.premio),z=schedule.flatMap(x=>x.zwei);
   return p.some((id,i)=>id&&p.indexOf(id)!==i)||z.some((id,i)=>id&&z.indexOf(id)!==i);
@@ -115,7 +115,7 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
     <table className="license-schedule-table">
      <thead><tr><th>Periode</th><th>Jadwal</th><th>Caleris Premio</th><th>Caleris Zwei</th></tr></thead>
      <tbody>
-      {periodRows.map(({name,index,race:isRace,raceIndex,days,start,end})=>{
+      {periodRows.map(({name,race:isRace,raceIndex,days,start,end})=>{
        return <tr key={name}>
         <td><strong>{name}</strong><small>{isRace?"3–5 race per divisi":index===0?"7 hari":name==="End Season"?"5 hari":name==="Off Season"?"7 hari":"2 hari"}</small></td>
         <td><span>{start} – {end}<small className="license-schedule-days">{days} hari</small></span></td>
