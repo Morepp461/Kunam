@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useMemo,useState} from "react";
-import {ArrowLeft,RefreshCw,Send,Clock3,Search} from "lucide-react";
+import {ArrowLeft,RefreshCw,Clock3,Search} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -94,6 +94,7 @@ export default function DriverTransferMarket({session}:{session:Session}){
  };
  const mineFreeAgent=freeAgentNegotiations.filter(n=>n.team_id===ownTeamId||n.driver_member_id===member?.id);
  const mine=negotiations.filter(n=>n.buyer_team_id===ownTeamId||n.seller_team_id===ownTeamId);
+ void setMoveType; void canRecruit; void teamDriverCount; void eligibleDrivers; void start; void startFreeAgent;
  return <section className="workspace transfer-market-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
   <header className="page-heading"><span className="section-eyebrow">MAIN EVENT · DRIVER MARKET</span><h1 className="page-title">Transfer Market</h1><p className="page-description">Rekrutmen Driver melalui penawaran, negosiasi dua pihak, dan persetujuan akhir FIA.</p></header>
