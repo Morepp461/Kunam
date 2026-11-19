@@ -60,7 +60,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
     mappedDriverTier="bronze";
    }
   }
-  setDriverPriceTier(mappedDriverTier);\n  setPitCrewLevel(Number(pitFacility?.level||0));
+  setDriverPriceTier(mappedDriverTier);
   const pitCrewQuery=asset==="TDP"&&m.team_id
    ?supabase.from("caleris_team_hq_facilities").select("level").eq("team_id",m.team_id).eq("facility_key","pit_crew_training_center").maybeSingle()
    :Promise.resolve({data:null,error:null});
@@ -72,11 +72,14 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
    supabase.from(attrTable).select("id,current_value,updated_at,"+keyColumn).eq(ownerColumn,ownerId).order(keyColumn),
    priceQuery,
    supabase.from("caleris_development_season_snapshots").select("id,season_id,asset_type,snapshot_stage,attributes,created_at").eq("asset_type",asset).eq(asset==="DDP"?"member_id":"team_id",ownerId).order("created_at",{ascending:false}).limit(40),
-   supabase.from("license_seasons").select("id,title,status")
+   supabase.from("license_seasons").select("id,title,status"),
+   pitCrewQuery
   ]);
   const errors=[ae,we,re,priceError,se,sre,pitFacilityError].filter(Boolean);
   if(errors.length){setNotice(errors.map(e=>e?.message).join(" · "));setLoading(false);return;}
-  setPitCrewLevel(Number(pitFacility?.level||0));\n  setAccount(a as Account|null);setCashWallet(w as CashWallet|null);
+  setPitCrewLevel(Number(pitFacility?.level||0));
+  setPitCrewLevel(Number(pitFacility?.level||0));
+  setAccount(a as Account|null);setCashWallet(w as CashWallet|null);
   setAttributes((rows||[]).map((r:any)=>({id:r.id,key:r[keyColumn],value:Number(r.current_value),updated_at:r.updated_at})));
   setPrices(Object.fromEntries((priceRows||[]).map((r:any)=>[asset==="DDP"?r.attribute_key:r.part_key,Number(r.cash_eur_per_point)])));
   setSnapshots((ss||[]) as Snapshot[]);setSeasons((seasonRows||[]) as Season[]);
@@ -86,7 +89,9 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const cashBalance=Number(cashWallet?.balance||0),tokenBalance=Number(account?.balance||0);
  const current=useMemo(()=>Object.fromEntries(attributes.map(a=>[a.key,a.value])),[attributes]);
  const delta=Number(amount||0),oldValue=Number(current[selected]??50),newValue=oldValue+delta;
- const cashRate=Number(prices[selected]||0),baseCashCost=delta*cashRate;\n const pitCrewDiscountActive=asset==="TDP"&&selected==="pit_stop_efficiency"&&paymentMethod==="cash"&&pitCrewLevel>0;\n const cashCost=pitCrewDiscountActive?Number((baseCashCost*Math.pow(0.9,pitCrewLevel)).toFixed(2)):baseCashCost,tokenCost=delta;
+ const cashRate=Number(prices[selected]||0),baseCashCost=delta*cashRate;
+ const pitCrewDiscountActive=asset==="TDP"&&selected==="pit_stop_efficiency"&&paymentMethod==="cash"&&pitCrewLevel>0;
+ const cashCost=pitCrewDiscountActive?Number((baseCashCost*Math.pow(0.9,pitCrewLevel)).toFixed(2)):baseCashCost,tokenCost=delta;
  const validDelta=Number.isFinite(delta)&&delta>0&&Math.round(delta*100)===delta*100&&newValue<=100;
  const validPayment=paymentMethod==="cash"?cashRate>0&&cashCost<=cashBalance:tokenCost<=tokenBalance;
  const upgrade=async()=>{
