@@ -2,7 +2,7 @@ import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} 
 import {createPortal} from "react-dom";
 import type {ChangeEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
 import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate,useParams} from "react-router-dom";
-import {Activity,ArrowUpRight,ShoppingBag,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,SlidersHorizontal,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText,Menu,Trophy,Coins,Globe,Medal,ArrowLeftRight,Megaphone,Briefcase,Handshake,Map,UserRound,Gauge,BadgeDollarSign,ListChecks,History,Dumbbell,CalendarCheck,Building2,Wrench,FileSignature,UserPlus,ScanSearch,ClipboardPenLine,Network,Cog,Scale,BookMarked,RadioTower,FlagTriangleRight,Gavel,ShieldAlert,MapPinned,Send} from "lucide-react";
+import {Activity,ArrowUpRight,ShoppingBag,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,SlidersHorizontal,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText,Menu,Trophy,Coins,Globe,Medal,ArrowLeftRight,Megaphone,Briefcase,Handshake,Map,UserRound,Gauge,BadgeDollarSign,ListChecks,History,Dumbbell,CalendarCheck,Building2,Wrench,FileSignature,UserPlus,ScanSearch,ClipboardPenLine,Network,Cog,Scale,BookMarked,RadioTower,FlagTriangleRight,Gavel,ShieldAlert,MapPinned,Send,ShieldCheck} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {missingSupabaseMessage,supabase} from "./lib/supabase";
 import "./workspace.css";
