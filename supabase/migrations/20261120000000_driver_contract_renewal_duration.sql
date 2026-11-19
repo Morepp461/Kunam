@@ -111,7 +111,7 @@ begin
     if v_min is null or v_offer.proposed_salary<v_min or v_offer.proposed_salary>v_max then
       raise exception 'Salary band lisensi berubah. Minta Team Owner mengirim penawaran baru.';
     end if;
-    select * into v_current_season from public.license_seasons s
+    select s.* into v_current_season from public.license_seasons s
     join public.economy_driver_contracts c on c.season_id=s.id
     where c.id=v_offer.current_contract_id;
     for v_season in
