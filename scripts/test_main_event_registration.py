@@ -99,8 +99,14 @@ assert "caleris_assign_owned_engines_on_season_activation" in engine_season_sql
 assert "distinct on (e.owner_team_id)" in engine_season_sql
 
 engine_market = (ROOT / "src" / "TeamEngineMarket.tsx").read_text(encoding="utf-8")
-for fragment in ['rpc("team_list_owned_engines")', 'rpc("team_set_engine_sale_listing",', "5000000", "25000000"]:
-    assert fragment in engine_market, f"Team Engine Market is missing: {fragment}"
+for fragment in ['rpc("team_list_owned_engines")', 'rpc("list_main_event_engine_marketplace")', 'rpc("team_purchase_engine_usage"', "race_pace", "qualifying_pace", "engine_power"]:
+    assert fragment in engine_market, f"Shared Team Engine Market is missing: {fragment}"
+admin_market = (ROOT / "src" / "AdminEngineMarket.tsx").read_text(encoding="utf-8")
+for fragment in ['rpc("admin_list_engine_marketplace")', 'rpc("admin_configure_engine_usage_offer"', "5000000", "25000000"]:
+    assert fragment in admin_market, f"Admin Engine Market pricing control is missing: {fragment}"
+shared_engine_sql = (MIGRATIONS / "20261120010000_shared_engine_usage_market.sql").read_text(encoding="utf-8").lower()
+for fragment in ["race_pace", "qualifying_pace", "engine_power", "team_purchase_engine_usage", "admin_configure_engine_usage_offer", "on conflict(season_id,team_id) do update", "owner_team_id"]:
+    assert fragment in shared_engine_sql, f"Shared Engine usage migration is missing: {fragment}"
 
 print("Main Event registration regression checks passed.")
 
