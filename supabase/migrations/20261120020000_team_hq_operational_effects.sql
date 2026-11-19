@@ -168,6 +168,26 @@ create trigger caleris_team_hq_config_effects
 after update of effects_by_level,is_enabled on public.caleris_team_hq_facility_configs
 for each row execute function private.refresh_team_hq_config_effects_trigger();
 
+do $function$
+declare
+  v_definition text;
+  v_original text := 'v_token_cost:=v_delta;';
+  v_replacement text := 'v_token_cost:=v_delta;
+  if p_scope=''driver'' and v_member.team_id is not null then
+    v_token_cost:=greatest(0.01,round(v_delta*(1-least(50,greatest(0,coalesce((private.team_hq_effects_for_team(v_member.team_id)->>''driver_development_efficiency_bonus_percent'')::numeric,0)))/100),2));
+  elsif p_scope=''team'' then
+    v_token_cost:=greatest(0.01,round(v_delta*(1-least(50,greatest(0,coalesce((private.team_hq_effects_for_team(v_member.team_id)->>''research_efficiency_bonus_percent'')::numeric,0)))/100),2));
+  end if;';
+begin
+  v_definition:=pg_get_functiondef('public.member_upgrade_development_attribute(uuid,text,text,numeric,text)'::regprocedure);
+  if position(v_original in v_definition)=0 then
+    raise exception 'Development upgrade function changed; review HQ discount integration before applying.';
+  end if;
+  v_definition:=replace(v_definition,v_original,v_replacement);
+  execute v_definition;
+end;
+$function$;
+
 create or replace function public.team_owner_get_hq_analytics_report()
 returns jsonb
 language plpgsql
