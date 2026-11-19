@@ -101,7 +101,7 @@ as $function$
     'factory_capacity_bonus_percent',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'factory_capacity_bonus_percent')::numeric,0)*f.condition/100),0),
     'driver_development_efficiency_bonus_percent',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'driver_development_efficiency_bonus_percent')::numeric,0)*f.condition/100),0),
     'research_efficiency_bonus_percent',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'research_efficiency_bonus_percent')::numeric,0)*f.condition/100),0),
-    'analytics_round_window',coalesce(max((c.effects_by_level->f.level::text->>'analytics_round_window')::integer*f.condition/100),0),
+    'analytics_round_window',coalesce(max(round((c.effects_by_level->f.level::text->>'analytics_round_window')::numeric*f.condition/100)::integer),0),
     'strategy_analysis_depth',coalesce(max((c.effects_by_level->f.level::text->>'strategy_analysis_depth')::integer*f.condition/100),0)
   )
   from public.caleris_team_hq_facilities f
