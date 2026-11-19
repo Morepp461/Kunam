@@ -187,7 +187,7 @@ begin
   if not found then raise exception 'Team Wallet pemilik Engine tidak tersedia.'; end if;
 
   v_tx:=private.post_economy_transaction(
-    v_buyer_wallet.id,v_owner_wallet.id,v_engine.asking_price,'engine_usage_purchase',
+    v_buyer_wallet.id,v_owner_wallet.id,v_engine.asking_price,'transfer',
     'Pembelian hak penggunaan Engine '||v_engine.name,p_idempotency_key,v_user,
     jsonb_build_object('engine_id',v_engine.id,'owner_team_id',v_engine.owner_team_id,
       'using_team_id',v_member.team_id,'season_id',p_season_id,
