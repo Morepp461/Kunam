@@ -71,7 +71,14 @@ export default function FiaDataExport({isAdmin,isFia}:{isAdmin:boolean;isFia:boo
    const blob=new Blob([new Uint8Array(buffer).buffer as ArrayBuffer],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
    const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="caleris-masters-live-data.xlsx";document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
    setNotice("Workbook berhasil dibuat: "+driverSheet.length+" driver dan "+teamSheet.length+" tim.");
-  }catch(error:any){setNotice(error?.message||"Export gagal. Periksa akses database.");}
+  }catch(error:any){
+   const response=error?.context;
+   if(response instanceof Response){
+    let detail=error?.message||"Permintaan export ditolak.";
+    try{const payload=await response.clone().json();detail=String(payload?.error||payload?.message||detail);}catch{}
+    setNotice("Export gagal ("+response.status+"): "+detail);
+   }else setNotice(error?.message||"Export gagal. Periksa akses database.");
+  }
   finally{setBusy(false);}
  };
  if(!isAdmin&&!isFia)return null;
