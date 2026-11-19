@@ -76,7 +76,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
   ]);
   const errors=[ae,we,re,priceError,se,sre,pitFacilityError].filter(Boolean);
   if(errors.length){setNotice(errors.map(e=>e?.message).join(" · "));setLoading(false);return;}
-  setAccount(a as Account|null);setCashWallet(w as CashWallet|null);
+  setPitCrewLevel(Number(pitFacility?.level||0));\n  setAccount(a as Account|null);setCashWallet(w as CashWallet|null);
   setAttributes((rows||[]).map((r:any)=>({id:r.id,key:r[keyColumn],value:Number(r.current_value),updated_at:r.updated_at})));
   setPrices(Object.fromEntries((priceRows||[]).map((r:any)=>[asset==="DDP"?r.attribute_key:r.part_key,Number(r.cash_eur_per_point)])));
   setSnapshots((ss||[]) as Snapshot[]);setSeasons((seasonRows||[]) as Season[]);
