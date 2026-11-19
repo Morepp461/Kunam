@@ -30,13 +30,15 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
  const [teamScores,setTeamScores]=useState<number[]>([]);
  const [driverScores,setDriverScores]=useState<number[]>([]);
  const [trustScores,setTrustScores]=useState<number[]>([]);
+ const [reputationWeights,setReputationWeights]=useState<Record<string,number>>({championship:25,race_performance:25,consistency:15,experience:10,fan_popularity:15,professional_record:10,form:5,morale:5,confidence:5});
+ const [weightsSaving,setWeightsSaving]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
 
  const refresh=useCallback(async()=>{
   if(!supabase){setError("Supabase belum dikonfigurasi.");setLoading(false);return;}
   setLoading(true);setError("");
-  const [s,t,o,r,c,ta,ps,po,f,tr,dr,trust]=await Promise.all([
+  const [s,t,o,r,c,ta,ps,po,f,tr,dr,trust,weights]=await Promise.all([
    supabase.from("caleris_sponsors").select("id,name,tier_key,available_budget,is_active").order("name"),
    supabase.from("teams").select("id,name").order("name"),
    supabase.from("caleris_sponsorship_offers").select("id,sponsor_id,target_team_id,status,proposed_amount,counter_count,created_at,expires_at").order("created_at",{ascending:false}),
@@ -48,9 +50,10 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
    supabase.from("caleris_fan_populations").select("entity_kind,population"),
    supabase.from("caleris_team_reputation").select("score"),
    supabase.from("caleris_driver_reputation").select("score"),
-   supabase.from("caleris_sponsorship_season_evaluations").select("trust_score")
+   supabase.from("caleris_sponsorship_season_evaluations").select("trust_score"),
+   supabase.from("caleris_brand_ecosystem_config").select("config_value").eq("config_key","driver_reputation_weights").maybeSingle()
   ]);
-  const issue=[s.error,t.error,o.error,r.error,c.error,ta.error,ps.error,po.error,f.error,tr.error,dr.error,trust.error].find(Boolean);
+  const issue=[s.error,t.error,o.error,r.error,c.error,ta.error,ps.error,po.error,f.error,tr.error,dr.error,trust.error,weights.error].find(Boolean);
   if(issue){setError(issue.message);setLoading(false);return;}
   setSponsors((s.data||[]) as Sponsor[]);setTeams((t.data||[]) as Team[]);
   setOffers((o.data||[]) as Offer[]);setRevisions((r.data||[]) as Revision[]);
@@ -60,10 +63,21 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
   setTeamScores((tr.data||[]).map(x=>Number(x.score||0)));
   setDriverScores((dr.data||[]).map(x=>Number(x.score||0)));
   setTrustScores((trust.data||[]).map(x=>Number(x.trust_score||0)));
+  setReputationWeights((weights.data?.config_value||{championship:25,race_performance:25,consistency:15,experience:10,fan_popularity:15,professional_record:10,form:5,morale:5,confidence:5}) as Record<string,number>);
   setLoading(false);
  },[session.user.id]);
 
  useEffect(()=>{void refresh()},[refresh]);
+ const saveReputationWeights=async()=>{
+  if(!supabase)return;
+  const values=Object.values(reputationWeights).map(Number);
+  if(values.some(v=>!Number.isFinite(v)||v<0)||values.reduce((a,b)=>a+b,0)<=0){setError("Bobot reputasi harus berupa angka non-negatif dengan total lebih dari nol.");return;}
+  setWeightsSaving(true);setError("");
+  const {error:saveError}=await supabase.rpc("admin_set_brand_ecosystem_config",{p_key:"driver_reputation_weights",p_value:reputationWeights,p_description:"Bobot reputasi Driver termasuk Form, Morale dan Confidence"});
+  setWeightsSaving(false);
+  if(saveError){setError(saveError.message);return;}
+  setError("Bobot reputasi Driver berhasil disimpan. Skor baru dihitung saat hasil race dipublikasikan.");await refresh();
+ };
  const sponsorName=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
  const teamName=(id:string|null)=>teams.find(t=>t.id===id)?.name||"Team";
  const history=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
@@ -94,6 +108,12 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
    <article><span>FAN POPULATION</span><strong>{num(totalFans)}</strong><small>Regional fans seluruh game</small></article>
    <article><span>SPONSOR PAYOUTS</span><strong>{money(paidTotal)}</strong><small>Sudah dibayarkan ke Economy Ledger</small></article>
   </div>
+  <section className="workspace-card">
+   <div className="section-title-row"><div><span className="section-eyebrow">REPUTATION CONFIGURATION</span><h2>Driver Reputation Weights</h2></div></div>
+   <p className="brand-card-help">Form, Morale, dan Confidence kini menjadi komponen reputasi Driver. Nilai dihitung dari lima race terakhir, tren lima race sebelumnya, serta status kontrak. Bobot dinormalisasi oleh engine dan dapat diatur Admin.</p>
+   <div className="brand-grid">{Object.entries(reputationWeights).map(([key,value])=><label className="s5-field" key={key}><span>{key.replaceAll("_"," ")}</span><input type="number" min="0" step="0.1" value={value} onChange={e=>setReputationWeights(current=>({...current,[key]:Number(e.target.value)}))}/></label>)}</div>
+   <button className="economy-primary-button" disabled={weightsSaving} onClick={()=>void saveReputationWeights()}>{weightsSaving?"Menyimpan...":"Simpan bobot reputasi"}</button>
+  </section>
   <section className="brand-grid">
    <article className="workspace-card">
     <span className="section-eyebrow">AUTOMATION</span><h2><Activity size={17}/> Race & Reputation Engine</h2>
