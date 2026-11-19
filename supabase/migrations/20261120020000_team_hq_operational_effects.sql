@@ -106,7 +106,7 @@ as $function$
   )
   from public.caleris_team_hq_facilities f
   join public.caleris_team_hq_facility_configs c on c.facility_key=f.facility_key
-  where f.team_id=p_team_id and f.level>0;
+  where f.team_id=p_team_id and f.level>0 and c.is_enabled;
 $function$;
 
 create or replace function private.refresh_team_hq_operational_bonuses(p_team_id uuid)
@@ -140,7 +140,7 @@ set search_path=''
 as $function$
 begin
   perform private.refresh_team_hq_operational_bonuses(coalesce(new.team_id,old.team_id));
-  return coalesce(new,old);
+  return new;
 end;
 $function$;
 
