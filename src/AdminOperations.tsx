@@ -126,7 +126,7 @@ export default function AdminOperations({session}:{session:Session}){
  };
  return <section className="workspace ops-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
-  <header className="economy-heading"><div><span className="section-eyebrow">ADMIN CONTROL · OPERATIONS</span><h1>Operations Suite</h1><p>Konfigurasi pajak, hadiah development, sponsor pool, dan valuasi tim.</p></div><span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span></header>
+  <header className="economy-heading"><div><span className="section-eyebrow">ADMIN CONTROL · OPERATIONS</span><h1>Operations Suite</h1><p>Konfigurasi pajak, hadiah development, sponsor pool, dan valuasi tim.</p><Link className="text-link" to="/admin/operations-intelligence">Buka Operations Intelligence →</Link></div><span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span></header>
   <nav className="ops-tabs" aria-label="Operations modules">
    <button className={tab==="tax"?"active":""} onClick={()=>setTab("tax")}><Wallet size={16}/> Tax Rules</button>
    <button className={tab==="prizes"?"active":""} onClick={()=>setTab("prizes")}><Trophy size={16}/> Race Rewards</button>
