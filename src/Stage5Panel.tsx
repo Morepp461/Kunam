@@ -13,6 +13,7 @@ import "./driver-exhibition.css";
 type Props = { session: Session; fallback: ReactNode; isAdmin?: boolean };
 type Row = Record<string, any>;
 const EMPTY_ROWS = { data: [] as Row[], error: null };
+const EMPTY_SINGLE = { data: null as Row | null, error: null };
 const money = (n: number) => "€ " + Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const dateLabel = (v?: string | null) => v ? new Date(v + (v.length === 10 ? "T00:00:00" : "")).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "Belum diatur";
 const ageOf = (dob?: string | null) => {
@@ -80,7 +81,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ,
       fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ
     ] = await Promise.all([
-      supabase.from("profiles").select("user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown").eq("user_id", session.user.id).maybeSingle(),
+      needsOwnIdentity ? supabase.from("profiles").select(isDriverCharacterPage ? "user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown" : "member_id").eq("user_id", session.user.id).maybeSingle() : Promise.resolve(EMPTY_SINGLE),
       needsSeasonData ? supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
       needsTeamData ? supabase.from("caleris_team_directory").select("id,name,division_key,main_color,secondary_color").order("name") : Promise.resolve(EMPTY_ROWS),
       needsMemberDirectory ? supabase.from("caleris_member_directory").select(needsDirectoryAvatars ? "id,character_name,role,license,team_id,avatar_path,avatar_url,nationality,hometown" : "id,character_name,role,license,team_id").order("character_name") : Promise.resolve(EMPTY_ROWS),
