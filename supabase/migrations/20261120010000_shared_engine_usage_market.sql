@@ -28,11 +28,12 @@ create table if not exists public.caleris_engine_usage_contracts (
   status text not null default 'active' check (status in ('active','replaced','expired')),
   purchased_at timestamptz not null default now(),
   ended_at timestamptz,
-  created_by uuid references auth.users(id) on delete set null,
-  unique(season_id,using_team_id)
+  created_by uuid references auth.users(id) on delete set null
 );
 create index if not exists caleris_engine_usage_contracts_engine_idx
   on public.caleris_engine_usage_contracts(engine_id,season_id,status);
+create unique index if not exists caleris_engine_usage_contracts_one_active_team_season
+  on public.caleris_engine_usage_contracts(season_id,using_team_id) where status='active';
 alter table public.caleris_engine_usage_contracts enable row level security;
 revoke all on public.caleris_engine_usage_contracts from anon,authenticated;
 
@@ -141,6 +142,7 @@ declare
   v_buyer_wallet public.economy_wallet_accounts%rowtype;
   v_owner_wallet public.economy_wallet_accounts%rowtype;
   v_tx jsonb;
+  v_existing public.economy_transactions%rowtype;
   v_contract_id uuid;
 begin
   if v_user is null then raise exception 'Authentication required.'; end if;
@@ -154,6 +156,20 @@ begin
   end if;
   select * into v_season from public.license_seasons where id=p_season_id and status='active';
   if not found then raise exception 'Season harus berstatus aktif.'; end if;
+  select * into v_existing from public.economy_transactions where idempotency_key=p_idempotency_key;
+  if found then
+    if v_existing.metadata->>'engine_id' is distinct from p_engine_id::text
+      or v_existing.metadata->>'using_team_id' is distinct from v_member.team_id::text
+      or v_existing.metadata->>'season_id' is distinct from p_season_id::text then
+      raise exception 'Kunci transaksi telah digunakan untuk pembelian Engine lain.';
+    end if;
+    select id into v_contract_id from public.caleris_engine_usage_contracts
+    where transaction_id=v_existing.id;
+    if v_contract_id is not null then
+      return jsonb_build_object('status','duplicate','contract_id',v_contract_id,'transaction_id',v_existing.id);
+    end if;
+    raise exception 'Transaksi Engine ditemukan tanpa kontrak penggunaan. Hubungi Admin untuk rekonsiliasi.';
+  end if;
   select * into v_engine from public.caleris_engines
   where id=p_engine_id and is_active and is_for_sale for update;
   if not found then raise exception 'Engine tidak tersedia di Engine Market.'; end if;
