@@ -74,6 +74,7 @@ def main():
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     profile_module = (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
     dashboard_module = (ROOT / "src/DashboardModule.tsx").read_text(encoding="utf-8")
+    layout_module = (ROOT / "src/MainLayout.tsx").read_text(encoding="utf-8")
     character_identity_migration = ROOT / "supabase/migrations/20261118140000_permanent_character_wallet_and_identity.sql"
     character_balance_migration = ROOT / "supabase/migrations/20261118150000_character_balance_aggregate_preserve_wallet_history.sql"
     assert character_identity_migration.is_file() and character_balance_migration.is_file(), "Missing permanent character identity/balance migrations"
@@ -97,8 +98,8 @@ def main():
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app
-    assert 'COMMUNITY &amp; SUPPORT' in app and 'Dukung Vreeo · Socialbuzz' in app
-    assert 'DIRECTOR OF VREEO.ID' in app
+    assert 'COMMUNITY &amp; SUPPORT' in layout_module and 'Dukung Vreeo · Socialbuzz' in layout_module
+    assert 'DIRECTOR OF VREEO.ID' in layout_module
     for director, instagram in [
         ("Muhammad Ovella", "lllllaaaaa44444"),
         ("Agung Pradana", "pradana.3"),
@@ -106,15 +107,15 @@ def main():
         ("Liam Amir", "liam_amir26"),
         ("Suhanda Arbawi", "_suhanda08"),
     ]:
-        assert director in app and instagram in app, f"Missing director link: {director}"
+        assert director in layout_module and instagram in layout_module, f"Missing director link: {director}"
     assert 'footer-directors nav' in styles
-    assert 'Gabung Discord' in app and 'Official Partners' not in app
-    assert 'CALERIS MASTERS · POWERED BY VREEO' in app
-    assert 'A Motorsport Roleplay Experience' not in app
+    assert 'Gabung Discord' in (app + layout_module) and 'Official Partners' not in (app + layout_module)
+    assert 'CALERIS MASTERS · POWERED BY VREEO' in layout_module
+    assert 'A Motorsport Roleplay Experience' not in (app + layout_module)
     assert 'footer-main' in styles and 'footer-support nav' in styles
     assert 'DIRECTOR OF VREEO.ID' in app
     for director in ["Muhammad Ovella", "Agung Pradana", "Muhammad Alfarel", "Liam Amir", "Suhanda Arbawi"]:
-        assert director in app
+        assert director in layout_module
     assert 'footer-directors nav' in styles
     assert 'legal-blank-page' in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
@@ -337,7 +338,7 @@ def main():
     for fragment in ["caleris_driver_salary_bands", "minimum_license", "salary_min", "salary_max", "member.team_id", "position"]:
         assert fragment in recruitment_advert_source, f"Team-scoped Job Advert UI missing: {fragment}"
     assert 'if(tab.path==="place-job-advert")return <TeamJobAdvert/>' in panel_pages.read_text(encoding="utf-8")
-    assert "panelTabIcons[group.path+\"/\"+tab.path]" in app, "Panel navigation must use distinct per-tab icons"
+    assert "panelTabIcons[group.path+\"/\"+tab.path]" in layout_module, "Panel navigation must use distinct per-tab icons"
     assert "Fixed Driver License Salary Bands" in (ROOT / "README.md").read_text(encoding="utf-8")
     contract_lock_fix = ROOT / "supabase/migrations/20261118190500_contract_salary_lock_lifecycle_fix.sql"
     roster_registration_fix = ROOT / "supabase/migrations/20261118191000_fix_active_season_roster_registration.sql"
