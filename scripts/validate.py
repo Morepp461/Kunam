@@ -195,8 +195,8 @@ def main():
         assert rpc in edge_source, f"Economy Edge gateway missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
-    assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in app
-    assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in app
+    assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in profile_module
+    assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in profile_module
     calendar_migration = ROOT / "supabase/migrations/20261112160305_season_calendar_and_payroll.sql"
     calendar_component = ROOT / "src/AdminSeasonCalendar.tsx"
     contracts_component = ROOT / "src/TeamDriverContracts.tsx"
