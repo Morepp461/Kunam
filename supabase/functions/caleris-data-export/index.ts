@@ -43,8 +43,13 @@ Deno.serve(async(req:Request)=>{
    admin.from("caleris_team_development_parts").select("team_id,part_key,current_value,updated_at").range(0,9999),
    admin.from("caleris_team_profiles").select("team_id,logo_url,country_of_origin,base_location,founded_year,description,vision,long_term_target,main_color,secondary_color").range(0,4999)
   ]);
-  const error=queries.find(q=>q.error)?.error;
-  if(error){console.error("Data export query failed:",error.message);return respond(422,{error:"Unable to read complete Driver and Team data."});}
+  const queryNames=["driver directory","team directory","driver attributes","driver development attributes","team development parts","team profiles"];
+  const failedIndex=queries.findIndex(q=>q.error);
+  if(failedIndex>=0){
+   const failure=queries[failedIndex].error;
+   console.error("Data export query failed:",{source:queryNames[failedIndex],code:failure?.code,message:failure?.message});
+   return respond(422,{error:"Unable to read export data.",source:queryNames[failedIndex],code:failure?.code??"UNKNOWN",detail:failure?.message??"Database query failed."});
+  }
   return respond(200,{success:true,generatedAt:new Date().toISOString(),members:queries[0].data??[],teams:queries[1].data??[],driverAttributes:queries[2].data??[],driverDevelopment:queries[3].data??[],teamDevelopment:queries[4].data??[],teamProfiles:queries[5].data??[]});
  }catch(error){console.error("Caleris data export failed:",error);return respond(500,{error:"Unexpected data export error."});}
 });
