@@ -67,7 +67,6 @@ export const panelGroups: PanelGroup[] = [
     { path: "discord-broadcast", label: "Discord Broadcast", description: "Kirim pengumuman resmi ke komunitas Discord." },
     { path: "race-input", label: "Race Input", description: "Input klasifikasi lengkap dan proses otomatis standings serta ekonomi." },
     { path: "punishment-input", label: "Punishment Input", description: "Pencatatan sanksi driver dan tim." },
-    { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." },
     { path: "circuit-pool-input", label: "Circuit Pool Input", description: "Input master circuit dan spesifikasi sirkuit." },
     { path: "team-hq-config", label: "Team HQ Configuration", description: "Konfigurasi fasilitas, biaya, durasi, maintenance, efek, dan unlock Team HQ." }
   ]}
