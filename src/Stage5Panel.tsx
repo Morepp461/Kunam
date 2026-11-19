@@ -4,6 +4,7 @@ import type { Session } from "@supabase/supabase-js";
 import { Link, useLocation } from "react-router-dom";
 import { Activity, CarFront, CheckCircle2, Flag, Medal, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { createStage5QueryPlan } from "./lib/stage5QueryPlan";
 import { broadcastNewsroomArticle } from "./lib/newsroomBroadcast";
 import DriverExhibition from "./DriverExhibition";
 import FiaDataExport from "./FiaDataExport";
@@ -58,47 +59,17 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
   };
   const set = (key: string, value: any) => setForm((v: Row) => ({ ...v, [key]: value }));
 
-  const isMainGridPage = isMain && ["global", "caleris-premio", "caleris-zwei"].includes(tab);
-  const isHallPage = isMain && tab === "hall-of-fame";
-  const isArchivePage = isMain && tab === "archive";
-  const isDriverCharacterPage = isDriver && tab === "character";
-  const isDriverCareerPage = isDriver && tab === "career-history";
-  const isTeamSummaryPage = isTeam && tab === "team-summary";
-  const isTeamRegistrationPage = isTeam && tab === "driver-registration";
-  const isTeamScoutPage = isTeam && tab === "scout";
-  const isTeamJobPage = isTeam && tab === "place-job-advert";
-  const isFinancialPage = (isDriver || isTeam) && tab === "financial-centre";
-  const isMemberAppealPage = (isDriver || isTeam) && tab === "appeal";
-  const isFiaAppealPage = isFia && tab === "appeal-room" && isAdmin;
-  const isMainAnnouncementPage = isMain && tab === "fia-announcement";
-  const isMainRegulationPage = isMain && tab === "regulation";
-  const isMainJobSearchPage = isMain && tab === "job-search";
-  const isFiaContentFormPage = isFia && ["rules-input", "announcement-input"].includes(tab);
-  const isDriverProfilePage = isDriverCharacterPage || isDriverCareerPage;
-  const isCompetitionPage = isMainGridPage || isHallPage || isArchivePage;
-  const isCompetitionSchedulePage = isMainGridPage && detail === "calendar";
-  const needsSeasonData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isTeamJobPage || isMainAnnouncementPage || isMainRegulationPage || isFiaContentFormPage;
-  const needsTeamData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamJobPage || isTeamScoutPage || isMainJobSearchPage || isFiaAppealPage;
-  const needsMemberDirectory = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isFiaAppealPage;
-  const needsDirectoryAvatars = isMainGridPage && detail === "driver-list";
-  const needsDivisionData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage;
-  const needsRoundData = isMainGridPage || isArchivePage || isDriverProfilePage || isTeamSummaryPage;
-  const needsRoundPoints = isMainGridPage || isDriverProfilePage || isTeamSummaryPage;
-  const needsFinalStandings = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage;
-  const needsRegistrationData = isMainGridPage || isTeamRegistrationPage;
-  const needsRaceResults = isMainGridPage || isArchivePage || isDriverProfilePage || isTeamSummaryPage;
-  const needsResultEntries = needsRaceResults;
-  const needsTeamProfiles = isMainGridPage || isTeamSummaryPage;
-  const needsAttributes = isDriverCharacterPage || isTeamScoutPage;
-  const needsAchievements = isDriverCharacterPage || isTeamSummaryPage || isHallPage;
-  const needsEngineData = isMainGridPage;
-  const needsJobAdverts = isMainJobSearchPage;
-  const needsAppealData = isMemberAppealPage || isFiaAppealPage;
-  const needsContracts = isDriverProfilePage || isTeamSummaryPage || isTeamScoutPage;
-  const needsWallets = isFinancialPage || isDriverCharacterPage || isTeamSummaryPage;
-  const needsFinancialLedger = isFinancialPage;
-  const needsDriverReputation = isDriverCharacterPage || isTeamScoutPage;
-  const needsSponsorshipData = isTeamSummaryPage;
+  const queryPlan = useMemo(() => createStage5QueryPlan(group, tab, detail, isAdmin), [group, tab, detail, isAdmin]);
+  const {
+    isMainGridPage, isDriverCharacterPage, isTeamSummaryPage, isTeamJobPage,
+    isMainAnnouncementPage, isMainRegulationPage, isFiaAppealPage,
+    isCompetitionPage, isCompetitionSchedulePage, needsSeasonData, needsTeamData,
+    needsMemberDirectory, needsDirectoryAvatars, needsDivisionData, needsRoundData,
+    needsRoundPoints, needsFinalStandings, needsRegistrationData, needsRaceResults,
+    needsResultEntries, needsTeamProfiles, needsAttributes, needsAchievements,
+    needsEngineData, needsJobAdverts, needsAppealData, needsContracts, needsWallets,
+    needsFinancialLedger, needsDriverReputation, needsSponsorshipData
+  } = queryPlan;
   const refresh = useCallback(async () => {
     if (!supabase) { setNotice("Supabase belum dikonfigurasi."); setLoading(false); return; }
     setLoading(true);
@@ -214,7 +185,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       sponsorshipContracts: sponsorshipContractsQ.data || [], sponsors: sponsorsQ.data || []
     });
     setLoading(false);
-  }, [session.user.id, group, tab, detail, isAdmin]);
+  }, [session.user.id, queryPlan]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
