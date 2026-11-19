@@ -74,9 +74,16 @@ export default function FiaDataExport({isAdmin,isFia}:{isAdmin:boolean;isFia:boo
   }catch(error:any){
    const response=error?.context;
    if(response instanceof Response){
-    let detail=error?.message||"Permintaan export ditolak.";
-    try{const payload=await response.clone().json();detail=String(payload?.error||payload?.message||detail);}catch{}
-    setNotice("Export gagal ("+response.status+"): "+detail);
+    let message=error?.message||"Permintaan export ditolak.";
+    try{
+     const payload=await response.clone().json();
+     const parts=[String(payload?.error||payload?.message||message)];
+     if(payload?.source)parts.push("Sumber: "+String(payload.source));
+     if(payload?.code)parts.push("Kode: "+String(payload.code));
+     if(payload?.detail)parts.push("Detail: "+String(payload.detail).slice(0,400));
+     message=parts.join(" | ");
+    }catch{}
+    setNotice("Export gagal ("+response.status+"): "+message);
    }else setNotice(error?.message||"Export gagal. Periksa akses database.");
   }
   finally{setBusy(false);}
