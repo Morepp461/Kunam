@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { Activity, Check, RefreshCw, ShieldCheck, Target, Wallet, FileSignature } from "lucide-react";
+import { Activity, RefreshCw, Target, Wallet, FileSignature } from "lucide-react";
 import { supabase } from "./lib/supabase";
 
 type Row = Record<string, any>;
@@ -209,7 +209,6 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
     setNotice(accept ? "Renewal diterima. Kontrak season berikutnya dibuat." : "Renewal ditolak. Status Driver mengikuti lifecycle kontrak yang berlaku."); await refresh();
   };
 
-  const activeOfferSeasonIds = useMemo(() => new Set(offers.filter(o => o.status === "offered").map(o => o.renewal_season_id)), [offers]);
   const progressPercent = budget && Number(budget.planned_budget) > 0 ? Math.min(100, outflow / Number(budget.planned_budget) * 100) : 0;
   const nextSeasonOptions = seasons.filter(s => !activeSeason || s.starts_on > activeSeason.starts_on);
   const categories = ["payroll","development","team_hq","operations","reserve"];
