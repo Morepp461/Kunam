@@ -26,7 +26,6 @@ import TeamTakeoverMarket from "./TeamTakeoverMarket";
 import AdminSponsorship from "./AdminSponsorship";
 import BrandEcosystemAdmin from "./BrandEcosystemAdmin";
 import SponsorshipCentre from "./SponsorshipCentre";
-import DriverBrandProfile from "./DriverBrandProfile";
 import DevelopmentTokens from "./DevelopmentTokens";
 import CalerisIntelligence from "./CalerisIntelligence";
 import DriverTraining from "./DriverTraining";
@@ -179,7 +178,6 @@ function Application(){
   <Route path="/team-panel/sponsorship" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<DevelopmentTokens session={session} asset="DDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/training" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Driver"?<DriverTraining session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/driver-panel/sponsorship" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Driver"?<DriverBrandProfile session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/affiliate-team" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamAffiliate session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/engine-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamEngineMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
