@@ -21,12 +21,12 @@ where base_valuation is null;
 create table if not exists public.caleris_merchandise_engine_config (
   singleton boolean primary key default true check (singleton),
   is_enabled boolean not null default true,
-  base_conversion_rate numeric(8,6) not null default 0.002,
-  max_conversion_rate numeric(8,6) not null default 0.01,
-  reputation_factor_min numeric(6,3) not null default 0.75,
-  reputation_factor_max numeric(6,3) not null default 1.25,
-  hq_demand_bonus_per_level numeric(6,3) not null default 2.5,
-  hq_capacity_bonus_per_level numeric(6,3) not null default 3,
+  base_conversion_rate numeric(8,6) not null default 0.002 check(base_conversion_rate between 0 and 0.02),
+  max_conversion_rate numeric(8,6) not null default 0.01 check(max_conversion_rate between base_conversion_rate and 0.02),
+  reputation_factor_min numeric(6,3) not null default 0.75 check(reputation_factor_min between 0.5 and 2),
+  reputation_factor_max numeric(6,3) not null default 1.25 check(reputation_factor_max between reputation_factor_min and 2),
+  hq_demand_bonus_per_level numeric(6,3) not null default 2.5 check(hq_demand_bonus_per_level between 0 and 20),
+  hq_capacity_bonus_per_level numeric(6,3) not null default 3 check(hq_capacity_bonus_per_level between 0 and 20),
   updated_at timestamptz not null default now(),
   updated_by uuid
 );
@@ -314,8 +314,8 @@ begin
     v_rep_factor:=v_config.reputation_factor_min+(v_config.reputation_factor_max-v_config.reputation_factor_min)*(least(10000,greatest(0,v_rep))/10000);
     v_quality:=1+(((coalesce(v_quality,50)+coalesce(v_conversion,50)+coalesce(v_capacity_bonus,50))/3)-50)/100*0.5;
     v_effects:=private.team_hq_effects_for_team(v_team.team_id);
-    v_capacity_bonus:=least(100,coalesce((v_effects->>'merchandise_capacity_bonus_percent')::numeric,0));
-    v_conversion:=least(v_config.max_conversion_rate,greatest(0,v_config.base_conversion_rate*v_rep_factor*v_quality*(1+least(100,coalesce((v_effects->>'merchandise_demand_bonus_percent')::numeric,0))/100)));
+    v_capacity_bonus:=least(100,coalesce((v_effects->>'merchandise_capacity_bonus_percent')::numeric,0)*v_config.hq_capacity_bonus_per_level/3);
+    v_conversion:=least(v_config.max_conversion_rate,greatest(0,v_config.base_conversion_rate*v_rep_factor*v_quality*(1+least(100,coalesce((v_effects->>'merchandise_demand_bonus_percent')::numeric,0)*v_config.hq_demand_bonus_per_level/2.5)/100)));
     select coalesce(sum(demand_share),0) into v_share_total from public.caleris_merchandise_products where team_id=v_team.team_id and is_active;
     if v_share_total<=0 then continue; end if;
     select * into v_wallet from public.economy_wallet_accounts where account_kind='team' and team_id=v_team.team_id and is_active for update;
