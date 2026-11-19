@@ -8,6 +8,8 @@ import {missingSupabaseMessage,supabase} from "./lib/supabase";
 import "./workspace.css";
 import "./stage5-panel.css";
 import PanelPage, { panelGroups } from "./PanelPages";
+import DashboardModule from "./DashboardModule";
+import ProfileModule from "./ProfileModule";
 import Stage5Panel from "./Stage5Panel";
 import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
@@ -36,8 +38,6 @@ import FIAEventControlCenter from "./FIAEventControlCenter";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
 import {CircuitPool} from "./CircuitPool";
-import RaceScheduleDashboard from "./RaceScheduleDashboard";
-import NotificationsCenter from "./NotificationsCenter";
 import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 
 import JobSearch from "./JobSearch";
@@ -81,9 +81,6 @@ const panelTabIcons:Record<string,ReactNode>={
  "team-panel/team-summary":<Building2 size={17}/>,"team-panel/team-hq":<Building2 size={17}/>,"team-panel/command-center":<Activity size={17}/>,"team-panel/financial-centre":<Wallet size={17}/>,"team-panel/development":<Wrench size={17}/>,"team-panel/sponsorship":<Coins size={17}/>,"team-panel/driver-contracts":<FileSignature size={17}/>,"team-panel/quest":<ClipboardList size={17}/>,"team-panel/driver-registration":<UserPlus size={17}/>,"team-panel/scout":<ScanSearch size={17}/>,"team-panel/place-job-advert":<ClipboardPenLine size={17}/>,"team-panel/affiliate-team":<Network size={17}/>,"team-panel/engine-market":<Cog size={17}/>,"team-panel/appeal":<Shield size={17}/>,
  "fia-panel/event-control":<Flag size={17}/>,"fia-panel/rules-input":<BookMarked size={17}/>,"fia-panel/season-calendar":<CalendarDays size={17}/>,"fia-panel/announcement-input":<RadioTower size={17}/>,"fia-panel/race-input":<FlagTriangleRight size={17}/>,"fia-panel/punishment-input":<Gavel size={17}/>,"fia-panel/appeal-room":<ShieldAlert size={17}/>,"fia-panel/circuit-pool-input":<MapPinned size={17}/>,"fia-panel/team-hq-config":<Building2 size={17}/>,"fia-panel/discord-broadcast":<Send size={17}/>
 };
-type MemberRecord={id:string;member_code:string|null;character_name:string|null;role:string|null;license:string|null;team_id:string|null};
-type TeamRecord={id:string;name:string};
-type ContractRecord={id:string;duration_label:string|null;starts_on:string|null;ends_on:string|null;salary:number|null;target:unknown;release_clause:number|null;status:string};
 const UI=createContext<{toast:(kind:Kind,title:string,message?:string)=>void;loading:(v:boolean)=>void}|null>(null);
 function useUI(){const c=useContext(UI);if(!c)throw Error("UI provider missing");return c;}
 function GlobalUI({children}:{children:ReactNode}){
@@ -144,7 +141,7 @@ function Application(){
  return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess}><AnalyticsTracker/><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
-  <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
+  <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/financial-centre" element={session&&!needsPaddockAccess?<CashLoanCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/race-checkin" element={session&&!needsPaddockAccess?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -180,7 +177,7 @@ function Application(){
   <Route path="/driver-panel/training" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Driver"?<DriverTraining session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/affiliate-team" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamAffiliate session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/engine-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamEngineMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/profile" element={session&&!needsPaddockAccess?<ProfileModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/member/:memberId" element={<PublicMemberProfile session={session}/>} />
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
@@ -369,137 +366,12 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   {preferredRole&&<PaddockRoleDetails role={preferredRole==="Team Owner"?"Team Owner":"Driver"} saving={saving} onSubmit={submit}/>}
  </div></div></section>;
 }
-function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
-  const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);
-  const [statCards,setStatCards]=useState<{label:string;value:string;detail:string;icon:ReactNode}[]>([]);
-  const [statsLoading,setStatsLoading]=useState(true),[statsScope,setStatsScope]=useState("STATISTIK MEMBER");
-  useEffect(()=>{let active=true;async function check(){if(!supabase)return;const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Role gagal diperiksa",error.message);setIsAdmin(Boolean(data?.user_id))}void check();return()=>{active=false}},[session.user.id,toast]);
-  useEffect(()=>{let active=true;async function loadStats(){
-    if(!supabase||!profileReady){setStatsLoading(!profileReady);return;}
-    setStatsLoading(true);
-    const empty=[{label:"Season",value:"—",detail:"Belum ada data",icon:<CalendarDays/>},{label:"Race start",value:"—",detail:"Belum ada data",icon:<Flag/>},{label:"Points",value:"—",detail:"Belum ada data",icon:<Activity/>},{label:"Race wins",value:"—",detail:"Belum ada data",icon:<Trophy/>}];
-    if(!profile?.member_id){if(active){setStatsScope("STATISTIK MEMBER");setStatCards(empty);setStatsLoading(false)}return;}
-    const {data:ownMember,error:memberError}=await supabase.from("members").select("id,role,team_id").eq("id",profile.member_id).maybeSingle();
-    if(!active)return;
-    if(memberError){toast("error","Statistik gagal dimuat",memberError.message);setStatCards(empty);setStatsLoading(false);return;}
-    if(!ownMember){setStatCards(empty);setStatsLoading(false);return;}
-    const [activeSeasonsQ,registrationsQ]=await Promise.all([
-      supabase.from("license_seasons").select("id").eq("status","active"),
-      supabase.from("license_season_members").select("season_id").eq("member_id",ownMember.id)
-    ]);
-    const activeSeasonIds=(activeSeasonsQ.data||[]).map((row:any)=>row.id);
-    const seasonCount=new Set((registrationsQ.data||[]).map((row:any)=>row.season_id)).size;
-    let divisionIds:string[]=[],roundIds:string[]=[];
-    if(activeSeasonIds.length){
-      const {data:divisions}=await supabase.from("license_season_divisions").select("id").in("season_id",activeSeasonIds);
-      divisionIds=(divisions||[]).map((row:any)=>row.id);
-    }
-    if(divisionIds.length){
-      const {data:rounds}=await supabase.from("license_rounds").select("id").in("season_division_id",divisionIds).neq("status","cancelled");
-      roundIds=(rounds||[]).map((row:any)=>row.id);
-    }
-    if(ownMember.role==="Driver"){
-      const [entriesQ,pointsQ,winsQ]=await Promise.all([
-        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        roundIds.length?supabase.from("license_round_standings").select("points_total").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        roundIds.length?supabase.from("caleris_race_results").select("id").eq("winner_member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
-      ]);
-      const races=new Set((entriesQ.data||[]).map((row:any)=>row.round_id)).size;
-      const points=(pointsQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
-      if(active){setStatsScope("STATISTIK DRIVER");setStatCards([
-        {label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},
-        {label:"Race start",value:String(races),detail:"Klasifikasi resmi tercatat",icon:<Flag/>},
-        {label:"Season points",value:points.toLocaleString("id-ID"),detail:"Poin pada season aktif",icon:<Activity/>},
-        {label:"Race wins",value:String((winsQ.data||[]).length),detail:"Kemenangan season aktif",icon:<Trophy/>}
-      ]);}
-    }else if(ownMember.role==="Owner"&&ownMember.team_id){
-      const [teamMembersQ,entriesQ]=await Promise.all([
-        supabase.from("members").select("id").eq("team_id",ownMember.team_id).eq("role","Driver"),
-        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id,member_id").eq("team_id",ownMember.team_id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
-      ]);
-      const teamMemberIds=(teamMembersQ.data||[]).map((row:any)=>row.id);
-      const teamEntries=entriesQ.data||[];
-      const roundStandingsQ=teamMemberIds.length&&roundIds.length?await supabase.from("license_round_standings").select("round_id,member_id,points_total").in("member_id",teamMemberIds).in("round_id",roundIds):{data:[]};
-      const teamEntryKeys=new Set(teamEntries.map((row:any)=>row.round_id+":"+row.member_id));
-      const teamPoints=(roundStandingsQ.data||[]).filter((row:any)=>teamEntryKeys.has(row.round_id+":"+row.member_id)).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
-      const raceStarts=new Set(teamEntries.map((row:any)=>row.round_id)).size;
-      const winnersQ=roundIds.length?await supabase.from("caleris_race_results").select("round_id,winner_member_id").in("round_id",roundIds):{data:[]};
-      const teamWins=(winnersQ.data||[]).filter((winner:any)=>teamEntries.some((entry:any)=>entry.round_id===winner.round_id&&entry.member_id===winner.winner_member_id)).length;
-      if(active){setStatsScope("STATISTIK TIM");setStatCards([
-        {label:"Active drivers",value:String(teamMembersQ.data?.length||0),detail:"Driver terdaftar di tim",icon:<Users/>},
-        {label:"Race start",value:String(raceStarts),detail:"Round dengan klasifikasi tim",icon:<Flag/>},
-        {label:"Team points",value:teamPoints.toLocaleString("id-ID"),detail:"Poin season aktif",icon:<Activity/>},
-        {label:"Team wins",value:String(teamWins),detail:"Kemenangan season aktif",icon:<Trophy/>}
-      ]);}
-    }else{
-      const [{data:roleWallets},{data:publicWallet}]=await Promise.all([
-        supabase.from("economy_wallet_accounts").select("balance").eq("member_id",ownMember.id).in("account_kind",["driver","team_owner"]).eq("is_active",true),
-        supabase.from("economy_wallet_accounts").select("balance").eq("account_kind","public_member").eq("profile_user_id",session.user.id).eq("is_active",true).maybeSingle()
-      ]);
-      const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0);
-      if(active){setStatsScope("STATISTIK AKUN");setStatCards([{label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},{label:"Account balance",value:"¢p "+balance.toLocaleString("id-ID"),detail:"Total saldo wallet pribadi",icon:<Wallet/>},{label:"Role",value:ownMember.role||"Member",detail:"Role akun saat ini",icon:<Users/>},{label:"Team",value:ownMember.team_id?"Terhubung":"Independent",detail:"Status afiliasi tim",icon:<Flag/>}]);}
-    }
-    if(active)setStatsLoading(false);
-  }
-  void loadStats();return()=>{active=false};
-  },[profile?.member_id,profileReady,session.user.id,toast]);
-  const name=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
-  return <section className="workspace"><PageHeading eyebrow="Member command center" title={`Welcome, ${name}`} description="Ringkasan aktivitas, event, dan perjalananmu di Caleris Masters."/><NotificationsCenter memberId={profile?.member_id||null}/><div className="dashboard-action-row"><Link className="action primary" to="/race-checkin">Race Check-in <ArrowUpRight size={15}/></Link><Link className="text-link" to="/financial-centre">Financial Centre <ArrowUpRight size={15}/></Link></div><RaceScheduleDashboard session={session} memberId={profile?.member_id||null} isAdmin={isAdmin}/><div className="dashboard-event-card"><div><span className="section-eyebrow">CURRENT EVENT</span><h2>Belum ada event aktif</h2><p>Informasi event akan muncul di sini setelah event pertama dipublikasikan.</p></div><div className="event-mark"><Flag size={25}/><span>CALERIS<br/>MASTERS</span></div></div><div className="section-title-row"><div><span className="section-eyebrow">OVERVIEW · {statsScope}</span><h2>{ownDashboardTitle(statsScope)}</h2></div><span className="empty-tag">{statsLoading?"Memuat statistik":"Data akun"}</span></div><div className="stat-grid">{(statCards.length?statCards:[{label:"Season",value:"—",detail:"Belum ada data",icon:<CalendarDays/>},{label:"Race start",value:"—",detail:"Belum ada data",icon:<Flag/>},{label:"Points",value:"—",detail:"Belum ada data",icon:<Activity/>},{label:"Race wins",value:"—",detail:"Belum ada data",icon:<Trophy/>}]).map(item=><div className="stat-card" key={item.label}><span className="stat-icon">{item.icon}</span><span className="stat-label">{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small></div>)}</div><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">YOUR PROFILE</span><h2>Informasi akun</h2><p>{profileReady?(profile?.driver_nickname||"Nickname driver belum diatur"):"Memuat profil..."}</p><Link className="text-link" to="/profile">Lihat profil <ArrowUpRight size={15}/></Link></div><div className="workspace-card"><span className="section-eyebrow">QUICK ACCESS</span><h2>Workspace</h2><p>{isAdmin?"Akses administrasi tersedia.":"Kelola informasi akun dan profilmu."}</p>{isAdmin?<Link className="text-link" to="/admin-workflow">Buka Admin Workflow <ArrowUpRight size={15}/></Link>:<Link className="text-link" to="/account/settings">Pengaturan akun <ArrowUpRight size={15}/></Link>}</div></div></section>;
-}
-function ownDashboardTitle(scope:string){return scope==="STATISTIK TIM"?"Statistik Tim":scope==="STATISTIK DRIVER"?"Statistik Driver":"Statistik Akun";}
-
 function AdminWorkflow({session}:{session:Session}){
  const [allowed,setAllowed]=useState(false),[checking,setChecking]=useState(true);const {toast}=useUI();
  useEffect(()=>{let active=true;async function run(){if(!supabase){setChecking(false);return;}const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Pemeriksaan akses gagal",error.message);setAllowed(Boolean(data?.user_id));setChecking(false)}void run();return()=>{active=false}},[session.user.id,toast]);
  if(checking)return <div className="center-state"><LoaderCircle className="spin"/><p>Memeriksa akses administrator...</p></div>;
  if(!allowed)return <section className="workspace"><PageHeading eyebrow="Restricted workspace" title="Admin Workflow" description="Workspace operasional khusus administrator CALERIS MASTERS."/><div className="access-denied"><Shield/><h2>Akses administrator diperlukan</h2><p>Admin Workflow hanya tersedia untuk akun yang terdaftar dalam allow-list administrator. Role FIA tidak memberikan akses ke halaman ini.</p></div></section>;
  return <section className="workspace"><PageHeading eyebrow="Control room · Administration" title="Admin Workflow" description="Workspace untuk tools operasional dan CRM CALERIS MASTERS."/><div className="workflow-placeholder"><div className="workflow-placeholder-icon"><ClipboardList size={27}/></div><span className="section-eyebrow">WORKSPACE READY</span><h2>CRM tools belum ditambahkan</h2><p>Area ini sudah disiapkan untuk tools CRM yang akan kamu berikan. Belum ada workflow, data, atau tindakan administrasi yang dibuat.</p><span className="empty-tag">Awaiting CRM specification</span></div></section>;
-}
-function ProfilePage({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
- const [member,setMember]=useState<MemberRecord|null>(null),[team,setTeam]=useState<TeamRecord|null>(null),[contract,setContract]=useState<ContractRecord|null>(null),[fanTotal,setFanTotal]=useState(0),[reputation,setReputation]=useState<{score:number;band:string}|null>(null),[wallets,setWallets]=useState<Record<string,number|null>>({public_member:null,driver:null,team_owner:null,team:null}),[busy,setBusy]=useState(true);const {toast}=useUI();
- useEffect(()=>{let active=true;async function load(){if(!supabase||!profileReady){setBusy(!profileReady);return;}setBusy(true);
-  const {data:publicWallet,error:publicWalletError}=await supabase.from("economy_wallet_directory").select("balance").eq("account_kind","public_member").eq("profile_user_id",session.user.id).maybeSingle();
-  if(!active)return;if(publicWalletError)toast("error","Wallet akun gagal dimuat",publicWalletError.message);
-  const nextWallets:Record<string,number|null>={public_member:publicWallet?Number(publicWallet.balance):null,driver:null,team_owner:null,team:null};
-  if(profile?.member_id){
-   const {data:m,error}=await supabase.from("members").select("id,member_code,character_name,role,license,team_id").eq("id",profile.member_id).maybeSingle();
-   if(!active)return;if(error)toast("error","Data member gagal dimuat",error.message);
-   const memberData=m as MemberRecord|null;setMember(memberData);
-   if(memberData?.role==="Driver"){
-    const [fansQ,reputationQ]=await Promise.all([
-     supabase.from("caleris_fan_populations").select("population").eq("entity_kind","driver").eq("member_id",memberData.id),
-     supabase.from("caleris_driver_reputation").select("score,band").eq("member_id",memberData.id).maybeSingle()
-    ]);
-    if(!active)return;
-    if(fansQ.error)toast("error","Total fans gagal dimuat",fansQ.error.message);
-    if(reputationQ.error)toast("error","Reputasi gagal dimuat",reputationQ.error.message);
-    setFanTotal((fansQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.population||0),0));
-    setReputation(reputationQ.data?{score:Number(reputationQ.data.score),band:String(reputationQ.data.band)}:null);
-   }else{setFanTotal(0);setReputation(null);}
-   if(memberData){
-    const {data:roleWalletRows,error:roleWalletError}=await supabase.from("economy_wallet_directory").select("account_kind,balance").eq("member_id",memberData.id).in("account_kind",["driver","team_owner"]).eq("is_active",true);
-    if(!active)return;
-    if(roleWalletError)toast("error","Wallet karakter gagal dimuat",roleWalletError.message);
-    for(const walletRow of roleWalletRows||[]){if(walletRow.account_kind==="driver"||walletRow.account_kind==="team_owner")nextWallets[walletRow.account_kind]=Number(walletRow.balance||0);}
-    nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0);
-    if(memberData.team_id){
-     const [{data:t},{data:teamWallet,error:teamWalletError},{data:c,error:contractError}]=await Promise.all([
-      supabase.from("teams").select("id,name").eq("id",memberData.team_id).maybeSingle(),
-      supabase.from("economy_wallet_directory").select("balance").eq("account_kind","team").eq("team_id",memberData.team_id).maybeSingle(),
-      supabase.from("contracts").select("id,duration_label,starts_on,ends_on,salary,target,release_clause,status").eq("member_id",profile.member_id).eq("status","active").order("created_at",{ascending:false}).limit(1).maybeSingle()
-     ]);
-     if(!active)return;setTeam(t as TeamRecord|null);if(teamWalletError)toast("error","Wallet tim gagal dimuat",teamWalletError.message);nextWallets.team=teamWallet?Number(teamWallet.balance):null;if(contractError)toast("error","Kontrak gagal dimuat",contractError.message);setContract(c as ContractRecord|null);
-    }else{setTeam(null);const {data:c,error:contractError}=await supabase.from("contracts").select("id,duration_label,starts_on,ends_on,salary,target,release_clause,status").eq("member_id",profile.member_id).eq("status","active").order("created_at",{ascending:false}).limit(1).maybeSingle();if(!active)return;if(contractError)toast("error","Kontrak gagal dimuat",contractError.message);setContract(c as ContractRecord|null);}
-   }else{setTeam(null);setContract(null);}
-  }else{setMember(null);setTeam(null);setContract(null);}
-  if(active){setWallets(nextWallets);setBusy(false);}
- }void load();return()=>{active=false}},[profile?.member_id,profileReady,session.user.id,toast]);
- const avatar=profile?.avatar_url||session.user.user_metadata?.avatar_url||session.user.user_metadata?.picture||"";
- const webName=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
- const info=(label:string,value:ReactNode)=><div className="profile-info-item"><span>{label}</span><strong>{value||"Belum tersedia"}</strong></div>;
- const balanceText=(value:number|null)=>value===null?"Belum tersedia":"¢p "+Number(value).toLocaleString("id-ID");
- const characterWallet=wallets.public_member;
- return <section className="workspace"><Link className="back-link" to="/dashboard"><ChevronLeft size={16}/> Dashboard</Link><PageHeading eyebrow="Member identity" title="My Profile" description="Informasi akun dan identitas karakter Caleris Masters."/><div className="profile-hero-card"><div className="profile-avatar-large">{avatar?<img src={avatar} alt="Foto profil"/>:<UserCircle size={54}/>}</div><div className="profile-hero-copy"><span className="section-eyebrow">ACCOUNT PROFILE</span><h2>{webName}</h2><p>{session.user.email||"Email tidak tersedia"}</p><span className="profile-role-pill">{profile?.account_status==="admin"?"Administrator":profile?.account_status==="active"?"Member aktif":profile?.account_status==="suspended"?"Suspended":"Public"}</span></div><Link className="action profile-edit-action" to="/account/settings"><Settings size={16}/> Edit akun</Link><Link className="action profile-edit-action" to={"/member/"+profile?.public_member_id}><ArrowUpRight size={16}/> Profil publik</Link></div><div className="profile-sections"><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">ACCOUNT</span><h2>Informasi akun</h2></div></div><div className="profile-info-grid">{info("Nama depan",profile?.first_name)}{info("Nama belakang",profile?.last_name)}{info("Nickname web",webName)}{info("Nickname driver",profile?.driver_nickname)}{info("Preferensi role",profile?.preferred_role)}{info("Status akun",profile?.account_status==="admin"?"Administrator":profile?.account_status==="active"?"Member aktif":profile?.account_status==="suspended"?"Suspended":"Public")}{info("Email",session.user.email)}{info("Member ID",profile?.public_member_id)}{info("Saldo member publik",busy?"Memuat...":balanceText(wallets.public_member))}</div></div><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CHARACTER</span><h2>Informasi karakter</h2></div></div>{busy?<p className="muted">Memuat informasi karakter dan wallet...</p>:!member?<EmptyPanel icon={<Users/>} title="Belum terhubung ke member" body="Wallet member publik tetap tersedia. Data karakter dan wallet Driver/Owner akan tampil setelah akun ditautkan ke member oleh administrator."/>:<div className="profile-info-grid">{info("Nickname driver",profile?.driver_nickname||member.character_name)}{info("Role",member.role)}{info("Tim",team?.name)}{info("License",member.license)}{info("Total fans",member.role==="Driver"?fanTotal.toLocaleString("id-ID"):"—")}{info("Reputasi",member.role==="Driver"?(reputation?reputation.score.toLocaleString("id-ID")+" · "+reputation.band:"Belum dihitung"):"—")}{info("Saldo karakter",balanceText(characterWallet))}{info("Saldo tim",balanceText(wallets.team))}</div>}</div><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CONTRACT</span><h2>Detail kontrak</h2></div><FileText size={19}/></div>{busy?<p className="muted">Memuat kontrak...</p>:!contract?<EmptyPanel icon={<FileText/>} title="Belum ada kontrak aktif" body="Detail durasi, gaji, target, dan klausul pelepasan akan ditampilkan ketika kontrak tersedia."/>:<div className="profile-info-grid">{info("Durasi",contract.duration_label)}{info("Mulai",contract.starts_on)}{info("Berakhir",contract.ends_on)}{info("Gaji",contract.salary===null?"Belum tersedia":"¢p "+Number(contract.salary).toLocaleString("id-ID"))}{info("Target",contract.target?JSON.stringify(contract.target):"Tidak ditentukan")}{info("Klausul pelepasan",contract.release_clause===null?"Tidak ditentukan":"¢p "+Number(contract.release_clause).toLocaleString("id-ID"))}</div>}</div></div></section>;
 }
 type PublicMemberProfileData={public_member_id:string;display_name:string;first_name:string|null;last_name:string|null;web_nickname:string|null;driver_nickname:string|null;avatar_url:string|null};
 type PublicCharacterData={character_name:string|null;role:string|null;license:string|null;team_name:string|null};
