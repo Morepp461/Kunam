@@ -72,7 +72,6 @@ declare
   v_contract public.economy_driver_contracts%rowtype;
   v_current_season public.license_seasons%rowtype;
   v_first_season uuid;
-  v_season_count integer;
   v_driver_license text;
   v_min numeric;
   v_max numeric;
@@ -93,17 +92,14 @@ begin
   select * into v_current_season from public.license_seasons where id=v_contract.season_id;
   if not found then raise exception 'Season kontrak berjalan tidak ditemukan.'; end if;
 
-  select count(*), (array_agg(id order by starts_on))[1]
-    into v_season_count, v_first_season
-  from (
-    select id,starts_on from public.license_seasons
-    where starts_on>v_current_season.starts_on
-      and status in ('draft','active')
-    order by starts_on
-    limit p_duration_seasons
-  ) next_seasons;
-  if v_season_count<>p_duration_seasons or v_first_season is null then
-    raise exception 'Jumlah season mendatang belum mencukupi untuk durasi yang dipilih.';
+  select id into v_first_season
+  from public.license_seasons
+  where starts_on>v_current_season.starts_on
+    and status in ('draft','active')
+  order by starts_on
+  limit 1;
+  if v_first_season is null then
+    raise exception 'Season berikutnya belum dibuat. Renewal dapat ditawarkan setelah season baru tersedia.';
   end if;
 
   select license into v_driver_license from public.members
