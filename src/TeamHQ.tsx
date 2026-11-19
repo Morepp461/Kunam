@@ -34,7 +34,6 @@ export default function TeamHQ() {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isFia, setIsFia] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<FacilityConfig | null>(null);
@@ -60,12 +59,11 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
     setIsFia(Boolean(adminResult.data?.user_id) || role === "FIA");
-    setIsAdmin(Boolean(adminResult.data?.user_id));
     setIsOwner(role === "Owner" || role === "Principal");
     if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setLoading(false); return; }
     const [teamResult, facilityResult, projectResult] = await Promise.all([
