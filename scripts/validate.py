@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     required = [
         "package.json", "index.html", "vite.config.ts", "src/main.tsx",
-        "src/App.tsx", "src/styles.css", "src/lib/supabase.ts",
+        "src/App.tsx", "src/MainLayout.tsx", "src/DashboardModule.tsx", "src/ProfileModule.tsx", "src/lib/stage5QueryPlan.ts", "src/styles.css", "src/lib/supabase.ts",
         "src/vite-env.d.ts", "supabase/SETUP.sql",
         "assets/Background 2.png",
         "assets/Untitled design_20261103_142659_0000.png",
