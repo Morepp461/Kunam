@@ -183,7 +183,7 @@ export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: 
     {teamId && <>
       <div className="team-merch-metrics">
         <article><Users size={16}/><span>Total fans</span><strong>{totalFans.toLocaleString("id-ID")}</strong><small>Loyalty {avg("loyalty").toFixed(1)} · Engagement {avg("engagement").toFixed(1)}</small></article>
-        <article><BarChart3 size={16}/><span>Team reputation</span><strong>{(reputation / 100).toFixed(1)}/100</strong><small>Sentiment {avg("sentiment").toFixed(1)}</small></article>
+        <article><BarChart3 size={16}/><span>Team reputation</span><strong>{reputation.toLocaleString("id-ID")}</strong><small>Sentiment {avg("sentiment").toFixed(1)}</small></article>
         <article><Coins size={16}/><span>Net merchandise income</span><strong>{money(totals.net)}</strong><small>Gross {money(totals.gross)} · Cost {money(totals.cost)}</small></article>
         <article><Package size={16}/><span>Units sold</span><strong>{totals.units.toLocaleString("id-ID")}</strong><small>{runs.length} race sales runs</small></article>
       </div>

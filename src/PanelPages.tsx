@@ -2,6 +2,7 @@ import TeamJobAdvert from "./TeamJobAdvert";
 import TeamHQ from "./TeamHQ";
 import DiscordBroadcastPanel from "./DiscordBroadcastPanel";
 import CalerisEcosystem from "./CalerisEcosystem";
+import TeamSummary from "./TeamSummary";
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -34,7 +35,6 @@ export const panelGroups: PanelGroup[] = [
     { path: "development", label: "Development", description: "Pengembangan atribut driver dan roadmap target pribadi." },
     { path: "contract-renewals", label: "Contract Renewal", description: "Keputusan Driver atas penawaran perpanjangan kontrak." },
     { path: "training", label: "Training", description: "Program latihan atribut Driver dengan tingkat kesulitan dan cooldown." },
-    { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
     { path: "quest", label: "Quest", description: "Daily Quest dan Period Quest dengan reward saldo wallet." },
     { path: "career-history", label: "Career History", description: "Rekam jejak karier dan statistik." },
     { path: "financial-centre", label: "Financial Centre", description: "Arus keuangan karakter driver." },
@@ -153,7 +153,7 @@ export default function PanelPage() {
     if(tab.path==="team-hq")return <TeamHQ/>;
     if(tab.path==="command-center")return <CalerisEcosystem mode="owner"/>;
     if(tab.path==="financial-centre")return <CalerisEcosystem mode="finance"/>;
-    if(tab.path==="team-summary")return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">TEAM IDENTITY</span><h2>Team Profile</h2><EmptyPanel title="Profil tim belum terhubung" body="Nama, logo, engine, divisi, dan profil tim akan tampil di sini."/></div><div className="workspace-card"><span className="section-eyebrow">DRIVER LINE-UP</span><h2>Driver Statistics</h2><EmptyPanel title="Line-up belum tersedia" body="Profil dan statistik kedua driver akan ditampilkan di sini."/></div></div><div className="workspace-card panel-season-note"><span className="section-eyebrow">SEASON TIMELINE</span><h2>Season Period Configuration</h2><p>Off season, pre season, race periods, balancing breaks, dan end season akan mengikuti konfigurasi periode aktif. Jumlah kalender per race period serta durasi setiap fase tidak ditetapkan secara hardcode.</p><span className="empty-tag">CONFIGURATION-DRIVEN</span></div></section>;
+    if(tab.path==="team-summary")return <TeamSummary/>;
     if(tab.path==="place-job-advert")return <TeamJobAdvert/>;
     const copy:Record<string,string>={sponsorship:"Daftar sponsor tim, penawaran brand, target, dan progress pencapaian.", "driver-registration":"Form pendaftaran driver yang akan dikirim untuk peninjauan FIA dan Admin.",quest:"Daily Quest dan Period Quest dengan reward saldo Owner.",scout:"Pencarian driver tim lain berdasarkan lisensi, atribut, performa, dan status kontrak.","affiliate-team":"Daftar affiliate, request masuk/keluar, serta detail perjanjian setiap tim.",appeal:"Pengajuan banding, hasil keputusan FIA, dan riwayat banding tim."};
     return <section className="workspace"><Heading eyebrow="Team Panel" title={title} description={tab.description}/><EmptyPanel title={title+" belum diaktifkan"} body={copy[tab.path]||tab.description}/></section>;
