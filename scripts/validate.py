@@ -113,7 +113,7 @@ def main():
     assert 'CALERIS MASTERS · POWERED BY VREEO' in layout_module
     assert 'A Motorsport Roleplay Experience' not in (app + layout_module)
     assert 'footer-main' in styles and 'footer-support nav' in styles
-    assert 'DIRECTOR OF VREEO.ID' in app
+    assert 'DIRECTOR OF VREEO.ID' in layout_module
     for director in ["Muhammad Ovella", "Agung Pradana", "Muhammad Alfarel", "Liam Amir", "Suhanda Arbawi"]:
         assert director in layout_module
     assert 'footer-directors nav' in styles
