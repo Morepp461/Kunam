@@ -157,7 +157,7 @@ set effects_by_level=(
     'fan_growth_bonus_percent',level*1.0,
     'fanbase_reputation_bonus',level*0.5,
     'merchandise_demand_bonus_percent',level*2.5
-  )) from generate_series(1,8) level
+  )) from generate_series(1,8) as levels(level)
 ),updated_at=now()
 where facility_key='marketing_department';
 update public.caleris_team_hq_facility_configs c
@@ -167,7 +167,7 @@ set effects_by_level=(
     'merchandise_demand_bonus_percent',level*2.0,
     'merchandise_capacity_bonus_percent',level*3.0,
     'sponsor_attraction_bonus_percent',level*1.0
-  )) from generate_series(1,8) level
+  )) from generate_series(1,8) as levels(level)
 ),updated_at=now()
 where facility_key='commercial_department';
 
