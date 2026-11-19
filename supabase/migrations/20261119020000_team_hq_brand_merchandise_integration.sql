@@ -253,7 +253,7 @@ begin
   if not found or v_member.role not in ('Owner','Principal') or v_member.team_id is null then raise exception 'Hanya Owner atau Principal yang dapat mengelola merchandise.'; end if;
   select * into v_product from public.caleris_merchandise_products where id=p_product_id and team_id=v_member.team_id for update;
   if not found then raise exception 'Produk merchandise tidak ditemukan.'; end if;
-  if p_unit_price is null or p_unit_price<v_product.unit_cost*1.10 or p_unit_price>10000000 then raise exception 'Harga jual harus minimal 110% biaya produksi dan maksimal €10.000.000.'; end if;
+  if p_unit_price is null or p_unit_price<v_product.unit_cost*1.10 or p_unit_price>10000000 then raise exception 'Harga jual harus minimal 1,1 kali biaya produksi dan maksimal €10.000.000.'; end if;
   update public.caleris_merchandise_products set unit_price=round(p_unit_price,2),is_active=coalesce(p_is_active,true),updated_at=now() where id=p_product_id;
   return jsonb_build_object('status','updated','product_id',p_product_id);
 end $$;
