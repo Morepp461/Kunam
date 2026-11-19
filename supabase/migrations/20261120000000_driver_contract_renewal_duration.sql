@@ -24,7 +24,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path=''
-as $
+as $function$
 declare
   v_term record;
   v_first_start date;
@@ -51,7 +51,7 @@ begin
   end loop;
   return new;
 end;
-$;
+$function$;
 drop trigger if exists caleris_apply_driver_contract_term_on_season on public.license_seasons;
 create trigger caleris_apply_driver_contract_term_on_season
 after insert on public.license_seasons
@@ -66,7 +66,7 @@ create or replace function public.team_owner_offer_driver_renewal(
 language plpgsql
 security definer
 set search_path=''
-as $$
+as $function$
 declare
   v_actor public.members%rowtype;
   v_contract public.economy_driver_contracts%rowtype;
@@ -121,7 +121,7 @@ begin
   ) returning id into v_offer;
   return v_offer;
 end;
-$$;
+$function$;
 
 create or replace function public.member_decide_driver_renewal(
   p_offer_id uuid,
@@ -131,7 +131,7 @@ create or replace function public.member_decide_driver_renewal(
 language plpgsql
 security definer
 set search_path=''
-as $$
+as $function$
 declare
   v_member_id uuid;
   v_offer public.caleris_driver_renewal_offers%rowtype;
@@ -181,7 +181,7 @@ begin
     'contract_id',v_contract_id,'term_id',v_term_id,
     'duration_seasons',coalesce(v_offer.duration_seasons,1));
 end;
-$$;
+$function$;
 
 
 drop policy if exists "FIA manages Team HQ configs" on public.caleris_team_hq_facility_configs;
@@ -195,7 +195,7 @@ create or replace function private.guard_permanent_profile_character()
 returns trigger
 language plpgsql
 set search_path=''
-as $
+as $function$
 begin
   if old.member_id is not null and new.member_id is distinct from old.member_id then
     if (select auth.uid()) is not null
@@ -209,7 +209,7 @@ begin
   end if;
   return new;
 end;
-$;
+$function$;
 
 revoke all on function public.team_owner_offer_driver_renewal(uuid,integer,numeric,text) from public;
 grant execute on function public.team_owner_offer_driver_renewal(uuid,integer,numeric,text) to authenticated;
