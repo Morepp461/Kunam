@@ -57,7 +57,7 @@ create index if not exists idx_caleris_merch_products_team on public.caleris_mer
 alter table public.caleris_merchandise_products enable row level security;
 drop policy if exists caleris_merch_products_read on public.caleris_merchandise_products;
 create policy caleris_merch_products_read on public.caleris_merchandise_products for select to authenticated
-using(exists(select 1 from public.profiles p join public.members m on m.id=p.member_id where p.user_id=auth.uid() and m.team_id=team_id)
+using(exists(select 1 from public.profiles p join public.members m on m.id=p.member_id where p.user_id=auth.uid() and m.team_id=public.caleris_merchandise_products.team_id)
   or exists(select 1 from public.site_admins a where a.user_id=auth.uid()));
 drop policy if exists caleris_merch_products_admin_manage on public.caleris_merchandise_products;
 create policy caleris_merch_products_admin_manage on public.caleris_merchandise_products for all to authenticated
@@ -85,7 +85,7 @@ create index if not exists idx_caleris_merch_sales_team_created on public.caleri
 alter table public.caleris_merchandise_sales_runs enable row level security;
 drop policy if exists caleris_merch_sales_read on public.caleris_merchandise_sales_runs;
 create policy caleris_merch_sales_read on public.caleris_merchandise_sales_runs for select to authenticated
-using(exists(select 1 from public.profiles p join public.members m on m.id=p.member_id where p.user_id=auth.uid() and m.team_id=team_id)
+using(exists(select 1 from public.profiles p join public.members m on m.id=p.member_id where p.user_id=auth.uid() and m.team_id=public.caleris_merchandise_sales_runs.team_id)
   or exists(select 1 from public.site_admins a where a.user_id=auth.uid()));
 
 create table if not exists public.caleris_merchandise_sales_items (
@@ -320,7 +320,7 @@ begin
     if v_share_total<=0 then continue; end if;
     select * into v_wallet from public.economy_wallet_accounts where account_kind='team' and team_id=v_team.team_id and is_active for update;
     if not found then continue; end if;
-    v_gross:=0;v_cost:=0;v_total_units:=0;
+    v_gross:=0;v_cost:=0;v_total_units:=0;v_sale_tx:=null;v_cost_tx:=null;
     insert into public.caleris_merchandise_sales_runs(team_id,round_id,fan_population,reputation_score,conversion_rate,metadata)
     values(v_team.team_id,p_round_id,v_fans,v_rep,v_conversion,jsonb_build_object('hq_effects',v_effects,'fan_quality_factor',v_quality,'reputation_factor',v_rep_factor))
     returning id into v_run_id;
@@ -537,7 +537,7 @@ begin
     'brand_equity',jsonb_build_object('fan_population',(select coalesce(sum(population),0) from public.caleris_fan_populations where entity_kind='team' and team_id=p_team_id),'reputation_score',v_reputation_raw),
     'active_team_debt',jsonb_build_object('amount',v_debt,'penalty_points',round(v_debt_penalty,2)),
     'overdue_installments',jsonb_build_object('amount',v_overdue,'penalty_points',round(v_overdue_penalty,2)),
-    'weights_normalized_from',90
+    'weights_normalized_from',100
   );
 
   insert into public.caleris_team_valuations(
