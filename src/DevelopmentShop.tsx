@@ -1,3 +1,4 @@
+/** @deprecated Legacy Development Shop UI. The active Shop route uses ShopPage; retain this file only for historical reference until RPC and migration dependencies are reviewed. */
 import {useEffect,useState} from "react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
