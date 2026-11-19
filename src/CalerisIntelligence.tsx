@@ -32,7 +32,7 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
   const [contracts, setContracts] = useState<Row[]>([]);
   const [health, setHealth] = useState<Row | null>(null);
   const [healthRuns, setHealthRuns] = useState<Row[]>([]);
-  const [form, setForm] = useState<Row>({ targets: {}, category_budgets: {} });
+  const [form, setForm] = useState<Row>({ targets: {}, category_budgets: {}, duration_seasons: "1" });
   const set = (key: string, value: any) => setForm((v: Row) => ({ ...v, [key]: value }));
 
   const refresh = useCallback(async () => {
