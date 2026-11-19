@@ -367,7 +367,8 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
   if (isDriver && tab === "career-history") {
     const raceStats = driverCareerStats;
     const completedHistory = driverRaceHistory.filter((r:Row)=>r.finish_status==="finished"&&Number(r.finishing_position)>0);
-    const averageGrid = completedHistory.length ? completedHistory.reduce((n:number,r:Row)=>n+Number(r.grid_position||0),0)/completedHistory.filter((r:Row)=>Number(r.grid_position)>0).length : 0;
+    const gridHistory = completedHistory.filter((r:Row)=>Number(r.grid_position)>0);
+    const averageGrid = gridHistory.length ? gridHistory.reduce((n:number,r:Row)=>n+Number(r.grid_position),0)/gridHistory.length : 0;
     const averageFinish = completedHistory.length ? completedHistory.reduce((n:number,r:Row)=>n+Number(r.finishing_position),0)/completedHistory.length : 0;
     const finishRate = driverRaceHistory.length ? completedHistory.length/driverRaceHistory.length*100 : 0;
     const recentHistory = driverRaceHistory.slice(0,5);
