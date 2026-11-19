@@ -2,6 +2,61 @@ alter table public.caleris_driver_renewal_offers
   add column if not exists duration_seasons integer not null default 1
   check (duration_seasons between 1 and 5);
 
+create table if not exists public.caleris_driver_contract_terms (
+  id uuid primary key default gen_random_uuid(),
+  first_season_id uuid not null references public.license_seasons(id),
+  team_id uuid not null references public.teams(id),
+  member_id uuid not null references public.members(id),
+  annual_salary numeric not null check (annual_salary >= 0),
+  duration_seasons integer not null check (duration_seasons between 1 and 5),
+  status text not null default 'active' check (status in ('active','completed','cancelled')),
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique(member_id, first_season_id)
+);
+create index if not exists caleris_driver_contract_terms_active_idx
+  on public.caleris_driver_contract_terms(first_season_id, status) where status='active';
+alter table public.caleris_driver_contract_terms enable row level security;
+revoke all on public.caleris_driver_contract_terms from anon, authenticated;
+
+create or replace function private.apply_driver_contract_term_to_new_season()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $
+declare
+  v_term record;
+  v_first_start date;
+  v_season_index integer;
+begin
+  for v_term in
+    select t.*, first_season.starts_on as first_starts_on
+    from public.caleris_driver_contract_terms t
+    join public.license_seasons first_season on first_season.id=t.first_season_id
+    where t.status='active' and new.starts_on>first_season.starts_on
+  loop
+    select count(*) into v_season_index
+    from public.license_seasons s
+    where s.starts_on>=v_term.first_starts_on and s.starts_on<=new.starts_on;
+    if v_season_index<=v_term.duration_seasons
+      and not exists(select 1 from public.economy_driver_contracts c
+        where c.season_id=new.id and c.member_id=v_term.member_id) then
+      insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
+      values(new.id,v_term.team_id,v_term.member_id,v_term.annual_salary,'active',v_term.created_by);
+    end if;
+    if v_season_index>=v_term.duration_seasons then
+      update public.caleris_driver_contract_terms set status='completed' where id=v_term.id;
+    end if;
+  end loop;
+  return new;
+end;
+$;
+drop trigger if exists caleris_apply_driver_contract_term_on_season on public.license_seasons;
+create trigger caleris_apply_driver_contract_term_on_season
+after insert on public.license_seasons
+for each row execute function private.apply_driver_contract_term_to_new_season();
+
 create or replace function public.team_owner_offer_driver_renewal(
   p_current_contract_id uuid,
   p_duration_seasons integer,
@@ -87,11 +142,8 @@ declare
   v_driver_license text;
   v_min numeric;
   v_max numeric;
-  v_current_season public.license_seasons%rowtype;
-  v_season record;
-  v_count integer := 0;
-  v_contract_ids uuid[] := '{}';
   v_contract_id uuid;
+  v_term_id uuid;
 begin
   if (select auth.uid()) is null then raise exception 'Authentication required.'; end if;
   select member_id into v_member_id from public.profiles where user_id=(select auth.uid());
@@ -111,27 +163,17 @@ begin
     if v_min is null or v_offer.proposed_salary<v_min or v_offer.proposed_salary>v_max then
       raise exception 'Salary band lisensi berubah. Minta Team Owner mengirim penawaran baru.';
     end if;
-    select s.* into v_current_season from public.license_seasons s
-    join public.economy_driver_contracts c on c.season_id=s.id
-    where c.id=v_offer.current_contract_id;
-    for v_season in
-      select id from public.license_seasons
-      where starts_on>v_current_season.starts_on and status in ('draft','active')
-      order by starts_on limit greatest(1,coalesce(v_offer.duration_seasons,1))
-    loop
-      if exists(select 1 from public.economy_driver_contracts
-        where season_id=v_season.id and member_id=v_member_id and status='active') then
-        raise exception 'Driver sudah memiliki kontrak aktif pada salah satu season tujuan.';
-      end if;
-      insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
-      values(v_season.id,v_offer.team_id,v_member_id,v_offer.proposed_salary,'active',(select auth.uid()))
-      returning id into v_contract_id;
-      v_contract_ids:=array_append(v_contract_ids,v_contract_id);
-      v_count:=v_count+1;
-    end loop;
-    if v_count<>greatest(1,coalesce(v_offer.duration_seasons,1)) then
-      raise exception 'Season mendatang tidak lagi mencukupi untuk durasi renewal.';
+    if exists(select 1 from public.economy_driver_contracts
+      where season_id=v_offer.renewal_season_id and member_id=v_member_id and status='active') then
+      raise exception 'Driver sudah memiliki kontrak aktif pada season renewal.';
     end if;
+    insert into public.caleris_driver_contract_terms(first_season_id,team_id,member_id,annual_salary,duration_seasons,created_by)
+    values(v_offer.renewal_season_id,v_offer.team_id,v_member_id,v_offer.proposed_salary,
+      greatest(1,coalesce(v_offer.duration_seasons,1)),(select auth.uid()))
+    returning id into v_term_id;
+    insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
+    values(v_offer.renewal_season_id,v_offer.team_id,v_member_id,v_offer.proposed_salary,'active',(select auth.uid()))
+    returning id into v_contract_id;
   end if;
 
   update public.caleris_driver_renewal_offers
@@ -140,10 +182,10 @@ begin
   where id=p_offer_id;
   return jsonb_build_object('offer_id',p_offer_id,
     'status',case when p_accept then 'accepted' else 'rejected' end,
-    'contract_ids',to_jsonb(v_contract_ids),'duration_seasons',coalesce(v_offer.duration_seasons,1));
+    'contract_id',v_contract_id,'term_id',v_term_id,
+    'duration_seasons',coalesce(v_offer.duration_seasons,1));
 end;
 $$;
-
 
 create or replace function private.guard_permanent_profile_character()
 returns trigger
