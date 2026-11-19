@@ -212,6 +212,62 @@ begin
 end;
 $function$;
 
+create or replace function private.apply_engine_attributes_to_team(p_team_id uuid,p_engine_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path=''
+as $function$
+declare v_engine public.caleris_engines%rowtype;
+begin
+  select * into v_engine from public.caleris_engines where id=p_engine_id and is_active;
+  if not found then return; end if;
+  update public.caleris_team_development_parts
+  set current_value=case part_key
+    when 'race_pace' then v_engine.race_pace
+    when 'qualifying_pace' then v_engine.qualifying_pace
+    when 'engine_power' then v_engine.engine_power
+    else current_value end,
+    updated_at=now()
+  where team_id=p_team_id and part_key in ('race_pace','qualifying_pace','engine_power');
+end;
+$function$;
+
+create or replace function private.sync_team_engine_attributes()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $function$
+begin
+  perform private.apply_engine_attributes_to_team(new.team_id,new.engine_id);
+  return new;
+end;
+$function$;
+drop trigger if exists caleris_sync_team_engine_attributes on public.caleris_team_engines;
+create trigger caleris_sync_team_engine_attributes
+after insert or update of engine_id on public.caleris_team_engines
+for each row execute function private.sync_team_engine_attributes();
+
+create or replace function private.sync_engine_attribute_changes()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $function$
+declare v_assignment record;
+begin
+  for v_assignment in select team_id from public.caleris_team_engines where engine_id=new.id loop
+    perform private.apply_engine_attributes_to_team(v_assignment.team_id,new.id);
+  end loop;
+  return new;
+end;
+$function$;
+drop trigger if exists caleris_sync_engine_attribute_changes on public.caleris_engines;
+create trigger caleris_sync_engine_attribute_changes
+after update of race_pace,qualifying_pace,engine_power on public.caleris_engines
+for each row execute function private.sync_engine_attribute_changes();
+
 revoke all on function public.admin_list_engine_marketplace() from public;
 revoke all on function public.admin_configure_engine_usage_offer(uuid,boolean,numeric) from public;
 revoke all on function public.team_purchase_engine_usage(uuid,uuid,text) from public;
