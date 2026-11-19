@@ -101,7 +101,7 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
         setWalletBalance(walletRows.reduce((n, w) => n + Number(w.balance || 0), 0));
         const walletIds = walletRows.map(w => w.id);
         if (walletIds.length) {
-          const { data: tx, error: txError } = await supabase.from("economy_transactions").select("amount").in("source_account_id", walletIds);
+          const { data: tx, error: txError } = await supabase.from("economy_transactions").select("amount").in("source_account_id", walletIds).gte("created_at", current.starts_on).lte("created_at", current.ends_on + "T23:59:59.999Z");
           if (txError) throw txError;
           setOutflow(((tx || []) as Row[]).reduce((n, t) => n + Number(t.amount || 0), 0));
         } else setOutflow(0);
