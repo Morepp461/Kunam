@@ -19,7 +19,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const [member,setMember]=useState<Member|null>(null),[team,setTeam]=useState<Team|null>(null);
  const [account,setAccount]=useState<Account|null>(null),[cashWallet,setCashWallet]=useState<CashWallet|null>(null);
  const [attributes,setAttributes]=useState<Attribute[]>([]),[prices,setPrices]=useState<Record<string,number>>({});
- const [driverPriceTier,setDriverPriceTier]=useState<string|null>(null);
+ const [driverPriceTier,setDriverPriceTier]=useState<string|null>(null),[pitCrewLevel,setPitCrewLevel]=useState(0);
  const [snapshots,setSnapshots]=useState<Snapshot[]>([]),[seasons,setSeasons]=useState<Season[]>([]);
  const [selected,setSelected]=useState(""),[amount,setAmount]=useState("1"),[paymentMethod,setPaymentMethod]=useState<"cash"|"token">("cash");
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
@@ -60,18 +60,21 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
     mappedDriverTier="bronze";
    }
   }
-  setDriverPriceTier(mappedDriverTier);
+  setDriverPriceTier(mappedDriverTier);\n  setPitCrewLevel(Number(pitFacility?.level||0));
+  const pitCrewQuery=asset==="TDP"&&m.team_id
+   ?supabase.from("caleris_team_hq_facilities").select("level").eq("team_id",m.team_id).eq("facility_key","pit_crew_training_center").maybeSingle()
+   :Promise.resolve({data:null,error:null});
   const priceQuery=asset==="DDP"
    ?supabase.from("caleris_driver_development_tier_pricing").select("attribute_key,cash_eur_per_point").eq("license_tier",mappedDriverTier||"__unmapped__").eq("is_configured",true)
    :supabase.from("caleris_team_development_division_pricing").select("part_key,cash_eur_per_point").eq("division_key",String(teamData?.division_key||"").trim().toLowerCase()).eq("is_configured",true);
-  const [{data:a,error:ae},{data:w,error:we},{data:rows,error:re},{data:priceRows,error:priceError},{data:ss,error:se},{data:seasonRows,error:sre}]=await Promise.all([
+  const [{data:a,error:ae},{data:w,error:we},{data:rows,error:re},{data:priceRows,error:priceError},{data:ss,error:se},{data:seasonRows,error:sre},{data:pitFacility,error:pitFacilityError}]=await Promise.all([
    devAccountQuery,cashWalletQuery,
    supabase.from(attrTable).select("id,current_value,updated_at,"+keyColumn).eq(ownerColumn,ownerId).order(keyColumn),
    priceQuery,
    supabase.from("caleris_development_season_snapshots").select("id,season_id,asset_type,snapshot_stage,attributes,created_at").eq("asset_type",asset).eq(asset==="DDP"?"member_id":"team_id",ownerId).order("created_at",{ascending:false}).limit(40),
    supabase.from("license_seasons").select("id,title,status")
   ]);
-  const errors=[ae,we,re,priceError,se,sre].filter(Boolean);
+  const errors=[ae,we,re,priceError,se,sre,pitFacilityError].filter(Boolean);
   if(errors.length){setNotice(errors.map(e=>e?.message).join(" · "));setLoading(false);return;}
   setAccount(a as Account|null);setCashWallet(w as CashWallet|null);
   setAttributes((rows||[]).map((r:any)=>({id:r.id,key:r[keyColumn],value:Number(r.current_value),updated_at:r.updated_at})));
@@ -83,7 +86,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
  const cashBalance=Number(cashWallet?.balance||0),tokenBalance=Number(account?.balance||0);
  const current=useMemo(()=>Object.fromEntries(attributes.map(a=>[a.key,a.value])),[attributes]);
  const delta=Number(amount||0),oldValue=Number(current[selected]??50),newValue=oldValue+delta;
- const cashRate=Number(prices[selected]||0),cashCost=delta*cashRate,tokenCost=delta;
+ const cashRate=Number(prices[selected]||0),baseCashCost=delta*cashRate;\n const pitCrewDiscountActive=asset==="TDP"&&selected==="pit_stop_efficiency"&&paymentMethod==="cash"&&pitCrewLevel>0;\n const cashCost=pitCrewDiscountActive?Number((baseCashCost*Math.pow(0.9,pitCrewLevel)).toFixed(2)):baseCashCost,tokenCost=delta;
  const validDelta=Number.isFinite(delta)&&delta>0&&Math.round(delta*100)===delta*100&&newValue<=100;
  const validPayment=paymentMethod==="cash"?cashRate>0&&cashCost<=cashBalance:tokenCost<=tokenBalance;
  const upgrade=async()=>{
@@ -114,8 +117,8 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
    <section className="workspace-card development-panel-card"><div className="section-title-row"><div><span className="section-eyebrow">02 · ATTRIBUTE UPGRADE</span><h2>Upgrade Atribut</h2></div><strong className="development-token-balance">{money(cashBalance)}</strong></div>
     <div className="development-upgrade-form"><label>Atribut<select value={selected} onChange={e=>setSelected(e.target.value)}><option value="">Pilih atribut</option>{definitions.map(([key,label])=><option key={key} value={key}>{label} · {Number(current[key]??50)}/100 · {money(prices[key]||0)}/poin</option>)}</select></label><label>Kenaikan poin<input type="number" min="0.01" step="0.01" max={Math.max(0,100-oldValue)} value={amount} onChange={e=>setAmount(e.target.value)}/></label></div>
     <label className="development-payment-method">Metode pembayaran<select value={paymentMethod} onChange={e=>setPaymentMethod(e.target.value as "cash"|"token")}><option value="cash">Wallet Cash · {money(cashBalance)}</option><option value="token">Race Reward Token · {Number(tokenBalance).toLocaleString("id-ID")} tersedia</option></select></label>
-    {selected&&<div className="development-cost-preview"><p><span>Hasil atribut</span><strong>{oldValue} → {newValue}/100</strong></p><p><span>Harga cash per poin</span><strong>{money(cashRate)}</strong></p>{paymentMethod==="cash"?<p><span>Total pembayaran</span><strong>{money(cashCost)}</strong></p>:<p><span>Token gratis digunakan</span><strong>{tokenCost.toLocaleString("id-ID",{maximumFractionDigits:2})} {asset}</strong></p>}<p><span>Sisa wallet setelah upgrade</span><strong>{paymentMethod==="cash"?money(Math.max(0,cashBalance-cashCost)):money(cashBalance)}</strong></p>{paymentMethod==="token"&&<p><span>Sisa token</span><strong>{Math.max(0,tokenBalance-tokenCost).toLocaleString("id-ID",{maximumFractionDigits:2})} {asset}</strong></p>}</div>}
-    <p className="economy-form-hint">Nilai maksimum atribut 100. Cash dibayar dari wallet Driver/Team ke Development Treasury. Token hanya berasal dari hasil race dan tidak memiliki harga tunai.</p>
+    {selected&&<div className="development-cost-preview"><p><span>Hasil atribut</span><strong>{oldValue} → {newValue}/100</strong></p><p><span>Harga cash per poin</span><strong>{money(cashRate)}</strong></p>{paymentMethod==="cash"&&pitCrewDiscountActive&&<p><span>Diskon Pit Crew Training Center · LV {pitCrewLevel}</span><strong>{((1-Math.pow(0.9,pitCrewLevel))*100).toLocaleString("id-ID",{maximumFractionDigits:2})}%</strong></p>}{paymentMethod==="cash"?<p><span>Total pembayaran</span><strong>{money(cashCost)}</strong></p>:<p><span>Token gratis digunakan</span><strong>{tokenCost.toLocaleString("id-ID",{maximumFractionDigits:2})} {asset}</strong></p>}<p><span>Sisa wallet setelah upgrade</span><strong>{paymentMethod==="cash"?money(Math.max(0,cashBalance-cashCost)):money(cashBalance)}</strong></p>{paymentMethod==="token"&&<p><span>Sisa token</span><strong>{Math.max(0,tokenBalance-tokenCost).toLocaleString("id-ID",{maximumFractionDigits:2})} {asset}</strong></p>}</div>}
+    <p className="economy-form-hint">Nilai maksimum atribut 100. Cash dibayar dari wallet Driver/Team ke Development Treasury. Diskon Pit Crew Training Center hanya berlaku untuk cash pada atribut Pit Stop Efficiency, dihitung majemuk 10% per level. TDP/DDP tidak mendapat diskon. Token hanya berasal dari hasil race dan tidak memiliki harga tunai.</p>
     
     {asset==="TDP"&&!["premio","zwei"].includes(String(team?.division_key||"").toLowerCase())&&<p className="economy-form-hint">Divisi tim belum ditetapkan ke Caleris Premio atau Caleris Zwei. Upgrade cash belum tersedia.</p>}
     <button className="economy-primary-button" disabled={saving||!selected||!validDelta||!validPayment} onClick={()=>void upgrade()}>{saving?"Memproses...":paymentMethod==="cash"?"Konfirmasi Upgrade & Bayar":"Upgrade Gratis dengan Race Token"}</button>
