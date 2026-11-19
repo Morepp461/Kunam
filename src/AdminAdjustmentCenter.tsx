@@ -9,7 +9,7 @@ type Band={license_label:string;license_tier:string;sort_order:number};
 type WalletRow={id:string;account_kind:string;member_id:string|null;team_id:string|null;balance:number;display_name:string;is_active:boolean};
 type Audit={id:string;member_id:string;previous_license:string|null;new_license:string;reason:string;created_at:string};
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
-export default function AdminAdjustmentCenter({session}:{session:Session}){
+export default function AdminAdjustmentCenter({_session}:{session:Session}){
  const [drivers,setDrivers]=useState<Driver[]>([]),[bands,setBands]=useState<Band[]>([]),[wallets,setWallets]=useState<WalletRow[]>([]),[audit,setAudit]=useState<Audit[]>([]);
  const [driverId,setDriverId]=useState(""),[license,setLicense]=useState(""),[licenseReason,setLicenseReason]=useState("");
  const [walletKind,setWalletKind]=useState<"driver"|"team_owner"|"team">("driver"),[walletId,setWalletId]=useState(""),[amount,setAmount]=useState(""),[reason,setReason]=useState("");
@@ -34,7 +34,7 @@ export default function AdminAdjustmentCenter({session}:{session:Session}){
  const assignLicense=async()=>{
   if(!supabase||!driverId||!license||licenseReason.trim().length<3)return;
   setSaving(true);setNotice(null);
-  const {data,error}=await supabase.rpc("admin_assign_driver_license",{p_member_id:driverId,p_license_label:license,p_reason:licenseReason.trim()});
+  const {error}=await supabase.rpc("admin_assign_driver_license",{p_member_id:driverId,p_license_label:license,p_reason:licenseReason.trim()});
   setSaving(false);
   if(error)setNotice({kind:"error",text:error.message});
   else{setNotice({kind:"success",text:"Lisensi Driver berhasil diperbarui dan audit tersimpan."});setLicenseReason("");await load()}
@@ -44,7 +44,7 @@ export default function AdminAdjustmentCenter({session}:{session:Session}){
   const value=Number(amount);
   if(!Number.isFinite(value)||value<=0||Number(value.toFixed(2))!==value){setNotice({kind:"error",text:"Nominal harus lebih besar dari nol dan maksimal dua desimal."});return}
   setSaving(true);setNotice(null);
-  const {data,error}=await supabase.rpc("admin_inject_wallet_balance",{p_wallet_account_id:walletId,p_amount:value,p_reason:reason.trim(),p_idempotency_key:"admin-wallet-injection:"+crypto.randomUUID()});
+  const {error}=await supabase.rpc("admin_inject_wallet_balance",{p_wallet_account_id:walletId,p_amount:value,p_reason:reason.trim(),p_idempotency_key:"admin-wallet-injection:"+crypto.randomUUID()});
   setSaving(false);
   if(error)setNotice({kind:"error",text:error.message});
   else{setNotice({kind:"success",text:"Saldo berhasil ditambahkan melalui VreeoBank dan double-entry ledger. "+money(value)});setAmount("");setReason("");await load()}
