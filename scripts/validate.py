@@ -72,6 +72,8 @@ def main():
     for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
         assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    profile_module = (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
+    dashboard_module = (ROOT / "src/DashboardModule.tsx").read_text(encoding="utf-8")
     character_identity_migration = ROOT / "supabase/migrations/20261118140000_permanent_character_wallet_and_identity.sql"
     character_balance_migration = ROOT / "supabase/migrations/20261118150000_character_balance_aggregate_preserve_wallet_history.sql"
     assert character_identity_migration.is_file() and character_balance_migration.is_file(), "Missing permanent character identity/balance migrations"
@@ -81,9 +83,9 @@ def main():
         assert fragment in identity_sql, f"Permanent character identity migration missing: {fragment}"
     for fragment in ["drop trigger if exists zz_members_character_wallet_sync", "drop trigger if exists zz_profiles_character_wallet_sync", "drop function if exists private.consolidate_member_character_wallets"]:
         assert fragment in balance_sql, f"Character balance compatibility migration missing: {fragment}"
-    assert 'nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0)' in app, "Profile must aggregate all personal wallet buckets into the character balance"
-    assert 'const characterWallet=wallets.public_member' in app, "Account and character balance must use the same aggregate"
-    assert 'const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0)' in app, "Dashboard must display the same aggregate character balance"
+    assert 'nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0)' in profile_module, "Profile must aggregate all personal wallet buckets into the character balance"
+    assert 'const characterWallet=wallets.public_member' in profile_module, "Account and character balance must use the same aggregate"
+    assert 'const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0)' in dashboard_module, "Dashboard must display the same aggregate character balance"
     assert 'path="/profile"' in app
     assert 'import Stage5Panel from "./Stage5Panel";' in app
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app
