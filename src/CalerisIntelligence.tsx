@@ -90,21 +90,15 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
 
       if (scope === "budget") {
         if (own.role !== "Owner" || !own.team_id || !current?.id) throw new Error("Budget Guard hanya tersedia untuk Team Owner dengan season aktif.");
-        const [{ data: plan, error: planError }, { data: wallets, error: walletError }] = await Promise.all([
+        const [{ data: plan, error: planError }, { data: snapshot, error: snapshotError }] = await Promise.all([
           supabase.from("caleris_team_budget_plans").select("*").eq("team_id", own.team_id).eq("season_id", current.id).maybeSingle(),
-          supabase.from("economy_wallet_accounts").select("id,balance").eq("team_id", own.team_id).eq("account_kind", "team").eq("is_active", true)
+          supabase.rpc("team_owner_get_budget_snapshot", { p_season_id: current.id })
         ]);
         if (planError) throw planError;
-        if (walletError) throw walletError;
+        if (snapshotError) throw snapshotError;
         setBudget(plan as Row | null); setForm((v: Row) => ({ ...v, planned_budget: String(plan?.planned_budget ?? ""), alert_threshold_percent: String(plan?.alert_threshold_percent ?? 80), category_budgets: plan?.category_budgets || {}, owner_notes: plan?.owner_notes || "" }));
-        const walletRows = (wallets || []) as Row[];
-        setWalletBalance(walletRows.reduce((n, w) => n + Number(w.balance || 0), 0));
-        const walletIds = walletRows.map(w => w.id);
-        if (walletIds.length) {
-          const { data: tx, error: txError } = await supabase.from("economy_transactions").select("amount").in("source_account_id", walletIds).gte("created_at", current.starts_on).lte("created_at", current.ends_on + "T23:59:59.999Z");
-          if (txError) throw txError;
-          setOutflow(((tx || []) as Row[]).reduce((n, t) => n + Number(t.amount || 0), 0));
-        } else setOutflow(0);
+        setWalletBalance(Number(snapshot?.wallet_balance || 0));
+        setOutflow(Number(snapshot?.season_outflow || 0));
       }
 
       if (scope === "renewals") {
