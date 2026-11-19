@@ -107,7 +107,7 @@ drop policy if exists caleris_merch_items_read on public.caleris_merchandise_sal
 create policy caleris_merch_items_read on public.caleris_merchandise_sales_items for select to authenticated
 using(exists(select 1 from public.caleris_merchandise_sales_runs r where r.id=sales_run_id
   and (exists(select 1 from public.profiles p join public.members m on m.id=p.member_id where p.user_id=auth.uid() and m.team_id=r.team_id)
-    or exists(select 1 from public.site_admins a where a.user_id=auth.uid())));
+    or exists(select 1 from public.site_admins a where a.user_id=auth.uid()))));
 
 -- A dedicated NPC market and supplier are separate from VreeoBank and Sponsor Source.
 alter table public.economy_wallet_accounts drop constraint if exists economy_wallet_accounts_account_kind_check;
