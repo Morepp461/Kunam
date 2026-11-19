@@ -41,3 +41,20 @@
 .vp-reader-facts h3{font-size:10px;letter-spacing:.18em;color:#8f292f}.vp-reader-facts p{font-family:Georgia,serif;margin:8px 0}
 .vp-reader footer{margin-top:30px;padding-top:12px;border-top:1px solid #172a29;font-size:8px;font-weight:900;letter-spacing:.15em;color:#6b6c63}
 @media(max-width:640px){.vp-masthead{grid-template-columns:1fr;padding:18px 14px 12px;text-align:center}.vp-masthead-title{grid-row:1;font-size:42px}.vp-masthead-side{display:none}.vp-edition{padding:8px 12px;font-size:8px}.vp-paper-grid{grid-template-columns:1fr;padding:0 13px 12px}.vp-story,.vp-story:nth-child(2n),.vp-story:nth-child(2n+1){border-right:0;padding:17px 2px}.vp-story-lead{display:flex;grid-column:auto}.vp-story-lead h2{font-size:39px}.vp-story-lead .vp-story-image{height:220px;min-height:0;order:2}.vp-story h2{font-size:29px}.vp-story-image{height:210px}.vp-reader-backdrop{padding:0}.vp-reader{min-height:100vh;padding:22px 19px}.vp-reader-body{font-size:15px}}
+
+
+/* Editorial rhythm: varied layouts for Vreeo Pedia stories */
+.vp-story-photo .vp-story-image{height:230px;filter:sepia(.12) contrast(1.08)}
+.vp-story-brief{padding-top:15px;padding-bottom:24px}
+.vp-story-brief h2{font-size:clamp(21px,2.5vw,28px);line-height:1.08}
+.vp-story-brief .vp-story-leadtext{font-family:Inter,Arial,sans-serif;font-size:12px;line-height:1.7}
+.vp-story-note{background:rgba(23,42,41,.045);padding:20px}
+.vp-story-note h2{font-size:clamp(25px,3.2vw,38px)}
+.vp-story-standard .vp-story-image{height:155px}
+.vp-story-meta span{max-width:70%;overflow-wrap:anywhere}
+.vp-story-facts span{letter-spacing:.06em}
+.vp-read{letter-spacing:.1em}
+.vp-reader-meta{line-height:1.8}
+.vp-reader-body{font-family:Inter,Arial,sans-serif;font-size:15px;line-height:1.9}
+.vp-reader-facts h3{letter-spacing:.12em}
+@media(max-width:640px){.vp-story-photo .vp-story-image,.vp-story-standard .vp-story-image{height:210px}.vp-story-note{padding:17px 12px}.vp-story-brief h2{font-size:27px}}
