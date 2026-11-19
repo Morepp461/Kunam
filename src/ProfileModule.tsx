@@ -1,4 +1,5 @@
 import {useEffect,useState} from "react";
+import type {ReactNode} from "react";
 import type {Session} from "@supabase/supabase-js";
 import {ArrowUpRight,ChevronLeft,FileText,Settings,UserCircle,Users} from "lucide-react";
 import {Link} from "react-router-dom";
@@ -10,7 +11,7 @@ type MemberRecord={id:string;member_code:string|null;character_name:string|null;
 type TeamRecord={id:string;name:string};
 type ContractRecord={id:string;duration_label:string|null;starts_on:string|null;ends_on:string|null;salary:number|null;target:unknown;release_clause:number|null;status:string};
 function PageHeading({eyebrow,title,description}:{eyebrow:string;title:string;description:string}){return <div className="page-heading"><p className="kicker">{eyebrow}</p><h1 className="page-title">{title}</h1><p className="page-description">{description}</p></div>}
-function EmptyPanel({icon,title,body}:{icon:React.ReactNode;title:string;body:string}){return <div className="empty-panel">{icon}<strong>{title}</strong><p>{body}</p></div>}
+function EmptyPanel({icon,title,body}:{icon:ReactNode;title:string;body:string}){return <div className="empty-panel">{icon}<strong>{title}</strong><p>{body}</p></div>}
 
 export default function ProfilePage({session,profile,profileReady,toast}:{session:Session;profile:ProfilePageProfile|null;profileReady:boolean;toast:Toast}){
  const [member,setMember]=useState<MemberRecord|null>(null),[team,setTeam]=useState<TeamRecord|null>(null),[contract,setContract]=useState<ContractRecord|null>(null),[fanTotal,setFanTotal]=useState(0),[reputation,setReputation]=useState<{score:number;band:string}|null>(null),[wallets,setWallets]=useState<Record<string,number|null>>({public_member:null,driver:null,team_owner:null,team:null}),[busy,setBusy]=useState(true);
