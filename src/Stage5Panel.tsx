@@ -11,6 +11,7 @@ import "./driver-exhibition.css";
 
 type Props = { session: Session; fallback: ReactNode; isAdmin?: boolean };
 type Row = Record<string, any>;
+const EMPTY_ROWS = { data: [] as Row[], error: null };
 const money = (n: number) => "€ " + Number(n || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
 const dateLabel = (v?: string | null) => v ? new Date(v + (v.length === 10 ? "T00:00:00" : "")).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" }) : "Belum diatur";
 const ageOf = (dob?: string | null) => {
@@ -76,8 +77,8 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
   const isDriverProfilePage = isDriverCharacterPage || isDriverCareerPage;
   const isCompetitionPage = isMainGridPage || isHallPage || isArchivePage;
   const isCompetitionSchedulePage = isMainGridPage && detail === "calendar";
-  const needsSeasonData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamJobPage || isMainAnnouncementPage || isMainRegulationPage || isFiaContentFormPage;
-  const needsTeamData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamJobPage || isTeamScoutPage || isFiaAppealPage;
+  const needsSeasonData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isTeamJobPage || isMainAnnouncementPage || isMainRegulationPage || isFiaContentFormPage;
+  const needsTeamData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamJobPage || isTeamScoutPage || isMainJobSearchPage || isFiaAppealPage;
   const needsMemberDirectory = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isFiaAppealPage;
   const needsDirectoryAvatars = isMainGridPage && detail === "driver-list";
   const needsDivisionData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage;
@@ -98,7 +99,6 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
   const needsFinancialLedger = isFinancialPage;
   const needsDriverReputation = isDriverCharacterPage || isTeamScoutPage;
   const needsSponsorshipData = isTeamSummaryPage;
-  const emptyRows = { data: [] as Row[], error: null };
   const refresh = useCallback(async () => {
     if (!supabase) { setNotice("Supabase belum dikonfigurasi."); setLoading(false); return; }
     setLoading(true);
@@ -111,34 +111,34 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ
     ] = await Promise.all([
       supabase.from("profiles").select("user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown").eq("user_id", session.user.id).maybeSingle(),
-      needsSeasonData ? supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }) : Promise.resolve(emptyRows),
-      needsTeamData ? supabase.from("caleris_team_directory").select("id,name,division_key,main_color,secondary_color").order("name") : Promise.resolve(emptyRows),
-      needsMemberDirectory ? supabase.from("caleris_member_directory").select(needsDirectoryAvatars ? "id,character_name,role,license,team_id,avatar_path,avatar_url,nationality,hometown" : "id,character_name,role,license,team_id").order("character_name") : Promise.resolve(emptyRows),
-      needsDivisionData ? supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,status") : Promise.resolve(emptyRows),
-      needsRoundData ? supabase.from("license_rounds").select("id,season_division_id,round_number,title,circuit_name,circuit_country_code,status,processed_at").order("round_number") : Promise.resolve(emptyRows),
-      needsRoundPoints ? supabase.from("license_round_standings").select("id,round_id,member_id,points_total,driver_name_snapshot,team_id_snapshot,team_name_snapshot") : Promise.resolve(emptyRows),
-      needsFinalStandings ? supabase.from("license_final_standings").select("id,season_division_id,member_id,final_points,final_position,driver_name_snapshot,team_id_snapshot,team_name_snapshot") : Promise.resolve(emptyRows),
-      needsRegistrationData ? supabase.from("license_season_members").select("id,season_id,season_division_id,member_id,is_hiatus,preserved_license") : Promise.resolve(emptyRows),
-      needsRaceResults ? supabase.from("caleris_race_results").select("id,round_id,winner_member_id,pole_member_id,driver_of_day_member_id,fastest_lap_member_id,fastest_lap_ms,published_at") : Promise.resolve(emptyRows),
-      needsResultEntries ? supabase.from("caleris_race_result_entries").select("id,round_id,member_id,team_id,driver_name_snapshot,team_name_snapshot,finish_status,finishing_position,grid_position,fastest_lap_ms") : Promise.resolve(emptyRows),
-      needsTeamProfiles ? supabase.from("caleris_team_profiles").select("*") : Promise.resolve(emptyRows),
-      needsAttributes ? supabase.from("caleris_driver_attributes").select("*") : Promise.resolve(emptyRows),
-      needsAchievements ? supabase.from("caleris_achievements").select("*").order("awarded_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsEngineData ? supabase.from("caleris_engines").select("*").eq("is_active", true).order("name") : Promise.resolve(emptyRows),
-      isMainAnnouncementPage ? supabase.from("caleris_announcements").select("*").eq("is_published", true).order("published_at", { ascending: false }) : Promise.resolve(emptyRows),
-      isMainRegulationPage ? supabase.from("caleris_regulations").select("*").eq("is_published", true).order("published_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsJobAdverts ? supabase.from("caleris_job_adverts").select("*").eq("status", "published").order("created_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsAppealData ? supabase.from("caleris_appeals").select("*").order("submitted_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsAppealData ? supabase.from("caleris_fines").select("*").order("issued_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsContracts ? supabase.from("economy_driver_contracts").select("*").order("created_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsWallets ? supabase.from("economy_wallet_accounts").select("id,account_kind,member_id,team_id,balance,is_active").eq("is_active", true) : Promise.resolve(emptyRows),
-      needsFinancialLedger ? supabase.from("economy_transactions").select("id,event_type,source_account_id,destination_account_id,amount,description,metadata,created_at").order("created_at", { ascending: false }).limit(150) : Promise.resolve(emptyRows),
-      isCompetitionSchedulePage ? supabase.from("season_calendar_periods").select("id,season_id,period_type,period_number,title,starts_on,ends_on,sort_order").order("sort_order") : Promise.resolve(emptyRows),
-      isCompetitionSchedulePage ? supabase.from("season_period_rounds").select("id,period_id,season_division_id,round_id") : Promise.resolve(emptyRows),
-      isDriverCharacterPage ? supabase.from("caleris_fan_populations").select("member_id,population").eq("entity_kind", "driver") : Promise.resolve(emptyRows),
-      needsDriverReputation ? supabase.from("caleris_driver_reputation").select("member_id,score,band") : Promise.resolve(emptyRows),
-      needsSponsorshipData ? supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,target_team_id,season_id,contract_amount,annual_contract_amount,duration_seasons,status,started_at,ended_at,renewal_status").eq("target_kind", "team").eq("status", "active").order("started_at", { ascending: false }) : Promise.resolve(emptyRows),
-      needsSponsorshipData ? supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name") : Promise.resolve(emptyRows)
+      needsSeasonData ? supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsTeamData ? supabase.from("caleris_team_directory").select("id,name,division_key,main_color,secondary_color").order("name") : Promise.resolve(EMPTY_ROWS),
+      needsMemberDirectory ? supabase.from("caleris_member_directory").select(needsDirectoryAvatars ? "id,character_name,role,license,team_id,avatar_path,avatar_url,nationality,hometown" : "id,character_name,role,license,team_id").order("character_name") : Promise.resolve(EMPTY_ROWS),
+      needsDivisionData ? supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,status") : Promise.resolve(EMPTY_ROWS),
+      needsRoundData ? supabase.from("license_rounds").select("id,season_division_id,round_number,title,circuit_name,circuit_country_code,status,processed_at").order("round_number") : Promise.resolve(EMPTY_ROWS),
+      needsRoundPoints ? supabase.from("license_round_standings").select("id,round_id,member_id,points_total,driver_name_snapshot,team_id_snapshot,team_name_snapshot") : Promise.resolve(EMPTY_ROWS),
+      needsFinalStandings ? supabase.from("license_final_standings").select("id,season_division_id,member_id,final_points,final_position,driver_name_snapshot,team_id_snapshot,team_name_snapshot") : Promise.resolve(EMPTY_ROWS),
+      needsRegistrationData ? supabase.from("license_season_members").select("id,season_id,season_division_id,member_id,is_hiatus,preserved_license") : Promise.resolve(EMPTY_ROWS),
+      needsRaceResults ? supabase.from("caleris_race_results").select("id,round_id,winner_member_id,pole_member_id,driver_of_day_member_id,fastest_lap_member_id,fastest_lap_ms,published_at") : Promise.resolve(EMPTY_ROWS),
+      needsResultEntries ? supabase.from("caleris_race_result_entries").select("id,round_id,member_id,team_id,driver_name_snapshot,team_name_snapshot,finish_status,finishing_position,grid_position,fastest_lap_ms") : Promise.resolve(EMPTY_ROWS),
+      needsTeamProfiles ? supabase.from("caleris_team_profiles").select("*") : Promise.resolve(EMPTY_ROWS),
+      needsAttributes ? supabase.from("caleris_driver_attributes").select("*") : Promise.resolve(EMPTY_ROWS),
+      needsAchievements ? supabase.from("caleris_achievements").select("*").order("awarded_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsEngineData ? supabase.from("caleris_engines").select("*").eq("is_active", true).order("name") : Promise.resolve(EMPTY_ROWS),
+      isMainAnnouncementPage ? supabase.from("caleris_announcements").select("*").eq("is_published", true).order("published_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      isMainRegulationPage ? supabase.from("caleris_regulations").select("*").eq("is_published", true).order("published_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsJobAdverts ? supabase.from("caleris_job_adverts").select("*").eq("status", "published").order("created_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsAppealData ? supabase.from("caleris_appeals").select("*").order("submitted_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsAppealData ? supabase.from("caleris_fines").select("*").order("issued_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsContracts ? supabase.from("economy_driver_contracts").select("*").order("created_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsWallets ? supabase.from("economy_wallet_accounts").select("id,account_kind,member_id,team_id,balance,is_active").eq("is_active", true) : Promise.resolve(EMPTY_ROWS),
+      needsFinancialLedger ? supabase.from("economy_transactions").select("id,event_type,source_account_id,destination_account_id,amount,description,metadata,created_at").order("created_at", { ascending: false }).limit(150) : Promise.resolve(EMPTY_ROWS),
+      isCompetitionSchedulePage ? supabase.from("season_calendar_periods").select("id,season_id,period_type,period_number,title,starts_on,ends_on,sort_order").order("sort_order") : Promise.resolve(EMPTY_ROWS),
+      isCompetitionSchedulePage ? supabase.from("season_period_rounds").select("id,period_id,season_division_id,round_id") : Promise.resolve(EMPTY_ROWS),
+      isDriverCharacterPage ? supabase.from("caleris_fan_populations").select("member_id,population").eq("entity_kind", "driver") : Promise.resolve(EMPTY_ROWS),
+      needsDriverReputation ? supabase.from("caleris_driver_reputation").select("member_id,score,band") : Promise.resolve(EMPTY_ROWS),
+      needsSponsorshipData ? supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,target_team_id,season_id,contract_amount,annual_contract_amount,duration_seasons,status,started_at,ended_at,renewal_status").eq("target_kind", "team").eq("status", "active").order("started_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
+      needsSponsorshipData ? supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name") : Promise.resolve(EMPTY_ROWS)
     ]);
     const errors = [
       p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ,
