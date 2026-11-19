@@ -183,6 +183,14 @@ begin
 end;
 $$;
 
+
+drop policy if exists "FIA manages Team HQ configs" on public.caleris_team_hq_facility_configs;
+create policy "Admin manages Team HQ configs"
+on public.caleris_team_hq_facility_configs
+for all to authenticated
+using (exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())))
+with check (exists(select 1 from public.site_admins a where a.user_id=(select auth.uid())));
+
 create or replace function private.guard_permanent_profile_character()
 returns trigger
 language plpgsql
