@@ -34,7 +34,6 @@ export const panelGroups: PanelGroup[] = [
     { path: "development", label: "Development", description: "Pengembangan atribut driver dan roadmap target pribadi." },
     { path: "contract-renewals", label: "Contract Renewal", description: "Keputusan Driver atas penawaran perpanjangan kontrak." },
     { path: "training", label: "Training", description: "Program latihan atribut Driver dengan tingkat kesulitan dan cooldown." },
-    { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
     { path: "quest", label: "Quest", description: "Daily Quest dan Period Quest dengan reward saldo wallet." },
     { path: "career-history", label: "Career History", description: "Rekam jejak karier dan statistik." },
     { path: "financial-centre", label: "Financial Centre", description: "Arus keuangan karakter driver." },
