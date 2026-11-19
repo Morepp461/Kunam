@@ -42,7 +42,7 @@ returns table(id uuid,name text,manufacturer text,country_of_origin text,descrip
   owner_team_id uuid,owner_team_name text,is_for_sale boolean,asking_price numeric,
   race_pace numeric,qualifying_pace numeric,engine_power numeric)
 language plpgsql security definer set search_path=''
-as $$
+as $function$
 begin
   if not exists(select 1 from public.site_admins where user_id=(select auth.uid())) then
     raise exception 'Akses Admin diperlukan.';
@@ -54,13 +54,13 @@ begin
   left join public.teams t on t.id=e.owner_team_id
   where e.is_active order by e.name;
 end;
-$$;
+$function$;
 
 create or replace function public.admin_configure_engine_usage_offer(
   p_engine_id uuid,p_is_listed boolean,p_usage_price numeric default null
 ) returns jsonb
 language plpgsql security definer set search_path=''
-as $$
+as $function$
 begin
   if not exists(select 1 from public.site_admins where user_id=(select auth.uid())) then
     raise exception 'Hanya Admin yang dapat mengatur harga dan listing Engine Market.';
@@ -75,21 +75,21 @@ begin
   if not found then raise exception 'Engine aktif tidak ditemukan.'; end if;
   return jsonb_build_object('ok',true,'listed',p_is_listed,'usage_price',p_usage_price);
 end;
-$$;
+$function$;
 
 create or replace function public.team_set_engine_sale_listing(
   p_engine_id uuid,p_is_for_sale boolean,p_asking_price numeric default null
 ) returns jsonb
 language plpgsql security definer set search_path=''
-as $$
+as $function$
 begin
   raise exception 'Harga dan listing Engine Market hanya dapat diatur oleh Admin.';
 end;
-$$;
+$function$;
 
 create or replace function public.team_list_owned_engines()
 returns jsonb language plpgsql security definer set search_path=''
-as $$
+as $function$
 declare v_team_id uuid; v_result jsonb;
 begin
   select m.team_id into v_team_id from public.profiles p
@@ -104,11 +104,11 @@ begin
   into v_result from public.caleris_engines e where e.owner_team_id=v_team_id and e.is_active;
   return v_result;
 end;
-$$;
+$function$;
 
 create or replace function public.list_main_event_engine_marketplace()
 returns jsonb language plpgsql security definer set search_path=''
-as $$
+as $function$
 declare v_team_id uuid; v_result jsonb;
 begin
   select m.team_id into v_team_id from public.profiles p
@@ -127,13 +127,13 @@ begin
     and e.asking_price between 5000000 and 25000000;
   return v_result;
 end;
-$$;
+$function$;
 
 create or replace function public.team_purchase_engine_usage(
   p_engine_id uuid,p_season_id uuid,p_idempotency_key text
 ) returns jsonb
 language plpgsql security definer set search_path=''
-as $$
+as $function$
 declare
   v_user uuid:=(select auth.uid());
   v_member public.members%rowtype;
@@ -210,7 +210,7 @@ begin
     'engine_id',v_engine.id,'owner_team_id',v_engine.owner_team_id,
     'race_pace',v_engine.race_pace,'qualifying_pace',v_engine.qualifying_pace,'engine_power',v_engine.engine_power);
 end;
-$$;
+$function$;
 
 revoke all on function public.admin_list_engine_marketplace() from public;
 revoke all on function public.admin_configure_engine_usage_offer(uuid,boolean,numeric) from public;
