@@ -342,19 +342,18 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       <div className="s5-hero"><div className="s5-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt="Avatar driver"/> : <span>{(member.character_name || "D").slice(0, 1)}</span>}</div><div className="s5-hero-copy"><span>OFFICIAL DRIVER PROFILE</span><h2>{member.character_name || "Driver"}</h2><p>{team?.name || "No team"} · {labelDivision(team?.division_key)}</p><small>{profile?.nationality || profile?.hometown || "Asal belum diatur"} · {ageOf(profile?.date_of_birth)}</small></div><div className="s5-wallet-chip"><Wallet size={16}/><span>{money((data.personalWallets || []).reduce((n: number, w: Row) => n + Number(w.balance || 0), 0))}</span></div></div>
       <div className="s5-grid s5-grid-4">{[["POINTS",statsAll.points],["WINS",statsAll.wins],["POLES",statsAll.poles],["PODIUM",statsAll.podium],["FASTEST LAPS",statsAll.fastestLaps],["DRIVER OF THE DAY",statsAll.dotd],["COMPLETED RACES",statsAll.completed],["GAINED POSITIONS",statsAll.gained],["AVERAGE POSITION",statsAll.average?statsAll.average.toFixed(2):"—"],["POINTS / RACE",statsAll.ppr.toFixed(2)],["DNF",statsAll.dnf],["TOTAL FANS",ownFanTotal.toLocaleString("id-ID")],["REPUTATION",ownReputation?Number(ownReputation.score).toLocaleString("id-ID"):"Belum dihitung"]].map(([k,v])=><div className="s5-stat" key={k as string}><span>{k}</span><strong>{v as string|number}</strong>{k==="REPUTATION"&&ownReputation?.band&&<small>{ownReputation.band}</small>}</div>)}</div>
       {(() => {
-        const recentFive = driverRaceHistory.slice(0,5);
-        const recentFinishes = recentFive.filter((r:Row)=>r.finish_status==="finished"&&Number(r.finishing_position)>0);
-        const recentAverage = recentFinishes.length ? recentFinishes.reduce((n:number,r:Row)=>n+Number(r.finishing_position),0)/recentFinishes.length : null;
-        const formLabel = recentAverage===null ? "Belum cukup data" : recentAverage<=5 ? "Strong form" : recentAverage<=10 ? "Stable form" : "Rebuilding";
-        const confidenceLabel = recentFive.some((r:Row)=>r.finish_status==="finished"&&Number(r.finishing_position)<=3) ? "High" : recentAverage!==null&&recentAverage<=10 ? "Steady" : "Building";
-        const moraleLabel = activeContract?.status==="active" ? "Contract secured" : "Contract needs attention";
+        const metrics=ownReputation?.metrics||{};
+        const formScore=Number.isFinite(Number(metrics.form))&&metrics.form!==null?Math.round(Number(metrics.form)):null;
+        const moraleScore=Number.isFinite(Number(metrics.morale))&&metrics.morale!==null?Math.round(Number(metrics.morale)):null;
+        const confidenceScore=Number.isFinite(Number(metrics.confidence))&&metrics.confidence!==null?Math.round(Number(metrics.confidence)):null;
+        const label=(score:number|null)=>score===null?"Menunggu hasil":score>=75?"Strong":score>=50?"Stable":"Needs attention";
         return <Card title="Form, Morale & Confidence" eyebrow="REPUTATION SIGNALS">
           <div className="s5-grid s5-grid-3">
-            <div className="s5-stat"><span>FORM</span><strong>{formLabel}</strong><small>{recentFive.length} recent races</small></div>
-            <div className="s5-stat"><span>MORALE</span><strong>{moraleLabel}</strong><small>Based on current contract status</small></div>
-            <div className="s5-stat"><span>CONFIDENCE</span><strong>{confidenceLabel}</strong><small>Based on recent official results</small></div>
+            <div className="s5-stat"><span>FORM</span><strong>{label(formScore)}</strong><small>{formScore===null?"Menunggu race dipublikasikan":formScore+"/100"}</small></div>
+            <div className="s5-stat"><span>MORALE</span><strong>{label(moraleScore)}</strong><small>{moraleScore===null?"Menunggu perhitungan reputasi":moraleScore+"/100"}</small></div>
+            <div className="s5-stat"><span>CONFIDENCE</span><strong>{label(confidenceScore)}</strong><small>{confidenceScore===null?"Menunggu perhitungan reputasi":confidenceScore+"/100"}</small></div>
           </div>
-          <p className="s5-footnote">Indikator ini tidak mengubah race engine. Data disajikan sebagai konteks reputasi karakter dan bukan atribut permanen Driver.</p>
+          <p className="s5-footnote">Ketiga indikator dihitung otomatis setelah hasil race dipublikasikan dan memengaruhi skor reputasi Driver. Tidak ada pengaruh ke race engine atau atribut permanen.</p>
         </Card>;
       })()}
       <div className="s5-grid s5-grid-2"><Card title="Contract & Salary" eyebrow="CURRENT SEASON"><dl className="s5-dl"><dt>Team</dt><dd>{team?.name || "Belum ada tim"}</dd><dt>License</dt><dd>{member.license || "Belum ditetapkan"}</dd><dt>Status</dt><dd>{activeContract?.status || "Belum ada kontrak"}</dd><dt>Annual salary</dt><dd>{activeContract ? money(Number(activeContract.annual_salary || 0)) : "—"}</dd><dt>Season</dt><dd>{(data.seasons || []).find((s: Row) => s.id === activeContract?.season_id)?.title || "—"}</dd><dt>Contract term</dt><dd>{ownContracts.filter((c: Row) => c.status === "active").length || "—"} season(s)</dd></dl></Card><Card title="Driver Attributes" eyebrow="ATTRIBUTE PROFILE · TAP TO VIEW CHART" onClick={() => setAttributeModalOpen(true)}><div className="s5-attribute-summary">{Object.entries(ownAttributes).map(([key, value])=><div key={key}><span>{key.replaceAll("_"," ")}</span><strong>{String(value)}</strong></div>)}</div></Card></div>
