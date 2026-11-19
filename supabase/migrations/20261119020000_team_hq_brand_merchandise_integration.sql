@@ -14,6 +14,7 @@ end $$;
 drop trigger if exists trg_team_default_base_valuation on public.teams;
 create trigger trg_team_default_base_valuation before insert or update of division_key on public.teams
 for each row execute function private.set_team_default_base_valuation();
+revoke all on function private.set_team_default_base_valuation() from public,anon,authenticated;
 update public.teams set base_valuation=case when lower(coalesce(division_key,'')) like '%zwei%' then 45000000 else 120000000 end
 where base_valuation is null;
 
@@ -311,7 +312,7 @@ begin
     into v_fans,v_quality,v_conversion,v_capacity_bonus
     from public.caleris_fan_populations where entity_kind='team' and team_id=v_team.team_id;
     select coalesce(score,0) into v_rep from public.caleris_team_reputation where team_id=v_team.team_id;
-    v_rep_factor:=v_config.reputation_factor_min+(v_config.reputation_factor_max-v_config.reputation_factor_min)*(least(10000,greatest(0,v_rep))/10000);
+    v_rep_factor:=v_config.reputation_factor_min+(v_config.reputation_factor_max-v_config.reputation_factor_min)*(least(10000::numeric,greatest(0,v_rep)::numeric)/10000);
     v_quality:=1+(((coalesce(v_quality,50)+coalesce(v_conversion,50)+coalesce(v_capacity_bonus,50))/3)-50)/100*0.5;
     v_effects:=private.team_hq_effects_for_team(v_team.team_id);
     v_capacity_bonus:=least(100,coalesce((v_effects->>'merchandise_capacity_bonus_percent')::numeric,0)*v_config.hq_capacity_bonus_per_level/3);
