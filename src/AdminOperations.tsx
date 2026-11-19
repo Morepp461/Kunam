@@ -10,7 +10,7 @@ type WealthAssessment={id:string;season_id:string;target_kind:"member"|"team";me
 type Division={id:string;season_id:string;division_key:string;division_name:string;season?:{title:string}};
 type PrizeRule={id:string;season_division_id:string;driver_win_ddp:number;team_win_tdp:number;driver_pole_ddp:number;team_pole_tdp:number;is_active:boolean};
 type Sponsor={id:string;name:string;description:string|null;industry:string|null;available_budget:number|null;is_active:boolean};
-type Team={id:string;name:string;division_key:string|null};
+type Team={id:string;name:string;division_key:string|null;base_valuation:number|null};
 type Valuation={id:string;team_id:string;base_valuation:number|null;team_score:number|null;score_breakdown:Record<string,any>|null;debt_penalty:number;overdue_penalty:number;total_valuation:number;assessed_at:string;team?:{name:string}};
 type Tab="tax"|"prizes"|"sponsors"|"valuation";
 const money=(n:number)=>"€ "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
@@ -31,7 +31,7 @@ export default function AdminOperations({session}:{session:Session}){
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,license_seasons(title)").order("created_at",{ascending:false}),
    supabase.from("caleris_race_reward_rules").select("*"),
    supabase.from("caleris_sponsors").select("*").order("name"),
-   supabase.from("teams").select("id,name,division_key").order("name"),
+   supabase.from("teams").select("id,name,division_key,base_valuation").order("name"),
    supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100),
    supabase.from("caleris_wealth_tax_assessments_v2").select("*").order("assessed_at",{ascending:false}).limit(100),
   ]);
@@ -122,7 +122,7 @@ export default function AdminOperations({session}:{session:Session}){
   if(error){setNotice(error.message);return}
   const result=data as {team_score?:number;total_valuation?:number};
   setNotice("Valuasi tersimpan. Team Score "+Number(result.team_score||0).toFixed(2)+"/100 · Final "+money(Number(result.total_valuation||0)));
-  setBaseValuation("");setValuationNote("");await refresh();
+  setBaseValuation(String(base));setValuationNote("");await refresh();
  };
  return <section className="workspace ops-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
@@ -195,10 +195,10 @@ export default function AdminOperations({session}:{session:Session}){
   {tab==="valuation"&&<div className="ops-grid">
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">HYBRID TEAM VALUATION</span><h2>Assess team value</h2></div></div>
     <form className="economy-form" onSubmit={saveValuation}>
-     <label>Team<select value={teamId} onChange={e=>setTeamId(e.target.value)} required><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.division_key?" · "+t.division_key:""}</option>)}</select></label>
+     <label>Team<select value={teamId} onChange={e=>{const id=e.target.value;const selected=teams.find(t=>t.id===id);setTeamId(id);setBaseValuation(selected?.base_valuation==null?"":String(selected.base_valuation));}} required><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}{t.division_key?" · "+t.division_key:""}</option>)}</select></label>
      <label>Base valuation (€)<input type="number" min="0" step="0.01" value={baseValuation} onChange={e=>setBaseValuation(e.target.value)} required/></label>
      <label>Notes<textarea rows={3} value={valuationNote} onChange={e=>setValuationNote(e.target.value)}/></label>
-     <p className="economy-form-hint">Admin hanya memasukkan Base Valuation. Sistem menghitung Development Progress 25%, Achievement History 15%, tren dua season 20%, Team Wallet 10%, lisensi driver terbaik 10%, dan Net Cashflow 10%. Bobot 90% dinormalisasi menjadi 100%. Hutang aktif dan tunggakan menjadi penalti. Snapshot historis lama tidak diubah.</p>
+     <p className="economy-form-hint">Default awal: Caleris Premio €120 juta dan Caleris Zwei €45 juta. Admin tetap dapat mengubah Base Valuation setiap tim. Team Score menghitung Development 25%, Achievement 15%, tren dua season 20%, Team Wallet 10%, lisensi driver 10%, Net Cashflow 10%, dan Team Reputation 10%. HQ asset value ditambahkan terpisah; merchandise net cashflow masuk ke komponen Net Cashflow. Hutang aktif dan tunggakan menjadi penalti.</p>
      <button className="economy-primary-button" disabled={saving||!teamId||baseValuation.trim()===""}><Save size={15}/> Hitung & simpan valuation</button>
     </form>
    </section>
