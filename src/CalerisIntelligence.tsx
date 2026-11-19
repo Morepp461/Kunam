@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import type { ReactNode } from "react";
 import { Activity, RefreshCw, Target, Wallet, FileSignature } from "lucide-react";
 import { supabase } from "./lib/supabase";
 
@@ -11,7 +12,7 @@ const DRIVER_ATTRIBUTES = [
   ["overtake_skill", "Overtake Skill"], ["mistake_rate", "Mistake Rate"], ["tyre_management", "Tyre Management"]
 ] as const;
 const cash = (v: number) => "€ " + Number(v || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
-const Panel = ({ title, eyebrow, children }: { title: string; eyebrow: string; children: React.ReactNode }) => <section className="s5-card"><div className="s5-card-head"><div><span>{eyebrow}</span><h2>{title}</h2></div></div>{children}</section>;
+const Panel = ({ title, eyebrow, children }: { title: string; eyebrow: string; children: ReactNode }) => <section className="s5-card"><div className="s5-card-head"><div><span>{eyebrow}</span><h2>{title}</h2></div></div>{children}</section>;
 
 export default function CalerisIntelligence({ session, scope }: { session: Session; scope: Scope }) {
   const [member, setMember] = useState<Row | null>(null);
