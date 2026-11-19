@@ -91,7 +91,7 @@ as $function$
     'fanbase_reputation_bonus',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'fanbase_reputation_bonus')::numeric,0)*f.condition/100),0),
     'commercial_credibility_bonus',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'commercial_credibility_bonus')::numeric,0)*f.condition/100),0),
     'merchandise_demand_bonus_percent',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'merchandise_demand_bonus_percent')::numeric,0)*f.condition/100),0),
-    'merchandise_capacity_bonus_percent',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'merchandise_capacity_bonus_percent')::numeric,0)*f.condition/100),0),
+    'merchandise_capacity_bonus_percent',coalesce(sum((coalesce((c.effects_by_level->f.level::text->>'merchandise_capacity_bonus_percent')::numeric,0)+coalesce((c.effects_by_level->f.level::text->>'factory_capacity_bonus_percent')::numeric,0))*f.condition/100),0),
     'sponsor_attraction_bonus_percent',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'sponsor_attraction_bonus_percent')::numeric,0)*f.condition/100),0),
     'pit_stop_efficiency_bonus',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'pit_stop_efficiency_bonus')::numeric,0)*f.condition/100),0),
     'qualifying_pace_bonus',coalesce(sum(coalesce((c.effects_by_level->f.level::text->>'qualifying_pace_bonus')::numeric,0)*f.condition/100),0),
