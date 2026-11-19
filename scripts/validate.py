@@ -195,7 +195,7 @@ def main():
     for rpc in ["admin_post_economy_transaction", "admin_reverse_economy_transaction", "admin_process_pending_economy_rewards"]:
         assert rpc in edge_source, f"Economy Edge gateway missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
-    assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
+    assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in layout_module
     assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in profile_module
     assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in profile_module
     calendar_migration = ROOT / "supabase/migrations/20261112160305_season_calendar_and_payroll.sql"
@@ -236,7 +236,7 @@ def main():
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "CALERIS MASTERS · FIA AUTOMATION" in license_engine_source and "fia_create_caleris_season" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
-    assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to="/admin/license-engine"' in app, "License Scoring Engine must be Admin-only"
+    assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to="/admin/license-engine"' in layout_module, "License Scoring Engine must be Admin-only"
 
     cash_loan_migration = ROOT / "supabase/migrations/20261112173057_economy_cash_loan_engine.sql"
     cash_loan_component = ROOT / "src/CashLoanCentre.tsx"
