@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Link, useLocation } from "react-router-dom";
-import { Activity, CarFront, CheckCircle2, Flag, Medal, Search, Trophy, Wallet } from "lucide-react";
+import { Activity, CarFront, CheckCircle2, Flag, Medal, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { broadcastNewsroomArticle } from "./lib/newsroomBroadcast";
 import DriverExhibition from "./DriverExhibition";
