@@ -23,7 +23,7 @@ import TeamAffiliate from "./TeamAffiliate";
 import TeamEngineMarket from "./TeamEngineMarket";
 import DriverTransferMarket from "./DriverTransferMarket";
 import TeamTakeoverMarket from "./TeamTakeoverMarket";
-import AdminSponsorship from "./AdminSponsorship";
+import BrandEcosystem from "./BrandEcosystem";
 import BrandEcosystemAdmin from "./BrandEcosystemAdmin";
 import SponsorshipCentre from "./SponsorshipCentre";
 import DevelopmentTokens from "./DevelopmentTokens";
@@ -159,7 +159,7 @@ function Application(){
   <Route path="/admin/pricing" element={session&&!needsPaddockAccess&&isAdmin?<AdminPricingCenter/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations" element={session&&!needsPaddockAccess&&isAdmin?<AdminOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/brand-ecosystem" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystemAdmin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<AdminSponsorship/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystem session={session} mode="admin"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/daily-checkin" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/quest" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Driver")?<QuestPage session={session} scope="driver"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/quest" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Owner"?<QuestPage session={session} scope="team_owner"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
