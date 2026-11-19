@@ -1,3 +1,4 @@
+/** @deprecated Legacy session-fetching wrapper. Admin sponsorship now receives the authenticated session from App and routes directly to BrandEcosystem. */
 import {useEffect,useState} from "react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";

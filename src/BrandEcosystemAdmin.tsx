@@ -31,7 +31,6 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
  const [driverScores,setDriverScores]=useState<number[]>([]);
  const [trustScores,setTrustScores]=useState<number[]>([]);
  const [reputationWeights,setReputationWeights]=useState<Record<string,number>>({championship:25,race_performance:25,consistency:15,experience:10,fan_popularity:15,professional_record:10,form:5,morale:5,confidence:5});
- const [weightsSaving,setWeightsSaving]=useState(false);
  const [loading,setLoading]=useState(true);
  const [error,setError]=useState("");
 
@@ -68,16 +67,6 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
  },[session.user.id]);
 
  useEffect(()=>{void refresh()},[refresh]);
- const saveReputationWeights=async()=>{
-  if(!supabase)return;
-  const values=Object.values(reputationWeights).map(Number);
-  if(values.some(v=>!Number.isFinite(v)||v<0)||values.reduce((a,b)=>a+b,0)<=0){setError("Bobot reputasi harus berupa angka non-negatif dengan total lebih dari nol.");return;}
-  setWeightsSaving(true);setError("");
-  const {error:saveError}=await supabase.rpc("admin_set_brand_ecosystem_config",{p_key:"driver_reputation_weights",p_value:reputationWeights,p_description:"Bobot reputasi Driver termasuk Form, Morale dan Confidence"});
-  setWeightsSaving(false);
-  if(saveError){setError(saveError.message);return;}
-  setError("Bobot reputasi Driver berhasil disimpan. Skor baru dihitung saat hasil race dipublikasikan.");await refresh();
- };
  const sponsorName=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
  const teamName=(id:string|null)=>teams.find(t=>t.id===id)?.name||"Team";
  const history=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
@@ -109,10 +98,10 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
    <article><span>SPONSOR PAYOUTS</span><strong>{money(paidTotal)}</strong><small>Sudah dibayarkan ke Economy Ledger</small></article>
   </div>
   <section className="workspace-card">
-   <div className="section-title-row"><div><span className="section-eyebrow">REPUTATION CONFIGURATION</span><h2>Driver Reputation Weights</h2></div></div>
-   <p className="brand-card-help">Form, Morale, dan Confidence kini menjadi komponen reputasi Driver. Nilai dihitung dari lima race terakhir, tren lima race sebelumnya, serta status kontrak. Bobot dinormalisasi oleh engine dan dapat diatur Admin.</p>
-   <div className="brand-grid">{Object.entries(reputationWeights).map(([key,value])=><label className="s5-field" key={key}><span>{key.replaceAll("_"," ")}</span><input type="number" min="0" step="0.1" value={value} onChange={e=>setReputationWeights(current=>({...current,[key]:Number(e.target.value)}))}/></label>)}</div>
-   <button className="economy-primary-button" disabled={weightsSaving} onClick={()=>void saveReputationWeights()}>{weightsSaving?"Menyimpan...":"Simpan bobot reputasi"}</button>
+   <div className="section-title-row"><div><span className="section-eyebrow">REPUTATION CONFIGURATION · READ ONLY</span><h2>Driver Reputation Weights</h2></div></div>
+   <p className="brand-card-help">Form, Morale, dan Confidence kini menjadi komponen reputasi Driver. Nilai dihitung dari lima race terakhir, tren lima race sebelumnya, serta status kontrak. Bobot dinormalisasi oleh engine. Pengubahan konfigurasi hanya tersedia di Sponsor Management Center.</p>
+   <div className="brand-grid">{Object.entries(reputationWeights).map(([key,value])=><div className="brand-compact-list" key={key}><strong>{key.replaceAll("_"," ")}</strong><span>{Number(value).toLocaleString("id-ID")}</span></div>)}</div>
+   <Link className="text-link" to="/admin/sponsorship">Ubah konfigurasi di Sponsor Management Center →</Link>
   </section>
   <section className="brand-grid">
    <article className="workspace-card">

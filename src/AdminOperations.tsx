@@ -11,7 +11,6 @@ type TaxRule={id:string;tax_type:"wealth"|"driver_transfer";tax_scope:"member"|"
 type WealthAssessment={id:string;season_id:string;target_kind:"member"|"team";member_id:string|null;team_id:string|null;wallet_balance_snapshot:number;applied_rate:number;tax_amount:number;status:string;assessed_at:string};
 type Division={id:string;season_id:string;division_key:string;division_name:string;season?:{title:string}};
 type PrizeRule={id:string;season_division_id:string;driver_win_ddp:number;team_win_tdp:number;driver_pole_ddp:number;team_pole_tdp:number;is_active:boolean};
-type Sponsor={id:string;name:string;description:string|null;industry:string|null;available_budget:number|null;is_active:boolean};
 type Team={id:string;name:string;division_key:string|null;base_valuation:number|null};
 type Valuation={id:string;team_id:string;base_valuation:number|null;team_score:number|null;score_breakdown:Record<string,any>|null;debt_penalty:number;overdue_penalty:number;total_valuation:number;assessed_at:string;team?:{name:string}};
 type Tab="tax"|"prizes"|"sponsors"|"valuation";
@@ -20,31 +19,28 @@ const number=(v:string)=>v.trim()===""?0:Number(v);
 export default function AdminOperations({session}:{session:Session}){
  const [tab,setTab]=useState<Tab>("tax"),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[prizes,setPrizes]=useState<PrizeRule[]>([]),[assessments,setAssessments]=useState<WealthAssessment[]>([]);
- const [sponsors,setSponsors]=useState<Sponsor[]>([]),[teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]);
+ const [teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]);
  const [taxType,setTaxType]=useState<"wealth"|"driver_transfer">("wealth"),[taxScope,setTaxScope]=useState<"member"|"team">("member"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null),[wealthSeasonId,setWealthSeasonId]=useState("");
  const [divisionId,setDivisionId]=useState(""),[driverWin,setDriverWin]=useState(""),[teamWin,setTeamWin]=useState(""),[driverPole,setDriverPole]=useState(""),[teamPole,setTeamPole]=useState(""),[prizeActive,setPrizeActive]=useState(false);
- const [sponsorId,setSponsorId]=useState<string|null>(null),[sponsorName,setSponsorName]=useState(""),[sponsorDescription,setSponsorDescription]=useState(""),[sponsorIndustry,setSponsorIndustry]=useState(""),[sponsorBudget,setSponsorBudget]=useState(""),[sponsorActive,setSponsorActive]=useState(true);
  const [teamId,setTeamId]=useState(""),[baseValuation,setBaseValuation]=useState(""),[valuationNote,setValuationNote]=useState("");
 
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setNotice("");
-  const [tax,division,prize,sponsor,team,valuation,assessment]=await Promise.all([
+  const [tax,division,prize,team,valuation,assessment]=await Promise.all([
    supabase.from("caleris_tax_rules").select("*").order("tax_type").order("minimum_base",{ascending:true}),
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,license_seasons(title)").order("created_at",{ascending:false}),
    supabase.from("caleris_race_reward_rules").select("*"),
-   supabase.from("caleris_sponsors").select("*").order("name"),
    supabase.from("teams").select("id,name,division_key,base_valuation").order("name"),
    supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100),
    supabase.from("caleris_wealth_tax_assessments_v2").select("*").order("assessed_at",{ascending:false}).limit(100),
   ]);
-  const err=[tax.error,division.error,prize.error,sponsor.error,team.error,valuation.error,assessment.error].find(Boolean);
+  const err=[tax.error,division.error,prize.error,team.error,valuation.error,assessment.error].find(Boolean);
   if(err)setNotice(err.message);
   setTaxRules((tax.data||[]) as TaxRule[]);
   const nextDivisions=(division.data||[]).map((x:any)=>({...x,season:x.license_seasons})) as Division[];
   setDivisions(nextDivisions);setWealthSeasonId(current=>current||nextDivisions[0]?.season_id||"");
   setAssessments((assessment.data||[]) as WealthAssessment[]);
   setPrizes((prize.data||[]) as PrizeRule[]);
-  setSponsors((sponsor.data||[]) as Sponsor[]);
   setTeams((team.data||[]) as Team[]);
   setValuations((valuation.data||[]).map((x:any)=>({...x,team:x.teams})) as Valuation[]);
   setLoading(false);
@@ -99,18 +95,6 @@ export default function AdminOperations({session}:{session:Session}){
   setSaving(false);setNotice(error?.message||"Aturan DDP/TDP tersimpan. Tidak ada token yang dibagikan sebelum hasil race dicatat.");await refresh();
  };
  const choosePrize=(id:string)=>{setDivisionId(id);const p=prizes.find(x=>x.season_division_id===id);setDriverWin(String(p?.driver_win_ddp??""));setTeamWin(String(p?.team_win_tdp??""));setDriverPole(String(p?.driver_pole_ddp??""));setTeamPole(String(p?.team_pole_tdp??""));setPrizeActive(p?.is_active??false)};
-
- const saveSponsor=async(e:FormEvent)=>{
-  e.preventDefault();if(!supabase||!sponsorName.trim())return;
-  const budget=sponsorBudget.trim()===""?null:number(sponsorBudget);
-  if(budget!==null&&(!Number.isFinite(budget)||budget<0)){setNotice("Budget sponsor tidak valid.");return}
-  setSaving(true);const payload={name:sponsorName.trim(),description:sponsorDescription.trim()||null,industry:sponsorIndustry.trim()||null,available_budget:budget,is_active:sponsorActive,updated_at:new Date().toISOString()};
-  const result=sponsorId?await supabase.from("caleris_sponsors").update(payload).eq("id",sponsorId):await supabase.from("caleris_sponsors").insert({...payload,created_by:session.user.id});
-  setSaving(false);setNotice(result.error?.message||"Data sponsor tersimpan.");if(!result.error){resetSponsor();await refresh()}
- };
- const resetSponsor=()=>{setSponsorId(null);setSponsorName("");setSponsorDescription("");setSponsorIndustry("");setSponsorBudget("");setSponsorActive(true)};
- const editSponsor=(s:Sponsor)=>{setSponsorId(s.id);setSponsorName(s.name);setSponsorDescription(s.description||"");setSponsorIndustry(s.industry||"");setSponsorBudget(s.available_budget==null?"":String(s.available_budget));setSponsorActive(s.is_active)};
- const deleteSponsor=async(id:string)=>{if(!supabase||!window.confirm("Hapus sponsor dari pool? Sponsor yang sudah memiliki kontrak akan ditolak database."))return;const {error}=await supabase.from("caleris_sponsors").delete().eq("id",id);setNotice(error?.message||"Sponsor dihapus.");await refresh()};
 
  const divisionOptions=Array.from(new Map(divisions.map(d=>[d.division_key,d.division_name])).entries());
  const assignTeamTier=async(id:string,key:string)=>{if(!supabase)return;setSaving(true);const {error}=await supabase.rpc("admin_set_team_division",{p_team_id:id,p_division_key:key||null});setSaving(false);setNotice(error?.message||"Tier tim diperbarui.");await refresh()};
@@ -180,18 +164,15 @@ export default function AdminOperations({session}:{session:Session}){
    </section>
   </div>}
   {tab==="sponsors"&&<div className="ops-grid">
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SPONSOR DATABASE</span><h2>{sponsorId?"Edit sponsor":"Tambah sponsor"}</h2></div><Link className="text-link" to="/admin/sponsorship">Manage offers & contracts</Link></div>
-    <form className="economy-form" onSubmit={saveSponsor}>
-     <label>Nama sponsor<input value={sponsorName} onChange={e=>setSponsorName(e.target.value)} required maxLength={160}/></label>
-     <label>Industri<input value={sponsorIndustry} onChange={e=>setSponsorIndustry(e.target.value)} maxLength={100}/></label>
-     <label>Deskripsi<textarea value={sponsorDescription} onChange={e=>setSponsorDescription(e.target.value)} rows={3}/></label>
-     <label>Budget sponsor (€)<input type="number" min="0" step="0.01" value={sponsorBudget} onChange={e=>setSponsorBudget(e.target.value)} placeholder="Kosongkan jika belum ditentukan"/></label>
-     <label className="economy-toggle"><input type="checkbox" checked={sponsorActive} onChange={e=>setSponsorActive(e.target.checked)}/> Aktif di Sponsor Pool</label>
-     <div className="ops-actions"><button className="economy-primary-button" disabled={saving}><Save size={15}/> Simpan sponsor</button>{sponsorId&&<button type="button" className="economy-secondary-button" onClick={resetSponsor}>Batal</button>}</div>
-    </form>
+   <section className="economy-panel">
+    <div className="economy-panel-heading"><div><span className="section-eyebrow">CANONICAL SPONSOR MANAGEMENT</span><h2>Sponsor Management Center</h2></div></div>
+    <p className="economy-form-hint">Pengelolaan Sponsor Pool, sponsor tier, budget, offer band, negosiasi, dan konfigurasi Brand Ecosystem dipusatkan di satu modul agar tidak ada jalur CRUD yang saling berbeda.</p>
+    <div className="ops-actions"><Link className="economy-primary-button" to="/admin/sponsorship">Buka Sponsor Management Center</Link></div>
    </section>
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SPONSOR POOL</span><h2>{sponsors.length} sponsor</h2></div></div>
-    {sponsors.length===0?<p className="economy-empty">Sponsor pool kosong. Nama dan ketentuan sponsor tidak dibuat otomatis.</p>:<div className="ops-record-list">{sponsors.map(s=><article key={s.id}><div><strong>{s.name}</strong><small>{s.industry||"Industri belum diisi"} · {s.available_budget==null?"Budget belum ditentukan":money(s.available_budget)} · {s.is_active?"Aktif":"Nonaktif"}</small></div><div className="ops-record-actions"><button onClick={()=>editSponsor(s)}>Edit</button><button onClick={()=>void deleteSponsor(s.id)} aria-label="Hapus sponsor"><Trash2 size={14}/></button></div></article>)}</div>}
+   <section className="economy-panel">
+    <div className="economy-panel-heading"><div><span className="section-eyebrow">READ-ONLY MONITORING</span><h2>Brand Ecosystem Monitoring</h2></div></div>
+    <p className="economy-form-hint">Pantau status otomatisasi reputasi, fanbase, penawaran, kontrak, target, dan pembayaran tanpa membuat konfigurasi sponsor duplikat.</p>
+    <div className="ops-actions"><Link className="economy-secondary-button" to="/admin/brand-ecosystem">Buka Brand Ecosystem Monitoring</Link></div>
    </section>
   </div>}
   {tab==="valuation"&&<div className="ops-grid">

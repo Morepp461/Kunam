@@ -1,3 +1,4 @@
+/** @deprecated Legacy license check-in UI. The active check-in route uses MemberRaceCheckIn; retain this file until its legacy table, ledger, RPC, and migration dependencies are reviewed. */
 import {useCallback,useEffect,useState} from "react";
 import type {Session} from "@supabase/supabase-js";
 import {CalendarCheck,CheckCircle2,Clock3,Flag,ShieldCheck} from "lucide-react";

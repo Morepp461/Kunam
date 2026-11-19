@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     required = [
         "package.json", "index.html", "vite.config.ts", "src/main.tsx",
-        "src/App.tsx", "src/styles.css", "src/lib/supabase.ts",
+        "src/App.tsx", "src/MainLayout.tsx", "src/DashboardModule.tsx", "src/ProfileModule.tsx", "src/lib/stage5QueryPlan.ts", "src/styles.css", "src/lib/supabase.ts",
         "src/vite-env.d.ts", "supabase/SETUP.sql",
         "assets/Background 2.png",
         "assets/Untitled design_20261103_142659_0000.png",
@@ -72,6 +72,9 @@ def main():
     for fragment in [".s5-workspace", ".s5-table", ".s5-hero", ".s5-main-tabs"]:
         assert fragment in stage5_css, f"Stage 5 styles missing: {fragment}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
+    profile_module = (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
+    dashboard_module = (ROOT / "src/DashboardModule.tsx").read_text(encoding="utf-8")
+    layout_module = (ROOT / "src/MainLayout.tsx").read_text(encoding="utf-8")
     character_identity_migration = ROOT / "supabase/migrations/20261118140000_permanent_character_wallet_and_identity.sql"
     character_balance_migration = ROOT / "supabase/migrations/20261118150000_character_balance_aggregate_preserve_wallet_history.sql"
     assert character_identity_migration.is_file() and character_balance_migration.is_file(), "Missing permanent character identity/balance migrations"
@@ -81,9 +84,9 @@ def main():
         assert fragment in identity_sql, f"Permanent character identity migration missing: {fragment}"
     for fragment in ["drop trigger if exists zz_members_character_wallet_sync", "drop trigger if exists zz_profiles_character_wallet_sync", "drop function if exists private.consolidate_member_character_wallets"]:
         assert fragment in balance_sql, f"Character balance compatibility migration missing: {fragment}"
-    assert 'nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0)' in app, "Profile must aggregate all personal wallet buckets into the character balance"
-    assert 'const characterWallet=wallets.public_member' in app, "Account and character balance must use the same aggregate"
-    assert 'const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0)' in app, "Dashboard must display the same aggregate character balance"
+    assert 'nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0)' in profile_module, "Profile must aggregate all personal wallet buckets into the character balance"
+    assert 'const characterWallet=wallets.public_member' in profile_module, "Account and character balance must use the same aggregate"
+    assert 'const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0)' in dashboard_module, "Dashboard must display the same aggregate character balance"
     assert 'path="/profile"' in app
     assert 'import Stage5Panel from "./Stage5Panel";' in app
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app
@@ -91,12 +94,12 @@ def main():
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
     assert 'provider:"discord"' in app
-    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/>' in app
+    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/>' in layout_module
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app
-    assert 'COMMUNITY &amp; SUPPORT' in app and 'Dukung Vreeo · Socialbuzz' in app
-    assert 'DIRECTOR OF VREEO.ID' in app
+    assert 'COMMUNITY &amp; SUPPORT' in layout_module and 'Dukung Vreeo · Socialbuzz' in layout_module
+    assert 'DIRECTOR OF VREEO.ID' in layout_module
     for director, instagram in [
         ("Muhammad Ovella", "lllllaaaaa44444"),
         ("Agung Pradana", "pradana.3"),
@@ -104,15 +107,15 @@ def main():
         ("Liam Amir", "liam_amir26"),
         ("Suhanda Arbawi", "_suhanda08"),
     ]:
-        assert director in app and instagram in app, f"Missing director link: {director}"
+        assert director in layout_module and instagram in layout_module, f"Missing director link: {director}"
     assert 'footer-directors nav' in styles
-    assert 'Gabung Discord' in app and 'Official Partners' not in app
-    assert 'CALERIS MASTERS · POWERED BY VREEO' in app
-    assert 'A Motorsport Roleplay Experience' not in app
+    assert 'Gabung Discord' in (app + layout_module) and 'Official Partners' not in (app + layout_module)
+    assert 'CALERIS MASTERS · POWERED BY VREEO' in layout_module
+    assert 'A Motorsport Roleplay Experience' not in (app + layout_module)
     assert 'footer-main' in styles and 'footer-support nav' in styles
-    assert 'DIRECTOR OF VREEO.ID' in app
+    assert 'DIRECTOR OF VREEO.ID' in layout_module
     for director in ["Muhammad Ovella", "Agung Pradana", "Muhammad Alfarel", "Liam Amir", "Suhanda Arbawi"]:
-        assert director in app
+        assert director in layout_module
     assert 'footer-directors nav' in styles
     assert 'legal-blank-page' in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
@@ -192,9 +195,9 @@ def main():
     for rpc in ["admin_post_economy_transaction", "admin_reverse_economy_transaction", "admin_process_pending_economy_rewards"]:
         assert rpc in edge_source, f"Economy Edge gateway missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
-    assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in app
-    assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in app
-    assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in app
+    assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in layout_module
+    assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in profile_module
+    assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in profile_module
     calendar_migration = ROOT / "supabase/migrations/20261112160305_season_calendar_and_payroll.sql"
     calendar_component = ROOT / "src/AdminSeasonCalendar.tsx"
     contracts_component = ROOT / "src/TeamDriverContracts.tsx"
@@ -233,7 +236,7 @@ def main():
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "CALERIS MASTERS · FIA AUTOMATION" in license_engine_source and "fia_create_caleris_season" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
-    assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to="/admin/license-engine"' in app, "License Scoring Engine must be Admin-only"
+    assert 'path="/fia-panel/license-engine" element={isAdmin?' in app and 'to:"/admin/license-engine"' in layout_module, "License Scoring Engine must be Admin-only"
 
     cash_loan_migration = ROOT / "supabase/migrations/20261112173057_economy_cash_loan_engine.sql"
     cash_loan_component = ROOT / "src/CashLoanCentre.tsx"
@@ -335,7 +338,7 @@ def main():
     for fragment in ["caleris_driver_salary_bands", "minimum_license", "salary_min", "salary_max", "member.team_id", "position"]:
         assert fragment in recruitment_advert_source, f"Team-scoped Job Advert UI missing: {fragment}"
     assert 'if(tab.path==="place-job-advert")return <TeamJobAdvert/>' in panel_pages.read_text(encoding="utf-8")
-    assert "panelTabIcons[group.path+\"/\"+tab.path]" in app, "Panel navigation must use distinct per-tab icons"
+    assert "panelTabIcons[group.path+\"/\"+tab.path]" in layout_module, "Panel navigation must use distinct per-tab icons"
     assert "Fixed Driver License Salary Bands" in (ROOT / "README.md").read_text(encoding="utf-8")
     contract_lock_fix = ROOT / "supabase/migrations/20261118190500_contract_salary_lock_lifecycle_fix.sql"
     roster_registration_fix = ROOT / "supabase/migrations/20261118191000_fix_active_season_roster_registration.sql"

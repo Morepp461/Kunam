@@ -1,13 +1,16 @@
 import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 import type {ChangeEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
-import {Link,Navigate,NavLink,Route,Routes,useLocation,useNavigate,useParams} from "react-router-dom";
-import {Activity,ArrowUpRight,ShoppingBag,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,LogOut,Moon,Settings,SlidersHorizontal,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Wallet,FileText,Menu,Trophy,Coins,Globe,Medal,ArrowLeftRight,Megaphone,Briefcase,Handshake,Map,UserRound,Gauge,BadgeDollarSign,ListChecks,History,Dumbbell,CalendarCheck,Building2,Wrench,FileSignature,UserPlus,ScanSearch,ClipboardPenLine,Network,Cog,Scale,BookMarked,RadioTower,FlagTriangleRight,Gavel,ShieldAlert,MapPinned,Send} from "lucide-react";
+import {Link,Navigate,Route,Routes,useLocation,useNavigate,useParams} from "react-router-dom";
+import {ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,Moon,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {missingSupabaseMessage,supabase} from "./lib/supabase";
 import "./workspace.css";
 import "./stage5-panel.css";
-import PanelPage, { panelGroups } from "./PanelPages";
+import PanelPage from "./PanelPages";
+import MainLayout from "./MainLayout";
+import DashboardModule from "./DashboardModule";
+import ProfileModule from "./ProfileModule";
 import Stage5Panel from "./Stage5Panel";
 import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
@@ -23,7 +26,7 @@ import TeamAffiliate from "./TeamAffiliate";
 import TeamEngineMarket from "./TeamEngineMarket";
 import DriverTransferMarket from "./DriverTransferMarket";
 import TeamTakeoverMarket from "./TeamTakeoverMarket";
-import AdminSponsorship from "./AdminSponsorship";
+import BrandEcosystem from "./BrandEcosystem";
 import BrandEcosystemAdmin from "./BrandEcosystemAdmin";
 import SponsorshipCentre from "./SponsorshipCentre";
 import DevelopmentTokens from "./DevelopmentTokens";
@@ -36,8 +39,6 @@ import FIAEventControlCenter from "./FIAEventControlCenter";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
 import {CircuitPool} from "./CircuitPool";
-import RaceScheduleDashboard from "./RaceScheduleDashboard";
-import NotificationsCenter from "./NotificationsCenter";
 import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 
 import JobSearch from "./JobSearch";
@@ -74,16 +75,6 @@ type Notice={id:number;kind:Kind;title:string;message?:string};
 type AccountProfile={user_id:string;member_id:string|null;public_member_id:string;avatar_url:string|null;avatar_path:string|null;web_nickname:string|null;driver_nickname:string|null;first_name:string|null;last_name:string|null;date_of_birth:string|null;nationality:string|null;hometown:string|null;preferred_role:string|null;account_status:"public"|"active"|"admin"|"suspended";onboarding_completed:boolean;privacy_accepted_at:string|null};
 type PanelAccess={is_admin:boolean;member_role:string|null;main_event:boolean;driver_panel:boolean;team_panel:boolean;fia_panel:boolean};
 const NO_PANEL_ACCESS:PanelAccess={is_admin:false,member_role:null,main_event:false,driver_panel:false,team_panel:false,fia_panel:false};
-const PANEL_ACCESS_KEYS:Record<string,keyof PanelAccess>={"main-event":"main_event","driver-panel":"driver_panel","team-panel":"team_panel","fia-panel":"fia_panel"};
-const panelTabIcons:Record<string,ReactNode>={
- "main-event/global":<Globe size={17}/>,"main-event/caleris-premio":<Trophy size={17}/>,"main-event/caleris-zwei":<Medal size={17}/>,"main-event/transfer-market":<ArrowLeftRight size={17}/>,"main-event/fia-announcement":<Megaphone size={17}/>,"main-event/job-search":<Briefcase size={17}/>,"main-event/take-over":<Handshake size={17}/>,"main-event/circuit-pool":<Map size={17}/>,"main-event/regulation":<BookOpen size={17}/>,"main-event/newsroom":<FileText size={17}/>,"main-event/hall-of-fame":<Trophy size={17}/>,
- "driver-panel/character":<UserRound size={17}/>,"driver-panel/development":<Gauge size={17}/>,"driver-panel/sponsorship":<BadgeDollarSign size={17}/>,"driver-panel/quest":<ListChecks size={17}/>,"driver-panel/career-history":<History size={17}/>,"driver-panel/financial-centre":<Wallet size={17}/>,"driver-panel/training":<Dumbbell size={17}/>,"driver-panel/daily-checkin":<CalendarCheck size={17}/>,"driver-panel/appeal":<Scale size={17}/>,
- "team-panel/team-summary":<Building2 size={17}/>,"team-panel/team-hq":<Building2 size={17}/>,"team-panel/command-center":<Activity size={17}/>,"team-panel/financial-centre":<Wallet size={17}/>,"team-panel/development":<Wrench size={17}/>,"team-panel/sponsorship":<Coins size={17}/>,"team-panel/driver-contracts":<FileSignature size={17}/>,"team-panel/quest":<ClipboardList size={17}/>,"team-panel/driver-registration":<UserPlus size={17}/>,"team-panel/scout":<ScanSearch size={17}/>,"team-panel/place-job-advert":<ClipboardPenLine size={17}/>,"team-panel/affiliate-team":<Network size={17}/>,"team-panel/engine-market":<Cog size={17}/>,"team-panel/appeal":<Shield size={17}/>,
- "fia-panel/event-control":<Flag size={17}/>,"fia-panel/rules-input":<BookMarked size={17}/>,"fia-panel/season-calendar":<CalendarDays size={17}/>,"fia-panel/announcement-input":<RadioTower size={17}/>,"fia-panel/race-input":<FlagTriangleRight size={17}/>,"fia-panel/punishment-input":<Gavel size={17}/>,"fia-panel/appeal-room":<ShieldAlert size={17}/>,"fia-panel/circuit-pool-input":<MapPinned size={17}/>,"fia-panel/team-hq-config":<Building2 size={17}/>,"fia-panel/discord-broadcast":<Send size={17}/>
-};
-type MemberRecord={id:string;member_code:string|null;character_name:string|null;role:string|null;license:string|null;team_id:string|null};
-type TeamRecord={id:string;name:string};
-type ContractRecord={id:string;duration_label:string|null;starts_on:string|null;ends_on:string|null;salary:number|null;target:unknown;release_clause:number|null;status:string};
 const UI=createContext<{toast:(kind:Kind,title:string,message?:string)=>void;loading:(v:boolean)=>void}|null>(null);
 function useUI(){const c=useContext(UI);if(!c)throw Error("UI provider missing");return c;}
 function GlobalUI({children}:{children:ReactNode}){
@@ -141,10 +132,10 @@ function Application(){
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
- return <Shell theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess}><AnalyticsTracker/><Routes>
+ return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin}/>} toast={toast} loading={loading}><AnalyticsTracker/><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
-  <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<Dashboard session={session} profile={profile} profileReady={profileReady}/>):<Navigate to="/" replace/>}/>
+  <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/financial-centre" element={session&&!needsPaddockAccess?<CashLoanCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/race-checkin" element={session&&!needsPaddockAccess?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -159,7 +150,7 @@ function Application(){
   <Route path="/admin/pricing" element={session&&!needsPaddockAccess&&isAdmin?<AdminPricingCenter/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations" element={session&&!needsPaddockAccess&&isAdmin?<AdminOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/brand-ecosystem" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystemAdmin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<AdminSponsorship/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystem session={session} mode="admin"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/daily-checkin" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/quest" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Driver")?<QuestPage session={session} scope="driver"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/quest" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Owner"?<QuestPage session={session} scope="team_owner"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -180,7 +171,7 @@ function Application(){
   <Route path="/driver-panel/training" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Driver"?<DriverTraining session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/affiliate-team" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamAffiliate session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/engine-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamEngineMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/profile" element={session&&!needsPaddockAccess?<ProfilePage session={session} profile={profile} profileReady={profileReady}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/profile" element={session&&!needsPaddockAccess?<ProfileModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/member/:memberId" element={<PublicMemberProfile session={session}/>} />
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
@@ -205,74 +196,11 @@ function Application(){
   <Route path="/admin/registered-members" element={session&&!needsPaddockAccess&&isAdmin?<AdminRegisteredMembers/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
- </Routes></Shell>;
+ </Routes></MainLayout>;
 }
-function Shell({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,panelAccess}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:AccountProfile|null;isAdmin:boolean;isPrimaryOwner:boolean;panelAccess:PanelAccess}){
- const {toast,loading}=useUI();const [menuOpen,setMenuOpen]=useState(false),[navOpen,setNavOpen]=useState(false);const navigate=useNavigate();const location=useLocation();
- useEffect(()=>{setMenuOpen(false);setNavOpen(false)},[location.pathname]);
- const logout=async()=>{if(!supabase)return;loading(true);const {error}=await supabase.auth.signOut();loading(false);setMenuOpen(false);if(error)toast("error","Logout gagal",error.message);else{toast("success","Berhasil logout","Sesi akun sudah diakhiri.");navigate("/")}};
- const avatar=profile?.avatar_url||session?.user.user_metadata?.avatar_url||session?.user.user_metadata?.picture||"";
- const nickname=profile?.web_nickname||session?.user.user_metadata?.full_name||session?.user.user_metadata?.name||session?.user.email?.split("@")[0]||"Member";
- const navigationGroups=session?[
-  {title:"MAIN",items:[{to:"/dashboard",label:"Dashboard",description:"Ringkasan aktivitas dan perjalananmu.",icon:<Activity size={17}/>},...(!isAdmin&&panelAccess.member_role===null?[{to:"/paddock-access",label:"Paddock Access",description:"Lengkapi profil dan pengajuan role dalam satu formulir.",icon:<Flag size={17}/>}]:[]),{to:"/shop",label:"Shop",description:"Beli Development Token dan item resmi.",icon:<ShoppingBag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>} ]},
-  ...panelGroups.filter(group=>panelAccess[PANEL_ACCESS_KEYS[group.path]]).map(group=>({title:group.label,items:group.tabs.filter(tab=>tab.path!=="registration"&&(tab.path!=="training"||panelAccess.member_role==="Driver")&&(!(group.path==="team-panel"&&["driver-registration","engine-market"].includes(tab.path))||isAdmin||panelAccess.member_role==="Owner")&&(!(group.path==="team-panel"&&tab.path==="quest")||panelAccess.member_role==="Owner")).map(tab=>({to:"/"+group.path+"/"+tab.path,label:tab.label,description:tab.description,icon:panelTabIcons[group.path+"/"+tab.path]??<Activity size={17}/> }))})),
-  {title:"ACCOUNT",items:[{to:"/profile",label:"Profil saya",description:"Identitas publik dan Member ID.",icon:<UserCircle size={17}/>},{to:"/account/settings",label:"Pengaturan akun",description:"Foto, nama, nickname dan mode tampilan.",icon:<Settings size={17}/>} ]},
-  ...(isAdmin?[{title:"ADMIN CONTROL",items:[{to:"/admin-workflow",label:"Admin Workflow",description:"Workspace operasional administrator.",icon:<ClipboardList size={17}/>},{to:"/admin/configuration",label:"Configuration Center",description:"Kelola lisensi, ekonomi, role, dan regulasi.",icon:<Settings size={17}/>},{to:"/admin/economy-engine",label:"Economy Engine",description:"Wallet, transaksi, pajak, denda, dan sumber dana.",icon:<Coins size={17}/>},{to:"/admin/adjustments",label:"License & Wallet Adjustments",description:"Penyesuaian lisensi Driver dan saldo wallet melalui ledger resmi.",icon:<Shield size={17}/>},{to:"/admin/data-adjustments",label:"License & Wallet Adjustments",description:"Penetapan lisensi Driver dan penyesuaian saldo saat migrasi.",icon:<Wallet size={17}/>},{to:"/admin/quest-engine",label:"Quest Engine",description:"Katalog quest dan nominal reward berdasarkan kesulitan.",icon:<Trophy size={17}/>},{to:"/admin/pricing",label:"Price Configuration",description:"Pusat harga, biaya upgrade, pajak, dan bunga pinjaman.",icon:<SlidersHorizontal size={17}/>},{to:"/admin/operations",label:"Operations Suite",description:"Tax rules, race rewards, sponsor pool, dan team valuation.",icon:<Settings size={17}/>},{to:"/admin/brand-ecosystem",label:"Brand Ecosystem",description:"Sponsor network, reputasi, fan growth, fan decline, dan populasi fans.",icon:<Activity size={17}/>},{to:"/admin/prizepool",label:"Season Prizepool",description:"Atur hadiah akhir musim dan proses pembayaran dari VreeoBank.",icon:<Coins size={17}/>},{to:"/admin/license-engine",label:"Season & License Engine",description:"Setup season otomatis; race, standings, dan scoring lisensi berjalan terhubung.",icon:<Trophy size={17}/>},{to:"/admin",label:"Site Manager",description:"Rules, komunitas dan pengelolaan Member ID.",icon:<Shield size={17}/>},{to:"/admin/users",label:"Daftar Akun",description:"Seluruh akun, profil, dan konfigurasi role member.",icon:<Users size={17}/>},{to:"/admin/registered-members",label:"Registered Member",description:"Review formulir registrasi Main Event dan aktivasi role.",icon:<ClipboardList size={17}/>},{to:"/admin/test-personas",label:"Test Personas",description:"Berganti konteks Owner dan Driver untuk pengujian.",icon:<Users size={17}/>},...(isPrimaryOwner?[{to:"/admin/developer-api",label:"Developer API & MCP",description:"API key dan koneksi integrasi eksternal.",icon:<Shield size={17}/>}]:[])]}]:[])
- ]:[{title:"MAIN",items:[{to:"/",label:"Beranda",description:"Kembali ke landing page Caleris Masters.",icon:<Flag size={17}/>},{to:"/rules",label:"Official Rules",description:"Peraturan resmi Caleris Masters.",icon:<BookOpen size={17}/>}]}];
- return <div className="site"><div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/><div className="scene-light"/><div className="scene-reflection"/><div className="scene-depth"/><div className="scene-flare"/><canvas className="dust-canvas"/></div>
- <header className="site-header">
-  {session&&<button type="button" className="nav-toggle" aria-label="Buka navigasi" aria-expanded={navOpen} onClick={()=>setNavOpen(v=>!v)}><Menu size={21}/></button>}
-  <Link className="brand" to={session?"/dashboard":"/"} aria-label="Caleris Masters"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"/></Link>
-  <div className="header-tools">
-   {session?<><GlobalSearch isAdmin={isAdmin}/><div className="account-menu-wrap"><button className="account-avatar-button" aria-label="Menu akun" aria-expanded={menuOpen} onClick={()=>setMenuOpen(v=>!v)}>{avatar?<img src={avatar} alt=""/>:<UserCircle size={24}/>}<ChevronDown size={13}/></button>{menuOpen&&<><button className="menu-dismiss" aria-label="Tutup menu" onClick={()=>setMenuOpen(false)}/><div className="account-dropdown"><div className="dropdown-identity"><strong>{nickname}</strong><small>{session.user.email||"Caleris member"}</small></div><Link to="/profile"><UserCircle size={16}/> Kunjungi profil</Link><Link to="/account/settings"><Settings size={16}/> Pengaturan akun</Link><button onClick={logout}><LogOut size={16}/> Logout</button></div></>}</div></>:location.pathname==="/" ? <div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div>:null}
-  </div>
- </header>
- {session&&navOpen&&<><button className="drawer-dismiss" aria-label="Tutup navigasi" onClick={()=>setNavOpen(false)}/><aside className="site-drawer"><button type="button" className="drawer-close" aria-label="Tutup navbar" onClick={()=>setNavOpen(false)}><X size={21}/></button><div className="drawer-brand"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Caleris Masters"/></div><nav className="drawer-nav">{navigationGroups.map(group=><section className="drawer-group" key={group.title}><span className="drawer-section">{group.title}</span><div className="drawer-group-items">{group.items.map(item=><NavLink key={item.to} to={item.to} onClick={()=>setNavOpen(false)} className={({isActive})=>"drawer-nav-card"+(isActive?" active":"")}><span className="drawer-nav-icon">{item.icon}</span><span className="drawer-nav-copy"><strong>{item.label}</strong><small>{item.description}</small></span><ArrowUpRight size={15}/></NavLink>)}</div></section>)}</nav><div className="drawer-footer">A MOTORSPORT ROLEPLAY EXPERIENCE</div></aside></>}
-
- <main className="page-content">{children}</main><SiteFooter/></div>;
-}
-
 function LegalBlankPage({title}:{title:string}){
  return <main className="legal-blank-page" aria-label={title}/>;
 }
-function SiteFooter(){
- return <footer className="site-footer">
-  <div className="footer-main">
-   <section className="footer-column footer-caleris">
-    <Link to="/" className="footer-brand footer-brand-caleris" aria-label="Caleris Masters">
-     <img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"/>
-    </Link>
-    <p>Platform Motorsport Roleplay yang menghubungkan pembalap, tim, dan pengelola dalam satu ekosistem kompetisi.</p>
-   </section>
-   <section className="footer-column footer-vreeo">
-    <img className="footer-vreeo-logo" src="/assets/Untitled%20design_20261103_142659_0000.png" alt="Logo Vreeo"/>
-    <h2>TENTANG VREEO</h2>
-    <p>Komunitas game Android Indonesia yang menghadirkan beberapa event menarik.</p>
-    <div className="footer-directors">
-     <h2>DIRECTOR OF VREEO.ID</h2>
-     <nav aria-label="Director of Vreeo.id">
-      <a href="https://www.instagram.com/lllllaaaaa44444?rpxt=MXo5OGFyOWY5YXV2" target="_blank" rel="noopener noreferrer">Muhammad Ovella ↗</a>
-      <a href="https://www.instagram.com/pradana.3?psln=bWVkaGp6aWJuMG0=" target="_blank" rel="noopener noreferrer">Agung Pradana ↗</a>
-      <a href="https://www.instagram.com/alfredo_owenzaus?dlrf=MWh0d3F6czBwbXpxNw==" target="_blank" rel="noopener noreferrer">Muhammad Alfarel ↗</a>
-      <a href="https://www.instagram.com/liam_amir26?xtok=aXJhOG1vZHFldGs1" target="_blank" rel="noopener noreferrer">Liam Amir ↗</a>
-      <a href="https://www.instagram.com/_suhanda08?exln=dXp5MGIyaWN5dGgy" target="_blank" rel="noopener noreferrer">Suhanda Arbawi ↗</a>
-     </nav>
-    </div>
-   </section>
-   <section className="footer-column footer-support">
-    <h2>COMMUNITY &amp; SUPPORT</h2>
-    <nav aria-label="Community and support">
-     <a href="https://sociabuzz.com/vreeo/support" target="_blank" rel="noreferrer">Dukung Vreeo · Socialbuzz ↗</a>
-     <a href="https://discord.gg/yat2qWuyy" target="_blank" rel="noreferrer">Gabung Discord ↗</a>
-     <Link to="/privacy-policy">Kebijakan Privasi</Link>
-     <Link to="/terms-and-conditions">Syarat &amp; Ketentuan</Link>
-    </nav>
-   </section>
-  </div>
-  <div className="footer-bottom">© {new Date().getFullYear()} CALERIS MASTERS · POWERED BY VREEO</div>
- </footer>;
-}
-
 function Home(){
  const {toast,loading}=useUI();const [invite,setInvite]=useState("");
  useEffect(()=>{if(!supabase)return;supabase.from("site_settings").select("value").eq("key","community_invite_url").maybeSingle().then(({data,error})=>{if(error)toast("error","Link komunitas gagal dimuat",error.message);else if(typeof data?.value==="string")setInvite(data.value)})},[toast]);
@@ -369,137 +297,12 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   {preferredRole&&<PaddockRoleDetails role={preferredRole==="Team Owner"?"Team Owner":"Driver"} saving={saving} onSubmit={submit}/>}
  </div></div></section>;
 }
-function Dashboard({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
-  const {toast}=useUI();const [isAdmin,setIsAdmin]=useState(false);
-  const [statCards,setStatCards]=useState<{label:string;value:string;detail:string;icon:ReactNode}[]>([]);
-  const [statsLoading,setStatsLoading]=useState(true),[statsScope,setStatsScope]=useState("STATISTIK MEMBER");
-  useEffect(()=>{let active=true;async function check(){if(!supabase)return;const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Role gagal diperiksa",error.message);setIsAdmin(Boolean(data?.user_id))}void check();return()=>{active=false}},[session.user.id,toast]);
-  useEffect(()=>{let active=true;async function loadStats(){
-    if(!supabase||!profileReady){setStatsLoading(!profileReady);return;}
-    setStatsLoading(true);
-    const empty=[{label:"Season",value:"—",detail:"Belum ada data",icon:<CalendarDays/>},{label:"Race start",value:"—",detail:"Belum ada data",icon:<Flag/>},{label:"Points",value:"—",detail:"Belum ada data",icon:<Activity/>},{label:"Race wins",value:"—",detail:"Belum ada data",icon:<Trophy/>}];
-    if(!profile?.member_id){if(active){setStatsScope("STATISTIK MEMBER");setStatCards(empty);setStatsLoading(false)}return;}
-    const {data:ownMember,error:memberError}=await supabase.from("members").select("id,role,team_id").eq("id",profile.member_id).maybeSingle();
-    if(!active)return;
-    if(memberError){toast("error","Statistik gagal dimuat",memberError.message);setStatCards(empty);setStatsLoading(false);return;}
-    if(!ownMember){setStatCards(empty);setStatsLoading(false);return;}
-    const [activeSeasonsQ,registrationsQ]=await Promise.all([
-      supabase.from("license_seasons").select("id").eq("status","active"),
-      supabase.from("license_season_members").select("season_id").eq("member_id",ownMember.id)
-    ]);
-    const activeSeasonIds=(activeSeasonsQ.data||[]).map((row:any)=>row.id);
-    const seasonCount=new Set((registrationsQ.data||[]).map((row:any)=>row.season_id)).size;
-    let divisionIds:string[]=[],roundIds:string[]=[];
-    if(activeSeasonIds.length){
-      const {data:divisions}=await supabase.from("license_season_divisions").select("id").in("season_id",activeSeasonIds);
-      divisionIds=(divisions||[]).map((row:any)=>row.id);
-    }
-    if(divisionIds.length){
-      const {data:rounds}=await supabase.from("license_rounds").select("id").in("season_division_id",divisionIds).neq("status","cancelled");
-      roundIds=(rounds||[]).map((row:any)=>row.id);
-    }
-    if(ownMember.role==="Driver"){
-      const [entriesQ,pointsQ,winsQ]=await Promise.all([
-        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        roundIds.length?supabase.from("license_round_standings").select("points_total").eq("member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null}),
-        roundIds.length?supabase.from("caleris_race_results").select("id").eq("winner_member_id",ownMember.id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
-      ]);
-      const races=new Set((entriesQ.data||[]).map((row:any)=>row.round_id)).size;
-      const points=(pointsQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
-      if(active){setStatsScope("STATISTIK DRIVER");setStatCards([
-        {label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},
-        {label:"Race start",value:String(races),detail:"Klasifikasi resmi tercatat",icon:<Flag/>},
-        {label:"Season points",value:points.toLocaleString("id-ID"),detail:"Poin pada season aktif",icon:<Activity/>},
-        {label:"Race wins",value:String((winsQ.data||[]).length),detail:"Kemenangan season aktif",icon:<Trophy/>}
-      ]);}
-    }else if(ownMember.role==="Owner"&&ownMember.team_id){
-      const [teamMembersQ,entriesQ]=await Promise.all([
-        supabase.from("members").select("id").eq("team_id",ownMember.team_id).eq("role","Driver"),
-        roundIds.length?supabase.from("caleris_race_result_entries").select("round_id,member_id").eq("team_id",ownMember.team_id).in("round_id",roundIds):Promise.resolve({data:[],error:null})
-      ]);
-      const teamMemberIds=(teamMembersQ.data||[]).map((row:any)=>row.id);
-      const teamEntries=entriesQ.data||[];
-      const roundStandingsQ=teamMemberIds.length&&roundIds.length?await supabase.from("license_round_standings").select("round_id,member_id,points_total").in("member_id",teamMemberIds).in("round_id",roundIds):{data:[]};
-      const teamEntryKeys=new Set(teamEntries.map((row:any)=>row.round_id+":"+row.member_id));
-      const teamPoints=(roundStandingsQ.data||[]).filter((row:any)=>teamEntryKeys.has(row.round_id+":"+row.member_id)).reduce((sum:number,row:any)=>sum+Number(row.points_total||0),0);
-      const raceStarts=new Set(teamEntries.map((row:any)=>row.round_id)).size;
-      const winnersQ=roundIds.length?await supabase.from("caleris_race_results").select("round_id,winner_member_id").in("round_id",roundIds):{data:[]};
-      const teamWins=(winnersQ.data||[]).filter((winner:any)=>teamEntries.some((entry:any)=>entry.round_id===winner.round_id&&entry.member_id===winner.winner_member_id)).length;
-      if(active){setStatsScope("STATISTIK TIM");setStatCards([
-        {label:"Active drivers",value:String(teamMembersQ.data?.length||0),detail:"Driver terdaftar di tim",icon:<Users/>},
-        {label:"Race start",value:String(raceStarts),detail:"Round dengan klasifikasi tim",icon:<Flag/>},
-        {label:"Team points",value:teamPoints.toLocaleString("id-ID"),detail:"Poin season aktif",icon:<Activity/>},
-        {label:"Team wins",value:String(teamWins),detail:"Kemenangan season aktif",icon:<Trophy/>}
-      ]);}
-    }else{
-      const [{data:roleWallets},{data:publicWallet}]=await Promise.all([
-        supabase.from("economy_wallet_accounts").select("balance").eq("member_id",ownMember.id).in("account_kind",["driver","team_owner"]).eq("is_active",true),
-        supabase.from("economy_wallet_accounts").select("balance").eq("account_kind","public_member").eq("profile_user_id",session.user.id).eq("is_active",true).maybeSingle()
-      ]);
-      const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0);
-      if(active){setStatsScope("STATISTIK AKUN");setStatCards([{label:"Season entered",value:String(seasonCount),detail:"Total season terdaftar",icon:<CalendarDays/>},{label:"Account balance",value:"¢p "+balance.toLocaleString("id-ID"),detail:"Total saldo wallet pribadi",icon:<Wallet/>},{label:"Role",value:ownMember.role||"Member",detail:"Role akun saat ini",icon:<Users/>},{label:"Team",value:ownMember.team_id?"Terhubung":"Independent",detail:"Status afiliasi tim",icon:<Flag/>}]);}
-    }
-    if(active)setStatsLoading(false);
-  }
-  void loadStats();return()=>{active=false};
-  },[profile?.member_id,profileReady,session.user.id,toast]);
-  const name=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
-  return <section className="workspace"><PageHeading eyebrow="Member command center" title={`Welcome, ${name}`} description="Ringkasan aktivitas, event, dan perjalananmu di Caleris Masters."/><NotificationsCenter memberId={profile?.member_id||null}/><div className="dashboard-action-row"><Link className="action primary" to="/race-checkin">Race Check-in <ArrowUpRight size={15}/></Link><Link className="text-link" to="/financial-centre">Financial Centre <ArrowUpRight size={15}/></Link></div><RaceScheduleDashboard session={session} memberId={profile?.member_id||null} isAdmin={isAdmin}/><div className="dashboard-event-card"><div><span className="section-eyebrow">CURRENT EVENT</span><h2>Belum ada event aktif</h2><p>Informasi event akan muncul di sini setelah event pertama dipublikasikan.</p></div><div className="event-mark"><Flag size={25}/><span>CALERIS<br/>MASTERS</span></div></div><div className="section-title-row"><div><span className="section-eyebrow">OVERVIEW · {statsScope}</span><h2>{ownDashboardTitle(statsScope)}</h2></div><span className="empty-tag">{statsLoading?"Memuat statistik":"Data akun"}</span></div><div className="stat-grid">{(statCards.length?statCards:[{label:"Season",value:"—",detail:"Belum ada data",icon:<CalendarDays/>},{label:"Race start",value:"—",detail:"Belum ada data",icon:<Flag/>},{label:"Points",value:"—",detail:"Belum ada data",icon:<Activity/>},{label:"Race wins",value:"—",detail:"Belum ada data",icon:<Trophy/>}]).map(item=><div className="stat-card" key={item.label}><span className="stat-icon">{item.icon}</span><span className="stat-label">{item.label}</span><strong>{item.value}</strong><small>{item.detail}</small></div>)}</div><div className="dashboard-lower-grid"><div className="workspace-card"><span className="section-eyebrow">YOUR PROFILE</span><h2>Informasi akun</h2><p>{profileReady?(profile?.driver_nickname||"Nickname driver belum diatur"):"Memuat profil..."}</p><Link className="text-link" to="/profile">Lihat profil <ArrowUpRight size={15}/></Link></div><div className="workspace-card"><span className="section-eyebrow">QUICK ACCESS</span><h2>Workspace</h2><p>{isAdmin?"Akses administrasi tersedia.":"Kelola informasi akun dan profilmu."}</p>{isAdmin?<Link className="text-link" to="/admin-workflow">Buka Admin Workflow <ArrowUpRight size={15}/></Link>:<Link className="text-link" to="/account/settings">Pengaturan akun <ArrowUpRight size={15}/></Link>}</div></div></section>;
-}
-function ownDashboardTitle(scope:string){return scope==="STATISTIK TIM"?"Statistik Tim":scope==="STATISTIK DRIVER"?"Statistik Driver":"Statistik Akun";}
-
 function AdminWorkflow({session}:{session:Session}){
  const [allowed,setAllowed]=useState(false),[checking,setChecking]=useState(true);const {toast}=useUI();
  useEffect(()=>{let active=true;async function run(){if(!supabase){setChecking(false);return;}const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Pemeriksaan akses gagal",error.message);setAllowed(Boolean(data?.user_id));setChecking(false)}void run();return()=>{active=false}},[session.user.id,toast]);
  if(checking)return <div className="center-state"><LoaderCircle className="spin"/><p>Memeriksa akses administrator...</p></div>;
  if(!allowed)return <section className="workspace"><PageHeading eyebrow="Restricted workspace" title="Admin Workflow" description="Workspace operasional khusus administrator CALERIS MASTERS."/><div className="access-denied"><Shield/><h2>Akses administrator diperlukan</h2><p>Admin Workflow hanya tersedia untuk akun yang terdaftar dalam allow-list administrator. Role FIA tidak memberikan akses ke halaman ini.</p></div></section>;
  return <section className="workspace"><PageHeading eyebrow="Control room · Administration" title="Admin Workflow" description="Workspace untuk tools operasional dan CRM CALERIS MASTERS."/><div className="workflow-placeholder"><div className="workflow-placeholder-icon"><ClipboardList size={27}/></div><span className="section-eyebrow">WORKSPACE READY</span><h2>CRM tools belum ditambahkan</h2><p>Area ini sudah disiapkan untuk tools CRM yang akan kamu berikan. Belum ada workflow, data, atau tindakan administrasi yang dibuat.</p><span className="empty-tag">Awaiting CRM specification</span></div></section>;
-}
-function ProfilePage({session,profile,profileReady}:{session:Session;profile:AccountProfile|null;profileReady:boolean}){
- const [member,setMember]=useState<MemberRecord|null>(null),[team,setTeam]=useState<TeamRecord|null>(null),[contract,setContract]=useState<ContractRecord|null>(null),[fanTotal,setFanTotal]=useState(0),[reputation,setReputation]=useState<{score:number;band:string}|null>(null),[wallets,setWallets]=useState<Record<string,number|null>>({public_member:null,driver:null,team_owner:null,team:null}),[busy,setBusy]=useState(true);const {toast}=useUI();
- useEffect(()=>{let active=true;async function load(){if(!supabase||!profileReady){setBusy(!profileReady);return;}setBusy(true);
-  const {data:publicWallet,error:publicWalletError}=await supabase.from("economy_wallet_directory").select("balance").eq("account_kind","public_member").eq("profile_user_id",session.user.id).maybeSingle();
-  if(!active)return;if(publicWalletError)toast("error","Wallet akun gagal dimuat",publicWalletError.message);
-  const nextWallets:Record<string,number|null>={public_member:publicWallet?Number(publicWallet.balance):null,driver:null,team_owner:null,team:null};
-  if(profile?.member_id){
-   const {data:m,error}=await supabase.from("members").select("id,member_code,character_name,role,license,team_id").eq("id",profile.member_id).maybeSingle();
-   if(!active)return;if(error)toast("error","Data member gagal dimuat",error.message);
-   const memberData=m as MemberRecord|null;setMember(memberData);
-   if(memberData?.role==="Driver"){
-    const [fansQ,reputationQ]=await Promise.all([
-     supabase.from("caleris_fan_populations").select("population").eq("entity_kind","driver").eq("member_id",memberData.id),
-     supabase.from("caleris_driver_reputation").select("score,band").eq("member_id",memberData.id).maybeSingle()
-    ]);
-    if(!active)return;
-    if(fansQ.error)toast("error","Total fans gagal dimuat",fansQ.error.message);
-    if(reputationQ.error)toast("error","Reputasi gagal dimuat",reputationQ.error.message);
-    setFanTotal((fansQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.population||0),0));
-    setReputation(reputationQ.data?{score:Number(reputationQ.data.score),band:String(reputationQ.data.band)}:null);
-   }else{setFanTotal(0);setReputation(null);}
-   if(memberData){
-    const {data:roleWalletRows,error:roleWalletError}=await supabase.from("economy_wallet_directory").select("account_kind,balance").eq("member_id",memberData.id).in("account_kind",["driver","team_owner"]).eq("is_active",true);
-    if(!active)return;
-    if(roleWalletError)toast("error","Wallet karakter gagal dimuat",roleWalletError.message);
-    for(const walletRow of roleWalletRows||[]){if(walletRow.account_kind==="driver"||walletRow.account_kind==="team_owner")nextWallets[walletRow.account_kind]=Number(walletRow.balance||0);}
-    nextWallets.public_member=Number(publicWallet?.balance||0)+Number(nextWallets.driver||0)+Number(nextWallets.team_owner||0);
-    if(memberData.team_id){
-     const [{data:t},{data:teamWallet,error:teamWalletError},{data:c,error:contractError}]=await Promise.all([
-      supabase.from("teams").select("id,name").eq("id",memberData.team_id).maybeSingle(),
-      supabase.from("economy_wallet_directory").select("balance").eq("account_kind","team").eq("team_id",memberData.team_id).maybeSingle(),
-      supabase.from("contracts").select("id,duration_label,starts_on,ends_on,salary,target,release_clause,status").eq("member_id",profile.member_id).eq("status","active").order("created_at",{ascending:false}).limit(1).maybeSingle()
-     ]);
-     if(!active)return;setTeam(t as TeamRecord|null);if(teamWalletError)toast("error","Wallet tim gagal dimuat",teamWalletError.message);nextWallets.team=teamWallet?Number(teamWallet.balance):null;if(contractError)toast("error","Kontrak gagal dimuat",contractError.message);setContract(c as ContractRecord|null);
-    }else{setTeam(null);const {data:c,error:contractError}=await supabase.from("contracts").select("id,duration_label,starts_on,ends_on,salary,target,release_clause,status").eq("member_id",profile.member_id).eq("status","active").order("created_at",{ascending:false}).limit(1).maybeSingle();if(!active)return;if(contractError)toast("error","Kontrak gagal dimuat",contractError.message);setContract(c as ContractRecord|null);}
-   }else{setTeam(null);setContract(null);}
-  }else{setMember(null);setTeam(null);setContract(null);}
-  if(active){setWallets(nextWallets);setBusy(false);}
- }void load();return()=>{active=false}},[profile?.member_id,profileReady,session.user.id,toast]);
- const avatar=profile?.avatar_url||session.user.user_metadata?.avatar_url||session.user.user_metadata?.picture||"";
- const webName=profile?.web_nickname||session.user.user_metadata?.full_name||session.user.user_metadata?.name||"Member";
- const info=(label:string,value:ReactNode)=><div className="profile-info-item"><span>{label}</span><strong>{value||"Belum tersedia"}</strong></div>;
- const balanceText=(value:number|null)=>value===null?"Belum tersedia":"¢p "+Number(value).toLocaleString("id-ID");
- const characterWallet=wallets.public_member;
- return <section className="workspace"><Link className="back-link" to="/dashboard"><ChevronLeft size={16}/> Dashboard</Link><PageHeading eyebrow="Member identity" title="My Profile" description="Informasi akun dan identitas karakter Caleris Masters."/><div className="profile-hero-card"><div className="profile-avatar-large">{avatar?<img src={avatar} alt="Foto profil"/>:<UserCircle size={54}/>}</div><div className="profile-hero-copy"><span className="section-eyebrow">ACCOUNT PROFILE</span><h2>{webName}</h2><p>{session.user.email||"Email tidak tersedia"}</p><span className="profile-role-pill">{profile?.account_status==="admin"?"Administrator":profile?.account_status==="active"?"Member aktif":profile?.account_status==="suspended"?"Suspended":"Public"}</span></div><Link className="action profile-edit-action" to="/account/settings"><Settings size={16}/> Edit akun</Link><Link className="action profile-edit-action" to={"/member/"+profile?.public_member_id}><ArrowUpRight size={16}/> Profil publik</Link></div><div className="profile-sections"><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">ACCOUNT</span><h2>Informasi akun</h2></div></div><div className="profile-info-grid">{info("Nama depan",profile?.first_name)}{info("Nama belakang",profile?.last_name)}{info("Nickname web",webName)}{info("Nickname driver",profile?.driver_nickname)}{info("Preferensi role",profile?.preferred_role)}{info("Status akun",profile?.account_status==="admin"?"Administrator":profile?.account_status==="active"?"Member aktif":profile?.account_status==="suspended"?"Suspended":"Public")}{info("Email",session.user.email)}{info("Member ID",profile?.public_member_id)}{info("Saldo member publik",busy?"Memuat...":balanceText(wallets.public_member))}</div></div><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CHARACTER</span><h2>Informasi karakter</h2></div></div>{busy?<p className="muted">Memuat informasi karakter dan wallet...</p>:!member?<EmptyPanel icon={<Users/>} title="Belum terhubung ke member" body="Wallet member publik tetap tersedia. Data karakter dan wallet Driver/Owner akan tampil setelah akun ditautkan ke member oleh administrator."/>:<div className="profile-info-grid">{info("Nickname driver",profile?.driver_nickname||member.character_name)}{info("Role",member.role)}{info("Tim",team?.name)}{info("License",member.license)}{info("Total fans",member.role==="Driver"?fanTotal.toLocaleString("id-ID"):"—")}{info("Reputasi",member.role==="Driver"?(reputation?reputation.score.toLocaleString("id-ID")+" · "+reputation.band:"Belum dihitung"):"—")}{info("Saldo karakter",balanceText(characterWallet))}{info("Saldo tim",balanceText(wallets.team))}</div>}</div><div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CONTRACT</span><h2>Detail kontrak</h2></div><FileText size={19}/></div>{busy?<p className="muted">Memuat kontrak...</p>:!contract?<EmptyPanel icon={<FileText/>} title="Belum ada kontrak aktif" body="Detail durasi, gaji, target, dan klausul pelepasan akan ditampilkan ketika kontrak tersedia."/>:<div className="profile-info-grid">{info("Durasi",contract.duration_label)}{info("Mulai",contract.starts_on)}{info("Berakhir",contract.ends_on)}{info("Gaji",contract.salary===null?"Belum tersedia":"¢p "+Number(contract.salary).toLocaleString("id-ID"))}{info("Target",contract.target?JSON.stringify(contract.target):"Tidak ditentukan")}{info("Klausul pelepasan",contract.release_clause===null?"Tidak ditentukan":"¢p "+Number(contract.release_clause).toLocaleString("id-ID"))}</div>}</div></div></section>;
 }
 type PublicMemberProfileData={public_member_id:string;display_name:string;first_name:string|null;last_name:string|null;web_nickname:string|null;driver_nickname:string|null;avatar_url:string|null};
 type PublicCharacterData={character_name:string|null;role:string|null;license:string|null;team_name:string|null};
