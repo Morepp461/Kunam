@@ -61,9 +61,8 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
 
   const queryPlan = useMemo(() => createStage5QueryPlan(group, tab, detail, isAdmin), [group, tab, detail, isAdmin]);
   const {
-    isMainGridPage, isDriverCharacterPage, isTeamSummaryPage, isTeamJobPage,
-    isMainAnnouncementPage, isMainRegulationPage, isFiaAppealPage,
-    isCompetitionPage, isCompetitionSchedulePage, needsSeasonData, needsTeamData,
+    isMainGridPage, isDriverCharacterPage, isTeamSummaryPage, isFinancialPage,
+    isMainAnnouncementPage, isMainRegulationPage, isCompetitionSchedulePage, needsSeasonData, needsTeamData,
     needsMemberDirectory, needsDirectoryAvatars, needsDivisionData, needsRoundData,
     needsRoundPoints, needsFinalStandings, needsRegistrationData, needsRaceResults,
     needsResultEntries, needsTeamProfiles, needsAttributes, needsAchievements,
