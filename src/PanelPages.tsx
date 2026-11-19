@@ -25,7 +25,8 @@ export const panelGroups: PanelGroup[] = [
     { path: "circuit-pool", label: "Circuit Pool", description: "Database sirkuit Caleris Masters." },
     { path: "regulation", label: "Regulation", description: "Regulasi kompetisi per season." },
     { path: "newsroom", label: "Caleris Newsroom", description: "Berita resmi, hasil balapan, dan perkembangan paddock." },
-    { path: "hall-of-fame", label: "Hall of Fame", description: "Juara, pencapaian, dan arsip sejarah CALERIS." }
+    { path: "hall-of-fame", label: "Hall of Fame", description: "Juara, pencapaian, dan arsip sejarah CALERIS." },
+    { path: "archive", label: "Season Archive", description: "Arsip klasemen dan hasil resmi seluruh season." }
   ]},
   { path: "driver-panel", label: "DRIVER PANEL", tabs: [
     { path: "daily-checkin", label: "Race Check-in", description: "Kehadiran per round; poin lisensi hanya untuk Driver." },
