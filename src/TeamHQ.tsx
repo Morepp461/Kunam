@@ -34,6 +34,7 @@ export default function TeamHQ() {
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isFia, setIsFia] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [draft, setDraft] = useState<FacilityConfig | null>(null);
@@ -59,11 +60,12 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
     setIsFia(Boolean(adminResult.data?.user_id) || role === "FIA");
+    setIsAdmin(Boolean(adminResult.data?.user_id));
     setIsOwner(role === "Owner" || role === "Principal");
     if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setLoading(false); return; }
     const [teamResult, facilityResult, projectResult] = await Promise.all([
@@ -172,7 +174,7 @@ export default function TeamHQ() {
           <h3>{config.title}</h3><p>{config.description}</p>
           {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div></>}
           {config.maintenance_required && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance diperlukan</small>}
-          {isFia && <button className="team-hq-edit" onClick={() => beginEdit(config)}>Edit configuration</button>}
+          {isAdmin && <button className="team-hq-edit" onClick={() => beginEdit(config)}>Edit configuration</button>}
           {team && (() => {
             const activeProject = activeProjects.find(p => p.facility_key === config.facility_key);
             const nextLevel = level + 1;
