@@ -25,12 +25,14 @@ export const panelGroups: PanelGroup[] = [
     { path: "circuit-pool", label: "Circuit Pool", description: "Database sirkuit Caleris Masters." },
     { path: "regulation", label: "Regulation", description: "Regulasi kompetisi per season." },
     { path: "newsroom", label: "Caleris Newsroom", description: "Berita resmi, hasil balapan, dan perkembangan paddock." },
-    { path: "hall-of-fame", label: "Hall of Fame", description: "Juara, pencapaian, dan arsip sejarah CALERIS." }
+    { path: "hall-of-fame", label: "Hall of Fame", description: "Juara, pencapaian, dan arsip sejarah CALERIS." },
+    { path: "archive", label: "Season Archive", description: "Arsip klasemen dan hasil resmi seluruh season." }
   ]},
   { path: "driver-panel", label: "DRIVER PANEL", tabs: [
     { path: "daily-checkin", label: "Race Check-in", description: "Kehadiran per round; poin lisensi hanya untuk Driver." },
     { path: "character", label: "Character", description: "Profil karakter dan kontrak driver." },
-    { path: "development", label: "Development", description: "Pengembangan delapan atribut driver." },
+    { path: "development", label: "Development", description: "Pengembangan atribut driver dan roadmap target pribadi." },
+    { path: "contract-renewals", label: "Contract Renewal", description: "Keputusan Driver atas penawaran perpanjangan kontrak." },
     { path: "training", label: "Training", description: "Program latihan atribut Driver dengan tingkat kesulitan dan cooldown." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target." },
     { path: "quest", label: "Quest", description: "Daily Quest dan Period Quest dengan reward saldo wallet." },
@@ -44,6 +46,9 @@ export const panelGroups: PanelGroup[] = [
     { path: "command-center", label: "Owner Command Center", description: "Pusat kendali operasional, finansial, performa, dan sponsorship tim." },
     { path: "financial-centre", label: "Financial Intelligence", description: "Analisis kas, valuasi, komitmen sponsorship, dan kondisi finansial tim." },
     { path: "driver-contracts", label: "Driver Contracts", description: "Kontrak gaji tahunan dan payroll Driver." },
+    { path: "contract-renewals", label: "Contract Renewal", description: "Kirim penawaran renewal dan pantau keputusan Driver." },
+    { path: "budget-guard", label: "Budget Guard", description: "Rencana budget dan peringatan pengeluaran tim." },
+    { path: "roadmap-suggestions", label: "Driver Roadmap Suggestions", description: "Berikan saran target, keputusan akhir tetap pada Driver." },
     { path: "development", label: "Development", description: "Pengembangan enam belas atribut mobil." },
     { path: "sponsorship", label: "Sponsorship", description: "Sponsor aktif, tawaran, dan target tim." },
     { path: "driver-registration", label: "Driver Registration", description: "Formulir registrasi driver untuk FIA dan Admin." },
@@ -62,7 +67,6 @@ export const panelGroups: PanelGroup[] = [
     { path: "discord-broadcast", label: "Discord Broadcast", description: "Kirim pengumuman resmi ke komunitas Discord." },
     { path: "race-input", label: "Race Input", description: "Input klasifikasi lengkap dan proses otomatis standings serta ekonomi." },
     { path: "punishment-input", label: "Punishment Input", description: "Pencatatan sanksi driver dan tim." },
-    { path: "appeal-room", label: "Appeal Room", description: "Peninjauan dan keputusan banding." },
     { path: "circuit-pool-input", label: "Circuit Pool Input", description: "Input master circuit dan spesifikasi sirkuit." },
     { path: "team-hq-config", label: "Team HQ Configuration", description: "Konfigurasi fasilitas, biaya, durasi, maintenance, efek, dan unlock Team HQ." }
   ]}

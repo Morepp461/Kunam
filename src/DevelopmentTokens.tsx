@@ -3,6 +3,7 @@ import {ArrowLeft,RefreshCw,Trophy,Wallet} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import CalerisIntelligence from "./CalerisIntelligence";
 
 type Account={id:string;asset_type:"DDP"|"TDP";balance:number;member_id:string|null;team_id:string|null};
 type Member={id:string;role:string|null;team_id:string|null;character_name:string|null;license:string|null};
@@ -124,6 +125,7 @@ export default function DevelopmentTokens({session,asset}:{session:Session;asset
     <div className="development-snapshot-list">{history.map(s=><article key={s.id}><div><strong>{seasonName(s.season_id)} · {s.snapshot_stage==="season_end"?"Akhir Season":"Baseline Season"}</strong><small>{new Date(s.created_at).toLocaleString("id-ID")}</small></div><span>{Object.keys(s.attributes||{}).length} atribut</span></article>)}</div>
    </section>
   </>}
+  {asset==="DDP"&&<CalerisIntelligence session={session} scope="roadmap"/>}
   {notice&&<div className="license-notice" role="status">{notice}</div>}
  </section>;
 }
