@@ -544,3 +544,68 @@ body{overflow-x:hidden}
     min-width:min(280px,calc(100vw - 180px));
   }
 }
+
+/* CALERIS hybrid navigation: desktop collapsible sidebar + mobile drawer */
+.app-navigation-shell{position:relative;z-index:2;display:flex;align-items:stretch;flex:1 0 auto;min-width:0;width:100%}
+.app-navigation-shell>.page-content{flex:1 1 auto;min-width:0;width:0;align-items:flex-start;justify-content:flex-start}
+.caleris-sidebar{position:sticky;top:0;z-index:25;display:flex;flex:0 0 292px;flex-direction:column;align-self:flex-start;width:292px;height:calc(100svh - 76px);min-height:560px;max-height:calc(100svh - 76px);overflow:hidden;padding:16px 12px 12px;border-right:1px solid rgba(198,163,58,.24);background:rgba(6,9,13,.91);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);transition:width .2s ease,flex-basis .2s ease}
+.caleris-sidebar.is-collapsed{flex-basis:78px;width:78px;padding-left:10px;padding-right:10px}
+.sidebar-topline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:38px;padding:0 4px 12px;border-bottom:1px solid rgba(198,163,58,.18)}
+.sidebar-brand-label,.sidebar-section-label{display:block;color:#a9965b;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.2em;text-transform:uppercase;white-space:nowrap}
+.sidebar-icon-button{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid rgba(198,163,58,.25);border-radius:5px;background:rgba(255,255,255,.035);color:#d8c17a}
+.sidebar-icon-button:hover{border-color:#d6b75e;color:#f1d77e}
+.sidebar-search{display:flex;align-items:center;gap:9px;min-height:42px;margin:13px 2px 15px;padding:0 11px;border:1px solid rgba(198,163,58,.28);border-radius:5px;background:rgba(0,0,0,.25);color:#d6b75e;cursor:text}
+.sidebar-search input{width:100%;min-width:0;border:0;outline:0;background:transparent;color:#f4f3ef;font:500 12px Inter,Arial,sans-serif}
+.sidebar-search input::placeholder{color:#aeb1b4}
+.sidebar-search button{display:grid;place-items:center;flex:none;width:22px;height:22px;border:0;background:transparent;color:#aeb1b4}
+.sidebar-quick{display:flex;flex-direction:column;gap:4px;padding:0 0 15px;border-bottom:1px solid rgba(198,163,58,.18)}
+.sidebar-section-label{padding:4px 9px 7px;font-size:9px;color:#8f835f}
+.sidebar-quick-link,.sidebar-category-toggle,.sidebar-page-link{display:flex;align-items:center;gap:11px;width:100%;min-height:39px;padding:8px 10px;border:1px solid transparent;border-radius:5px;background:transparent;color:#dcd9d0;text-align:left;text-decoration:none;font:600 12px Inter,Arial,sans-serif;transition:background .16s ease,border-color .16s ease,color .16s ease}
+.sidebar-quick-link:hover,.sidebar-page-link:hover,.sidebar-category-toggle:hover{background:rgba(198,163,58,.075);color:#f1d77e}
+.sidebar-quick-link.active,.sidebar-page-link.active{border-color:rgba(198,163,58,.28);background:rgba(198,163,58,.13);color:#f4d77a}
+.sidebar-item-icon,.sidebar-category-icon{display:grid;place-items:center;flex:0 0 20px;width:20px;color:#d1b45d}
+.sidebar-item-label,.sidebar-category-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-navigation{display:flex;flex:1 1 auto;min-height:0;flex-direction:column;gap:4px;overflow:auto;padding:13px 0 12px;scrollbar-width:thin;scrollbar-color:rgba(198,163,58,.28) transparent}
+.sidebar-category{display:flex;flex-direction:column;gap:3px}
+.sidebar-category-toggle{min-height:40px;cursor:pointer;font-weight:700}
+.sidebar-category-chevron{flex:none;margin-left:auto;color:#92865f;transition:transform .16s ease}
+.sidebar-category.is-open>.sidebar-category-toggle .sidebar-category-chevron{transform:rotate(180deg)}
+.sidebar-category-content{display:flex;flex-direction:column;gap:8px;padding:3px 0 10px 14px}
+.sidebar-subcategory{display:flex;flex-direction:column;gap:2px}
+.sidebar-subcategory-label{padding:7px 8px 4px;color:#9d926f;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.15em;text-transform:uppercase}
+.sidebar-page-link{min-height:35px;padding:7px 8px 7px 10px;font-size:11px;font-weight:500}
+.sidebar-page-link .sidebar-item-icon{flex-basis:18px;width:18px}
+.sidebar-no-results{padding:8px 10px;color:#aeb1b4;font-size:11px;line-height:1.6}
+.sidebar-account{padding:11px 0 2px;border-top:1px solid rgba(198,163,58,.18)}
+.sidebar-user{display:flex;align-items:center;gap:9px;min-width:0;padding:7px 8px;color:#d6b75e}
+.sidebar-user>img{flex:none;width:28px;height:28px;border:1px solid rgba(198,163,58,.35);border-radius:50%;object-fit:cover}
+.sidebar-user>svg{flex:none}
+.sidebar-user>span{display:flex;min-width:0;flex-direction:column;gap:3px}
+.sidebar-user strong,.sidebar-user small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-user strong{color:#eeeae0;font-size:11px}
+.sidebar-user small{color:#9fa4a8;font-size:9px}
+.caleris-sidebar.is-collapsed .sidebar-brand-label,.caleris-sidebar.is-collapsed .sidebar-section-label,.caleris-sidebar.is-collapsed .sidebar-item-label,.caleris-sidebar.is-collapsed .sidebar-category-label,.caleris-sidebar.is-collapsed .sidebar-category-chevron,.caleris-sidebar.is-collapsed .sidebar-subcategory-label,.caleris-sidebar.is-collapsed .sidebar-account,.caleris-sidebar.is-collapsed .sidebar-search input,.caleris-sidebar.is-collapsed .sidebar-search button{display:none}
+.caleris-sidebar.is-collapsed .sidebar-topline{justify-content:center;padding-left:0;padding-right:0}
+.caleris-sidebar.is-collapsed .sidebar-search{justify-content:center;padding:0;cursor:pointer}
+.caleris-sidebar.is-collapsed .sidebar-quick-link,.caleris-sidebar.is-collapsed .sidebar-category-toggle,.caleris-sidebar.is-collapsed .sidebar-page-link{justify-content:center;padding-left:0;padding-right:0}
+.caleris-sidebar.is-collapsed .sidebar-category-content{display:none}
+.caleris-sidebar.is-collapsed .sidebar-category{position:relative}
+.mobile-nav-toggle{display:none}
+.caleris-sidebar.is-mobile-drawer{display:none}
+body.light .caleris-sidebar{background:rgba(29,27,22,.94);color:#eeeae0}
+@media(max-width:900px){
+ .app-navigation-shell{display:block}
+ .app-navigation-shell>.page-content{width:100%;min-width:0}
+ .mobile-nav-toggle{display:grid}
+ .app-navigation-shell>.caleris-sidebar{display:none}
+ .caleris-sidebar.is-mobile-drawer{position:fixed;top:0;bottom:0;left:0;z-index:60;display:flex;width:min(340px,88vw);height:100dvh;max-height:100dvh;min-height:0;padding:16px 13px 12px;box-shadow:18px 0 55px #0009;animation:drawerIn .2s ease-out}
+ .caleris-sidebar.is-mobile-drawer .sidebar-brand-label,.caleris-sidebar.is-mobile-drawer .sidebar-section-label,.caleris-sidebar.is-mobile-drawer .sidebar-item-label,.caleris-sidebar.is-mobile-drawer .sidebar-category-label,.caleris-sidebar.is-mobile-drawer .sidebar-category-chevron,.caleris-sidebar.is-mobile-drawer .sidebar-subcategory-label,.caleris-sidebar.is-mobile-drawer .sidebar-account,.caleris-sidebar.is-mobile-drawer .sidebar-search input,.caleris-sidebar.is-mobile-drawer .sidebar-search button{display:initial}
+ .caleris-sidebar.is-mobile-drawer .sidebar-topline{justify-content:space-between}
+ .caleris-sidebar.is-mobile-drawer .sidebar-search{justify-content:flex-start;padding:0 11px}
+ .caleris-sidebar.is-mobile-drawer .sidebar-quick-link,.caleris-sidebar.is-mobile-drawer .sidebar-category-toggle,.caleris-sidebar.is-mobile-drawer .sidebar-page-link{justify-content:flex-start;padding-left:10px;padding-right:10px}
+ .caleris-sidebar.is-mobile-drawer .sidebar-category-content{display:flex}
+ .caleris-sidebar.is-mobile-drawer .sidebar-category.is-open .sidebar-category-content{display:flex}
+}
+@media(max-width:620px){
+ .app-navigation-shell>.page-content{padding:24px 17px}
+}
