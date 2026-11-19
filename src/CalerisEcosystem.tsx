@@ -8,6 +8,21 @@ type TeamInfo = { id:string; name:string; division_key:string|null };
 type Standing = { id:string; final_position:number|null; final_points:number|null; driver_name_snapshot?:string|null; team_name_snapshot?:string|null; season_division_id:string };
 const currency=(v:number)=>"€"+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(v||0);
 const dateLabel=(v:string)=>new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v));
+const newsroomCategory=(value:string)=>({general:"Umum",sporting:"Olahraga",disciplinary:"Disiplin",schedule:"Jadwal",administrative:"Administrasi",announcement:"Pengumuman",sponsorship:"Sponsorship",sponsor:"Sponsorship",contract_signed:"Kontrak Baru",contract_renewed:"Perpanjangan Kontrak",contract_ended:"Akhir Kerja Sama","Official Classification":"Hasil Balapan"}[value]??value.replaceAll("_"," ").replace(/\b\w/g,letter=>letter.toUpperCase()));
+const newsroomSource=(value:string)=>({"Official Bulletin":"Papan Pengumuman","Paddock Report":"Kabar Paddock","Race Desk":"Meja Redaksi Balap"}[value]??value);
+const raceEditorial=(id:string,winnerName:string,poleName:string|null,roundTitle:string,location:string)=>{
+ const angles=[
+  ["Amankan Kemenangan di "+roundTitle,winnerName+" tercatat sebagai pemenang "+roundTitle+" dalam klasifikasi resmi."],
+  ["Sorotan "+roundTitle+": "+winnerName+" Teratas","Nama "+winnerName+" berada di posisi teratas klasifikasi resmi "+roundTitle+"."],
+  ["Peta Persaingan "+roundTitle+" Terjawab","Klasifikasi resmi "+roundTitle+" menempatkan "+winnerName+" sebagai pemenang."],
+  ["Dari Garis Start ke Hasil Akhir","Catatan resmi "+roundTitle+" memastikan "+winnerName+" sebagai pemenang balapan."],
+  ["Hasil Resmi "+roundTitle+": "+winnerName+" Jadi Nama Utama","Meja redaksi merangkum hasil yang sudah dipublikasikan. "+winnerName+" tercatat sebagai pemenang."],
+  ["Satu Nama di Puncak "+roundTitle+": "+winnerName,"Klasifikasi akhir yang dipublikasikan menempatkan "+winnerName+" di posisi pemenang."]
+ ];
+ const hash=[...id].reduce((sum,char)=>sum+char.charCodeAt(0),0),angle=angles[hash%angles.length];
+ return {title:angle[0].includes(winnerName)?angle[0]:winnerName+" "+angle[0],lead:angle[1],body:["Klasifikasi resmi "+roundTitle+" kini sudah dipublikasikan.",winnerName+" tercatat sebagai pemenang berdasarkan hasil resmi.",poleName?poleName+" tercatat sebagai peraih pole position.":null,location?"Catatan lokasi: "+location+".":null].filter(Boolean).join("\n\n")};
+};
+
 export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [loading,setLoading]=useState(true),[error,setError]=useState(""),[team,setTeam]=useState<TeamInfo|null>(null);
  const [wallet,setWallet]=useState(0),[valuation,setValuation]=useState<number|null>(null),[reputation,setReputation]=useState<number|null>(null);
@@ -73,8 +88,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
      supabase.from("caleris_race_results").select("id,round_id,winner_member_id,pole_member_id,published_at").not("published_at","is",null).order("published_at",{ascending:false}).limit(20)
     ]);
     const items:NewsItem[]=[
-     ...(ann.data??[]).map((x:any)=>({id:x.id,title:x.title,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:x.category??"Announcement",date:x.published_at??x.created_at,source:"Official Bulletin",facts:[x.division_key?String(x.division_key).toUpperCase():"CALERIS MASTERS"]})),
-     ...(stories.data??[]).map((x:any)=>({id:x.id,title:x.headline,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:x.event_type??"Paddock Story",date:x.created_at,source:"Paddock Report"}))
+     ...(ann.data??[]).map((x:any)=>({id:x.id,title:x.title,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:newsroomCategory(String(x.category??"Pengumuman")),date:x.published_at??x.created_at,source:"Papan Pengumuman",facts:[x.division_key?String(x.division_key).toUpperCase():"CALERIS MASTERS"]})),
+     ...(stories.data??[]).map((x:any)=>({id:x.id,title:x.headline,body:x.body,lead:String(x.body??"").split(/\n|(?<=[.!?])\s/)[0]?.slice(0,260)??"",category:newsroomCategory(String(x.event_type??"Kabar Paddock")),date:x.created_at,source:"Kabar Paddock"}))
     ];
     if(stories.data?.length){
      const contractIds=[...new Set(stories.data.map((x:any)=>x.contract_id).filter(Boolean))];
@@ -83,7 +98,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
      const {data:storyTeams}=storyTeamIds.length?await supabase.from("caleris_team_profiles").select("team_id,logo_url").in("team_id",storyTeamIds):{data:[] as any[]};
      const contractMap=new Map((storyContracts??[]).map((x:any)=>[x.id,x.target_team_id]));
      const logoMap=new Map((storyTeams??[]).map((x:any)=>[x.team_id,x.logo_url]));
-     for(const item of items.filter(x=>x.source==="Paddock Report")){const source=(stories.data??[]).find((x:any)=>x.id===item.id);const teamId=contractMap.get(source?.contract_id);item.imageUrl=teamId?logoMap.get(teamId)??null:null;}
+     for(const item of items.filter(x=>x.source==="Kabar Paddock")){const source=(stories.data??[]).find((x:any)=>x.id===item.id);const teamId=contractMap.get(source?.contract_id);item.imageUrl=teamId?logoMap.get(teamId)??null:null;}
     }
     if(races.data?.length){
      const roundIds=[...new Set(races.data.map((x:any)=>x.round_id).filter(Boolean))];
@@ -104,9 +119,10 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
      for(const race of races.data as any[]){
       const round=roundMap.get(race.round_id) as any,winner=memberMap.get(race.winner_member_id) as any,pole=memberMap.get(race.pole_member_id) as any;
       const location=[round?.circuit_name,round?.round_number?"ROUND "+round.round_number:null].filter(Boolean).join(" · ");
-      const winnerName=winner?.character_name??"Winner not recorded";
-      const body=["The official classification for "+(round?.title??"this round")+" has been published.",winner?winnerName+" is recorded as the race winner.":null,pole?pole.character_name+" is credited with pole position.":null,location?"Venue and round: "+location+".":null].filter(Boolean).join("\n\n");
-      items.push({id:race.id,title:winner?winnerName+" wins "+(round?.title??"the round"):round?.title??"Official race classification",body,lead:winnerName+(pole?", with "+pole.character_name+" credited for pole position.":" is listed as the winner in the official classification."),category:"Official Classification",date:race.published_at,source:"Race Desk",imageUrl:avatarMap.get(race.winner_member_id)??(winner?.team_id?logoMap.get(winner.team_id):null)??null,facts:[location,winner?"WINNER · "+winnerName:null,pole?"POLE · "+pole.character_name:null].filter(Boolean) as string[]});
+      const winnerName=winner?.character_name??"Pemenang belum tercatat";
+      const roundTitle=round?.title??"Putaran ini";
+      const editorial=raceEditorial(race.id,winnerName,pole?.character_name??null,roundTitle,location);
+      items.push({id:race.id,title:editorial.title,body:editorial.body,lead:editorial.lead,category:"Hasil Balapan",date:race.published_at,source:"Meja Redaksi Balap",imageUrl:avatarMap.get(race.winner_member_id)??(winner?.team_id?logoMap.get(winner.team_id):null)??null,facts:[location,winner?"PEMENANG · "+winnerName:null,pole?"POLE POSITION · "+pole.character_name:null].filter(Boolean) as string[]});
      }
     }
     setNews(items.sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()).slice(0,40));
@@ -139,7 +155,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
   }catch(e){setError(e instanceof Error?e.message:"Data gagal dimuat.");}finally{setLoading(false);}
  },[mode,refreshKey]);
  useEffect(()=>{void load();},[load]);
- const titles:Record<Mode,[string,string,string]>={owner:["Team Owner Command Center","STRATEGIC OPERATIONS","Ringkasan kondisi tim dari sumber data resmi CALERIS."],finance:["Financial Intelligence Center","FINANCIAL INTELLIGENCE","Pantau kas tim, valuasi, sponsorship aktif, dan kondisi aset."],news:["Caleris Newsroom","PADDOCK MEDIA","Berita resmi, hasil balapan, cerita sponsorship, dan perkembangan paddock."],hall:["Hall of Fame & Historical Archive","CALERIS HISTORY","Arsip juara, pencapaian, dan catatan resmi lintas musim."]};
+ const titles:Record<Mode,[string,string,string]>={owner:["Team Owner Command Center","STRATEGIC OPERATIONS","Ringkasan kondisi tim dari sumber data resmi CALERIS."],finance:["Financial Intelligence Center","FINANCIAL INTELLIGENCE","Pantau kas tim, valuasi, sponsorship aktif, dan kondisi aset."],news:["Caleris Newsroom","KABAR PADDOCK","Hasil balapan, kabar tim, cerita sponsor, dan pengumuman resmi Caleris Masters."],hall:["Hall of Fame & Historical Archive","CALERIS HISTORY","Arsip juara, pencapaian, dan catatan resmi lintas musim."]};
  const [title,eyebrow,description]=titles[mode];
  if(loading)return <section className="workspace caleris-ecosystem"><p>Memuat data resmi...</p></section>;
  return <section className="workspace caleris-ecosystem">
@@ -154,24 +170,24 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    <section className="workspace-card"><div className="ce-title"><h2>Financial Intelligence</h2><span>Official Economy Engine</span></div><p className="ce-note">Saldo diambil langsung dari wallet tim. Transaksi dan pembayaran tetap dikelola oleh Economy Engine, tidak ada saldo bayangan di dashboard ini.</p><div className="ce-finance-summary"><span>Available cash</span><strong>{currency(wallet)}</strong></div><div className="ce-finance-summary"><span>Active sponsor commitment</span><strong>{currency(sponsors.reduce((sum,s)=>sum+Number(s.annual_contract_amount??s.contract_amount),0))}</strong></div></section>
   </>}</>}
   {mode==="news"&&<div className="vp-newsroom">
-   <div className="vp-masthead"><div className="vp-masthead-side">PADDOCK MEDIA<br/>EST. CALERIS</div><div className="vp-masthead-title">Vreeo Pedia</div><div className="vp-masthead-side vp-masthead-right">THE OFFICIAL<br/>MOTORSPORT JOURNAL</div></div>
-   <div className="vp-edition"><span>CALERIS MASTERS · NEWS & CLASSIFIEDS</span><span>{news.length} STORIES IN THIS EDITION</span></div>
+   <div className="vp-masthead"><div className="vp-masthead-side">KABAR PADDOCK<br/>SEJAK CALERIS</div><div className="vp-masthead-title">Vreeo Pedia</div><div className="vp-masthead-side vp-masthead-right">JURNAL RESMI<br/>DUNIA BALAP</div></div>
+   <div className="vp-edition"><span>CALERIS MASTERS · BERITA & HASIL RESMI</span><span>{news.length} BERITA EDISI INI</span></div>
    {news.length? <div className="vp-paper-grid">{news.map((item,index)=><button type="button" className={index===0?"vp-story vp-story-lead":"vp-story"} key={item.id} onClick={()=>setSelectedArticle(item)}>
-    <div className="vp-story-meta"><span>{item.source} / {item.category}</span><time>{dateLabel(item.date)}</time></div>
+    <div className="vp-story-meta"><span>{newsroomSource(item.source)} / {item.category}</span><time>{dateLabel(item.date)}</time></div>
     {item.imageUrl&&<img className="vp-story-image" src={item.imageUrl} alt="" loading="lazy"/>}
     <h2>{item.title}</h2><p className="vp-story-leadtext">{item.lead||item.body.slice(0,220)}</p>
     {item.facts?.length? <div className="vp-story-facts">{item.facts.map((fact,i)=><span key={i}>{fact}</span>)}</div>:null}
-    <span className="vp-read">READ FULL STORY ↗</span>
-   </button>)}</div>:<div className="vp-empty"><Newspaper/><strong>No stories in this edition</strong><span>Official reports and paddock coverage will appear here after publication.</span></div>}
+    <span className="vp-read">BACA SELENGKAPNYA ↗</span>
+   </button>)}</div>:<div className="vp-empty"><Newspaper/><strong>Belum ada berita di edisi ini</strong><span>Berita resmi, hasil balapan, dan kabar paddock akan muncul di sini setelah dipublikasikan.</span></div>}
    {selectedArticle&&<div className="vp-reader-backdrop" role="presentation" onClick={()=>setSelectedArticle(null)}><article className="vp-reader" role="dialog" aria-modal="true" aria-labelledby="vp-reader-title" onClick={e=>e.stopPropagation()}>
-    <button type="button" className="vp-reader-close" onClick={()=>setSelectedArticle(null)}>CLOSE ✕</button><div className="vp-reader-masthead">VREEO PEDIA <span>PADDOCK MEDIA</span></div>
+    <button type="button" className="vp-reader-close" onClick={()=>setSelectedArticle(null)}>TUTUP ✕</button><div className="vp-reader-masthead">VREEO PEDIA <span>KABAR PADDOCK</span></div>
     <div className="vp-reader-meta">{selectedArticle.source} · {selectedArticle.category} · {dateLabel(selectedArticle.date)}</div>
     <h2 id="vp-reader-title">{selectedArticle.title}</h2>
     {selectedArticle.imageUrl&&<img className="vp-reader-image" src={selectedArticle.imageUrl} alt=""/>}
     {selectedArticle.lead&&<p className="vp-reader-lead">{selectedArticle.lead}</p>}
     <div className="vp-reader-body">{selectedArticle.body.split("\n").map((paragraph,i)=><p key={i}>{paragraph}</p>)}</div>
-    {selectedArticle.facts?.length?<div className="vp-reader-facts"><h3>THE FACTS</h3>{selectedArticle.facts.map((fact,i)=><p key={i}>{fact}</p>)}</div>:null}
-    <footer>VREEO PEDIA · CALERIS MASTERS OFFICIAL PADDOCK MEDIA</footer>
+    {selectedArticle.facts?.length?<div className="vp-reader-facts"><h3>FAKTA RESMI</h3>{selectedArticle.facts.map((fact,i)=><p key={i}>{fact}</p>)}</div>:null}
+    <footer>VREEO PEDIA · MEDIA RESMI CALERIS MASTERS</footer>
    </article></div>}
   </div>}
   {mode==="hall"&&<div className="ce-hall-grid">
