@@ -122,7 +122,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
       const winnerName=winner?.character_name??"Pemenang belum tercatat";
       const roundTitle=round?.title??"Putaran ini";
       const editorial=raceEditorial(race.id,winnerName,pole?.character_name??null,roundTitle,location);
-      items.push({id:race.id,title:editorial.title,body:editorial.body,lead:editorial.lead,category:"Hasil Balapan",date:race.published_at,source:"Meja Redaksi Balap",imageUrl:avatarMap.get(race.winner_member_id)??(winner?.team_id?logoMap.get(winner.team_id):null)??null,facts:[location,winner?"PEMENANG · "+winnerName:null,pole?"POLE POSITION · "+pole.character_name:null].filter(Boolean) as string[]});
+      items.push({id:race.id,title:editorial.title,body:editorial.body,lead:editorial.lead,category:(["Kemenangan","Klasifikasi Resmi","Sorotan Putaran","Catatan Balapan","Hasil Balapan","Sorotan Pole Position"][[...race.id].reduce((sum,char)=>sum+char.charCodeAt(0),0)%6]),date:race.published_at,source:"Meja Redaksi Balap",imageUrl:avatarMap.get(race.winner_member_id)??(winner?.team_id?logoMap.get(winner.team_id):null)??null,facts:[location,winner?"PEMENANG · "+winnerName:null,pole?"POLE POSITION · "+pole.character_name:null].filter(Boolean) as string[]});
      }
     }
     setNews(items.sort((a,b)=>new Date(b.date).getTime()-new Date(a.date).getTime()).slice(0,40));
@@ -172,7 +172,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
   {mode==="news"&&<div className="vp-newsroom">
    <div className="vp-masthead"><div className="vp-masthead-side">KABAR PADDOCK<br/>SEJAK CALERIS</div><div className="vp-masthead-title">Vreeo Pedia</div><div className="vp-masthead-side vp-masthead-right">JURNAL RESMI<br/>DUNIA BALAP</div></div>
    <div className="vp-edition"><span>CALERIS MASTERS · BERITA & HASIL RESMI</span><span>{news.length} BERITA EDISI INI</span></div>
-   {news.length? <div className="vp-paper-grid">{news.map((item,index)=><button type="button" className={index===0?"vp-story vp-story-lead":"vp-story"} key={item.id} onClick={()=>setSelectedArticle(item)}>
+   {news.length? <div className="vp-paper-grid">{news.map((item,index)=><button type="button" className={index===0?"vp-story vp-story-lead":`vp-story ${index%4===1?"vp-story-photo":index%4===2?"vp-story-brief":index%4===3?"vp-story-note":"vp-story-standard"}`} key={item.id} onClick={()=>setSelectedArticle(item)}>
     <div className="vp-story-meta"><span>{newsroomSource(item.source)} / {item.category}</span><time>{dateLabel(item.date)}</time></div>
     {item.imageUrl&&<img className="vp-story-image" src={item.imageUrl} alt="" loading="lazy"/>}
     <h2>{item.title}</h2><p className="vp-story-leadtext">{item.lead||item.body.slice(0,220)}</p>
