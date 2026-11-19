@@ -62,7 +62,7 @@ function subcategory(group:string,item:NavItem){
 }
 function groupNavigation(groups:NavCategory[]):NavCategory[]{
  const mapping:Record<string,string>={"MAIN EVENT":"Main Event","DRIVER PANEL":"Driver Center","TEAM PANEL":"Team Management","FIA PANEL":"FIA Control","ADMIN CONTROL":"Administration","ACCOUNT":"Account"};
- return groups.filter(g=>g.title!=="MAIN").map(g=>({title:mapping[g.title]||g.title,items:g.items}));
+ const paddock=groups.find(g=>g.title==="MAIN")?.items.filter(item=>item.to==="/paddock-access")||[];\n return [...(paddock.length?[{title:"Member Access",items:paddock}]:[]),...groups.filter(g=>g.title!=="MAIN").map(g=>({title:mapping[g.title]||g.title,items:g.items}))];
 }
 function groupQuickAccess(groups:NavCategory[]):NavItem[]{
  const main=groups.find(g=>g.title==="MAIN");
