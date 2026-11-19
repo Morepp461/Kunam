@@ -13,7 +13,7 @@ import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
 import AdminPrizepool from "./AdminPrizepool";
 import AdminEconomyEngine from "./AdminEconomyEngine";
-import AdminAdjustments from "./AdminAdjustments";
+import AdminAdjustmentCenter from "./AdminAdjustmentCenter";
 import AdminAdjustmentCenter from "./AdminAdjustmentCenter";
 import AdminQuestEngine from "./AdminQuestEngine";
 import QuestPage from "./QuestPage";
@@ -154,7 +154,7 @@ function Application(){
   <Route path="/admin/prizepool" element={session&&!needsPaddockAccess&&isAdmin?<AdminPrizepool session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminLicenseEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/economy-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminEconomyEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/admin/adjustments" element={session&&!needsPaddockAccess&&isAdmin?<AdminAdjustments session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/adjustments" element={session&&!needsPaddockAccess&&isAdmin?<AdminAdjustmentCenter session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/data-adjustments" element={session&&!needsPaddockAccess&&isAdmin?<AdminAdjustmentCenter session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/quest-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminQuestEngine/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/pricing" element={session&&!needsPaddockAccess&&isAdmin?<AdminPricingCenter/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
