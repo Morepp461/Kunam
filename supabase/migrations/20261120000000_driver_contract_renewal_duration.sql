@@ -144,6 +144,27 @@ begin
 end;
 $$;
 
+
+create or replace function private.guard_permanent_profile_character()
+returns trigger
+language plpgsql
+set search_path=''
+as $
+begin
+  if old.member_id is not null and new.member_id is distinct from old.member_id then
+    if (select auth.uid()) is not null
+      and exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))
+      and exists(select 1 from public.caleris_runtime_environment e where e.singleton=true and e.environment='testing')
+      and exists(select 1 from public.caleris_admin_test_personas p
+        where p.user_id=(select auth.uid()) and p.member_id=new.member_id) then
+      return new;
+    end if;
+    raise exception 'Karakter akun bersifat permanen dan tidak dapat diganti atau dilepas.';
+  end if;
+  return new;
+end;
+$;
+
 revoke all on function public.team_owner_offer_driver_renewal(uuid,integer,numeric,text) from public;
 grant execute on function public.team_owner_offer_driver_renewal(uuid,integer,numeric,text) to authenticated;
 revoke all on function public.member_decide_driver_renewal(uuid,boolean,text) from public;
