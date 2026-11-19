@@ -5,7 +5,7 @@ export type Stage5QueryPlan = {
   isFinancialPage: boolean; isMemberAppealPage: boolean; isFiaAppealPage: boolean;
   isMainAnnouncementPage: boolean; isMainRegulationPage: boolean; isMainJobSearchPage: boolean; isFiaContentFormPage: boolean;
   isDriverProfilePage: boolean; isCompetitionPage: boolean; isCompetitionSchedulePage: boolean;
-  needsSeasonData: boolean; needsTeamData: boolean; needsMemberDirectory: boolean; needsDirectoryAvatars: boolean;
+  needsOwnIdentity: boolean; needsSeasonData: boolean; needsTeamData: boolean; needsMemberDirectory: boolean; needsDirectoryAvatars: boolean;
   needsDivisionData: boolean; needsRoundData: boolean; needsRoundPoints: boolean; needsFinalStandings: boolean;
   needsRegistrationData: boolean; needsRaceResults: boolean; needsResultEntries: boolean; needsTeamProfiles: boolean;
   needsAttributes: boolean; needsAchievements: boolean; needsEngineData: boolean; needsJobAdverts: boolean;
@@ -35,6 +35,7 @@ export function createStage5QueryPlan(group: string, tab: string, detail: string
   const isDriverProfilePage = isDriverCharacterPage || isDriverCareerPage;
   const isCompetitionPage = isMainGridPage || isHallPage || isArchivePage;
   const isCompetitionSchedulePage = isMainGridPage && detail === "calendar";
+  const needsOwnIdentity = isDriverProfilePage || isFinancialPage || isMemberAppealPage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isTeamJobPage;
   const needsSeasonData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isTeamJobPage || isMainAnnouncementPage || isMainRegulationPage || isFiaContentFormPage;
   const needsTeamData = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamJobPage || isTeamScoutPage || isMainJobSearchPage || isFiaAppealPage;
   const needsMemberDirectory = isCompetitionPage || isDriverProfilePage || isTeamSummaryPage || isTeamRegistrationPage || isTeamScoutPage || isFiaAppealPage;
@@ -62,7 +63,7 @@ export function createStage5QueryPlan(group: string, tab: string, detail: string
     isTeamSummaryPage, isTeamRegistrationPage, isTeamScoutPage, isTeamJobPage, isFinancialPage,
     isMemberAppealPage, isFiaAppealPage, isMainAnnouncementPage, isMainRegulationPage,
     isMainJobSearchPage, isFiaContentFormPage, isDriverProfilePage, isCompetitionPage,
-    isCompetitionSchedulePage, needsSeasonData, needsTeamData, needsMemberDirectory,
+    isCompetitionSchedulePage, needsOwnIdentity, needsSeasonData, needsTeamData, needsMemberDirectory,
     needsDirectoryAvatars, needsDivisionData, needsRoundData, needsRoundPoints,
     needsFinalStandings, needsRegistrationData, needsRaceResults, needsResultEntries,
     needsTeamProfiles, needsAttributes, needsAchievements, needsEngineData, needsJobAdverts,
