@@ -9,7 +9,7 @@ type Band={license_label:string;license_tier:string;sort_order:number};
 type WalletRow={id:string;account_kind:string;member_id:string|null;team_id:string|null;balance:number;display_name:string;is_active:boolean};
 type Audit={id:string;member_id:string;previous_license:string|null;new_license:string;reason:string;created_at:string};
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
-export default function AdminAdjustmentCenter({_session}:{session:Session}){
+export default function AdminAdjustmentCenter(_props:{session:Session}){
  const [drivers,setDrivers]=useState<Driver[]>([]),[bands,setBands]=useState<Band[]>([]),[wallets,setWallets]=useState<WalletRow[]>([]),[audit,setAudit]=useState<Audit[]>([]);
  const [driverId,setDriverId]=useState(""),[license,setLicense]=useState(""),[licenseReason,setLicenseReason]=useState("");
  const [walletKind,setWalletKind]=useState<"driver"|"team_owner"|"team">("driver"),[walletId,setWalletId]=useState(""),[amount,setAmount]=useState(""),[reason,setReason]=useState("");
