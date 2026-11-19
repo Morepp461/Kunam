@@ -140,6 +140,8 @@ declare
   v_max numeric;
   v_contract_id uuid;
   v_term_id uuid;
+  v_season record;
+  v_count integer:=0;
 begin
   if (select auth.uid()) is null then raise exception 'Authentication required.'; end if;
   select member_id into v_member_id from public.profiles where user_id=(select auth.uid());
@@ -159,17 +161,30 @@ begin
     if v_min is null or v_offer.proposed_salary<v_min or v_offer.proposed_salary>v_max then
       raise exception 'Salary band lisensi berubah. Minta Team Owner mengirim penawaran baru.';
     end if;
-    if exists(select 1 from public.economy_driver_contracts
-      where season_id=v_offer.renewal_season_id and member_id=v_member_id and status='active') then
-      raise exception 'Driver sudah memiliki kontrak aktif pada season renewal.';
-    end if;
     insert into public.caleris_driver_contract_terms(first_season_id,team_id,member_id,annual_salary,duration_seasons,created_by)
     values(v_offer.renewal_season_id,v_offer.team_id,v_member_id,v_offer.proposed_salary,
       greatest(1,coalesce(v_offer.duration_seasons,1)),(select auth.uid()))
     returning id into v_term_id;
-    insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
-    values(v_offer.renewal_season_id,v_offer.team_id,v_member_id,v_offer.proposed_salary,'active',(select auth.uid()))
-    returning id into v_contract_id;
+    for v_season in
+      select id from public.license_seasons
+      where starts_on >= (select starts_on from public.license_seasons where id=v_offer.renewal_season_id)
+        and status in ('draft','active')
+      order by starts_on
+      limit greatest(1,coalesce(v_offer.duration_seasons,1))
+    loop
+      if exists(select 1 from public.economy_driver_contracts
+        where season_id=v_season.id and member_id=v_member_id and status='active') then
+        raise exception 'Driver sudah memiliki kontrak aktif pada salah satu season dalam durasi renewal.';
+      end if;
+      insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
+      values(v_season.id,v_offer.team_id,v_member_id,v_offer.proposed_salary,'active',(select auth.uid()))
+      returning id into v_contract_id;
+      if v_count=0 then
+        v_count:=1;
+      else
+        v_count:=v_count+1;
+      end if;
+    end loop;
   end if;
 
   update public.caleris_driver_renewal_offers
