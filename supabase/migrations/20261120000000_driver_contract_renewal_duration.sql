@@ -43,7 +43,9 @@ begin
       and not exists(select 1 from public.economy_driver_contracts c
         where c.season_id=new.id and c.member_id=v_term.member_id) then
       insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
-      values(new.id,v_term.team_id,v_term.member_id,v_term.annual_salary,'active',v_term.created_by);
+      values(new.id,v_term.team_id,v_term.member_id,v_term.annual_salary,'active',v_term.created_by)
+      on conflict(season_id,member_id) do update set
+        team_id=excluded.team_id,annual_salary=excluded.annual_salary,status='active',created_by=excluded.created_by;
     end if;
     if v_season_index>=v_term.duration_seasons then
       update public.caleris_driver_contract_terms set status='completed' where id=v_term.id;
@@ -178,6 +180,8 @@ begin
       end if;
       insert into public.economy_driver_contracts(season_id,team_id,member_id,annual_salary,status,created_by)
       values(v_season.id,v_offer.team_id,v_member_id,v_offer.proposed_salary,'active',(select auth.uid()))
+      on conflict(season_id,member_id) do update set
+        team_id=excluded.team_id,annual_salary=excluded.annual_salary,status='active',created_by=excluded.created_by
       returning id into v_contract_id;
       if v_count=0 then
         v_count:=1;
