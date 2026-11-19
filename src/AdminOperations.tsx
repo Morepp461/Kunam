@@ -5,6 +5,7 @@ import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 import TeamMerchandise from "./TeamMerchandise";
+import AdminEngineMarket from "./AdminEngineMarket";
 
 type TaxRule={id:string;tax_type:"wealth"|"driver_transfer";tax_scope:"member"|"team";label:string;minimum_base:number;rate_percent:number;is_active:boolean;sort_order:number};
 type WealthAssessment={id:string;season_id:string;target_kind:"member"|"team";member_id:string|null;team_id:string|null;wallet_balance_snapshot:number;applied_rate:number;tax_amount:number;status:string;assessed_at:string};
@@ -210,6 +211,7 @@ export default function AdminOperations({session}:{session:Session}){
   </div>}
   {notice&&<div className="license-notice" role="status">{notice}</div>}
   <TeamMerchandise teamId={null} isOwner={false} isAdmin={true} />
+  <AdminEngineMarket/>
   <div className="economy-security-note"><ShieldCheck size={17}/><p>Semua nilai disimpan sebagai konfigurasi/data operasional. Modul ini tidak mengaktifkan pungutan atau payout otomatis dan tidak mengubah ledger sampai workflow transaksinya disahkan.</p></div>
  </section>;
 }
