@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { Link } from "react-router-dom";
 import { ArrowLeft, RefreshCw, ShieldCheck, Wallet, Award } from "lucide-react";
@@ -47,7 +48,7 @@ export default function AdminAdjustments({ session }: { session: Session }) {
 
   useEffect(() => { void load(); }, [load]);
 
-  const assignLicense = async (event: React.FormEvent<HTMLFormElement>) => {
+  const assignLicense = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!supabase || !memberId || !licenseLabel || licenseReason.trim().length < 3) return;
     setSavingLicense(true); setNotice(null);
