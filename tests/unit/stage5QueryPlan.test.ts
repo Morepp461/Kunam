@@ -4,6 +4,7 @@ import { createStage5QueryPlan } from "../../src/lib/stage5QueryPlan";
 describe("Stage5 route-scoped data plan", () => {
   it("keeps unrelated economy and sponsorship queries out of competition pages", () => {
     const plan = createStage5QueryPlan("main-event", "global", "", true);
+    expect(plan.needsOwnIdentity).toBe(false);
     expect(plan.needsRaceResults).toBe(true);
     expect(plan.needsResultEntries).toBe(true);
     expect(plan.needsRoundPoints).toBe(true);
@@ -21,6 +22,7 @@ describe("Stage5 route-scoped data plan", () => {
   });
   it("loads driver profile data without financial transaction history", () => {
     const plan = createStage5QueryPlan("driver-panel", "character", "");
+    expect(plan.needsOwnIdentity).toBe(true);
     expect(plan.needsAttributes).toBe(true);
     expect(plan.needsWallets).toBe(true);
     expect(plan.needsDriverReputation).toBe(true);
