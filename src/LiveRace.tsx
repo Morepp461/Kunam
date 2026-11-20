@@ -633,7 +633,7 @@ export default function LiveRace() {
           {(controlState?.penalties ?? []).map((penalty) => <article key={penalty.id}>
             <div><strong>{penalty.type.replaceAll("_"," ").toUpperCase()} · {penalty.driverId}</strong><small>{penalty.reason} · {penalty.ratifiedByAdminId ? "RATIFIED" : "PENDING ADMIN RATIFICATION"}{penalty.reversedByEventId ? " · REVERSED" : ""}</small></div>
             {!penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_ratify_penalty", { penaltyId: penalty.id })}>Ratify</button>}
-            {penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_reverse_penalty", { penaltyId: penalty.id, supersedesEventId: controlState.events.find((event) => event.action==="penalty_issued" && event.penaltyId===penalty.id)?.id ?? "" })}>Reverse</button>}
+            {penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_reverse_penalty", { penaltyId: penalty.id, supersedesEventId: controlState?.events.find((event) => event.action==="penalty_issued" && event.penaltyId===penalty.id)?.id ?? "" })}>Reverse</button>}
           </article>)}
           {!controlState?.penalties.length && <p className="race-engine-empty">Belum ada keputusan penalti.</p>}
         </div>
