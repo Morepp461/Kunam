@@ -92,6 +92,34 @@ describe("Race physics calibration profiles", () => {
     expect(validatePhysicsCalibrationProfile(conflated).errors.some((error) => error.includes("separate from Mistake Rate"))).toBe(true);
   });
 
+  it("keeps the four Aggression/Mistake Rate combinations independently observable", () => {
+    const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
+    const profile = createProfile();
+    const evaluate = (aggression: number, mistakeRate: number) => evaluateAttributeInfluences({
+      ...fixture.entrants[0],
+      driverAttributes: {
+        ...fixture.entrants[0].driverAttributes,
+        aggression,
+        mistake_rate: mistakeRate
+      }
+    }, profile);
+
+    const measured = evaluate(60, 50);
+    const cautious = evaluate(50, 60);
+    const combined = evaluate(60, 60);
+    const baseline = evaluate(50, 50);
+
+    expect(measured.overtake_advantage_per_point).toBeGreaterThan(baseline.overtake_advantage_per_point);
+    expect(measured.defense_advantage_per_point).toBeGreaterThan(baseline.defense_advantage_per_point);
+    expect(measured.mistake_probability_per_point).toBe(baseline.mistake_probability_per_point);
+    expect(cautious.mistake_probability_per_point).toBeGreaterThan(baseline.mistake_probability_per_point);
+    expect(cautious.overtake_advantage_per_point).toBe(baseline.overtake_advantage_per_point);
+    expect(cautious.defense_advantage_per_point).toBe(baseline.defense_advantage_per_point);
+    expect(combined.overtake_advantage_per_point).toBe(measured.overtake_advantage_per_point);
+    expect(combined.defense_advantage_per_point).toBe(measured.defense_advantage_per_point);
+    expect(combined.mistake_probability_per_point).toBe(cautious.mistake_probability_per_point);
+  });
+
   it("applies Aggression only when an eligible attack or defence duel exists", () => {
     const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
     const profile = createProfile();
