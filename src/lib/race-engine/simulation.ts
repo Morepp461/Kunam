@@ -118,6 +118,7 @@ export interface RaceSimulationEvent {
   readonly raceControlFlag?: RaceControlFlag;
   readonly restartMode?: "standing" | "rolling";
   readonly restartPolicy?: "last_valid_classification";
+  readonly controlAction?: string;
 }
 
 export interface EntrantSimulationState {
@@ -714,6 +715,32 @@ export class RaceSimulation {
       incidentId,
       restartMode: mode,
       restartPolicy: policy
+    });
+  }
+
+  recordExternalRaceControlEvent(input: {
+    readonly id: string;
+    readonly action: string;
+    readonly flag?: RaceControlFlag;
+    readonly flagDurationMs?: number;
+    readonly restartMode?: "standing" | "rolling";
+    readonly restartPolicy?: "last_valid_classification";
+  }): void {
+    if (!input.id.trim() || !input.action.trim()) throw new Error("Race-control event ID and action are required");
+    const incidentId = `manual-control:${input.id}`;
+    if (this.mutableEvents.some((event) => event.incidentId === incidentId)) return;
+    const leader = this.classification[0];
+    this.mutableEvents.push({
+      sequence: this.mutableEvents.length + 1,
+      type: "race_control",
+      lapNumber: leader?.lapCompleted ?? 0,
+      simulationTimeMs: this.simulationClockMsValue,
+      ...(input.flag ? { raceControlFlag: input.flag } : {}),
+      ...(input.flagDurationMs !== undefined ? { durationMs: input.flagDurationMs } : {}),
+      ...(input.restartMode ? { restartMode: input.restartMode } : {}),
+      ...(input.restartPolicy ? { restartPolicy: input.restartPolicy } : {}),
+      controlAction: input.action,
+      incidentId
     });
   }
 
