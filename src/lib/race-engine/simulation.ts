@@ -11,6 +11,13 @@ import type {
 } from "./contracts";
 import { SeededRandom } from "./random";
 import type { RandomGeneratorState } from "./random";
+import {
+  advanceTyreState,
+  createInitialTyreState,
+  createTyreSegmentInput,
+  getTyreSegmentEnvironment
+} from "./tyres";
+import type { TyreSimulationModel, TyreState } from "./tyres";
 
 export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 2;
 
@@ -28,6 +35,7 @@ export interface SegmentPerformanceContext {
   readonly segmentDistanceMeters: number;
   readonly segment: CircuitSegmentSnapshot;
   readonly baseSegmentTimeMs: number;
+  readonly tyreState: TyreState | null;
 }
 
 export interface SegmentPerformanceModel {
@@ -50,6 +58,9 @@ export interface RaceSimulationConfig {
   readonly performanceModelId: string;
   readonly performanceModelVersion: string;
   readonly performanceModelSnapshot: JsonValue;
+  readonly tyreModelId: string | null;
+  readonly tyreModelVersion: string | null;
+  readonly tyreModelSnapshot: JsonValue | null;
 }
 
 export interface RaceSimulationEvent {
@@ -70,6 +81,7 @@ export interface EntrantSimulationState {
   readonly segmentIndex: number;
   readonly elapsedMs: number;
   readonly finished: boolean;
+  readonly tyreState?: TyreState;
 }
 
 export interface RaceClassificationEntry {
@@ -88,6 +100,7 @@ interface MutableEntrantState {
   segmentIndex: number;
   elapsedMs: number;
   finished: boolean;
+  tyreState?: TyreState;
 }
 
 export interface RaceSimulationCheckpoint {
@@ -116,6 +129,21 @@ function assertConfig(config: RaceSimulationConfig): void {
   }
   if (!config.performanceModelId.trim() || !config.performanceModelVersion.trim()) {
     throw new Error("Performance model ID and version are required");
+  }
+  const hasTyreModel = config.tyreModelId !== null &&
+    config.tyreModelVersion !== null &&
+    config.tyreModelSnapshot !== null;
+  const hasPartialTyreModel = config.tyreModelId === null ||
+    config.tyreModelVersion === null ||
+    config.tyreModelSnapshot === null;
+  if (!hasTyreModel && !hasPartialTyreModel) {
+    throw new Error("Tyre model configuration is invalid");
+  }
+  if (
+    config.tyreModelId !== null && !config.tyreModelId.trim() ||
+    config.tyreModelVersion !== null && !config.tyreModelVersion.trim()
+  ) {
+    throw new Error("Tyre model ID and version must not be empty");
   }
 }
 
@@ -165,6 +193,7 @@ export class RaceSimulation {
 
   private random: SeededRandom;
   private readonly performanceModel: SegmentPerformanceModel;
+  private readonly tyreModel?: TyreSimulationModel;
   private readonly mutableEntrants: MutableEntrantState[];
   private readonly mutableEvents: RaceSimulationEvent[] = [];
   private statusValue: RaceSimulationStatus = "running";
@@ -176,16 +205,21 @@ export class RaceSimulation {
       config?: Partial<RaceSimulationConfig>;
       performanceModel?: SegmentPerformanceModel;
       randomState?: RandomGeneratorState;
+      tyreModel?: TyreSimulationModel;
     }
   ) {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
     this.snapshot = immutableSnapshot;
     this.performanceModel = options?.performanceModel ?? NEUTRAL_PERFORMANCE_MODEL;
+    this.tyreModel = options?.tyreModel;
     const config: RaceSimulationConfig = {
       noiseAmplitudeMs: options?.config?.noiseAmplitudeMs ?? 0,
       performanceModelId: this.performanceModel.id,
       performanceModelVersion: this.performanceModel.version,
-      performanceModelSnapshot: cloneJsonValue(this.performanceModel.snapshot)
+      performanceModelSnapshot: cloneJsonValue(this.performanceModel.snapshot),
+      tyreModelId: this.tyreModel?.id ?? null,
+      tyreModelVersion: this.tyreModel?.version ?? null,
+      tyreModelSnapshot: this.tyreModel ? cloneJsonValue(this.tyreModel.snapshot) : null
     };
     if (options?.config?.performanceModelId && options.config.performanceModelId !== config.performanceModelId) {
       throw new Error("Configured performance model ID does not match the injected model");
@@ -199,24 +233,74 @@ export class RaceSimulation {
     ) {
       throw new Error("Configured performance model snapshot does not match the injected model");
     }
+    if (
+      options?.config?.tyreModelId !== undefined &&
+      options.config.tyreModelId !== config.tyreModelId
+    ) {
+      throw new Error("Configured tyre model ID does not match the injected model");
+    }
+    if (
+      options?.config?.tyreModelVersion !== undefined &&
+      options.config.tyreModelVersion !== config.tyreModelVersion
+    ) {
+      throw new Error("Configured tyre model version does not match the injected model");
+    }
+    if (
+      options?.config?.tyreModelSnapshot !== undefined &&
+      canonicalJson(options.config.tyreModelSnapshot) !== canonicalJson(config.tyreModelSnapshot)
+    ) {
+      throw new Error("Configured tyre model snapshot does not match the injected model");
+    }
     assertConfig(config);
     this.config = deepFreeze(config);
     this.random = options?.randomState
       ? SeededRandom.restore(options.randomState)
       : new SeededRandom(immutableSnapshot.seed);
-    this.mutableEntrants = immutableSnapshot.entrants.map((entrant) => ({
+    if (this.tyreModel) {
+      const entrantIds = new Set(immutableSnapshot.entrants.map((entrant) => entrant.driverId));
+      const configuredIds = Object.keys(this.tyreModel.startingCompounds);
+      if (
+        configuredIds.length !== entrantIds.size ||
+        configuredIds.some((id) => !entrantIds.has(id))
+      ) {
+        throw new Error("Tyre model must define exactly one starting compound for every race entrant");
+      }
+      for (let lap = 1; lap <= immutableSnapshot.circuit.totalLaps; lap += 1) {
+        for (const segment of immutableSnapshot.circuit.segments) {
+          getTyreSegmentEnvironment(this.tyreModel, lap, segment.id);
+        }
+      }
+    }
+    this.mutableEntrants = immutableSnapshot.entrants.map((entrant) => {
+      const firstSegment = immutableSnapshot.circuit.segments[0];
+      const firstEnvironment = this.tyreModel
+        ? getTyreSegmentEnvironment(this.tyreModel, 1, firstSegment.id)
+        : undefined;
+      const tyreState = this.tyreModel && firstEnvironment
+        ? createInitialTyreState(
+            this.tyreModel.startingCompounds[entrant.driverId],
+            firstEnvironment.trackWetness,
+            firstEnvironment.surfaceTempC,
+            firstEnvironment.carcassTempC,
+            this.tyreModel.profile
+          )
+        : undefined;
+      return ({
       driverId: entrant.driverId,
       teamId: entrant.teamId,
       lapCompleted: 0,
       segmentIndex: 0,
       elapsedMs: 0,
-      finished: false
-    }));
+      finished: false,
+      ...(tyreState ? { tyreState } : {})
+    });
+    });
   }
 
   static restore(
     checkpoint: RaceSimulationCheckpoint,
-    performanceModel: SegmentPerformanceModel = NEUTRAL_PERFORMANCE_MODEL
+    performanceModel: SegmentPerformanceModel = NEUTRAL_PERFORMANCE_MODEL,
+    tyreModel?: TyreSimulationModel
   ): RaceSimulation {
     if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION) {
       throw new Error("Unsupported simulation checkpoint schema version");
@@ -234,12 +318,24 @@ export class RaceSimulation {
     ) {
       throw new Error("Checkpoint requires the same performance model ID and version");
     }
+    const checkpointHasTyreModel = checkpoint.config.tyreModelId !== null;
+    if (checkpointHasTyreModel !== Boolean(tyreModel)) {
+      throw new Error("Checkpoint requires the same tyre simulation model");
+    }
+    if (tyreModel && (
+      checkpoint.config.tyreModelId !== tyreModel.id ||
+      checkpoint.config.tyreModelVersion !== tyreModel.version ||
+      canonicalJson(checkpoint.config.tyreModelSnapshot) !== canonicalJson(tyreModel.snapshot)
+    )) {
+      throw new Error("Checkpoint tyre model ID, version, or snapshot does not match");
+    }
     const validation = validateRaceStartSnapshot(checkpoint.snapshot);
     if (!validation.valid) throw new Error(`Checkpoint snapshot is invalid: ${validation.errors.join("; ")}`);
 
     const simulation = new RaceSimulation(checkpoint.snapshot, {
       config: checkpoint.config,
       performanceModel,
+      tyreModel,
       randomState: checkpoint.randomState
     });
     const maxTicks = simulation.snapshot.circuit.totalLaps * simulation.snapshot.circuit.segments.length;
@@ -271,6 +367,21 @@ export class RaceSimulation {
         state.elapsedMs < 0
       ) {
         throw new Error(`Checkpoint state for ${state.driverId} is invalid`);
+      }
+      if (simulation.tyreModel) {
+        if (!state.tyreState || state.tyreState.compound !== simulation.tyreModel.startingCompounds[state.driverId]) {
+          throw new Error(`Checkpoint tyre state for ${state.driverId} is missing or has an unexpected compound`);
+        }
+        if (
+          !Number.isFinite(state.tyreState.wearPercent) || state.tyreState.wearPercent < 0 || state.tyreState.wearPercent > 100 ||
+          !Number.isFinite(state.tyreState.distanceDrivenMeters) || state.tyreState.distanceDrivenMeters < 0 ||
+          !Number.isFinite(state.tyreState.surfaceTempC) || !Number.isFinite(state.tyreState.carcassTempC) ||
+          !Number.isFinite(state.tyreState.gripPercent) || state.tyreState.gripPercent < 0 || state.tyreState.gripPercent > 100
+        ) {
+          throw new Error(`Checkpoint tyre state for ${state.driverId} is invalid`);
+        }
+      } else if (state.tyreState !== undefined) {
+        throw new Error(`Checkpoint contains unexpected tyre state for ${state.driverId}`);
       }
       if (state.finished && state.lapCompleted !== simulation.snapshot.circuit.totalLaps) {
         throw new Error(`Finished driver ${state.driverId} has not completed the race distance`);
@@ -394,7 +505,8 @@ export class RaceSimulation {
         segmentIndex: state.segmentIndex,
         segmentDistanceMeters: segment.distanceMeters,
         segment,
-        baseSegmentTimeMs
+        baseSegmentTimeMs,
+        tyreState: state.tyreState ?? null
       });
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
@@ -404,6 +516,22 @@ export class RaceSimulation {
         : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
       if (durationMs <= 0) throw new Error(`Segment duration must be positive for ${state.driverId}`);
+
+      if (this.tyreModel && state.tyreState) {
+        const environment = getTyreSegmentEnvironment(
+          this.tyreModel,
+          state.lapCompleted + 1,
+          segment.id
+        );
+        const tyreInput = createTyreSegmentInput(
+          environment,
+          segment.distanceMeters,
+          entrant.driverAttributes.tyre_management,
+          entrant.carTeamAttributes.team_tyre_management,
+          entrant.carTeamAttributes.car_tyre_wear
+        );
+        state.tyreState = advanceTyreState(state.tyreState, tyreInput, this.tyreModel.profile);
+      }
 
       state.elapsedMs += durationMs;
       appendEvent({
@@ -489,7 +617,10 @@ export class RaceSimulation {
       snapshot: this.snapshot as RaceStartSnapshot,
       config: {
         ...this.config,
-        performanceModelSnapshot: cloneJsonValue(this.config.performanceModelSnapshot)
+        performanceModelSnapshot: cloneJsonValue(this.config.performanceModelSnapshot),
+        tyreModelSnapshot: this.config.tyreModelSnapshot === null
+          ? null
+          : cloneJsonValue(this.config.tyreModelSnapshot)
       },
       randomState: this.random.snapshot(),
       status: this.statusValue,
