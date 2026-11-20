@@ -132,12 +132,21 @@ export function validatePhysicsCalibrationProfile(
       continue;
     }
     validateWeightMap(`attributes.${definition.id}`, weights, true, errors);
-    if (
-      definition.id === "driver.mistake_rate" &&
-      typeof weights.mistake_probability_per_point === "number" &&
-      weights.mistake_probability_per_point < 0
-    ) {
-      errors.push("Mistake Rate must not reduce mistake probability when its rating increases");
+    if (definition.id === "driver.aggression") {
+      const hasDuelInfluence =
+        (typeof weights.overtake_advantage_per_point === "number" && weights.overtake_advantage_per_point !== 0) ||
+        (typeof weights.defense_advantage_per_point === "number" && weights.defense_advantage_per_point !== 0);
+      if (!hasDuelInfluence) {
+        errors.push("Aggression must have a measurable attack or defence duel influence");
+      }
+      if (weights.mistake_probability_per_point !== undefined) {
+        errors.push("Aggression must remain separate from Mistake Rate risk probability");
+      }
+    }
+    if (definition.id === "driver.mistake_rate") {
+      if (typeof weights.mistake_probability_per_point !== "number" || weights.mistake_probability_per_point <= 0) {
+        errors.push("Mistake Rate must increase risk probability when its rating increases");
+      }
     }
     if (
       definition.id === "car_team.reliability" &&
