@@ -19,6 +19,10 @@ assert 'setLicenseOptions((b.data||[]).filter(row=>row.license_label!=="A").map(
 assert 'supabase.from("caleris_driver_salary_bands").select("license_label,sort_order").order("sort_order")' in JOB_SEARCH
 assert 'value={license} onChange={e=>setLicense(e.target.value)}' in JOB_SEARCH
 assert '<option value="">Semua lisensi</option>' in JOB_SEARCH
+assert "licenseOptions.length<=4? <fieldset" not in JOB_SEARCH
+assert "licenseOptions.length<=4?" in JOB_SEARCH
+assert 'type="radio" name="minimum-license"' in JOB_SEARCH
+assert ".market-license-options>label.is-selected" in CONTROLS
 assert 'Minimal lisensi <span className="market-filter-hint">Opsional' in JOB_SEARCH
 assert '<label>Minimal lisensi<input' not in JOB_SEARCH
 
