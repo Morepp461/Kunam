@@ -64,7 +64,7 @@ describe("Race Engine team HQ effect snapshots", () => {
       race_pace_bonus: 2
     });
     expect(result.unresolvedFacilityKeys).toEqual(["pit_crew_training_center"]);
-    expect(validateTeamHqRaceEffectSnapshot(result.snapshot)).toEqual([]);
+    expect(validateTeamHqRaceEffectSnapshot(result.snapshot)).toContain("HQ facilities have no configured race effect: pit_crew_training_center");
   });
 
   it("enforces division-specific facility limits and required configuration", () => {
