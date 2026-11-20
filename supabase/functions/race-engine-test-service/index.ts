@@ -137,7 +137,7 @@ async function processBackgroundBatch() {
     .limit(3);
   if (listError) throw listError;
 
-  const processed: Array<Record<string, unknown>> = [];
+  const processed: Array<{ status: string; [key: string]: unknown }> = [];
   for (const session of sessions ?? []) {
     const { data: controlRows, error: controlError } = await service
       .from("race_engine_test_control_events")
