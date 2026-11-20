@@ -8,6 +8,7 @@ import {
 } from "../../src/lib/race-engine/attributes";
 import {
   createImmutableRaceStartSnapshot,
+  MAX_RACE_ENTRANTS,
   RACE_ENGINE_VERSION,
   validateRaceStartSnapshot
 } from "../../src/lib/race-engine/contracts";
@@ -107,6 +108,22 @@ describe("Race start snapshot validation", () => {
     expect(Object.isFrozen(frozen.circuit.segments)).toBe(true);
     expect(Object.isFrozen(frozen.circuit.layout)).toBe(true);
     expect(Object.isFrozen(frozen.entrants[0].driverAttributes)).toBe(true);
+  });
+
+  it("enforces the PRD maximum of 25 drivers per division", () => {
+    expect(MAX_RACE_ENTRANTS).toBe(25);
+    const snapshot = validSnapshot();
+    const entrants = Array.from({ length: MAX_RACE_ENTRANTS + 1 }, (_, index) => ({
+      ...snapshot.entrants[0],
+      driverId: `driver-${index + 1}`,
+      teamId: `team-${Math.floor(index / 2) + 1}`,
+      driverNameSnapshot: `Driver ${index + 1}`,
+      teamNameSnapshot: `Team ${Math.floor(index / 2) + 1}`,
+      startingGridPosition: index + 1
+    }));
+    const result = validateRaceStartSnapshot({ ...snapshot, entrants });
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain("Race cannot contain more than 25 drivers in one division");
   });
 
   it("rejects duplicate drivers and unsupported schema versions", () => {
