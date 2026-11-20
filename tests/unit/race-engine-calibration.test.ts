@@ -220,7 +220,7 @@ describe("Race physics calibration profiles", () => {
       }
     };
     expect(model.calculatePitStrategyAdjustments?.(entrant)).toEqual({
-      strategyQualityAdjustmentMs: -30,
+      strategyQualityRiskMultiplier: -0.3,
       pitStopTimeAdjustmentMs: -100
     });
   });
