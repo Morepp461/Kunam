@@ -74,6 +74,19 @@ describe("Race physics calibration profiles", () => {
     expect(validatePhysicsCalibrationProfile(invalid).errors.some((error) => error.includes("Mistake Rate"))).toBe(true);
   });
 
+
+  it("enforces higher Reliability as a protective factor for mechanical failures", () => {
+    const profile = createProfile();
+    const invalid = {
+      ...profile,
+      attributes: {
+        ...profile.attributes,
+        "car_team.reliability": { mechanical_failure_probability_per_point: 0.01 }
+      }
+    };
+    expect(validatePhysicsCalibrationProfile(invalid).errors.some((error) => error.includes("Reliability"))).toBe(true);
+  });
+
   it("calculates attribute and explicitly configured HQ influences from the profile", () => {
     const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
     const entrant = {
