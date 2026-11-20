@@ -251,7 +251,7 @@ export function createCalibratedPerformanceModel(
     calculatePitStrategyAdjustments: (entrant: RaceEntrantSnapshot) => {
       const totals = evaluateAttributeInfluencesUnchecked(entrant, snapshot);
       return {
-        strategyQualityAdjustmentMs: totals.strategy_quality_per_point,
+        strategyQualityRiskMultiplier: totals.strategy_quality_per_point,
         pitStopTimeAdjustmentMs: totals.pit_stop_time_ms_per_point
       };
     }
