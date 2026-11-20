@@ -24,6 +24,43 @@ describe("Race Engine Lab synthetic service profiles", () => {
     expect(controlledElapsed).toBeGreaterThan(baselineElapsed);
   });
 
+  it("projects external flags and penalty decisions into replay exactly once", () => {
+    const snapshot = createSyntheticRaceFixture({
+      seed: 61124,
+      driverCount: 4,
+      teamCount: 2,
+      totalLaps: 3
+    });
+    const models = createRaceEngineTestModels(snapshot);
+    const simulation = new RaceSimulation(snapshot, models);
+
+    simulation.recordExternalRaceControlEvent({
+      id: "rc-flag-1",
+      action: "flag_deployed",
+      flag: "safety_car",
+      flagDurationMs: 5000
+    });
+    simulation.recordExternalRaceControlEvent({
+      id: "rc-penalty-2",
+      action: "penalty_issued"
+    });
+    simulation.recordExternalRaceControlEvent({
+      id: "rc-flag-1",
+      action: "flag_deployed",
+      flag: "safety_car",
+      flagDurationMs: 5000
+    });
+
+    expect(simulation.events.filter((event) => event.incidentId === "manual-control:rc-flag-1")).toHaveLength(1);
+    expect(simulation.events.find((event) => event.incidentId === "manual-control:rc-flag-1")).toMatchObject({
+      type: "race_control",
+      raceControlFlag: "safety_car",
+      durationMs: 5000,
+      controlAction: "flag_deployed"
+    });
+    expect(simulation.events.find((event) => event.incidentId === "manual-control:rc-penalty-2")?.controlAction).toBe("penalty_issued");
+  });
+
   it("records standing and rolling restarts in the replay event timeline without changing the last valid order", () => {
     const snapshot = createSyntheticRaceFixture({
       seed: 61123,
