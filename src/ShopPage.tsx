@@ -6,7 +6,7 @@ export default function ShopPage({session}:{session:Session}){
  void session;
  return <section className="workspace development-shop-page">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
-  <header className="page-heading"><span className="section-eyebrow">CALERIS MARKETPLACE</span><h1 className="page-title">Shop</h1><p className="page-description">Marketplace CALERIS sedang disiapkan. Item baru akan diumumkan di sini.</p></header>
+  <header className="page-heading"><span className="section-eyebrow">CALERIS MARKETPLACE</span><h1 className="page-title">Shop</h1><p className="page-description">Item Shop tidak dapat dibeli saat ini. Marketplace CALERIS sedang disiapkan.</p></header>
   <section className="workspace-card shop-upcoming-card" aria-label="Shop upcoming">
    <span className="shop-upcoming-orbit shop-upcoming-orbit-one"/>
    <span className="shop-upcoming-orbit shop-upcoming-orbit-two"/>
