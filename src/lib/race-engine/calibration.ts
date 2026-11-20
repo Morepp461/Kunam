@@ -2,7 +2,7 @@ import {
   ATTRIBUTE_SCHEMA_VERSION,
   RACE_ATTRIBUTE_DEFINITIONS
 } from "./attributes";
-import type { JsonValue, RaceEntrantSnapshot, CircuitSegmentSnapshot } from "./contracts";
+import type { JsonValue, RaceEntrantSnapshot } from "./contracts";
 import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation";
 
 export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 1;
