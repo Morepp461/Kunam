@@ -160,6 +160,7 @@ describe("Tyre state integration with race simulation checkpoints", () => {
 
     const checkpoint = simulation.createCheckpoint();
     expect(checkpoint.config.pitModelSnapshot).toEqual(pitModel.snapshot);
+    expect(checkpoint.simulationClockMs).toBe(Math.max(...simulation.entrantStates.map((state) => state.elapsedMs)));
     const restored = RaceSimulation.restore(checkpoint, undefined, tyreModel, undefined, pitModel);
     simulation.runToCompletion();
     restored.runToCompletion();
