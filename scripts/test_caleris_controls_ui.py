@@ -66,3 +66,10 @@ assert "rgba(111,25,43,.98)" in WORKSPACE
 assert "panel-feature-card:before" in WORKSPACE
 
 print("CALERIS custom dropdown, account hub, global search and red page-card regression checks passed.")
+
+EDGE = (ROOT / "supabase" / "functions" / "member-directory" / "index.ts").read_text(encoding="utf-8")
+assert 'select("id,role,character_name")' in EDGE
+assert 'from("caleris_announcements")' in EDGE
+assert 'from("caleris_sponsorship_story_events")' in EDGE
+assert 'PAGES & CONTENT' in APP
+print("CALERIS custom dropdown, account hub, global search, content indexing and red page-card regression checks passed.")
