@@ -5,6 +5,26 @@ import { RaceSimulation } from "./race-engine/simulation.ts";
 import type { RaceSimulationCheckpoint } from "./race-engine/simulation.ts";
 import { createSyntheticRaceFixture } from "./race-engine/synthetic-fixture.ts";
 import { createRaceEngineTestModels } from "./race-engine/test-profiles.ts";
+import {
+  authorizeRaceRestart,
+  clearRaceControlFlag,
+  createInitialRaceControlState,
+  deployRaceControlFlag,
+  issueRacePenalty,
+  ratifyRacePenalty,
+  reverseRacePenalty,
+  validateRaceControlAuditTrail
+} from "./race-engine/race-control.ts";
+import type {
+  RaceControlAuditEvent,
+  RaceControlCommandContext,
+  RaceControlEvidence,
+  RaceControlFlag,
+  RaceControlPenalty,
+  RaceControlState,
+  RacePenaltyType,
+  RaceRestartMode
+} from "./race-engine/race-control.ts";
 
 const TEST_URL = Deno.env.get("SUPABASE_URL")!;
 const TEST_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -141,6 +161,114 @@ async function processBackgroundBatch() {
   }
 
   return { processed, checkedAt: new Date().toISOString() };
+}
+
+
+async function loadRaceControlContext(sessionId: string, userId: string) {
+  const { data: session, error: sessionError } = await service
+    .from("race_engine_test_sessions")
+    .select("id,created_by,checkpoint,status")
+    .eq("id", sessionId)
+    .eq("created_by", userId)
+    .maybeSingle();
+  if (sessionError) throw sessionError;
+  if (!session) throw new Error("Sesi simulasi tidak ditemukan.");
+
+  const { data: eventRows, error: eventError } = await service
+    .from("race_engine_test_control_events")
+    .select("sequence,payload")
+    .eq("session_id", sessionId)
+    .order("sequence", { ascending: true });
+  if (eventError) throw eventError;
+
+  const events = (eventRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+  const penaltiesById = new Map<string, RaceControlPenalty>();
+  for (const event of events) {
+    if (event.action === "penalty_issued" && event.penaltyId && event.driverId && event.penaltyType) {
+      penaltiesById.set(event.penaltyId, {
+        id: event.penaltyId,
+        raceId: sessionId,
+        driverId: event.driverId,
+        type: event.penaltyType,
+        durationMs: event.penaltyDurationMs ?? null,
+        gridPositions: event.penaltyGridPositions ?? null,
+        reason: event.reason,
+        evidence: event.evidence,
+        issuedBy: event.actorId,
+        issuedAt: event.occurredAt,
+        ratifiedByAdminId: null,
+        reversedByEventId: null
+      });
+    } else if (event.action === "penalty_ratified" && event.penaltyId) {
+      const previous = penaltiesById.get(event.penaltyId);
+      if (previous) penaltiesById.set(event.penaltyId, { ...previous, ratifiedByAdminId: event.actorId });
+    } else if (event.action === "penalty_reversed" && event.penaltyId) {
+      const previous = penaltiesById.get(event.penaltyId);
+      if (previous) penaltiesById.set(event.penaltyId, { ...previous, reversedByEventId: event.id });
+    }
+  }
+
+  const simulation = restoreSimulation(session.checkpoint as RaceSimulationCheckpoint);
+  const initial = createInitialRaceControlState(sessionId, simulation.classification);
+  const lastFlagEvent = [...events].reverse().find((event) => event.flag !== undefined);
+  const lastSuspensionEvent = [...events].reverse().find((event) =>
+    event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+  );
+  const suspended = lastSuspensionEvent?.action === "race_suspended";
+  const state: RaceControlState = Object.freeze({
+    ...initial,
+    flag: lastFlagEvent?.flag ?? "green",
+    suspended,
+    restartPending: suspended,
+    penalties: Object.freeze([...penaltiesById.values()]),
+    events: Object.freeze(events)
+  });
+  return { session, simulation, state };
+}
+
+async function persistRaceControlEvent(sessionId: string, state: RaceControlState) {
+  const event = state.events[state.events.length - 1];
+  if (!event) throw new Error("Race-control event was not produced.");
+  const { error } = await service.from("race_engine_test_control_events").insert({
+    session_id: sessionId,
+    sequence: event.sequence,
+    action: event.action,
+    actor_id: event.actorId,
+    actor_role: event.actorRole,
+    occurred_at: event.occurredAt,
+    simulation_time_ms: event.simulationTimeMs,
+    reason: event.reason,
+    payload: event,
+    evidence: event.evidence,
+    supersedes_event_id: null,
+    requires_admin_ratification: event.requiresAdminRatification
+  });
+  if (error) throw error;
+  return event;
+}
+
+function raceControlContext(
+  sessionId: string,
+  userId: string,
+  simulation: RaceSimulation,
+  state: RaceControlState,
+  body: Record<string, unknown>
+): RaceControlCommandContext {
+  const evidence = Array.isArray(body.evidence) ? body.evidence as RaceControlEvidence[] : [];
+  const simulationTimeMs = simulation.entrantStates.reduce(
+    (maximum, entrant) => Math.max(maximum, entrant.elapsedMs),
+    0
+  );
+  return {
+    raceId: sessionId,
+    actorId: userId,
+    actorRole: "admin",
+    occurredAt: new Date().toISOString(),
+    simulationTimeMs,
+    sequence: state.events.length + 1,
+    reason: String(body.reason ?? ""),
+    evidence
+  };
 }
 
 Deno.serve(async (req: Request) => {
