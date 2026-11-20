@@ -66,7 +66,7 @@ export interface SegmentPerformanceModel {
   readonly battleDetectionGapMs?: number;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
   calculatePitStrategyAdjustments?(entrant: RaceEntrantSnapshot): {
-    readonly strategyQualityAdjustmentMs: number;
+    readonly strategyQualityRiskMultiplier: number;
     readonly pitStopTimeAdjustmentMs: number;
   };
 }
