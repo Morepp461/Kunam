@@ -176,8 +176,11 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
         <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker drawing canvas" onClick={addPoint}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
           <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
-          {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}\n          {trackLimitBoundary.length > 0 && trackLimitBoundary.length < 3 && <polyline points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary-line"/>}\n          {points.length > 1 && <polyline points={toPoints(points)} className="circuit-maker-line"/>}
-          {trackLimitBoundary.map((point,index) => <circle key={"boundary-"+index} cx={point.x*500} cy={point.y*320} r={3} className="boundary-point"/>)}\n          {points.map((point,index) => <circle key={point.id} cx={point.x*500} cy={point.y*320} r={index===0?6:4} className={index===0?"start":"point"}/>)}
+          {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
+          {trackLimitBoundary.length > 0 && trackLimitBoundary.length < 3 && <polyline points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary-line"/>}
+          {points.length > 1 && <polyline points={toPoints(points)} className="circuit-maker-line"/>}
+          {trackLimitBoundary.map((point,index) => <circle key={"boundary-"+index} cx={point.x*500} cy={point.y*320} r={3} className="boundary-point"/>)}
+          {points.map((point,index) => <circle key={point.id} cx={point.x*500} cy={point.y*320} r={index===0?6:4} className={index===0?"start":"point"}/>)}
           {points.length > 0 && <text x={points[0].x*500+10} y={points[0].y*320-10} className="circuit-maker-start-label">START / FINISH</text>}
         </svg>
         <div className="circuit-maker-canvas-actions"><button type="button" onClick={undo} disabled={!points.length}>Undo point</button><button type="button" onClick={closeLoop} disabled={points.length<4}>Close loop</button><button type="button" onClick={() => setPoints([])} disabled={!points.length}>Clear layout</button></div>
@@ -198,7 +201,9 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
             <label>High-speed demand<input type="number" min="0" max="1" step="0.01" value={segment.highSpeedDemand} onChange={(e)=>updateSegment(segment.id,"highSpeedDemand",e.target.value)}/></label>
             <label>Traction demand<input type="number" min="0" max="1" step="0.01" value={segment.tractionDemand} onChange={(e)=>updateSegment(segment.id,"tractionDemand",e.target.value)}/></label>
             <label>Braking demand<input type="number" min="0" max="1" step="0.01" value={segment.brakingDemand} onChange={(e)=>updateSegment(segment.id,"brakingDemand",e.target.value)}/></label>
-            <label>Elevation change (m)<input type="number" step="0.1" value={segment.elevationChangeMeters} onChange={(e)=>updateSegment(segment.id,"elevationChangeMeters",e.target.value)}/></label>\n            <label>Banking (degrees)<input type="number" step="0.1" value={segment.bankingDegrees} onChange={(e)=>updateSegment(segment.id,"bankingDegrees",e.target.value)}/></label>\n            <label>Gradient (%)<input type="number" step="0.1" value={segment.gradientPercent} onChange={(e)=>updateSegment(segment.id,"gradientPercent",e.target.value)}/></label>
+            <label>Elevation change (m)<input type="number" step="0.1" value={segment.elevationChangeMeters} onChange={(e)=>updateSegment(segment.id,"elevationChangeMeters",e.target.value)}/></label>
+            <label>Banking (degrees)<input type="number" step="0.1" value={segment.bankingDegrees} onChange={(e)=>updateSegment(segment.id,"bankingDegrees",e.target.value)}/></label>
+            <label>Gradient (%)<input type="number" step="0.1" value={segment.gradientPercent} onChange={(e)=>updateSegment(segment.id,"gradientPercent",e.target.value)}/></label>
           </div>
           <div className="circuit-maker-checks">
             {([["drsAvailable","DRS zone"],["ersAvailable","ERS available"],["overtakingOpportunity","Overtake opportunity"],["defendingOpportunity","Defend opportunity"]] as const).map(([key,label])=><label key={key}><input type="checkbox" checked={segment[key]} onChange={(e)=>updateSegment(segment.id,key,e.target.checked)}/>{label}</label>)}
