@@ -63,6 +63,7 @@ export interface RaceControlAuditEvent {
   readonly penaltyId?: string;
   readonly penaltyDurationMs?: number;
   readonly penaltyGridPositions?: number;
+  readonly gridPenaltyApplied?: boolean;
   readonly reason: string;
   readonly evidence: readonly RaceControlEvidence[];
   readonly supersedesEventId?: string;
@@ -82,6 +83,7 @@ export interface RaceControlPenalty {
   readonly issuedAt: string;
   readonly ratifiedByAdminId: string | null;
   readonly reversedByEventId: string | null;
+  readonly gridPenaltyApplied?: boolean;
 }
 
 export interface RaceControlState {
@@ -178,7 +180,7 @@ export function resolveRaceClassificationWithPenalties(
       } else if (penalty.type === "race_ban") {
         raceBanned = true;
         appliedPenaltyIds.push(penalty.id);
-      } else if (penalty.type === "grid_penalty") {
+      } else if (penalty.type === "grid_penalty" && !penalty.gridPenaltyApplied) {
         pendingGridPenaltyPositions += penalty.gridPositions ?? 0;
       }
     }
@@ -231,7 +233,7 @@ export function resolveStartingGridWithPenalties(
   const ordered = [...grid].sort((a, b) => a.gridPosition - b.gridPosition || a.driverId.localeCompare(b.driverId))
     .map((entry) => ({ driverId: entry.driverId, appliedGridPenaltyIds: [] as string[] }));
   const activeGridPenalties = activeRatifiedPenalties(penalties)
-    .filter((penalty) => penalty.type === "grid_penalty" && (penalty.gridPositions ?? 0) > 0)
+     .filter((penalty) => penalty.type === "grid_penalty" && !penalty.gridPenaltyApplied && (penalty.gridPositions ?? 0) > 0)
     .sort((a, b) => a.issuedAt.localeCompare(b.issuedAt) || a.id.localeCompare(b.id));
 
   for (const penalty of activeGridPenalties) {
