@@ -191,4 +191,7 @@ grant execute on function public.admin_get_rewarded_ads_config() to authenticate
 grant execute on function public.admin_update_rewarded_ads_config(boolean,jsonb,text,text) to authenticated;
 grant execute on function public.member_get_rewarded_ads_board() to authenticated;
 
+grant insert on public.caleris_rewarded_ads_events to service_role;
+grant insert on public.caleris_rewarded_ads_claims to service_role;
+
 commit;
