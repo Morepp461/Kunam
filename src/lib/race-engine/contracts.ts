@@ -9,7 +9,7 @@ import type {
   DriverAttributeValues
 } from "./attributes";
 
-export const RACE_ENGINE_VERSION = "0.4.0";
+export const RACE_ENGINE_VERSION = "0.5.0";
 export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 2;
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };

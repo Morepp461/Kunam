@@ -120,7 +120,8 @@ describe("Race physics calibration profiles", () => {
         tractionDemand: 0,
         drsAvailable: true
       },
-      baseSegmentTimeMs: 14400
+      baseSegmentTimeMs: 14400,
+      tyreState: null
     };
 
     expect(model.calculateAdjustmentMs(context)).toBe(-15);
