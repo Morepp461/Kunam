@@ -76,6 +76,7 @@ export function createRaceTelemetrySample(sample: RaceTelemetrySample): RaceTele
   if (!validation.valid) throw new Error(`Invalid race telemetry sample: ${validation.errors.join("; ")}`);
   return Object.freeze({
     ...sample,
+    trackCoordinates: Object.freeze({ ...sample.trackCoordinates }),
     tyre: Object.freeze({ ...sample.tyre })
   });
 }
