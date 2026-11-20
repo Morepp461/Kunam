@@ -123,6 +123,35 @@ async function processBackgroundBatch() {
     try {
       const checkpoint = claim.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
+      const { data: controlRows, error: controlError } = await service
+        .from("race_engine_test_control_events")
+        .select("payload")
+        .eq("session_id", session.id)
+        .order("sequence", { ascending: true });
+      if (controlError) throw controlError;
+      const controlEvents = (controlRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+      const lastSuspension = [...controlEvents].reverse().find((event) =>
+        event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+      );
+      if (lastSuspension?.action === "race_suspended") {
+        processed.push({ sessionId: session.id, status: "suspended_by_red_flag" });
+        continue;
+      }
+      const latestFlag = [...controlEvents].reverse().find((event) => event.flag !== undefined);
+      simulation.clearExternalRaceControlFlags();
+      if (
+        latestFlag?.flag &&
+        latestFlag.flag !== "green" &&
+        latestFlag.flag !== "red_flag" &&
+        Number.isFinite(latestFlag.flagExpiresAtSimulationTimeMs) &&
+        Number(latestFlag.flagExpiresAtSimulationTimeMs) > simulation.simulationClockMs
+      ) {
+        simulation.applyExternalRaceControlFlag(
+          latestFlag.flag as Exclude<RaceControlFlag, "green" | "red_flag">,
+          latestFlag.id,
+          Number(latestFlag.flagExpiresAtSimulationTimeMs)
+        );
+      }
       const previousEventCount = simulation.events.length;
       const maxSteps = Math.max(1, Math.min(15, Number(session.speed_multiplier ?? 1)));
       for (let index = 0; index < maxSteps && simulation.status !== "completed"; index += 1) {
@@ -255,10 +284,7 @@ function raceControlContext(
   body: Record<string, unknown>
 ): RaceControlCommandContext {
   const evidence = Array.isArray(body.evidence) ? body.evidence as RaceControlEvidence[] : [];
-  const simulationTimeMs = simulation.entrantStates.reduce(
-    (maximum, entrant) => Math.max(maximum, entrant.elapsedMs),
-    0
-  );
+  const simulationTimeMs = simulation.simulationClockMs;
   return {
     raceId: sessionId,
     actorId: userId,
@@ -366,9 +392,12 @@ Deno.serve(async (req: Request) => {
       const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
       const context = raceControlContext(sessionId, user.id, simulation, state, body);
       const flag = String(body.flag ?? "") as RaceControlFlag;
+      const allowedFlags: RaceControlFlag[] = ["green", "yellow", "double_yellow", "full_course_yellow", "virtual_safety_car", "safety_car", "red_flag"];
+      if (!allowedFlags.includes(flag)) throw new Error("Unsupported race-control flag.");
+      const durationMs = body.durationMs === undefined ? undefined : Number(body.durationMs);
       const next = flag === "green"
         ? clearRaceControlFlag(state, context)
-        : deployRaceControlFlag(state, context, flag as Exclude<RaceControlFlag, "green">);
+        : deployRaceControlFlag(state, context, flag as Exclude<RaceControlFlag, "green">, durationMs);
       const event = await persistRaceControlEvent(sessionId, next);
       return json({ event, controlState: next }, 200, origin);
     }
