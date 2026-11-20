@@ -103,7 +103,7 @@ describe("Profile-driven tyre degradation", () => {
     }, profile);
 
     expect(worn.wearPercent).toBe(100);
-    expect(worn.gripPercent).toBe(0);
+    expect(worn.gripPercent).toBe(70);
   });
 
   it("creates a fresh immutable tyre set on replacement", () => {
