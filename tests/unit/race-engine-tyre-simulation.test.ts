@@ -8,6 +8,7 @@ import {
   TYRE_COMPOUNDS
 } from "../../src/lib/race-engine/tyres";
 import type { TyreDegradationProfile, TyreSegmentEnvironment } from "../../src/lib/race-engine/tyres";
+import { createPitStrategyModel } from "../../src/lib/race-engine/pit-strategy";
 
 function createProfile(): TyreDegradationProfile {
   const compounds = Object.fromEntries(TYRE_COMPOUNDS.map((compound) => [
@@ -121,6 +122,50 @@ describe("Tyre state integration with race simulation checkpoints", () => {
     expect(restored.events).toEqual(uninterrupted.events);
     expect(restored.classification).toEqual(uninterrupted.classification);
     expect(restored.entrantStates).toEqual(uninterrupted.entrantStates);
+  });
+
+
+  it("executes calibrated pit stops, replaces tyre sets, and restores pit history from event checkpoints", () => {
+    const { snapshot, tyreModel } = createSetup(2);
+    const pitModel = createPitStrategyModel({
+      schemaVersion: 1,
+      id: "pit-execution-test",
+      version: "1.0.0",
+      pitWindowStartLap: 1,
+      pitWindowEndLap: 1,
+      wearTriggerPercent: 0,
+      minimumLapsBetweenStops: 0,
+      maximumStops: 1
+    }, {
+      "1": [{
+        compound: "hard",
+        pitLaneLossMs: 1200,
+        expectedLapTimeDeltaMs: 0,
+        expectedDegradationMsPerLap: 0,
+        riskPenaltyMs: 0,
+        compatibleWetnessMin: 0,
+        compatibleWetnessMax: 1
+      }]
+    });
+    const simulation = new RaceSimulation(snapshot, { tyreModel, pitModel });
+    for (let i = 0; i < snapshot.circuit.segments.length; i += 1) simulation.advanceOneSegment();
+
+    const pitEvents = simulation.events.filter((event) => event.type === "pit_stop");
+    expect(pitEvents).toHaveLength(snapshot.entrants.length);
+    expect(pitEvents.every((event) => event.selectedCompound === "hard" && event.durationMs === 1200)).toBe(true);
+    expect(simulation.entrantStates.every((state) =>
+      state.pitStopCount === 1 && state.lastPitLap === 1 &&
+      state.tyreState?.compound === "hard" && state.tyreState.wearPercent === 0
+    )).toBe(true);
+
+    const checkpoint = simulation.createCheckpoint();
+    expect(checkpoint.config.pitModelSnapshot).toEqual(pitModel.snapshot);
+    const restored = RaceSimulation.restore(checkpoint, undefined, tyreModel, undefined, pitModel);
+    simulation.runToCompletion();
+    restored.runToCompletion();
+    expect(restored.events).toEqual(simulation.events);
+    expect(restored.entrantStates).toEqual(simulation.entrantStates);
+    expect(restored.classification).toEqual(simulation.classification);
   });
 
   it("rejects a checkpoint with a different tyre calibration even when its ID and version are unchanged", () => {
