@@ -1,4 +1,4 @@
-import type { JsonValue } from "./contracts";
+import type { JsonValue } from "./contracts.ts";
 
 export const WEATHER_MODEL_SCHEMA_VERSION = 1;
 
