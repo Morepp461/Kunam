@@ -2,6 +2,7 @@ import {useCallback,useEffect,useState} from "react";
 import {ArrowLeft,Coins,Save} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
+import AdminRewardedAdsConfig from "./AdminRewardedAdsConfig";
 
 type Difficulty="easy"|"normal"|"hard"|"elite";
 type Reward={difficulty:Difficulty;reward_amount:number;updated_at:string};
@@ -42,6 +43,7 @@ export default function AdminQuestEngine(){
   <Link className="back-link" to="/dashboard"><ArrowLeft size={15}/> Dashboard</Link>
   <header className="page-heading"><span className="section-eyebrow">ADMIN CONTROL · ECONOMY</span><h1 className="page-title">Quest Engine</h1><p className="page-description">Kelola nominal reward berdasarkan tingkat kesulitan. Pembayaran hanya dilakukan setelah member menekan tombol Klaim Reward pada Quest yang selesai.</p></header>
   <div className="admin-quest-summary">{counts.map(x=><article key={x.role_scope+":"+x.quest_type}><span>{x.role_scope==="driver"?"Driver":"Team Owner"} · {x.quest_type==="daily"?"Daily":"Period"}</span><strong>{x.total} quest</strong></article>)}</div>
+  <AdminRewardedAdsConfig/>
   <section className="workspace-card admin-quest-card"><div className="section-title-row"><div><span className="section-eyebrow">REWARD CONFIGURATION</span><h2>Nominal berdasarkan kesulitan</h2></div><Coins size={19}/></div>
    {loading?<p>Memuat konfigurasi...</p>:<div className="admin-quest-reward-list">{order.map(difficulty=><label className="admin-quest-reward-row" key={difficulty}><span><strong>{labels[difficulty]}</strong><small>Reward per quest selesai</small></span><div><span>€</span><input type="number" min="0.01" step="0.01" value={amounts[difficulty]} onChange={e=>setAmounts(v=>({...v,[difficulty]:e.target.value}))}/></div><b>{money(Number(amounts[difficulty]||0))}</b></label>)}</div>}
    <button className="admin-quest-save" disabled={loading||saving} onClick={()=>void save()}><Save size={15}/>{saving?"Menyimpan...":"Simpan nominal reward"}</button>
