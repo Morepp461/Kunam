@@ -13,6 +13,7 @@ import {
   issueRacePenalty,
   ratifyRacePenalty,
   reverseRacePenalty,
+  resolveRaceClassificationWithPenalties,
   validateRaceControlAuditTrail
 } from "./race-engine/race-control.ts";
 import type {
@@ -171,13 +172,16 @@ async function processBackgroundBatch() {
 
       const nextCheckpoint = simulation.createCheckpoint();
       const eventsAdded = simulation.events.slice(previousEventCount);
+      const resolvedClassification = simulation.status === "completed"
+        ? resolveRaceClassificationWithPenalties(simulation.classification, deriveRaceControlPenalties(session.id, controlEvents))
+        : null;
       const { data: committed, error: commitError } = await service.rpc("race_engine_commit_test_step", {
         p_session_id: session.id,
         p_worker_id: workerId,
         p_expected_tick: Number(claim.tick),
         p_checkpoint: nextCheckpoint,
         p_events: eventsAdded,
-        p_classification: simulation.status === "completed" ? simulation.classification : null,
+        p_classification: resolvedClassification,
         p_status: simulation.status,
         p_command_id: crypto.randomUUID(),
         p_actor_id: session.created_by
@@ -204,24 +208,7 @@ async function processBackgroundBatch() {
 }
 
 
-async function loadRaceControlContext(sessionId: string, userId: string) {
-  const { data: session, error: sessionError } = await service
-    .from("race_engine_test_sessions")
-    .select("id,created_by,checkpoint,status")
-    .eq("id", sessionId)
-    .eq("created_by", userId)
-    .maybeSingle();
-  if (sessionError) throw sessionError;
-  if (!session) throw new Error("Sesi simulasi tidak ditemukan.");
-
-  const { data: eventRows, error: eventError } = await service
-    .from("race_engine_test_control_events")
-    .select("sequence,payload")
-    .eq("session_id", sessionId)
-    .order("sequence", { ascending: true });
-  if (eventError) throw eventError;
-
-  const events = (eventRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+function deriveRaceControlPenalties(sessionId: string, events: readonly RaceControlAuditEvent[]): RaceControlPenalty[] {
   const penaltiesById = new Map<string, RaceControlPenalty>();
   for (const event of events) {
     if (event.action === "penalty_issued" && event.penaltyId && event.driverId && event.penaltyType) {
@@ -247,6 +234,28 @@ async function loadRaceControlContext(sessionId: string, userId: string) {
       if (previous) penaltiesById.set(event.penaltyId, { ...previous, reversedByEventId: event.id });
     }
   }
+  return [...penaltiesById.values()];
+}
+
+async function loadRaceControlContext(sessionId: string, userId: string) {
+  const { data: session, error: sessionError } = await service
+    .from("race_engine_test_sessions")
+    .select("id,created_by,checkpoint,status")
+    .eq("id", sessionId)
+    .eq("created_by", userId)
+    .maybeSingle();
+  if (sessionError) throw sessionError;
+  if (!session) throw new Error("Sesi simulasi tidak ditemukan.");
+
+  const { data: eventRows, error: eventError } = await service
+    .from("race_engine_test_control_events")
+    .select("sequence,payload")
+    .eq("session_id", sessionId)
+    .order("sequence", { ascending: true });
+  if (eventError) throw eventError;
+
+  const events = (eventRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+  const penalties = deriveRaceControlPenalties(sessionId, events);
 
   const simulation = restoreSimulation(session.checkpoint as RaceSimulationCheckpoint);
   const initial = createInitialRaceControlState(sessionId, simulation.classification);
@@ -260,7 +269,7 @@ async function loadRaceControlContext(sessionId: string, userId: string) {
     flag: lastFlagEvent?.flag ?? "green",
     suspended,
     restartPending: suspended,
-    penalties: Object.freeze([...penaltiesById.values()]),
+    penalties: Object.freeze(penalties),
     events: Object.freeze(events)
   });
   return { session, simulation, state };
@@ -395,6 +404,7 @@ Deno.serve(async (req: Request) => {
       return json({
         controlState: state,
         classification: simulation.classification,
+        resolvedClassification: resolveRaceClassificationWithPenalties(simulation.classification, state.penalties),
         audit: validateRaceControlAuditTrail(state)
       }, 200, origin);
     }
@@ -594,7 +604,9 @@ Deno.serve(async (req: Request) => {
       const nextCheckpoint = simulation.createCheckpoint();
       const eventsAdded = simulation.events.slice(previousEventCount);
       const status = simulation.status;
-      const classification = status === "completed" ? simulation.classification : null;
+      const classification = status === "completed"
+        ? resolveRaceClassificationWithPenalties(simulation.classification, deriveRaceControlPenalties(sessionId, controlEvents))
+        : null;
       const commandId = crypto.randomUUID();
       const { data: committed, error: commitError } = await service.rpc("race_engine_commit_test_step", {
         p_session_id: sessionId,
