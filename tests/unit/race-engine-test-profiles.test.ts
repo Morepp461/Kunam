@@ -24,6 +24,36 @@ describe("Race Engine Lab synthetic service profiles", () => {
     expect(controlledElapsed).toBeGreaterThan(baselineElapsed);
   });
 
+  it("accepts and checkpoints synthetic car setup values through the Race Engine Lab profile", () => {
+    const fixture = createSyntheticRaceFixture({
+      seed: 61125,
+      driverCount: 4,
+      teamCount: 2,
+      totalLaps: 2
+    });
+    const carSetup = {
+      schemaVersion: 1 as const,
+      aeroSetting: 65,
+      suspensionSetting: 45,
+      brakeBalanceFrontPercent: 52,
+      frontTyrePressurePsi: 24,
+      rearTyrePressurePsi: 25
+    };
+    const snapshot = {
+      ...fixture,
+      entrants: fixture.entrants.map((entrant) => ({ ...entrant, carSetup }))
+    };
+    const models = createRaceEngineTestModels(snapshot);
+    const simulation = new RaceSimulation(snapshot, models);
+    const checkpoint = simulation.createCheckpoint();
+
+    expect(models.performanceModel.snapshot).toMatchObject({
+      carSetup: { schemaVersion: 1 }
+    });
+    expect(checkpoint.snapshot.entrants.every((entrant) => entrant.carSetup?.aeroSetting === 65)).toBe(true);
+    expect(checkpoint.config.performanceModelSnapshot).toEqual(models.performanceModel.snapshot);
+  });
+
   it("projects external flags and penalty decisions into replay exactly once", () => {
     const snapshot = createSyntheticRaceFixture({
       seed: 61124,
