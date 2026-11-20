@@ -76,6 +76,15 @@ export function validateRaceStartSnapshot(
   errors.push(...circuitValidation.errors.map((error) => `Circuit: ${error}`));
 
   if (value.entrants.length === 0) errors.push("Race must contain at least one entrant");
+  const entrantsWithGridPosition = value.entrants.filter((entrant) => entrant.startingGridPosition !== undefined).length;
+  if (entrantsWithGridPosition > 0 && entrantsWithGridPosition !== value.entrants.length) {
+    errors.push("Starting-grid positions must be supplied for every entrant or none");
+  }
+  if (entrantsWithGridPosition === value.entrants.length && value.entrants.length > 0) {
+    for (let position = 1; position <= value.entrants.length; position += 1) {
+      if (!startingGridPositions.has(position)) errors.push("Starting-grid positions must be contiguous from 1");
+    }
+  }
   const driverIds = new Set<string>();
   const startingGridPositions = new Set<number>();
   for (const entrant of value.entrants) {
