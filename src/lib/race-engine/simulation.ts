@@ -701,9 +701,7 @@ export class RaceSimulation {
           lapNumber: state.lapCompleted,
           simulationTimeMs: state.elapsedMs
         });
-        if (state.lapCompleted >= this.snapshot.circuit.totalLaps) {
-          state.finished = true;
-          if (this.pitModel && state.tyreState) {
+          if (this.pitModel && state.tyreState && state.lapCompleted < this.snapshot.circuit.totalLaps) {
             const candidates = this.pitModel.candidatesByLap[String(state.lapCompleted)] ?? this.pitModel.candidatesByLap.default ?? [];
             const trackWetness = this.weatherStateValue?.trackWetness ??
               getTyreSegmentEnvironment(this.tyreModel as TyreSimulationModel, state.lapCompleted, segments[segments.length - 1].id).trackWetness;
@@ -742,6 +740,8 @@ export class RaceSimulation {
               });
             }
           }
+        if (state.lapCompleted >= this.snapshot.circuit.totalLaps) {
+          state.finished = true;
           appendEvent({
             type: "race_completed",
             driverId: state.driverId,
