@@ -132,6 +132,7 @@ export interface EntrantSimulationState {
   readonly pitStopCount?: number;
   readonly lastPitLap?: number | null;
   readonly retired?: boolean;
+  readonly startingGridPosition: number;
 }
 
 export interface RaceClassificationEntry {
@@ -143,6 +144,7 @@ export interface RaceClassificationEntry {
   readonly finished: boolean;
   readonly pitStopCount?: number;
   readonly retired?: boolean;
+  readonly startingGridPosition: number;
 }
 
 interface MutableEntrantState {
@@ -417,7 +419,7 @@ export class RaceSimulation {
       canonicalJson(config.raceControlProfileSnapshot as JsonValue) !== canonicalJson(this.raceControlProfile as unknown as JsonValue)
     )) throw new Error("Configured incident/race-control models do not match the injected models");
     if (!this.incidentModel && !allIncidentNull) throw new Error("Incident configuration requires injected incident and race-control models");
-    this.mutableEntrants = immutableSnapshot.entrants.map((entrant) => {
+    this.mutableEntrants = immutableSnapshot.entrants.map((entrant, entrantIndex) => {
       const firstSegment = immutableSnapshot.circuit.segments[0];
       const firstEnvironment = this.tyreModel
         ? getTyreSegmentEnvironment(this.tyreModel, 1, firstSegment.id)
@@ -441,6 +443,7 @@ export class RaceSimulation {
         pitStopCount: 0,
         lastPitLap: null,
         retired: false,
+        startingGridPosition: entrant.startingGridPosition ?? entrantIndex + 1,
         ...(tyreState ? { tyreState } : {})
       };
     });
@@ -760,6 +763,34 @@ export class RaceSimulation {
     return this.mutableEntrants.map(copyEntrantState);
   }
 
+  applyStartingGridOrder(
+    grid: readonly { readonly driverId: string; readonly gridPosition: number }[]
+  ): void {
+    if (this.tickValue !== 0 || this.simulationClockMsValue !== 0) {
+      throw new Error("Starting grid can only be changed before the first simulation tick");
+    }
+    if (grid.length !== this.mutableEntrants.length) throw new Error("Starting grid must include every race entrant");
+    const positions = new Set<number>();
+    const order = new Map<string, number>();
+    for (const entry of grid) {
+      if (!entry.driverId.trim() || !Number.isInteger(entry.gridPosition) || entry.gridPosition < 1) {
+        throw new Error("Starting-grid entries require a driver ID and positive integer position");
+      }
+      if (positions.has(entry.gridPosition) || order.has(entry.driverId)) {
+        throw new Error("Starting-grid driver IDs and positions must be unique");
+      }
+      positions.add(entry.gridPosition);
+      order.set(entry.driverId, entry.gridPosition);
+    }
+    if (order.size !== this.mutableEntrants.length || this.mutableEntrants.some((entrant) => !order.has(entrant.driverId))) {
+      throw new Error("Starting grid must match the active race entrants");
+    }
+    this.mutableEntrants = this.mutableEntrants.map((entrant) => ({
+      ...entrant,
+      startingGridPosition: order.get(entrant.driverId)!
+    }));
+  }
+
   get classification(): readonly RaceClassificationEntry[] {
     const totalDistance = this.snapshot.circuit.segments.reduce((sum, segment) => sum + segment.distanceMeters, 0);
     const segments = this.snapshot.circuit.segments;
@@ -775,6 +806,7 @@ export class RaceSimulation {
         const distanceDifference = progress(b) - progress(a);
         if (distanceDifference !== 0) return distanceDifference;
         if (a.elapsedMs !== b.elapsedMs) return a.elapsedMs - b.elapsedMs;
+        if (a.startingGridPosition !== b.startingGridPosition) return a.startingGridPosition - b.startingGridPosition;
         if (a.driverId < b.driverId) return -1;
         if (a.driverId > b.driverId) return 1;
         return 0;
@@ -787,7 +819,8 @@ export class RaceSimulation {
         elapsedMs: entrant.elapsedMs,
         finished: entrant.finished,
         retired: entrant.retired,
-        pitStopCount: entrant.pitStopCount
+        pitStopCount: entrant.pitStopCount,
+        startingGridPosition: entrant.startingGridPosition
       }));
   }
 
