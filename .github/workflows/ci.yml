@@ -40,6 +40,8 @@ jobs:
       - name: Browser smoke tests
         run: npm run test:e2e
       - run: python3 -B scripts/validate.py
+      - name: Paddock Access CORS regression checks
+        run: python3 -B scripts/test_paddock_access_cors.py
       - name: Economy transaction regression checks
         run: python3 -B scripts/test_economy_regressions.py
       - name: Economy wallet lifecycle checks
