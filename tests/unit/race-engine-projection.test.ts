@@ -22,12 +22,18 @@ describe("Race timing projection", () => {
       status: "running"
     });
     expect(projection.timingRows).toHaveLength(6);
+    expect(projection.segmentTelemetry.length).toBeGreaterThan(0);
+    expect(projection.segmentTelemetry.every((point) =>
+      Number.isFinite(point.averageSpeedKph) && point.averageSpeedKph > 0 &&
+      Number.isFinite(point.trackPositionMeters) && point.segmentDurationMs > 0
+    )).toBe(true);
     expect(projection.timingRows.map((row) => row.position)).toEqual([1,2,3,4,5,6]);
     expect(projection.timingRows.every((row) =>
       Number.isFinite(row.elapsedMs) && Number.isFinite(row.segmentDistanceCompletedMeters)
     )).toBe(true);
     expect(projection).not.toHaveProperty("speedKph");
     expect(projection).not.toHaveProperty("throttlePercent");
+    expect(projection.segmentTelemetry[0]).toHaveProperty("averageSpeedKph");
   });
 
   it("keeps the same race projection data deterministic across checkpoint restore", () => {
