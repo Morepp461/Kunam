@@ -81,7 +81,7 @@ export function buildRaceTimingProjection(
 
   const states = new Map(checkpoint.entrants.map((entrant) => [entrant.driverId, entrant]));
   const seenDrivers = new Set<string>();
-  const timingRows = classification.map((entry, index) => {
+  const timingRows = classification.map((entry) => {
     const state = states.get(entry.driverId);
     if (!state || seenDrivers.has(entry.driverId)) {
       throw new Error("Projection classification contains an unknown or duplicate driver");
