@@ -37,6 +37,31 @@ export interface CircuitGeometrySegment extends CircuitSegmentSnapshot {
   readonly trackWidthMeters: number;
 }
 
+export interface CircuitDrsZone {
+  readonly id: string;
+  readonly startDistanceMeters: number;
+  readonly endDistanceMeters: number;
+  readonly detectionDistanceMeters: number | null;
+}
+
+export interface CircuitGeometrySpecifications {
+  readonly direction: "clockwise" | "counterclockwise" | "unknown";
+  readonly surface: "asphalt" | "concrete" | "mixed" | "unknown";
+  readonly elevationDataStatus: "measured" | "unavailable";
+  readonly pitLane: {
+    readonly enabled: boolean;
+    readonly lengthMeters: number | null;
+    readonly speedLimitKph: number | null;
+    readonly entryDistanceMeters: number | null;
+    readonly exitDistanceMeters: number | null;
+  };
+  readonly drsZones: readonly CircuitDrsZone[];
+  readonly trackLimits: {
+    readonly method: "segment_width" | "unverified";
+    readonly sourceNote: string;
+  };
+}
+
 export interface CircuitGeometryDefinition {
   readonly schemaVersion: typeof CIRCUIT_GEOMETRY_SCHEMA_VERSION;
   readonly id: string;
@@ -51,6 +76,7 @@ export interface CircuitGeometryDefinition {
   readonly sourceProvenance?: CircuitSourceProvenance;
   readonly layout: readonly CircuitPathPoint[];
   readonly segments: readonly CircuitGeometrySegment[];
+  readonly specifications?: CircuitGeometrySpecifications;
 }
 
 
@@ -259,6 +285,48 @@ export function validateCircuitGeometryDefinition(
 
   for (const sector of [1, 2, 3] as const) {
     if (sectorCounts[sector] === 0) errors.push(`Circuit is missing sector ${sector}`);
+  }
+
+  if (circuit.specifications) {
+    const spec = circuit.specifications;
+    if (!["clockwise", "counterclockwise", "unknown"].includes(spec.direction)) errors.push("Circuit direction is invalid");
+    if (!["asphalt", "concrete", "mixed", "unknown"].includes(spec.surface)) errors.push("Circuit surface is invalid");
+    if (!["measured", "unavailable"].includes(spec.elevationDataStatus)) errors.push("Circuit elevation data status is invalid");
+    if (!["segment_width", "unverified"].includes(spec.trackLimits.method)) errors.push("Circuit track-limit method is invalid");
+    if (typeof spec.trackLimits.sourceNote !== "string") errors.push("Circuit track-limit source note must be text");
+    if (spec.pitLane.enabled) {
+      for (const [key, value] of [
+        ["lengthMeters", spec.pitLane.lengthMeters],
+        ["speedLimitKph", spec.pitLane.speedLimitKph]
+      ] as const) {
+        if (value === null || !Number.isFinite(value) || value <= 0) errors.push("Pit lane " + key + " must be a positive measured value");
+      }
+      if (spec.pitLane.entryDistanceMeters === null || !Number.isFinite(spec.pitLane.entryDistanceMeters) || spec.pitLane.entryDistanceMeters < 0) {
+        errors.push("Pit lane entry distance must be measured and non-negative");
+      }
+      if (spec.pitLane.exitDistanceMeters === null || !Number.isFinite(spec.pitLane.exitDistanceMeters) || spec.pitLane.exitDistanceMeters <= 0) {
+        errors.push("Pit lane exit distance must be a positive measured value");
+      }
+      if (spec.pitLane.entryDistanceMeters !== null && spec.pitLane.exitDistanceMeters !== null &&
+          spec.pitLane.entryDistanceMeters >= spec.pitLane.exitDistanceMeters) {
+        errors.push("Pit lane entry distance must be before pit lane exit distance");
+      }
+    }
+    const drsIds = new Set<string>();
+    for (const zone of spec.drsZones) {
+      if (!zone.id.trim() || drsIds.has(zone.id)) errors.push("DRS zone IDs must be present and unique");
+      drsIds.add(zone.id);
+      if (!Number.isFinite(zone.startDistanceMeters) || !Number.isFinite(zone.endDistanceMeters) ||
+          zone.startDistanceMeters < 0 || zone.endDistanceMeters <= zone.startDistanceMeters ||
+          zone.endDistanceMeters > circuit.trackLengthMeters) {
+        errors.push("DRS zone distances must be within the measured circuit length");
+      }
+      if (zone.detectionDistanceMeters !== null &&
+          (!Number.isFinite(zone.detectionDistanceMeters) || zone.detectionDistanceMeters < 0 ||
+           zone.detectionDistanceMeters >= circuit.trackLengthMeters)) {
+        errors.push("DRS detection distance must be within the measured circuit length");
+      }
+    }
   }
 
   const calculatedTrackLengthMeters = calculateCircuitSegmentDistance(circuit.segments);

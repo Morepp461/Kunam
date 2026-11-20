@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { RACE_ENGINE_VERSION } from "./race-engine/contracts.ts";
 import type { RaceStartSnapshot } from "./race-engine/contracts.ts";
+import { validateCircuitGeometryDefinition, validateCircuitReleaseReadiness } from "./race-engine/circuit-geometry.ts";
 import { RaceSimulation } from "./race-engine/simulation.ts";
 import type { RaceSimulationCheckpoint } from "./race-engine/simulation.ts";
 import { createSyntheticRaceFixture } from "./race-engine/synthetic-fixture.ts";
@@ -414,12 +415,36 @@ Deno.serve(async (req: Request) => {
     if (action === "list") {
       const { data, error } = await service
         .from("race_engine_test_sessions")
-        .select("id,status,seed,driver_count,team_count,total_laps,engine_version,tick,total_ticks,speed_multiplier,created_at,updated_at,completed_at,last_error")
+        .select("id,status,seed,driver_count,team_count,total_laps,circuit_id,circuit_revision,circuit_name_snapshot,engine_version,tick,total_ticks,speed_multiplier,created_at,updated_at,completed_at,last_error")
         .eq("created_by", user.id)
         .order("created_at", { ascending: false })
         .limit(20);
       if (error) throw error;
       return json({ sessions: data ?? [] }, 200, origin);
+    }
+
+    if (action === "circuits") {
+      const { data, error } = await service
+        .from("caleris_circuits")
+        .select("id,name,country_code,circuit_kind,circuit_geometry,geometry_revision")
+        .order("name");
+      if (error) throw error;
+      const circuits = (data ?? []).map((row) => {
+        const geometry = row.circuit_geometry as unknown as RaceStartSnapshot["circuit"] | null;
+        const geometryValidation = geometry ? validateCircuitGeometryDefinition(geometry) : null;
+        const releaseValidation = geometry ? validateCircuitReleaseReadiness(geometry) : null;
+        return {
+          id: row.id,
+          name: row.name,
+          countryCode: row.country_code,
+          kind: row.circuit_kind,
+          revision: row.geometry_revision,
+          readyForTesting: Boolean(releaseValidation?.ready),
+          officialReady: Boolean(releaseValidation?.ready),
+          validationErrors: geometryValidation?.errors ?? ["Circuit Maker geometry belum dibuat."]
+        };
+      });
+      return json({ circuits }, 200, origin);
     }
 
     if (action === "create") {
@@ -434,6 +459,27 @@ Deno.serve(async (req: Request) => {
 
       const id = crypto.randomUUID();
       const fixture = createSyntheticRaceFixture({ seed, driverCount, teamCount, totalLaps });
+      const selectedCircuitId = typeof body.circuitId === "string" ? body.circuitId.trim() : "";
+      let selectedCircuit: RaceStartSnapshot["circuit"] = fixture.circuit;
+      let circuitRevision: number | null = null;
+      let circuitNameSnapshot = fixture.circuit.name;
+      if (selectedCircuitId) {
+        const { data: circuitRow, error: circuitError } = await service
+          .from("caleris_circuits")
+          .select("id,name,circuit_geometry,geometry_revision")
+          .eq("id", selectedCircuitId)
+          .maybeSingle();
+        if (circuitError) throw circuitError;
+        if (!circuitRow?.circuit_geometry) throw new Error("Circuit ini belum memiliki geometry dari Circuit Maker.");
+        const candidate = circuitRow.circuit_geometry as unknown as RaceStartSnapshot["circuit"];
+        const releaseCheck = validateCircuitReleaseReadiness(candidate);
+        if (!releaseCheck.ready) {
+          throw new Error("Circuit belum lolos validasi Race Engine: " + releaseCheck.errors.slice(0, 4).join("; "));
+        }
+        selectedCircuit = { ...candidate, totalLaps };
+        circuitRevision = Number(circuitRow.geometry_revision);
+        circuitNameSnapshot = circuitRow.name;
+      }
       const division = String(body.division ?? "premio") as TeamHqDivision;
       if (division !== "premio" && division !== "zwei") throw new Error("Division HQ tidak valid.");
       const hqInput = body.hqFacilityLevels === undefined ? {} : asRecord(body.hqFacilityLevels);
@@ -471,6 +517,7 @@ Deno.serve(async (req: Request) => {
       const snapshot: RaceStartSnapshot = {
         ...fixture,
         raceId: id,
+        circuit: selectedCircuit,
         entrants: fixture.entrants.map((entrant) => ({
           ...entrant,
           hqEffects: hqResolution.snapshot.effects,
@@ -491,13 +538,16 @@ Deno.serve(async (req: Request) => {
           driver_count: driverCount,
           team_count: teamCount,
           total_laps: totalLaps,
+          circuit_id: selectedCircuitId || null,
+          circuit_revision: circuitRevision,
+          circuit_name_snapshot: circuitNameSnapshot,
           engine_version: RACE_ENGINE_VERSION,
           snapshot,
           checkpoint,
           tick: 0,
           total_ticks: totalLaps * snapshot.circuit.segments.length
         })
-        .select("id,status,seed,driver_count,team_count,total_laps,engine_version,tick,total_ticks,created_at")
+        .select("id,status,seed,driver_count,team_count,total_laps,circuit_id,circuit_revision,circuit_name_snapshot,engine_version,tick,total_ticks,created_at")
         .single();
       if (error) throw error;
       const { error: checkpointError } = await service
