@@ -113,7 +113,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const updateSegment = (id: string, key: keyof SegmentForm, next: string|boolean) => setSegments((current) => current.map((segment) => segment.id === id ? ({...segment, [key]: next}) : segment));
   const addSegment = () => setSegments((current) => [...current, {
     ...initialSegments[activeSector-1],
-    id: "sector-"+activeSector+"-segment-"+(current.filter((segment) => segment.sectorNumber === activeSector).length+1),
+    id: "sector-"+activeSector+"-"+crypto.randomUUID(),
     sectorNumber: activeSector
   }]);
   const removeSegment = (id: string) => setSegments((current) => current.length > 3 ? current.filter((segment) => segment.id !== id) : current);
