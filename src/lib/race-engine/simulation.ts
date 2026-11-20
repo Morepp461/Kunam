@@ -764,6 +764,7 @@ export class RaceSimulation {
       stagedSimulationClockMs = resumeAtSimulationTimeMs;
     }
     const activeFlagsForTick = stagedRaceControlFlags.map((flag) => ({ ...flag }));
+    const activeFlagCountAtTickStart = stagedRaceControlFlags.length;
     const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished && !entrant.retired);
     const weatherLap = weatherReferenceState ? weatherReferenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
     const weatherSegment = weatherReferenceState
@@ -983,6 +984,15 @@ export class RaceSimulation {
           incidentType: incident.type
         });
       }
+    }
+
+    for (let index = activeFlagCountAtTickStart; index < stagedRaceControlFlags.length; index += 1) {
+      const flag = stagedRaceControlFlags[index];
+      const durationMs = this.raceControlProfile?.durationMsByFlag[flag.flag] ?? 0;
+      stagedRaceControlFlags[index] = {
+        ...flag,
+        expiresAtSimulationTimeMs: stagedSimulationClockMs + globalTickDurationMs + durationMs
+      };
     }
 
     // Commit the tick only after every entrant has advanced successfully.
