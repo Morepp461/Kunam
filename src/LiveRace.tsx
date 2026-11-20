@@ -51,6 +51,11 @@ type RaceTimingProjection = {
   tick: number;
   simulationTimeMs: number;
   timingRows: Array<{ driverId: string; segmentId: string | null; segmentIndex: number | null; segmentDistanceCompletedMeters: number }>;
+  segmentTelemetry: Array<{
+    sequence: number; driverId: string; racePosition: number | null; lapNumber: number;
+    sectorNumber: number | null; segmentId: string; simulationTimeMs: number;
+    segmentDurationMs: number; distanceMeters: number; averageSpeedKph: number; trackPositionMeters: number;
+  }>;
 };
 
 type RaceEvent = {
@@ -601,6 +606,23 @@ export default function LiveRace() {
               <span>{entry.tyreState.wearPercent.toFixed(1)}% wear</span><span>{entry.pitStopCount ?? 0} pit</span>
             </div>)}
             {!tyreStates.length && <p className="race-engine-empty">Tyre state akan muncul setelah checkpoint dimuat.</p>}
+          </div>
+        </section>
+
+        <section className="race-engine-result-section">
+          <div className="live-race-subheading"><h3><Activity size={15}/> Segment telemetry</h3><span>DERIVED FROM SIMULATION</span></div>
+          <div className="live-race-table-wrap">
+            <table className="live-race-timing-table">
+              <thead><tr><th>DRIVER</th><th>LAP</th><th>SEGMENT</th><th>AVG SPEED</th><th>SIM TIME</th></tr></thead>
+              <tbody>
+                {(detail?.projection?.segmentTelemetry ?? []).slice(-10).reverse().map((point) => <tr key={point.sequence}>
+                  <td>{point.driverId}</td><td>{point.lapNumber}</td><td>{point.segmentId}</td>
+                  <td className="lap-time">{point.averageSpeedKph.toFixed(1)} km/h</td>
+                  <td className="lap-time">{formatTime(point.simulationTimeMs)}</td>
+                </tr>)}
+              </tbody>
+            </table>
+            {!detail?.projection?.segmentTelemetry?.length && <p className="race-engine-empty">Telemetry segmen akan muncul setelah simulation tick tersimpan.</p>}
           </div>
         </section>
       </div>
