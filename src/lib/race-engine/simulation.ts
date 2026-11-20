@@ -789,10 +789,9 @@ export class RaceSimulation {
     for (let position = 1; position <= grid.length; position += 1) {
       if (!positions.has(position)) throw new Error("Starting-grid positions must be contiguous");
     }
-    this.mutableEntrants = this.mutableEntrants.map((entrant) => ({
-      ...entrant,
-      startingGridPosition: order.get(entrant.driverId)!
-    }));
+    for (const entrant of this.mutableEntrants) {
+      entrant.startingGridPosition = order.get(entrant.driverId)!;
+    }
   }
 
   get classification(): readonly RaceClassificationEntry[] {
