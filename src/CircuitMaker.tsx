@@ -107,8 +107,9 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     segments: inputSegments,
     specifications,
     kind,
+    sourceProvenance: sourceProvenance ?? value?.sourceProvenance,
     trackLimitBoundary
-  }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, trackLimitBoundary, value?.revision]);
+  }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, sourceProvenance, trackLimitBoundary, value?.revision, value?.sourceProvenance]);
 
   const addPoint = (event: MouseEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
