@@ -58,6 +58,7 @@ export interface RaceControlAuditEvent {
   readonly restartPolicy?: RedFlagRestartPolicy;
   readonly driverId?: string;
   readonly penaltyType?: RacePenaltyType;
+  readonly penaltyId?: string;
   readonly penaltyDurationMs?: number;
   readonly penaltyGridPositions?: number;
   readonly reason: string;
@@ -274,6 +275,7 @@ export function issueRacePenalty(
   const event = createAuditEvent(context, {
     id: `rc-${context.sequence}`,
     action: "penalty_issued",
+    penaltyId: penalty.id,
     driverId: input.driverId,
     penaltyType: input.type,
     ...(input.durationMs !== undefined ? { penaltyDurationMs: input.durationMs } : {}),
@@ -296,7 +298,7 @@ export function ratifyRacePenalty(
   if (penalty?.ratifiedByAdminId) errors.push("Penalty is already ratified");
   if (penalty?.reversedByEventId) errors.push("A reversed penalty cannot be ratified");
   if (errors.length) throw new Error(errors.join("; "));
-  const event = createAuditEvent(context, { id: `rc-${context.sequence}`, action: "penalty_ratified", driverId: penalty!.driverId, penaltyType: penalty!.type });
+  const event = createAuditEvent(context, { id: `rc-${context.sequence}`, action: "penalty_ratified", penaltyId, driverId: penalty!.driverId, penaltyType: penalty!.type });
   const next = appendEvent(state, event);
   return Object.freeze({
     ...next,
@@ -323,6 +325,7 @@ export function reverseRacePenalty(
   const event = createAuditEvent(context, {
     id: `rc-${context.sequence}`,
     action: "penalty_reversed",
+    penaltyId,
     driverId: penalty!.driverId,
     penaltyType: penalty!.type,
     supersedesEventId
