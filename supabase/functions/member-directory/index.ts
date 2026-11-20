@@ -273,7 +273,20 @@ Deno.serve(async (req: Request) => {
       const mergedProfiles = [...(profileMatches.data ?? []), ...linkedProfiles]
         .filter((row, index, rows) => rows.findIndex((item) => item.public_member_id === row.public_member_id) === index)
         .slice(0, 20);
-      const members = await Promise.all(mergedProfiles.map((p) => withAvatar(p as ProfileRow)));
+      const linkedIds = mergedProfiles.map((row) => row.member_id).filter(Boolean) as string[];
+      const { data: memberDetails, error: memberDetailsError } = linkedIds.length
+        ? await admin.from("members").select("id,role,character_name").in("id", linkedIds)
+        : { data: [], error: null };
+      if (memberDetailsError) {
+        console.error("Member role lookup failed:", memberDetailsError.message);
+        return respond(500, { error: "Informasi driver gagal dimuat." });
+      }
+      const memberDetailMap = new Map((memberDetails ?? []).map((row) => [row.id, row]));
+      const members = await Promise.all(mergedProfiles.map(async (p) => {
+        const profile = await withAvatar(p as ProfileRow);
+        const detail = p.member_id ? memberDetailMap.get(p.member_id) : null;
+        return { ...profile, role: detail?.role ?? null, character_name: detail?.character_name ?? null };
+      }));
       const teams = matchingTeams.map((team) => ({
         id: team.id,
         name: team.name,
@@ -288,14 +301,29 @@ Deno.serve(async (req: Request) => {
         return respond(500, { error: "Pencarian halaman gagal dimuat." });
       }
       const needle = term.toLocaleLowerCase("id-ID");
+      const [announcements, stories] = await Promise.all([
+        admin.from("caleris_announcements").select("id,title,body,published_at,created_at").eq("is_published", true)
+          .or("title.ilike." + pattern + ",body.ilike." + pattern).order("published_at", { ascending: false }).limit(8),
+        admin.from("caleris_sponsorship_story_events").select("id,headline,body,created_at").eq("visibility", "public")
+          .or("headline.ilike." + pattern + ",body.ilike." + pattern).order("created_at", { ascending: false }).limit(8),
+      ]);
+      if (announcements.error || stories.error) {
+        console.error("Published content search failed:", { announcements: announcements.error?.message, stories: stories.error?.message });
+      }
       const pages = (content ?? []).flatMap((row) => {
         const value = row.content as Record<string, unknown>;
         const title = typeof value?.title === "string" ? value.title : row.slug;
         const searchableText = JSON.stringify(value ?? {}).replace(/[{}":,]/g, " ");
         if (!(title + " " + searchableText).toLocaleLowerCase("id-ID").includes(needle)) return [];
-        return [{ title, slug: row.slug, excerpt: searchableText.trim().slice(0, 150), href: row.slug === "rules" ? "/rules" : "/dashboard" }];
-      }).slice(0, 12);
-      return respond(200, { members, teams, pages });
+        const routes: Record<string, string> = { rules: "/rules", newsroom: "/main-event/newsroom", "privacy-policy": "/privacy-policy", "terms-and-conditions": "/terms-and-conditions" };
+        return [{ title, slug: row.slug, excerpt: searchableText.trim().slice(0, 150), href: routes[row.slug] ?? "/dashboard" }];
+      });
+      const contentResults = [
+        ...(announcements.data ?? []).map((row) => ({ title: row.title, slug: "announcement-" + row.id, excerpt: String(row.body ?? "").replace(/\s+/g, " ").slice(0, 150), href: "/main-event/newsroom" })),
+        ...(stories.data ?? []).map((row) => ({ title: row.headline, slug: "paddock-story-" + row.id, excerpt: String(row.body ?? "").replace(/\s+/g, " ").slice(0, 150), href: "/main-event/newsroom" })),
+      ];
+      const mergedPages = [...contentResults, ...pages].filter((item, index, all) => all.findIndex((candidate) => candidate.slug === item.slug) === index).slice(0, 20);
+      return respond(200, { members, teams, pages: mergedPages });
     }
 
     if (action === "update_member_id") {
