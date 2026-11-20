@@ -153,6 +153,11 @@ async function processBackgroundBatch() {
           Number(latestFlag.flagExpiresAtSimulationTimeMs)
         );
       }
+      const restartEvent = [...controlEvents].reverse().find((event) => event.action === "restart_authorized");
+      if (restartEvent?.restartMode && restartEvent.restartPolicy &&
+          !simulation.events.some((event) => event.incidentId === `manual-restart:${restartEvent.id}`)) {
+        simulation.recordRaceRestart(restartEvent.restartMode, restartEvent.id, restartEvent.restartPolicy);
+      }
       const previousEventCount = simulation.events.length;
       const maxSteps = Math.max(1, Math.min(15, Number(session.speed_multiplier ?? 1)));
       for (let index = 0; index < maxSteps && simulation.status !== "completed"; index += 1) {
@@ -564,6 +569,11 @@ Deno.serve(async (req: Request) => {
           latestFlag.id,
           Number(latestFlag.flagExpiresAtSimulationTimeMs)
         );
+      }
+      const restartEvent = [...controlEvents].reverse().find((event) => event.action === "restart_authorized");
+      if (restartEvent?.restartMode && restartEvent.restartPolicy &&
+          !simulation.events.some((event) => event.incidentId === `manual-restart:${restartEvent.id}`)) {
+        simulation.recordRaceRestart(restartEvent.restartMode, restartEvent.id, restartEvent.restartPolicy);
       }
       const expectedTick = Number(claimed.tick);
       const steps = Number(claimed.speed_multiplier ?? 1);
