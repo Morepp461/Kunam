@@ -67,7 +67,8 @@ describe("Race lifecycle start authorization", () => {
   it("treats the same start idempotency key as a replay and rejects a different key", () => {
     const replay = authorizeRaceStart(request({
       status: "running",
-      existingStartIdempotencyKey: "race-1-start-v1"
+      existingStartIdempotencyKey: "race-1-start-v1",
+      existingStartActorId: "scheduler"
     }));
     const duplicate = authorizeRaceStart(request({
       status: "running",
@@ -75,6 +76,12 @@ describe("Race lifecycle start authorization", () => {
     }));
     expect(replay).toMatchObject({ accepted: true, shouldStart: false, idempotentReplay: true });
     expect(duplicate.reason).toMatch(/queued state/i);
+    const wrongActor = authorizeRaceStart(request({
+      status: "running",
+      existingStartIdempotencyKey: "race-1-start-v1",
+      existingStartActorId: "admin-2"
+    }));
+    expect(wrongActor.reason).toMatch(/different start actor/i);
   });
 
   it("records immutable audit metadata and readiness blockers", () => {
