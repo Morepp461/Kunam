@@ -5,7 +5,7 @@ import {
 import type { JsonValue, RaceEntrantSnapshot } from "./contracts";
 import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation";
 
-export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 1;
+export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 2;
 
 export const ATTRIBUTE_INFLUENCE_CHANNELS = [
   "segment_pace_ms_per_point",

@@ -21,7 +21,7 @@ function createProfile(): RacePhysicsCalibrationProfile {
   attributes["driver.mistake_rate"] = { mistake_probability_per_point: 0.01 };
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     attributeSchemaVersion: 1,
     id: "calibration-test",
     version: "1.0.0",
