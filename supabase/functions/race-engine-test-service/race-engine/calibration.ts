@@ -264,7 +264,8 @@ function calculateSegmentPaceAdjustmentUnchecked(
     totals.segment_pace_ms_per_point +
     totals.low_speed_pace_ms_per_point * segment.lowSpeedDemand +
     totals.high_speed_pace_ms_per_point * segment.highSpeedDemand +
-    totals.traction_pace_ms_per_point * segment.tractionDemand +\n    totals.braking_pace_ms_per_point * (segment.brakingDemand ?? 0) +
+    totals.traction_pace_ms_per_point * segment.tractionDemand +
+    totals.braking_pace_ms_per_point * (segment.brakingDemand ?? 0) +
     (segment.drsAvailable ? totals.drs_pace_ms_per_point : 0) +
     (segment.ersAvailable ? totals.ers_efficiency_per_point : 0) +
     tyreWearAdjustment + wetGripAdjustment + attackAdjustment + defenseAdjustment + consistencyAdjustment
