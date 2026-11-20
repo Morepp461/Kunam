@@ -3,7 +3,7 @@ import { RaceSimulation } from "../../src/lib/race-engine/simulation";
 import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
 
 describe("Ten-session race isolation", () => {
-  it("runs ten independent 25-driver sessions interleaved without cross-session state leakage", () => {
+  it("runs ten independent 25-driver sessions interleaved with checkpoint restarts and no cross-session leakage", () => {
     const sessions = Array.from({ length: 10 }, (_, index) => {
       const snapshot = createSyntheticRaceFixture({
         seed: 91000 + index,
@@ -26,6 +26,9 @@ describe("Ten-session race isolation", () => {
         if (session.simulation.status !== "completed") {
           active = true;
           session.simulation.advanceOneSegment();
+          if (session.simulation.tick % 7 === 0 && session.simulation.status !== "completed") {
+            session.simulation = RaceSimulation.restore(session.simulation.createCheckpoint());
+          }
         }
       }
       ticks += 1;
