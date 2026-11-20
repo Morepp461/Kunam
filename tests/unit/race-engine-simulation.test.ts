@@ -3,6 +3,8 @@ import { RaceSimulation } from "../../src/lib/race-engine/simulation";
 import type { SegmentPerformanceModel } from "../../src/lib/race-engine/simulation";
 import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
 import { createWeatherSimulationModel } from "../../src/lib/race-engine/weather";
+import { createIncidentModel } from "../../src/lib/race-engine/incidents";
+import type { IncidentCalibrationProfile, RaceControlProfile } from "../../src/lib/race-engine/incidents";
 
 const seededModel: SegmentPerformanceModel = {
   id: "test-driver-order",
@@ -119,6 +121,58 @@ describe("Race simulation kernel", () => {
     expect(restored.events).toEqual(simulation.events);
     expect(restored.classification).toEqual(simulation.classification);
     expect(restored.weatherState).toEqual(simulation.weatherState);
+  });
+
+
+  it("records incidents, maintenance eligibility, race-control flags, retirement, and checkpoint recovery", () => {
+    const snapshot = createSyntheticRaceFixture({ seed: 91, driverCount: 4, teamCount: 2, totalLaps: 2 });
+    const incidentProfile: IncidentCalibrationProfile = {
+      schemaVersion: 1,
+      id: "simulation-incident",
+      version: "1.0.0",
+      baselineAttributeValue: 50,
+      maximumRatePerKm: 100,
+      incidents: {
+        spin: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        off_track: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        collision: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        crash: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        mechanical_failure: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        engine_failure: { baseRatePerKm: 100, attributeRatePerPoint: {}, timeLossMs: 500, retiresDriver: true }
+      }
+    };
+    const raceControlProfile: RaceControlProfile = {
+      id: "simulation-control",
+      version: "1.0.0",
+      flagByIncident: {
+        spin: "green", off_track: "green", collision: "green",
+        crash: "green", mechanical_failure: "green", engine_failure: "red_flag"
+      },
+      durationMsByFlag: {
+        yellow: 1000, double_yellow: 2000, virtual_safety_car: 3000,
+        safety_car: 4000, red_flag: 100_000
+      }
+    };
+    const incidentModel = createIncidentModel(incidentProfile);
+    const simulation = new RaceSimulation(snapshot, { incidentModel, raceControlProfile });
+    const firstTick = simulation.advanceOneSegment();
+    expect(firstTick.status).toBe("completed");
+    expect(simulation.events.filter((event) => event.type === "incident")).toHaveLength(4);
+    expect(simulation.events.filter((event) => event.type === "race_control").every((event) =>
+      event.raceControlFlag === "red_flag"
+    )).toBe(true);
+    expect(simulation.events.filter((event) => event.type === "incident").every((event) =>
+      event.maintenanceCostEligible === true && event.retiresDriver === true
+    )).toBe(true);
+    expect(simulation.entrantStates.every((state) => state.retired === true && state.finished === false)).toBe(true);
+    expect(simulation.classification.every((entry) => entry.retired === true)).toBe(true);
+    expect(simulation.activeRaceControlFlags).toHaveLength(4);
+
+    const checkpoint = simulation.createCheckpoint();
+    const restored = RaceSimulation.restore(checkpoint, undefined, undefined, undefined, undefined, incidentModel, raceControlProfile);
+    expect(restored.events).toEqual(simulation.events);
+    expect(restored.activeRaceControlFlags).toEqual(simulation.activeRaceControlFlags);
+    expect(restored.classification).toEqual(simulation.classification);
   });
 
   it("does not mutate the input snapshot and keeps stable tie ordering", () => {
