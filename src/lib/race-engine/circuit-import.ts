@@ -77,7 +77,13 @@ function haversineMeters(a: { latitude: number; longitude: number }, b: { latitu
 
 function validateSourceMetadata(metadata: CircuitGeoJsonSourceMetadata): void {
   if (!metadata.provider.trim()) throw new Error("Circuit data provider is required");
-  if (!/^https:\/\//i.test(metadata.sourceUrl)) throw new Error("Circuit source URL must use HTTPS");
+  let source: URL;
+  try { source = new URL(metadata.sourceUrl); } catch { throw new Error("Circuit source URL is invalid"); }
+  if (source.protocol !== "https:") throw new Error("Circuit source URL must use HTTPS");
+  if (source.username || source.password) throw new Error("Circuit source URL must not contain credentials");
+  if ([...source.searchParams.keys()].some((key) => /token|api.?key|secret|auth|signature|credential/i.test(key))) {
+    throw new Error("Circuit source URL must not contain private access tokens or signed credentials");
+  }
   if (!metadata.licenseId.trim()) throw new Error("Circuit source license is required");
   if (!metadata.attribution.trim()) throw new Error("Circuit source attribution is required");
   if (!Number.isFinite(Date.parse(metadata.retrievedAt))) throw new Error("Circuit retrieval timestamp is invalid");
@@ -106,6 +112,8 @@ export async function importCircuitGeoJsonDraft(
   }
 
   const line = extractLineString(parsed);
+  if (!Array.isArray(line.coordinates) || line.coordinates.length < 4) throw new Error("Circuit LineString requires at least four coordinates");
+  if (line.coordinates.length > 50_000) throw new Error("Circuit centerline is limited to 50,000 coordinates");
   const coordinates = line.coordinates.map((coordinate, index) => {
     if (!Array.isArray(coordinate) || coordinate.length < 2) {
       throw new Error(`GeoJSON coordinate ${index + 1} must contain longitude and latitude`);

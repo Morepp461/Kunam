@@ -73,3 +73,12 @@ The code-level provenance gate requires a declared circuit kind. Synthetic circu
 - TUMFTM/racetrack-database README and license: https://github.com/TUMFTM/racetrack-database
 
 This document is a technical source-governance policy, not legal advice or an assertion that any particular third-party dataset has already been cleared for CALERIS commercial use.
+
+
+## GeoJSON centerline draft import
+
+The FIA Circuit Pool Input page accepts a single GeoJSON `LineString` (raw geometry, a Feature, or a FeatureCollection containing exactly one LineString). Import records provider, HTTPS source URL, license ID, attribution, retrieval timestamp, source revision, and a SHA-256 hash of the exact uploaded text.
+
+The importer only produces a normalized centerline preview with projected meter coordinates, cumulative distance, closure-gap detection, and elevation availability. It deliberately does not infer corner labels, sector boundaries, track widths, pit lane, DRS zones, track limits, or missing elevation.
+
+Every imported result is stored with `geometry_status = unverified`. It is a draft and cannot satisfy official circuit release gates. A qualified reviewer must complete and verify the missing circuit specifications against the cited source and applicable license before the geometry can be used by an official race.
