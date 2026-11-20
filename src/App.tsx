@@ -47,6 +47,7 @@ import { optimizeImageToWebp } from "./lib/imageOptimization";
 import AdminRegisteredMembers from "./AdminRegisteredMembers";
 import DeveloperAPI from "./DeveloperAPI";
 import TeamDriverApplications from "./TeamDriverApplications";
+import LiveRace from "./LiveRace";
 
 import CashLoanCentre from "./CashLoanCentre";
 import "./license-engine.css";
@@ -149,6 +150,7 @@ function Application(){
   <Route path="/admin/quest-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminQuestEngine/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/pricing" element={session&&!needsPaddockAccess&&isAdmin?<AdminPricingCenter/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations" element={session&&!needsPaddockAccess&&isAdmin?<AdminOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+   <Route path="/admin/live-race" element={session&&!needsPaddockAccess&&isAdmin?<LiveRace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/brand-ecosystem" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystemAdmin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystem session={session} mode="admin"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/daily-checkin" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
