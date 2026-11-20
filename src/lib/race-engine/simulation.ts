@@ -40,7 +40,6 @@ export const NEUTRAL_PERFORMANCE_MODEL: SegmentPerformanceModel = Object.freeze(
 });
 
 export interface RaceSimulationConfig {
-  /** Symmetric deterministic timing noise. Zero disables noise. */
   readonly noiseAmplitudeMs: number;
   readonly performanceModelId: string;
   readonly performanceModelVersion: string;
@@ -64,7 +63,6 @@ export interface EntrantSimulationState {
   readonly segmentIndex: number;
   readonly elapsedMs: number;
   readonly finished: boolean;
-  readonly finishPosition?: number;
 }
 
 export interface RaceClassificationEntry {
@@ -83,7 +81,6 @@ interface MutableEntrantState {
   segmentIndex: number;
   elapsedMs: number;
   finished: boolean;
-  finishPosition?: number;
 }
 
 export interface RaceSimulationCheckpoint {
@@ -127,12 +124,13 @@ function copyEntrantState(state: MutableEntrantState): EntrantSimulationState {
  * Deterministic segment-stepped race kernel.
  * Physics is injected through a versioned performance model; the default model
  * is intentionally neutral until the game-specific coefficients are calibrated.
+ * Each segment tick is staged and committed atomically in memory.
  */
 export class RaceSimulation {
   readonly snapshot: Readonly<RaceStartSnapshot>;
   readonly config: RaceSimulationConfig;
 
-  private readonly random: SeededRandom;
+  private random: SeededRandom;
   private readonly performanceModel: SegmentPerformanceModel;
   private readonly mutableEntrants: MutableEntrantState[];
   private readonly mutableEvents: RaceSimulationEvent[] = [];
@@ -145,7 +143,6 @@ export class RaceSimulation {
       config?: Partial<RaceSimulationConfig>;
       performanceModel?: SegmentPerformanceModel;
       randomState?: RandomGeneratorState;
-      checkpoint?: RaceSimulationCheckpoint;
     }
   ) {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
@@ -204,11 +201,15 @@ export class RaceSimulation {
       performanceModel,
       randomState: checkpoint.randomState
     });
-    if (!Number.isInteger(checkpoint.tick) || checkpoint.tick < 0) {
+    const maxTicks = simulation.snapshot.circuit.totalLaps * simulation.snapshot.circuit.segments.length;
+    if (!Number.isInteger(checkpoint.tick) || checkpoint.tick < 0 || checkpoint.tick > maxTicks) {
       throw new Error("Checkpoint tick is invalid");
     }
     if (checkpoint.entrants.length !== simulation.mutableEntrants.length) {
       throw new Error("Checkpoint entrant count does not match input snapshot");
+    }
+    if (checkpoint.status !== "running" && checkpoint.status !== "completed") {
+      throw new Error("Checkpoint status is invalid");
     }
 
     const expectedIds = new Set(simulation.mutableEntrants.map((entrant) => entrant.driverId));
@@ -233,6 +234,9 @@ export class RaceSimulation {
       if (state.finished && state.lapCompleted !== simulation.snapshot.circuit.totalLaps) {
         throw new Error(`Finished driver ${state.driverId} has not completed the race distance`);
       }
+      if (!state.finished && state.lapCompleted === simulation.snapshot.circuit.totalLaps) {
+        throw new Error(`Unfinished driver ${state.driverId} has completed the configured distance`);
+      }
     }
 
     for (let index = 0; index < simulation.mutableEntrants.length; index += 1) {
@@ -240,12 +244,24 @@ export class RaceSimulation {
       if (!state) throw new Error("Checkpoint is missing an entrant state");
       simulation.mutableEntrants[index] = { ...state };
     }
+
+    checkpoint.events.forEach((event, index) => {
+      if (event.sequence !== index + 1 || !Number.isFinite(event.simulationTimeMs) || event.simulationTimeMs < 0) {
+        throw new Error("Checkpoint event log has an invalid sequence or timestamp");
+      }
+      if (event.driverId && !expectedIds.has(event.driverId)) {
+        throw new Error("Checkpoint event references an unknown driver");
+      }
+    });
     simulation.mutableEvents.push(...checkpoint.events.map(copyEvent));
     simulation.statusValue = checkpoint.status;
     simulation.tickValue = checkpoint.tick;
 
     if (simulation.statusValue === "completed" && simulation.mutableEntrants.some((entrant) => !entrant.finished)) {
       throw new Error("Completed checkpoint contains an unfinished entrant");
+    }
+    if (simulation.statusValue === "running" && simulation.mutableEntrants.every((entrant) => entrant.finished)) {
+      throw new Error("Running checkpoint cannot contain only finished entrants");
     }
     return simulation;
   }
@@ -281,7 +297,9 @@ export class RaceSimulation {
         const distanceDifference = progress(b) - progress(a);
         if (distanceDifference !== 0) return distanceDifference;
         if (a.elapsedMs !== b.elapsedMs) return a.elapsedMs - b.elapsedMs;
-        return a.driverId.localeCompare(b.driverId);
+        if (a.driverId < b.driverId) return -1;
+        if (a.driverId > b.driverId) return 1;
+        return 0;
       })
       .map((entrant, index) => ({
         position: index + 1,
@@ -298,11 +316,19 @@ export class RaceSimulation {
       return { status: this.statusValue, tick: this.tickValue, eventsAdded: [], classification: this.classification };
     }
 
-    const firstNewEventIndex = this.mutableEvents.length;
     const segments = this.snapshot.circuit.segments;
     const totalDistance = segments.reduce((sum, segment) => sum + segment.distanceMeters, 0);
+    const stagedEntrants = this.mutableEntrants.map((entrant) => ({ ...entrant }));
+    const stagedRandom = SeededRandom.restore(this.random.snapshot());
+    const stagedEvents: RaceSimulationEvent[] = [];
+    const appendEvent = (event: Omit<RaceSimulationEvent, "sequence">) => {
+      stagedEvents.push({
+        sequence: this.mutableEvents.length + stagedEvents.length + 1,
+        ...event
+      });
+    };
 
-    for (const state of this.mutableEntrants) {
+    for (const state of stagedEntrants) {
       if (state.finished) continue;
       const entrant = this.snapshot.entrants.find((item) => item.driverId === state.driverId);
       if (!entrant) throw new Error(`Missing immutable entrant snapshot for ${state.driverId}`);
@@ -321,12 +347,12 @@ export class RaceSimulation {
       }
       const noiseMs = this.config.noiseAmplitudeMs === 0
         ? 0
-        : this.random.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
+        : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
       if (durationMs <= 0) throw new Error(`Segment duration must be positive for ${state.driverId}`);
 
       state.elapsedMs += durationMs;
-      this.pushEvent({
+      appendEvent({
         type: "segment_completed",
         driverId: state.driverId,
         lapNumber: state.lapCompleted + 1,
@@ -338,7 +364,7 @@ export class RaceSimulation {
 
       const nextSegment = segments[state.segmentIndex + 1];
       if (!nextSegment || nextSegment.sectorNumber !== segment.sectorNumber) {
-        this.pushEvent({
+        appendEvent({
           type: "sector_completed",
           driverId: state.driverId,
           lapNumber: state.lapCompleted + 1,
@@ -351,7 +377,7 @@ export class RaceSimulation {
       if (state.segmentIndex === segments.length - 1) {
         state.lapCompleted += 1;
         state.segmentIndex = 0;
-        this.pushEvent({
+        appendEvent({
           type: "lap_completed",
           driverId: state.driverId,
           lapNumber: state.lapCompleted,
@@ -359,7 +385,7 @@ export class RaceSimulation {
         });
         if (state.lapCompleted >= this.snapshot.circuit.totalLaps) {
           state.finished = true;
-          this.pushEvent({
+          appendEvent({
             type: "race_completed",
             driverId: state.driverId,
             lapNumber: state.lapCompleted,
@@ -371,16 +397,19 @@ export class RaceSimulation {
       }
     }
 
+    // Commit the tick only after every entrant has advanced successfully.
+    this.mutableEntrants.splice(0, this.mutableEntrants.length, ...stagedEntrants);
+    this.mutableEvents.push(...stagedEvents);
+    this.random = stagedRandom;
     this.tickValue += 1;
     if (this.mutableEntrants.every((entrant) => entrant.finished)) {
       this.statusValue = "completed";
     }
 
-    const eventsAdded = this.mutableEvents.slice(firstNewEventIndex).map(copyEvent);
     return {
       status: this.statusValue,
       tick: this.tickValue,
-      eventsAdded,
+      eventsAdded: stagedEvents.map(copyEvent),
       classification: this.classification
     };
   }
@@ -411,12 +440,5 @@ export class RaceSimulation {
       entrants: this.entrantStates,
       events: this.events
     };
-  }
-
-  private pushEvent(event: Omit<RaceSimulationEvent, "sequence">): void {
-    this.mutableEvents.push({
-      sequence: this.mutableEvents.length + 1,
-      ...event
-    });
   }
 }
