@@ -48,7 +48,7 @@ describe("Race replay and archive retention policy", () => {
     expect(resolveRaceRetention(input({
       now: "2027-01-01T00:00:00.000Z",
       disputeHold: true
-    })).toMatchObject({
+    }))).toMatchObject({
       replay: "hold",
       fullDetails: "hold",
       archiveKeyFacts: false
@@ -61,7 +61,7 @@ describe("Race replay and archive retention policy", () => {
       replayPurgedAt: "2026-11-22T12:00:00.000Z",
       keyFactsArchivedAt: "2026-12-01T00:00:00.000Z",
       detailsPurgedAt: "2026-12-02T00:00:00.000Z"
-    })).toMatchObject({
+    }))).toMatchObject({
       replay: "already_purged",
       fullDetails: "already_purged"
     }));
