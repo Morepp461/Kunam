@@ -4,6 +4,9 @@ import {
   resolveStartingGridWithPenalties
 } from "../../src/lib/race-engine/race-control";
 import type { RaceControlPenalty } from "../../src/lib/race-engine/race-control";
+import { RaceSimulation } from "../../src/lib/race-engine/simulation";
+import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
+import { createRaceEngineTestModels } from "../../src/lib/race-engine/test-profiles";
 import type { RaceClassificationEntry } from "../../src/lib/race-engine/simulation";
 
 const classification: RaceClassificationEntry[] = [
@@ -57,6 +60,42 @@ describe("Race-control penalty resolution", () => {
     expect(result.slice(0, 2).map((entry) => entry.driverId)).toEqual(["driver-d", "driver-c"]);
     expect(result.find((entry) => entry.driverId === "driver-a")).toMatchObject({ position: null, status: "disqualified" });
     expect(result.find((entry) => entry.driverId === "driver-b")).toMatchObject({ position: null, status: "race_banned" });
+  });
+
+  it("applies a ratified grid penalty to the live simulation before the first tick and preserves it on restore", () => {
+    const snapshot = createSyntheticRaceFixture({
+      seed: 61200,
+      driverCount: 4,
+      teamCount: 2,
+      totalLaps: 3
+    });
+    const models = createRaceEngineTestModels(snapshot);
+    const simulation = new RaceSimulation(snapshot, models);
+    const originalGrid = simulation.classification.map((entry) => entry.driverId);
+    const targetDriver = originalGrid[0];
+    const grid = resolveStartingGridWithPenalties(
+      simulation.entrantStates.map((entry) => ({
+        driverId: entry.driverId,
+        gridPosition: entry.startingGridPosition ?? 1
+      })),
+      [penalty({ id: "grid-test", driverId: targetDriver, type: "grid_penalty", gridPositions: 3 })]
+    );
+
+    simulation.applyStartingGridOrder(grid);
+    const expectedGrid = grid.map((entry) => entry.driverId);
+    expect(simulation.classification.map((entry) => entry.driverId)).toEqual(expectedGrid);
+    expect(expectedGrid[3]).toBe(targetDriver);
+
+    const restored = RaceSimulation.restore(
+      simulation.createCheckpoint(),
+      models.performanceModel,
+      models.tyreModel,
+      models.weatherModel,
+      models.pitModel,
+      models.incidentModel,
+      models.raceControlProfile
+    );
+    expect(restored.classification.map((entry) => entry.driverId)).toEqual(expectedGrid);
   });
 
   it("does not apply grid penalties to race time, but moves the starting-grid order", () => {
