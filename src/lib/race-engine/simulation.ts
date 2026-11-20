@@ -52,6 +52,8 @@ export interface SegmentPerformanceContext {
   readonly baseSegmentTimeMs: number;
   readonly tyreState: TyreState | null;
   readonly weatherState?: WeatherState | null;
+  readonly battleContext?: { readonly attackingGapMs?: number; readonly defendingGapMs?: number };
+  readonly consistencySample?: number;
   readonly simulationClockMs?: number;
   readonly activeRaceControlFlags?: readonly ActiveRaceControlFlag[];
 }
@@ -754,12 +756,16 @@ export class RaceSimulation {
       const behind = orderIndex >= 0 && orderIndex < orderedEntrants.length - 1 ? orderedEntrants[orderIndex + 1] : undefined;
       const attackingGapMs = ahead ? state.elapsedMs - ahead.elapsedMs : undefined;
       const defendingGapMs = behind ? behind.elapsedMs - state.elapsedMs : undefined;
+      const battleGapThreshold = this.performanceModel.battleDetectionGapMs ?? 0;
       const battleContext = {
-        ...(attackingGapMs !== undefined && attackingGapMs <= this.performanceModel.battleDetectionGapMs ?? 0 && segment.overtakingOpportunity
+        ...(attackingGapMs !== undefined && attackingGapMs <= battleGapThreshold && segment.overtakingOpportunity === true
           ? { attackingGapMs } : {}),
-        ...(defendingGapMs !== undefined && defendingGapMs <= (this.performanceModel.snapshot as { battleDetectionGapMs?: number }).battleDetectionGapMs! && segment.defendingOpportunity
+        ...(defendingGapMs !== undefined && defendingGapMs <= battleGapThreshold && segment.defendingOpportunity === true
           ? { defendingGapMs } : {})
       };
+      const noiseMs = this.config.noiseAmplitudeMs === 0
+        ? 0
+        : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const adjustmentMs = this.performanceModel.calculateAdjustmentMs({
         entrant,
         lapNumber: state.lapCompleted + 1,
@@ -775,9 +781,6 @@ export class RaceSimulation {
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
       }
-      const noiseMs = this.config.noiseAmplitudeMs === 0
-        ? 0
-        : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
       let incident: ReturnType<typeof evaluateSegmentIncident> = null;
       if (this.incidentModel) {
