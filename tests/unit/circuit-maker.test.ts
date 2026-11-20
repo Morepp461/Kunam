@@ -38,4 +38,73 @@ describe("Circuit Maker geometry builder", () => {
     expect(result.definition).toBeNull();
     expect(result.errors.some((error) => error.includes("distanceMeters"))).toBe(true);
   });
+
+  it("stores measured banking, gradient, and a validated track-limit polygon", () => {
+    const result = buildCircuitMakerDefinition({
+      id: "fictional-track-boundary",
+      revision: "rev-2",
+      name: "Boundary Ring",
+      countryCode: "ID",
+      totalLaps: 5,
+      targetLapTimeMs: 92000,
+      layout,
+      segments: segments.map((segment, index) => ({
+        ...segment,
+        bankingDegrees: index === 1 ? 8.5 : undefined,
+        gradientPercent: index === 2 ? -3.25 : undefined
+      })),
+      kind: "fictional",
+      specifications: {
+        direction: "clockwise",
+        surface: "asphalt",
+        elevationDataStatus: "measured",
+        pitLane: { enabled: false, lengthMeters: null, speedLimitKph: null, entryDistanceMeters: null, exitDistanceMeters: null },
+        drsZones: [],
+        trackLimits: { method: "polygon", sourceNote: "Boundary traced from approved circuit source" }
+      },
+      trackLimitBoundary: [
+        { x: 0.15, y: 0.15 }, { x: 0.85, y: 0.15 },
+        { x: 0.85, y: 0.85 }, { x: 0.15, y: 0.85 }
+      ]
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.definition?.segments[1].bankingDegrees).toBe(8.5);
+    expect(result.definition?.segments[2].gradientPercent).toBe(-3.25);
+    expect(result.definition?.trackLimitGeometry?.boundary).toHaveLength(4);
+  });
+
+  it("rejects missing or self-intersecting measured track-limit polygons", () => {
+    const base = {
+      id: "fictional-track-boundary",
+      revision: "rev-2",
+      name: "Boundary Ring",
+      countryCode: "ID",
+      totalLaps: 5,
+      targetLapTimeMs: 92000,
+      layout,
+      segments,
+      kind: "fictional" as const,
+      specifications: {
+        direction: "clockwise" as const,
+        surface: "asphalt" as const,
+        elevationDataStatus: "measured" as const,
+        pitLane: { enabled: false, lengthMeters: null, speedLimitKph: null, entryDistanceMeters: null, exitDistanceMeters: null },
+        drsZones: [],
+        trackLimits: { method: "polygon" as const, sourceNote: "Measured boundary" }
+      }
+    };
+    const missing = buildCircuitMakerDefinition(base);
+    expect(missing.definition).toBeNull();
+    expect(missing.errors).toContain("Polygon track limits require a measured boundary polygon");
+
+    const crossing = buildCircuitMakerDefinition({
+      ...base,
+      trackLimitBoundary: [
+        { x: 0.2, y: 0.2 }, { x: 0.8, y: 0.8 },
+        { x: 0.2, y: 0.8 }, { x: 0.8, y: 0.2 }
+      ]
+    });
+    expect(crossing.definition).toBeNull();
+    expect(crossing.errors.some((error) => error.includes("self-intersect"))).toBe(true);
+  });
 });
