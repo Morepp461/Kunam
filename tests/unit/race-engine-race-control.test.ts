@@ -46,7 +46,7 @@ function context(sequence: number, actorRole: "admin" | "fia" = "fia", driverId?
 describe("Audited race-control policy", () => {
   it("deploys and clears flags with immutable evidence-backed audit events", () => {
     const initial = createInitialRaceControlState("race-1", classification);
-    const yellow = deployRaceControlFlag(initial, context(1), "double_yellow");
+    const yellow = deployRaceControlFlag(initial, context(1), "double_yellow", 5000);
     expect(yellow.flag).toBe("double_yellow");
     const green = clearRaceControlFlag(yellow, context(2));
     expect(green.flag).toBe("green");
@@ -129,7 +129,7 @@ describe("Audited race-control policy", () => {
 
   it("rejects sequence gaps and duplicate command events", () => {
     const initial = createInitialRaceControlState("race-1", classification);
-    const deployed = deployRaceControlFlag(initial, context(1), "yellow");
+    const deployed = deployRaceControlFlag(initial, context(1), "yellow", 5000);
     expect(() => clearRaceControlFlag(deployed, context(3))).toThrow(/sequence/i);
   });
 });

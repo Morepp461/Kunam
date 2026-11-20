@@ -8,7 +8,7 @@ const destination = resolve(root, "supabase/functions/race-engine-test-service/r
 const modules = [
   "attributes.ts", "calibration.ts", "circuit-geometry.ts", "contracts.ts",
   "incidents.ts", "pit-strategy.ts", "random.ts", "simulation.ts",
-  "synthetic-fixture.ts", "test-profiles.ts", "tyres.ts", "weather.ts"
+  "synthetic-fixture.ts", "test-profiles.ts", "tyres.ts", "weather.ts", "race-control.ts"
 ];
 
 mkdirSync(destination, { recursive: true });

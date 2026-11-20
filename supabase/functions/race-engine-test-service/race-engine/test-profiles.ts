@@ -178,6 +178,7 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
     durationMsByFlag: {
       yellow: 2500,
       double_yellow: 4000,
+      full_course_yellow: 4500,
       virtual_safety_car: 5000,
       safety_car: 7000,
       red_flag: 9000
@@ -185,6 +186,7 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
     paceTimeMultiplierByFlag: {
       yellow: 1.05,
       double_yellow: 1.08,
+      full_course_yellow: 1.1,
       virtual_safety_car: 1.12,
       safety_car: 1.15,
       red_flag: 1.2

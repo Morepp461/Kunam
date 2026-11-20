@@ -7,7 +7,7 @@ export const INCIDENT_TYPES = [
   "spin", "off_track", "collision", "crash", "mechanical_failure", "engine_failure"
 ] as const;
 export type IncidentType = (typeof INCIDENT_TYPES)[number];
-export type RaceControlFlag = "green" | "yellow" | "double_yellow" | "virtual_safety_car" | "safety_car" | "red_flag";
+export type RaceControlFlag = "green" | "yellow" | "double_yellow" | "full_course_yellow" | "virtual_safety_car" | "safety_car" | "red_flag";
 
 export interface IncidentCalibration {
   readonly baseRatePerKm: number;
@@ -184,7 +184,7 @@ export function validateRaceControlProfile(profile: RaceControlProfile): Inciden
   if (!profile.id.trim() || !profile.version.trim()) errors.push("Race-control profile ID and version are required");
   for (const type of INCIDENT_TYPES) {
     const flag = profile.flagByIncident[type];
-    if (!flag || !["green", "yellow", "double_yellow", "virtual_safety_car", "safety_car", "red_flag"].includes(flag)) {
+    if (!flag || !["green", "yellow", "double_yellow", "full_course_yellow", "virtual_safety_car", "safety_car", "red_flag"].includes(flag)) {
       errors.push(`Race-control profile has an invalid flag for ${type}`);
       continue;
     }
@@ -194,7 +194,7 @@ export function validateRaceControlProfile(profile: RaceControlProfile): Inciden
     }
   }
   for (const [flag, multiplier] of Object.entries(profile.paceTimeMultiplierByFlag ?? {})) {
-    if (!["yellow", "double_yellow", "virtual_safety_car", "safety_car", "red_flag"].includes(flag) ||
+    if (!["yellow", "double_yellow", "full_course_yellow", "virtual_safety_car", "safety_car", "red_flag"].includes(flag) ||
         !finite(multiplier) || multiplier < 1) {
       errors.push(`Race-control pace multiplier for ${flag} must be finite and at least 1`);
     }

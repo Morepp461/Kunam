@@ -54,10 +54,13 @@ export interface RaceControlAuditEvent {
   readonly occurredAt: string;
   readonly simulationTimeMs: number;
   readonly flag?: RaceControlFlag;
+  readonly flagDurationMs?: number;
+  readonly flagExpiresAtSimulationTimeMs?: number;
   readonly restartMode?: RaceRestartMode;
   readonly restartPolicy?: RedFlagRestartPolicy;
   readonly driverId?: string;
   readonly penaltyType?: RacePenaltyType;
+  readonly penaltyId?: string;
   readonly penaltyDurationMs?: number;
   readonly penaltyGridPositions?: number;
   readonly reason: string;
@@ -189,15 +192,28 @@ function appendEvent(state: RaceControlState, event: RaceControlAuditEvent): Rac
 export function deployRaceControlFlag(
   state: RaceControlState,
   context: RaceControlCommandContext,
-  flag: Exclude<RaceControlFlag, "green">
+  flag: Exclude<RaceControlFlag, "green">,
+  durationMs?: number
 ): RaceControlState {
   const errors = [...validateContext(context), ...validateEvidence(context.evidence)];
   if (context.actorRole !== "fia" && context.actorRole !== "admin") errors.push("Only FIA or Admin may deploy race-control flags");
   if (context.raceId !== state.raceId) errors.push("Race ID does not match the active session");
   if (flag === "red_flag" && state.suspended) errors.push("Race is already suspended");
+  if (flag === "red_flag" && durationMs !== undefined) errors.push("Red flag suspension ends only through explicit restart authorization");
+  if (flag !== "red_flag" && (!Number.isInteger(durationMs) || (durationMs ?? 0) <= 0)) {
+    errors.push("A positive integer duration is required for timed race-control flags");
+  }
   if (errors.length) throw new Error(errors.join("; "));
   const suspended = flag === "red_flag";
-  const event = createAuditEvent(context, { id: `rc-${context.sequence}`, action: suspended ? "race_suspended" : "flag_deployed", flag });
+  const event = createAuditEvent(context, {
+    id: `rc-${context.sequence}`,
+    action: suspended ? "race_suspended" : "flag_deployed",
+    flag,
+    ...(durationMs !== undefined ? {
+      flagDurationMs: durationMs,
+      flagExpiresAtSimulationTimeMs: context.simulationTimeMs + durationMs
+    } : {})
+  });
   const next = appendEvent(state, event);
   return Object.freeze({ ...next, flag, suspended, restartPending: suspended });
 }
@@ -274,6 +290,7 @@ export function issueRacePenalty(
   const event = createAuditEvent(context, {
     id: `rc-${context.sequence}`,
     action: "penalty_issued",
+    penaltyId: penalty.id,
     driverId: input.driverId,
     penaltyType: input.type,
     ...(input.durationMs !== undefined ? { penaltyDurationMs: input.durationMs } : {}),
@@ -296,7 +313,7 @@ export function ratifyRacePenalty(
   if (penalty?.ratifiedByAdminId) errors.push("Penalty is already ratified");
   if (penalty?.reversedByEventId) errors.push("A reversed penalty cannot be ratified");
   if (errors.length) throw new Error(errors.join("; "));
-  const event = createAuditEvent(context, { id: `rc-${context.sequence}`, action: "penalty_ratified", driverId: penalty!.driverId, penaltyType: penalty!.type });
+  const event = createAuditEvent(context, { id: `rc-${context.sequence}`, action: "penalty_ratified", penaltyId, driverId: penalty!.driverId, penaltyType: penalty!.type });
   const next = appendEvent(state, event);
   return Object.freeze({
     ...next,
@@ -323,6 +340,7 @@ export function reverseRacePenalty(
   const event = createAuditEvent(context, {
     id: `rc-${context.sequence}`,
     action: "penalty_reversed",
+    penaltyId,
     driverId: penalty!.driverId,
     penaltyType: penalty!.type,
     supersedesEventId

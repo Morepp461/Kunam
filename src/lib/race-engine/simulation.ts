@@ -116,6 +116,9 @@ export interface RaceSimulationEvent {
   readonly maintenanceCostEligible?: boolean;
   readonly retiresDriver?: boolean;
   readonly raceControlFlag?: RaceControlFlag;
+  readonly restartMode?: "standing" | "rolling";
+  readonly restartPolicy?: "last_valid_classification";
+  readonly controlAction?: string;
 }
 
 export interface EntrantSimulationState {
@@ -662,6 +665,83 @@ export class RaceSimulation {
 
   get tick(): number {
     return this.tickValue;
+  }
+
+  get simulationClockMs(): number {
+    return this.simulationClockMsValue;
+  }
+
+  /** Adds a persisted FIA/Admin control flag to the deterministic simulation timeline. */
+  applyExternalRaceControlFlag(
+    flag: Exclude<RaceControlFlag, "green" | "red_flag">,
+    commandId: string,
+    expiresAtSimulationTimeMs: number
+  ): void {
+    if (!commandId.trim()) throw new Error("External race-control command ID is required");
+    if (!Number.isFinite(expiresAtSimulationTimeMs) || expiresAtSimulationTimeMs <= this.simulationClockMsValue) {
+      throw new RangeError("External race-control flag expiry must be after the current simulation clock");
+    }
+    const incidentId = `manual:${commandId}`;
+    this.clearExternalRaceControlFlags();
+    this.activeRaceControlFlagsValue.push({
+      flag,
+      incidentId,
+      expiresAtSimulationTimeMs
+    });
+  }
+
+  /** Removes only externally commanded flags; incident-generated flags remain intact. */
+  clearExternalRaceControlFlags(): void {
+    this.activeRaceControlFlagsValue = this.activeRaceControlFlagsValue.filter(
+      (flag) => !flag.incidentId.startsWith("manual:")
+    );
+  }
+
+  recordRaceRestart(
+    mode: "standing" | "rolling",
+    commandId: string,
+    policy: "last_valid_classification" = "last_valid_classification"
+  ): void {
+    if (!commandId.trim()) throw new Error("Race restart command ID is required");
+    const incidentId = `manual-restart:${commandId}`;
+    if (this.mutableEvents.some((event) => event.incidentId === incidentId)) return;
+    const leader = this.classification[0];
+    this.mutableEvents.push({
+      sequence: this.mutableEvents.length + 1,
+      type: "race_control",
+      lapNumber: leader?.lapCompleted ?? 0,
+      simulationTimeMs: this.simulationClockMsValue,
+      raceControlFlag: "green",
+      incidentId,
+      restartMode: mode,
+      restartPolicy: policy
+    });
+  }
+
+  recordExternalRaceControlEvent(input: {
+    readonly id: string;
+    readonly action: string;
+    readonly flag?: RaceControlFlag;
+    readonly flagDurationMs?: number;
+    readonly restartMode?: "standing" | "rolling";
+    readonly restartPolicy?: "last_valid_classification";
+  }): void {
+    if (!input.id.trim() || !input.action.trim()) throw new Error("Race-control event ID and action are required");
+    const incidentId = `manual-control:${input.id}`;
+    if (this.mutableEvents.some((event) => event.incidentId === incidentId)) return;
+    const leader = this.classification[0];
+    this.mutableEvents.push({
+      sequence: this.mutableEvents.length + 1,
+      type: "race_control",
+      lapNumber: leader?.lapCompleted ?? 0,
+      simulationTimeMs: this.simulationClockMsValue,
+      ...(input.flag ? { raceControlFlag: input.flag } : {}),
+      ...(input.flagDurationMs !== undefined ? { durationMs: input.flagDurationMs } : {}),
+      ...(input.restartMode ? { restartMode: input.restartMode } : {}),
+      ...(input.restartPolicy ? { restartPolicy: input.restartPolicy } : {}),
+      controlAction: input.action,
+      incidentId
+    });
   }
 
   get weatherState(): WeatherState | null {

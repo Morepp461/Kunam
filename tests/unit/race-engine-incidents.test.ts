@@ -26,7 +26,7 @@ const control: RaceControlProfile = {
     crash: "safety_car", mechanical_failure: "virtual_safety_car", engine_failure: "red_flag"
   },
   durationMsByFlag: {
-    yellow: 10_000, double_yellow: 20_000, virtual_safety_car: 30_000,
+    yellow: 10_000, double_yellow: 20_000, full_course_yellow: 25_000, virtual_safety_car: 30_000,
     safety_car: 40_000, red_flag: 50_000
   }
 };

@@ -5,6 +5,26 @@ import { RaceSimulation } from "./race-engine/simulation.ts";
 import type { RaceSimulationCheckpoint } from "./race-engine/simulation.ts";
 import { createSyntheticRaceFixture } from "./race-engine/synthetic-fixture.ts";
 import { createRaceEngineTestModels } from "./race-engine/test-profiles.ts";
+import {
+  authorizeRaceRestart,
+  clearRaceControlFlag,
+  createInitialRaceControlState,
+  deployRaceControlFlag,
+  issueRacePenalty,
+  ratifyRacePenalty,
+  reverseRacePenalty,
+  validateRaceControlAuditTrail
+} from "./race-engine/race-control.ts";
+import type {
+  RaceControlAuditEvent,
+  RaceControlCommandContext,
+  RaceControlEvidence,
+  RaceControlFlag,
+  RaceControlPenalty,
+  RaceControlState,
+  RacePenaltyType,
+  RaceRestartMode
+} from "./race-engine/race-control.ts";
 
 const TEST_URL = Deno.env.get("SUPABASE_URL")!;
 const TEST_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -88,6 +108,21 @@ async function processBackgroundBatch() {
 
   const processed: Array<Record<string, unknown>> = [];
   for (const session of sessions ?? []) {
+    const { data: controlRows, error: controlError } = await service
+      .from("race_engine_test_control_events")
+      .select("payload")
+      .eq("session_id", session.id)
+      .order("sequence", { ascending: true });
+    if (controlError) throw controlError;
+    const controlEvents = (controlRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+    const lastSuspension = [...controlEvents].reverse().find((event) =>
+      event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+    );
+    if (lastSuspension?.action === "race_suspended") {
+      processed.push({ sessionId: session.id, status: "suspended_by_red_flag" });
+      continue;
+    }
+
     const workerId = crypto.randomUUID();
     const { data: claim, error: claimError } = await service.rpc("race_engine_claim_test_session", {
       p_session_id: session.id,
@@ -103,7 +138,32 @@ async function processBackgroundBatch() {
     try {
       const checkpoint = claim.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
+      const latestFlag = [...controlEvents].reverse().find((event) => event.flag !== undefined);
+      simulation.clearExternalRaceControlFlags();
+      if (
+        latestFlag?.flag &&
+        latestFlag.flag !== "green" &&
+        latestFlag.flag !== "red_flag" &&
+        Number.isFinite(latestFlag.flagExpiresAtSimulationTimeMs) &&
+        Number(latestFlag.flagExpiresAtSimulationTimeMs) > simulation.simulationClockMs
+      ) {
+        simulation.applyExternalRaceControlFlag(
+          latestFlag.flag as Exclude<RaceControlFlag, "green" | "red_flag">,
+          latestFlag.id,
+          Number(latestFlag.flagExpiresAtSimulationTimeMs)
+        );
+      }
       const previousEventCount = simulation.events.length;
+      for (const controlEvent of controlEvents) {
+        simulation.recordExternalRaceControlEvent({
+          id: controlEvent.id,
+          action: controlEvent.action,
+          ...(controlEvent.flag ? { flag: controlEvent.flag } : {}),
+          ...(controlEvent.flagDurationMs !== undefined ? { flagDurationMs: controlEvent.flagDurationMs } : {}),
+          ...(controlEvent.restartMode ? { restartMode: controlEvent.restartMode } : {}),
+          ...(controlEvent.restartPolicy ? { restartPolicy: controlEvent.restartPolicy } : {})
+        });
+      }
       const maxSteps = Math.max(1, Math.min(15, Number(session.speed_multiplier ?? 1)));
       for (let index = 0; index < maxSteps && simulation.status !== "completed"; index += 1) {
         simulation.advanceOneSegment();
@@ -141,6 +201,111 @@ async function processBackgroundBatch() {
   }
 
   return { processed, checkedAt: new Date().toISOString() };
+}
+
+
+async function loadRaceControlContext(sessionId: string, userId: string) {
+  const { data: session, error: sessionError } = await service
+    .from("race_engine_test_sessions")
+    .select("id,created_by,checkpoint,status")
+    .eq("id", sessionId)
+    .eq("created_by", userId)
+    .maybeSingle();
+  if (sessionError) throw sessionError;
+  if (!session) throw new Error("Sesi simulasi tidak ditemukan.");
+
+  const { data: eventRows, error: eventError } = await service
+    .from("race_engine_test_control_events")
+    .select("sequence,payload")
+    .eq("session_id", sessionId)
+    .order("sequence", { ascending: true });
+  if (eventError) throw eventError;
+
+  const events = (eventRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+  const penaltiesById = new Map<string, RaceControlPenalty>();
+  for (const event of events) {
+    if (event.action === "penalty_issued" && event.penaltyId && event.driverId && event.penaltyType) {
+      penaltiesById.set(event.penaltyId, {
+        id: event.penaltyId,
+        raceId: sessionId,
+        driverId: event.driverId,
+        type: event.penaltyType,
+        durationMs: event.penaltyDurationMs ?? null,
+        gridPositions: event.penaltyGridPositions ?? null,
+        reason: event.reason,
+        evidence: event.evidence,
+        issuedBy: event.actorId,
+        issuedAt: event.occurredAt,
+        ratifiedByAdminId: null,
+        reversedByEventId: null
+      });
+    } else if (event.action === "penalty_ratified" && event.penaltyId) {
+      const previous = penaltiesById.get(event.penaltyId);
+      if (previous) penaltiesById.set(event.penaltyId, { ...previous, ratifiedByAdminId: event.actorId });
+    } else if (event.action === "penalty_reversed" && event.penaltyId) {
+      const previous = penaltiesById.get(event.penaltyId);
+      if (previous) penaltiesById.set(event.penaltyId, { ...previous, reversedByEventId: event.id });
+    }
+  }
+
+  const simulation = restoreSimulation(session.checkpoint as RaceSimulationCheckpoint);
+  const initial = createInitialRaceControlState(sessionId, simulation.classification);
+  const lastFlagEvent = [...events].reverse().find((event) => event.flag !== undefined);
+  const lastSuspensionEvent = [...events].reverse().find((event) =>
+    event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+  );
+  const suspended = lastSuspensionEvent?.action === "race_suspended";
+  const state: RaceControlState = Object.freeze({
+    ...initial,
+    flag: lastFlagEvent?.flag ?? "green",
+    suspended,
+    restartPending: suspended,
+    penalties: Object.freeze([...penaltiesById.values()]),
+    events: Object.freeze(events)
+  });
+  return { session, simulation, state };
+}
+
+async function persistRaceControlEvent(sessionId: string, state: RaceControlState) {
+  const event = state.events[state.events.length - 1];
+  if (!event) throw new Error("Race-control event was not produced.");
+  const { error } = await service.from("race_engine_test_control_events").insert({
+    session_id: sessionId,
+    sequence: event.sequence,
+    action: event.action,
+    actor_id: event.actorId,
+    actor_role: event.actorRole,
+    occurred_at: event.occurredAt,
+    simulation_time_ms: event.simulationTimeMs,
+    reason: event.reason,
+    payload: event,
+    evidence: event.evidence,
+    supersedes_event_id: null,
+    requires_admin_ratification: event.requiresAdminRatification
+  });
+  if (error) throw error;
+  return event;
+}
+
+function raceControlContext(
+  sessionId: string,
+  userId: string,
+  simulation: RaceSimulation,
+  state: RaceControlState,
+  body: Record<string, unknown>
+): RaceControlCommandContext {
+  const evidence = Array.isArray(body.evidence) ? body.evidence as RaceControlEvidence[] : [];
+  const simulationTimeMs = simulation.simulationClockMs;
+  return {
+    raceId: sessionId,
+    actorId: userId,
+    actorRole: "admin",
+    occurredAt: new Date().toISOString(),
+    simulationTimeMs,
+    sequence: state.events.length + 1,
+    reason: String(body.reason ?? ""),
+    evidence
+  };
 }
 
 Deno.serve(async (req: Request) => {
@@ -225,6 +390,74 @@ Deno.serve(async (req: Request) => {
     const sessionId = String(body.sessionId ?? "");
     if (!/^[0-9a-f-]{36}$/i.test(sessionId)) throw new Error("Session ID tidak valid.");
 
+    if (action === "control_state") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      return json({
+        controlState: state,
+        classification: simulation.classification,
+        audit: validateRaceControlAuditTrail(state)
+      }, 200, origin);
+    }
+
+    if (action === "control_flag") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const flag = String(body.flag ?? "") as RaceControlFlag;
+      const allowedFlags: RaceControlFlag[] = ["green", "yellow", "double_yellow", "full_course_yellow", "virtual_safety_car", "safety_car", "red_flag"];
+      if (!allowedFlags.includes(flag)) throw new Error("Unsupported race-control flag.");
+      const durationMs = body.durationMs === undefined ? undefined : Number(body.durationMs);
+      const next = flag === "green"
+        ? clearRaceControlFlag(state, context)
+        : deployRaceControlFlag(state, context, flag as Exclude<RaceControlFlag, "green">, durationMs);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
+    if (action === "control_restart") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const mode = String(body.mode ?? "") as RaceRestartMode;
+      if (mode !== "standing" && mode !== "rolling") throw new Error("Restart mode must be standing or rolling.");
+      const next = authorizeRaceRestart(state, context, mode);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
+    if (action === "control_penalty") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const penaltyType = String(body.penaltyType ?? "") as RacePenaltyType;
+      const durationMs = body.durationMs === undefined ? undefined : Number(body.durationMs);
+      const gridPositions = body.gridPositions === undefined ? undefined : Number(body.gridPositions);
+      const next = issueRacePenalty(state, context, {
+        driverId: String(body.driverId ?? ""),
+        type: penaltyType,
+        ...(durationMs !== undefined ? { durationMs } : {}),
+        ...(gridPositions !== undefined ? { gridPositions } : {})
+      });
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 201, origin);
+    }
+
+    if (action === "control_ratify_penalty") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const penaltyId = String(body.penaltyId ?? "");
+      const next = ratifyRacePenalty(state, context, penaltyId);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
+    if (action === "control_reverse_penalty") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const penaltyId = String(body.penaltyId ?? "");
+      const supersedesEventId = String(body.supersedesEventId ?? "");
+      const next = reverseRacePenalty(state, context, penaltyId, supersedesEventId);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
     if (action === "detail" || action === "recover") {
       const { data: session, error } = await service
         .from("race_engine_test_sessions")
@@ -302,6 +535,20 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "advance") {
+      const { data: controlRows, error: controlError } = await service
+        .from("race_engine_test_control_events")
+        .select("payload")
+        .eq("session_id", sessionId)
+        .order("sequence", { ascending: true });
+      if (controlError) throw controlError;
+      const controlEvents = (controlRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+      const lastSuspension = [...controlEvents].reverse().find((event) =>
+        event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+      );
+      if (lastSuspension?.action === "race_suspended") {
+        return json({ error: "Race ditangguhkan oleh red flag. FIA/Admin harus mengesahkan restart terlebih dahulu.", suspended: true }, 409, origin);
+      }
+
       const workerId = crypto.randomUUID();
       const { data: claimed, error: claimError } = await service.rpc("race_engine_claim_test_session", {
         p_session_id: sessionId,
@@ -313,9 +560,34 @@ Deno.serve(async (req: Request) => {
 
       const checkpoint = claimed.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
+      const latestFlag = [...controlEvents].reverse().find((event) => event.flag !== undefined);
+      simulation.clearExternalRaceControlFlags();
+      if (
+        latestFlag?.flag &&
+        latestFlag.flag !== "green" &&
+        latestFlag.flag !== "red_flag" &&
+        Number.isFinite(latestFlag.flagExpiresAtSimulationTimeMs) &&
+        Number(latestFlag.flagExpiresAtSimulationTimeMs) > simulation.simulationClockMs
+      ) {
+        simulation.applyExternalRaceControlFlag(
+          latestFlag.flag as Exclude<RaceControlFlag, "green" | "red_flag">,
+          latestFlag.id,
+          Number(latestFlag.flagExpiresAtSimulationTimeMs)
+        );
+      }
+      const previousEventCount = simulation.events.length;
+      for (const controlEvent of controlEvents) {
+        simulation.recordExternalRaceControlEvent({
+          id: controlEvent.id,
+          action: controlEvent.action,
+          ...(controlEvent.flag ? { flag: controlEvent.flag } : {}),
+          ...(controlEvent.flagDurationMs !== undefined ? { flagDurationMs: controlEvent.flagDurationMs } : {}),
+          ...(controlEvent.restartMode ? { restartMode: controlEvent.restartMode } : {}),
+          ...(controlEvent.restartPolicy ? { restartPolicy: controlEvent.restartPolicy } : {})
+        });
+      }
       const expectedTick = Number(claimed.tick);
       const steps = Number(claimed.speed_multiplier ?? 1);
-      const previousEventCount = simulation.events.length;
       for (let index = 0; index < steps && simulation.status !== "completed"; index += 1) {
         simulation.advanceOneSegment();
       }

@@ -49,6 +49,38 @@ type RaceEvent = {
   payload: Record<string, unknown>;
 };
 
+type RaceControlFlag = "green" | "yellow" | "double_yellow" | "full_course_yellow" | "virtual_safety_car" | "safety_car" | "red_flag";
+type RaceControlPenalty = {
+  id: string;
+  driverId: string;
+  type: string;
+  durationMs: number | null;
+  gridPositions: number | null;
+  reason: string;
+  issuedAt: string;
+  ratifiedByAdminId: string | null;
+  reversedByEventId: string | null;
+};
+type RaceControlAuditEvent = {
+  id: string;
+  sequence: number;
+  action: string;
+  actorRole: string;
+  occurredAt: string;
+  flag?: RaceControlFlag;
+  penaltyId?: string;
+  penaltyType?: string;
+  driverId?: string;
+  reason: string;
+};
+type RaceControlState = {
+  flag: RaceControlFlag;
+  suspended: boolean;
+  restartPending: boolean;
+  penalties: RaceControlPenalty[];
+  events: RaceControlAuditEvent[];
+};
+
 function formatTime(ms: number): string {
   if (!Number.isFinite(ms)) return "—";
   const minutes = Math.floor(ms / 60000);
@@ -101,6 +133,18 @@ export default function LiveRace() {
   const [replaySpeed, setReplaySpeed] = useState(1);
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replayLoading, setReplayLoading] = useState(false);
+  const [controlState, setControlState] = useState<RaceControlState | null>(null);
+  const [controlFlag, setControlFlag] = useState<Exclude<RaceControlFlag, "green">>("yellow");
+  const [controlDurationMs, setControlDurationMs] = useState("30000");
+  const [controlReason, setControlReason] = useState("");
+  const [evidenceDescription, setEvidenceDescription] = useState("");
+  const [evidenceRef, setEvidenceRef] = useState("");
+  const [evidenceLap, setEvidenceLap] = useState("1");
+  const [penaltyDriverId, setPenaltyDriverId] = useState("");
+  const [penaltyType, setPenaltyType] = useState("time_5s");
+  const [penaltyDurationMs, setPenaltyDurationMs] = useState("5000");
+  const [gridPenaltyPositions, setGridPenaltyPositions] = useState("1");
+  const [restartMode, setRestartMode] = useState<"standing" | "rolling">("standing");
 
   const refreshSessions = useCallback(async (preferId?: string) => {
     try {
@@ -126,6 +170,8 @@ export default function LiveRace() {
     try {
       const result = await raceApi("detail", { sessionId: id });
       setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
+      const control = await raceApi("control_state", { sessionId: id });
+      setControlState(control.controlState as RaceControlState);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal memuat detail sesi.");
@@ -279,6 +325,45 @@ export default function LiveRace() {
     } finally {
       setBusy("");
     }
+  }
+
+  async function submitControlAction(action: string, payload: Record<string, unknown> = {}) {
+    if (!selectedId) return;
+    setBusy(action);
+    setError("");
+    setNotice("");
+    try {
+      const evidence = [{
+        id: crypto.randomUUID(),
+        source: "replay",
+        capturedAt: new Date().toISOString(),
+        lapNumber: Number(evidenceLap),
+        ...(typeof payload.driverId === "string" ? { driverId: payload.driverId } : {}),
+        description: evidenceDescription.trim(),
+        artifactRef: evidenceRef.trim()
+      }];
+      const result = await raceApi(action, {
+        sessionId: selectedId,
+        reason: controlReason.trim(),
+        evidence,
+        ...payload
+      });
+      setControlState(result.controlState as RaceControlState);
+      setControlReason("");
+      setEvidenceDescription("");
+      setEvidenceRef("");
+      setNotice("Race-control decision tersimpan sebagai audit event.");
+      await loadDetail(selectedId);
+      await refreshSessions(selectedId);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Race-control action gagal.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  function controlEvidenceReady() {
+    return Boolean(controlReason.trim() && evidenceDescription.trim() && evidenceRef.trim() && Number.isInteger(Number(evidenceLap)) && Number(evidenceLap) >= 0);
   }
 
   async function verifyRecovery() {
@@ -453,6 +538,110 @@ export default function LiveRace() {
           </div>
         </section>
       </div>
+
+      <section className="race-engine-control-lab workspace-card">
+        <div className="live-race-subheading">
+          <h3><ShieldCheck size={15}/> FIA / Admin Race Control Lab</h3>
+          <span className={controlState?.suspended ? "race-control-state suspended" : "race-control-state"}>{controlState?.suspended ? "RED FLAG · SUSPENDED" : (controlState?.flag ?? "green").replaceAll("_", " ").toUpperCase()}</span>
+        </div>
+        <p className="page-description">Kontrol ini tersimpan di audit Testing. Red flag menghentikan worker sampai restart disahkan. Flag lain memakai durasi simulasi.</p>
+        <div className="race-control-form-grid">
+          <label>Race control flag
+            <select value={controlFlag} onChange={(event) => setControlFlag(event.target.value as Exclude<RaceControlFlag, "green">)}>
+              <option value="yellow">Yellow</option>
+              <option value="double_yellow">Double Yellow</option>
+              <option value="full_course_yellow">Full Course Yellow</option>
+              <option value="virtual_safety_car">Virtual Safety Car</option>
+              <option value="safety_car">Safety Car</option>
+              <option value="red_flag">Red Flag</option>
+            </select>
+          </label>
+          {controlFlag !== "red_flag" && <label>Duration (ms)
+            <input type="number" min="1" step="1000" value={controlDurationMs} onChange={(event) => setControlDurationMs(event.target.value)}/>
+          </label>}
+          <label>Reason
+            <input value={controlReason} onChange={(event) => setControlReason(event.target.value)} placeholder="Alasan keputusan race control"/>
+          </label>
+          <label>Evidence lap
+            <input type="number" min="0" value={evidenceLap} onChange={(event) => setEvidenceLap(event.target.value)}/>
+          </label>
+          <label>Evidence description
+            <input value={evidenceDescription} onChange={(event) => setEvidenceDescription(event.target.value)} placeholder="Ringkasan bukti replay / marshal"/>
+          </label>
+          <label>Evidence reference
+            <input value={evidenceRef} onChange={(event) => setEvidenceRef(event.target.value)} placeholder="Replay event ID / artifact reference"/>
+          </label>
+        </div>
+        <div className="race-engine-actions">
+          <button className="race-engine-primary-button" disabled={Boolean(busy) || !controlEvidenceReady() || controlState?.suspended} onClick={() => void submitControlAction("control_flag", { flag: controlFlag, ...(controlFlag !== "red_flag" ? { durationMs: Number(controlDurationMs) } : {}) })}>
+            {busy === "control_flag" ? <LoaderCircle className="spin" size={15}/> : <Flag size={15}/>} Deploy flag
+          </button>
+          <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady() || !controlState || controlState.flag === "green" || controlState.suspended} onClick={() => void submitControlAction("control_flag", { flag: "green" })}>
+            Clear flag
+          </button>
+          {controlState?.suspended && <>
+            <select value={restartMode} onChange={(event) => setRestartMode(event.target.value as "standing" | "rolling")}>
+              <option value="standing">Standing restart</option>
+              <option value="rolling">Rolling restart</option>
+            </select>
+            <button className="race-engine-primary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_restart", { mode: restartMode })}>
+              Authorize restart
+            </button>
+          </>}
+        </div>
+
+        <div className="race-control-penalty-block">
+          <div className="live-race-subheading"><h4>Penalty decision</h4><span>EVIDENCE REQUIRED</span></div>
+          <div className="race-control-form-grid">
+            <label>Driver
+              <select value={penaltyDriverId} onChange={(event) => setPenaltyDriverId(event.target.value)}>
+                <option value="">Select driver</option>
+                {(checkpoint?.snapshot?.entrants ?? entrants).map((entrant: any) => <option key={entrant.driverId} value={entrant.driverId}>{entrant.driverNameSnapshot ?? entrant.driverId}</option>)}
+              </select>
+            </label>
+            <label>Penalty type
+              <select value={penaltyType} onChange={(event) => {setPenaltyType(event.target.value);setPenaltyDurationMs(event.target.value==="time_10s"?"10000":event.target.value==="time_5s"?"5000":"30000");}}>
+                <option value="warning">Warning</option>
+                <option value="time_5s">5 seconds</option>
+                <option value="time_10s">10 seconds</option>
+                <option value="drive_through">Drive-through</option>
+                <option value="stop_go">Stop-go</option>
+                <option value="grid_penalty">Grid penalty</option>
+                <option value="time_penalty">Time penalty</option>
+                <option value="disqualification">Disqualification</option>
+                <option value="race_ban">Race ban</option>
+              </select>
+            </label>
+            {["time_5s","time_10s","drive_through","stop_go","time_penalty"].includes(penaltyType) && <label>Duration (ms)
+              <input type="number" min="1" value={penaltyDurationMs} disabled={penaltyType==="time_5s"||penaltyType==="time_10s"} onChange={(event) => setPenaltyDurationMs(event.target.value)}/>
+            </label>}
+            {penaltyType==="grid_penalty" && <label>Grid positions
+              <input type="number" min="1" max="20" value={gridPenaltyPositions} onChange={(event) => setGridPenaltyPositions(event.target.value)}/>
+            </label>}
+          </div>
+          <button className="race-engine-primary-button" disabled={Boolean(busy) || !penaltyDriverId || !controlEvidenceReady()} onClick={() => void submitControlAction("control_penalty", {
+            driverId: penaltyDriverId,
+            penaltyType,
+            ...(["time_5s","time_10s","drive_through","stop_go","time_penalty"].includes(penaltyType) ? { durationMs: Number(penaltyDurationMs) } : {}),
+            ...(penaltyType==="grid_penalty" ? { gridPositions: Number(gridPenaltyPositions) } : {})
+          })}>
+            {busy === "control_penalty" ? <LoaderCircle className="spin" size={15}/> : <ShieldCheck size={15}/>} Issue penalty
+          </button>
+        </div>
+
+        <div className="race-control-penalty-list">
+          {(controlState?.penalties ?? []).map((penalty) => <article key={penalty.id}>
+            <div><strong>{penalty.type.replaceAll("_"," ").toUpperCase()} · {penalty.driverId}</strong><small>{penalty.reason} · {penalty.ratifiedByAdminId ? "RATIFIED" : "PENDING ADMIN RATIFICATION"}{penalty.reversedByEventId ? " · REVERSED" : ""}</small></div>
+            {!penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_ratify_penalty", { penaltyId: penalty.id })}>Ratify</button>}
+            {penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_reverse_penalty", { penaltyId: penalty.id, supersedesEventId: controlState?.events.find((event) => event.action==="penalty_issued" && event.penaltyId===penalty.id)?.id ?? "" })}>Reverse</button>}
+          </article>)}
+          {!controlState?.penalties.length && <p className="race-engine-empty">Belum ada keputusan penalti.</p>}
+        </div>
+        <div className="race-control-audit-list">
+          {(controlState?.events ?? []).slice(-8).reverse().map((event) => <article key={event.id}><strong>{event.action.replaceAll("_"," ").toUpperCase()}</strong><small>{event.reason} · {event.actorRole.toUpperCase()} · {formatDate(event.occurredAt)}</small></article>)}
+          {!controlState?.events.length && <p className="race-engine-empty">Belum ada race-control audit event.</p>}
+        </div>
+      </section>
 
       <section className="race-engine-event-section">
         <div className="live-race-subheading"><h3><Flag size={15}/> Race Event Log</h3><span>{detail?.events.length ?? 0} PERSISTED EVENTS</span></div>
