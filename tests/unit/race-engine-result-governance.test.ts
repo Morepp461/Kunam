@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  authorizeRaceCancellation,
   authorizeResultGovernance
 } from "../../src/lib/race-engine/result-governance";
 import type { OfficialRaceResult, ResultGovernanceRequest } from "../../src/lib/race-engine/result-governance";
@@ -38,30 +39,7 @@ describe("Official race result governance", () => {
     expect(result.reason).toMatch(/Only FIA/i);
   });
 
-  it("allows FIA or Admin to cancel with an auditable reason", () => {
-    const fia = authorizeResultGovernance(request({
-      action: "cancel",
-      reason: "Race cancelled under the event rules"
-    }));
-    const admin = authorizeResultGovernance(request({
-      action: "cancel",
-      actor: { id: "admin-1", role: "admin" },
-      reason: "Operational cancellation"
-    }));
-    expect(fia.resultStatus).toBe("cancelled");
-    expect(admin.resultStatus).toBe("cancelled");
-  });
-
-  it("rejects cancellation without reason or by ordinary users", () => {
-    expect(authorizeResultGovernance(request({ action: "cancel" })).reason).toMatch(/requires an auditable reason/i);
-    expect(authorizeResultGovernance(request({
-      action: "cancel",
-      actor: { id: "driver-1", role: "driver" },
-      reason: "test"
-    })).reason).toMatch(/Only FIA or Admin/i);
-  });
-
-  it("allows only Admin to correct a ratified result by superseding it", () => {
+  it("allows only Admin to correct a ratified result by creating a superseding version", () => {
     const ratified = { ...provisional, status: "ratified" as const };
     const corrected = authorizeResultGovernance(request({
       action: "correct",
@@ -77,7 +55,6 @@ describe("Official race result governance", () => {
         id: "result-2",
         raceId: "race-1",
         version: 2,
-        status: "ratified",
         supersedesResultId: "result-1"
       }
     });
@@ -114,20 +91,45 @@ describe("Official race result governance", () => {
     })).reason).toMatch(/auditable reason/i);
   });
 
-  it("preserves immutable audit records and never includes financial operations", () => {
-    const result = authorizeResultGovernance(request({
-      action: "cancel",
-      reason: "Owner-approved cancellation"
-    }));
+  it("preserves immutable result audit records and excludes financial operations", () => {
+    const result = authorizeResultGovernance(request());
     expect(result.audit).toMatchObject({
-      action: "cancel",
+      action: "ratify",
       actorId: "fia-1",
-      previousResultId: "result-1",
-      reason: "Owner-approved cancellation"
+      previousResultId: "result-1"
     });
     expect(Object.isFrozen(result)).toBe(true);
     expect(Object.isFrozen(result.audit)).toBe(true);
     expect(result).not.toHaveProperty("wallet");
     expect(result).not.toHaveProperty("settlement");
+  });
+});
+
+describe("Race cancellation authority", () => {
+  it("allows FIA and Admin to cancel a race with an auditable reason", () => {
+    for (const role of ["fia", "admin"] as const) {
+      expect(authorizeRaceCancellation({
+        raceId: "race-1",
+        raceStatus: "running",
+        actor: { id: `${role}-1`, role },
+        occurredAt: "2026-11-20T20:00:00.000Z",
+        reason: "Operational cancellation"
+      }).accepted).toBe(true);
+    }
+  });
+
+  it("rejects ordinary users, missing reasons, and already-cancelled races", () => {
+    const base = {
+      raceId: "race-1",
+      raceStatus: "queued" as const,
+      occurredAt: "2026-11-20T20:00:00.000Z",
+      reason: "Cancel"
+    };
+    expect(authorizeRaceCancellation({ ...base, actor: { id: "driver-1", role: "driver" } }).reason)
+      .toMatch(/Only FIA or Admin/i);
+    expect(authorizeRaceCancellation({ ...base, actor: { id: "fia-1", role: "fia" }, reason: "" }).reason)
+      .toMatch(/auditable reason/i);
+    expect(authorizeRaceCancellation({ ...base, raceStatus: "cancelled", actor: { id: "fia-1", role: "fia" } }).reason)
+      .toMatch(/already cancelled/i);
   });
 });
