@@ -247,7 +247,14 @@ export function createCalibratedPerformanceModel(
     snapshot: snapshot as unknown as JsonValue,
     battleDetectionGapMs: snapshot.battleDetectionGapMs,
     calculateAdjustmentMs: (context: SegmentPerformanceContext) =>
-      calculateSegmentPaceAdjustmentUnchecked(context, snapshot)
+      calculateSegmentPaceAdjustmentUnchecked(context, snapshot),
+    calculatePitStrategyAdjustments: (entrant: RaceEntrantSnapshot) => {
+      const totals = evaluateAttributeInfluencesUnchecked(entrant, snapshot);
+      return {
+        strategyQualityAdjustmentMs: totals.strategy_quality_per_point,
+        pitStopTimeAdjustmentMs: totals.pit_stop_time_ms_per_point
+      };
+    }
   });
 }
 
