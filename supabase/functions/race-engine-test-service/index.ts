@@ -169,6 +169,13 @@ async function processBackgroundBatch() {
     });
     if (claimError) throw claimError;
     if (!claim) {
+      // A valid lease owned by another invocation must not pin this row at the head of the queue.
+      const { error: rotateError } = await service
+        .from("race_engine_test_sessions")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", session.id)
+        .in("status", ["queued", "running"]);
+      if (rotateError) throw rotateError;
       processed.push({ sessionId: session.id, status: "busy" });
       continue;
     }
@@ -641,6 +648,15 @@ Deno.serve(async (req: Request) => {
         .eq("session_id", sessionId)
         .maybeSingle();
       if (projectionError) throw projectionError;
+      const projectionIsStale = !projectionRow?.projection ||
+        Number((projectionRow.projection as Record<string, unknown>).tick) !== Number(session.tick);
+      const projection = projectionIsStale
+        ? await persistTimingProjection(
+            sessionId,
+            restoreSimulation(session.checkpoint as RaceSimulationCheckpoint),
+            (session.classification ?? undefined) as RaceTimingProjectionClassificationEntry[] | undefined
+          )
+        : projectionRow.projection;
       const { data: commands, error: commandError } = await service
         .from("race_engine_test_commands")
         .select("id,command_type,result,created_at")
@@ -648,7 +664,7 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(20);
       if (commandError) throw commandError;
-      return json({ session, projection: projectionRow?.projection ?? null, events: events ?? [], commands: commands ?? [] }, 200, origin);
+      return json({ session, projection, events: events ?? [], commands: commands ?? [] }, 200, origin);
     }
 
     if (action === "replay") {
