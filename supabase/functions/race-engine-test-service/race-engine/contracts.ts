@@ -1,13 +1,13 @@
 import {
   ATTRIBUTE_SCHEMA_VERSION,
   validateAttributeValues
-} from "./attributes";
-import { validateCircuitGeometryDefinition } from "./circuit-geometry";
-import type { CircuitGeometryDefinition } from "./circuit-geometry";
+} from "./attributes.ts";
+import { validateCircuitGeometryDefinition } from "./circuit-geometry.ts";
+import type { CircuitGeometryDefinition } from "./circuit-geometry.ts";
 import type {
   CarTeamAttributeValues,
   DriverAttributeValues
-} from "./attributes";
+} from "./attributes.ts";
 
 export const RACE_ENGINE_VERSION = "0.5.0";
 export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 2;
