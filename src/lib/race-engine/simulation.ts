@@ -132,7 +132,7 @@ export interface EntrantSimulationState {
   readonly pitStopCount?: number;
   readonly lastPitLap?: number | null;
   readonly retired?: boolean;
-  readonly startingGridPosition: number;
+  readonly startingGridPosition?: number;
 }
 
 export interface RaceClassificationEntry {
@@ -144,7 +144,6 @@ export interface RaceClassificationEntry {
   readonly finished: boolean;
   readonly pitStopCount?: number;
   readonly retired?: boolean;
-  readonly startingGridPosition: number;
 }
 
 interface MutableEntrantState {
@@ -785,6 +784,9 @@ export class RaceSimulation {
     if (order.size !== this.mutableEntrants.length || this.mutableEntrants.some((entrant) => !order.has(entrant.driverId))) {
       throw new Error("Starting grid must match the active race entrants");
     }
+    for (let position = 1; position <= grid.length; position += 1) {
+      if (!positions.has(position)) throw new Error("Starting-grid positions must be contiguous");
+    }
     this.mutableEntrants = this.mutableEntrants.map((entrant) => ({
       ...entrant,
       startingGridPosition: order.get(entrant.driverId)!
@@ -819,8 +821,7 @@ export class RaceSimulation {
         elapsedMs: entrant.elapsedMs,
         finished: entrant.finished,
         retired: entrant.retired,
-        pitStopCount: entrant.pitStopCount,
-        startingGridPosition: entrant.startingGridPosition
+        pitStopCount: entrant.pitStopCount
       }));
   }
 
