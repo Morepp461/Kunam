@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import type { MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { Maximize2 } from "lucide-react";
 import { buildCircuitMakerDefinition, circuitLayoutFromGeoJsonDraft } from "./lib/race-engine/circuit-maker";
 import type { CircuitMakerSegmentInput } from "./lib/race-engine/circuit-maker";
 import type { CircuitGeometryDefinition, CircuitPathPoint, CircuitCornerType, CircuitGeometrySpecifications, CircuitSourceProvenance } from "./lib/race-engine/circuit-geometry";
@@ -52,6 +53,22 @@ const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
 }));
 const toPoints = (points: readonly { readonly x: number; readonly y: number }[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
 const numberValue = (value: string) => value.trim() === "" ? Number.NaN : Number(value);
+const smoothStroke = (input: readonly {x:number;y:number}[]) => {
+  if(input.length<3)return input.map((point,index)=>({id:"point-"+(index+1),...point}));
+  const output:CircuitPathPoint[]=[];
+  const get=(index:number)=>input[Math.max(0,Math.min(input.length-1,index))];
+  for(let i=0;i<input.length-1;i++){
+    const p0=get(i-1),p1=get(i),p2=get(i+1),p3=get(i+2);
+    for(let step=0;step<6;step++){
+      const t=step/6,t2=t*t,t3=t2*t;
+      const x=.5*(2*p1.x+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
+      const y=.5*(2*p1.y+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3);
+      output.push({id:"point-"+(output.length+1),x:Math.max(0,Math.min(1,x)),y:Math.max(0,Math.min(1,y))});
+    }
+  }
+  output.push({id:"point-"+(output.length+1),...input[input.length-1]});
+  return output;
+};
 
 export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, value, importedGeoJsonDraft = null, sourceProvenance = null, onChange }: Props) {
   const [points, setPoints] = useState<CircuitPathPoint[]>(() => value?.layout.map((point) => ({...point})) ?? []);
@@ -79,6 +96,18 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const [targetLapTime, setTargetLapTime] = useState(value ? String(value.targetLapTimeMs) : "");
   const [kind, setKind] = useState<"fictional"|"real">(value?.kind === "real" ? "real" : "fictional");
   const [activeSector, setActiveSector] = useState<1|2|3>(1);
+  const [drawing,setDrawing]=useState(false);
+  const [fullScreen,setFullScreen]=useState(false);
+  const makerRef=useRef<HTMLElement|null>(null);
+  const strokeRef=useRef<{x:number;y:number}[]>([]);
+  const centerlineStrokeStarts=useRef<number[]>([]);
+  const boundaryStrokeStarts=useRef<number[]>([]);
+  useEffect(()=>{const sync=()=>setFullScreen(Boolean(document.fullscreenElement&&makerRef.current?.contains(document.fullscreenElement)));document.addEventListener("fullscreenchange",sync);return()=>document.removeEventListener("fullscreenchange",sync)},[]);
+  const toggleFullScreen=async()=>{try{if(document.fullscreenElement){await document.exitFullscreen();return}await makerRef.current?.requestFullscreen();try{await (screen.orientation as any).lock?.("landscape")}catch{}}catch{}};
+  const getPointerPoint=(event:ReactPointerEvent<SVGSVGElement>)=>{const rect=event.currentTarget.getBoundingClientRect();return{x:Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height))}};
+  const startStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);strokeRef.current=[getPointerPoint(event)];setDrawing(true)};
+  const moveStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{if(!drawing)return;const point=getPointerPoint(event),last=strokeRef.current[strokeRef.current.length-1];if(!last||Math.hypot(point.x-last.x,point.y-last.y)>.003)strokeRef.current.push(point)};
+  const finishStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{if(!drawing)return;event.preventDefault();setDrawing(false);const stroke=strokeRef.current;strokeRef.current=[];if(stroke.length<2)return;const smooth=smoothStroke(stroke);if(drawingMode==="track_limit")setTrackLimitBoundary(current=>{boundaryStrokeStarts.current.push(current.length);return [...current,...smooth.map(({x,y})=>({x,y}))]});else setPoints(current=>{centerlineStrokeStarts.current.push(current.length);const strokeId=crypto.randomUUID();return [...current,...smooth.map((point,index)=>({...point,id:strokeId+"-"+index}))]})};
   const [specifications, setSpecifications] = useState<CircuitGeometrySpecifications>(() => value?.specifications ?? { direction: "unknown", surface: "unknown", elevationDataStatus: "unavailable", pitLane: { enabled: false, lengthMeters: null, speedLimitKph: null, entryDistanceMeters: null, exitDistanceMeters: null }, drsZones: [], trackLimits: { method: "unverified", sourceNote: "" } });
 
   const inputSegments = useMemo<CircuitMakerSegmentInput[]>(() => segments.map((segment) => ({
@@ -111,20 +140,6 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     trackLimitBoundary
   }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, sourceProvenance, trackLimitBoundary, value?.revision, value?.sourceProvenance]);
 
-  const addPoint = (event: MouseEvent<SVGSVGElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    if (drawingMode === "track_limit") {
-      setTrackLimitBoundary((current) => [...current, { x, y }]);
-      return;
-    }
-    setPoints((current) => {
-      const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y
-        ? current.slice(0, -1) : current;
-      return [...open, { id: `point-${open.length+1}`, x, y }];
-    });
-  };
   const loadImportedCenterline = () => {
     if (!importedGeoJsonDraft) return;
     setPoints(circuitLayoutFromGeoJsonDraft(importedGeoJsonDraft));
@@ -144,15 +159,17 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   });
   const undo = () => {
     if (drawingMode === "track_limit") {
-      setTrackLimitBoundary((current) => current.slice(0, -1));
+      const start=boundaryStrokeStarts.current.pop();
+      setTrackLimitBoundary(current=>current.slice(0,start===undefined?Math.max(0,current.length-1):start));
       return;
     }
-    setPoints((current) => {
-      const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y ? current.slice(0,-1) : current;
-      return open.slice(0,-1);
+    const start=centerlineStrokeStarts.current.pop();
+    setPoints(current=>{
+      const open=current.length>1&&current[0].x===current[current.length-1].x&&current[0].y===current[current.length-1].y?current.slice(0,-1):current;
+      return open.slice(0,start===undefined?Math.max(0,open.length-1):start);
     });
   };
-  const clearActiveDrawing = () => drawingMode === "track_limit" ? setTrackLimitBoundary([]) : setPoints([]);
+  const clearActiveDrawing = () => { if(drawingMode==="track_limit"){boundaryStrokeStarts.current=[];setTrackLimitBoundary([])}else{centerlineStrokeStarts.current=[];setPoints([])} };
   const updateSegment = (id: string, key: keyof SegmentForm, next: string|boolean) => setSegments((current) => current.map((segment) => segment.id === id ? ({...segment, [key]: next}) : segment));
   const addSegment = () => setSegments((current) => [...current, {
     ...initialSegments[activeSector-1],
@@ -163,10 +180,10 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const selected = segments.filter((segment) => segment.sectorNumber === activeSector);
   const publish = () => onChange(built.definition);
 
-  return <section className="circuit-maker">
+  return <section ref={makerRef} className={"circuit-maker"+(fullScreen?" is-fullscreen":"")}>
     <header className="circuit-maker-heading">
       <div><span className="section-eyebrow">CIRCUIT DESIGNER</span><h3>Circuit Maker</h3><p>Visual editor dan specification editor tersinkron dalam satu draft.</p></div>
-      <span className={built.definition ? "circuit-maker-status valid" : "circuit-maker-status"}>{built.definition ? "GEOMETRY VALID" : "DRAFT INCOMPLETE"}</span>
+      <div className="circuit-maker-head-actions"><span className={built.definition ? "circuit-maker-status valid" : "circuit-maker-status"}>{built.definition ? "GEOMETRY VALID" : "DRAFT INCOMPLETE"}</span><button type="button" className="circuit-maker-fullscreen" onClick={toggleFullScreen}><Maximize2 size={14}/>{fullScreen?"Exit fullscreen":"Landscape fullscreen"}</button></div>
     </header>
     <div className="circuit-maker-toolbar">
       <label>Jenis circuit<select value={kind} onChange={(event) => setKind(event.target.value as "fictional"|"real")}><option value="fictional">Fictional circuit</option><option value="real">Real circuit · provenance required</option></select></label>
@@ -193,7 +210,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     <div className="circuit-maker-layout">
       <div className="circuit-maker-canvas-panel">
         <div className="circuit-maker-canvas-head"><strong>TRACK CANVAS</strong><span>Centerline {points.length} · Boundary {trackLimitBoundary.length}</span></div>
-        <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker drawing canvas" onClick={addPoint}>
+        <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker freehand drawing canvas" onPointerDown={startStroke} onPointerMove={moveStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
           <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
           {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
@@ -212,7 +229,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
           <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
         </div>
-        <small>{drawingMode==="centerline"?"Tap canvas to draw the centerline, then close its loop.":"Tap canvas to draw the measured track-limit boundary polygon. Polygon closure is implicit; add at least three points."}</small>
+        <small>{drawingMode==="centerline"?"Tahan dan geser untuk menggambar centerline dengan kurva halus.":"Tahan dan geser untuk menggambar batas lintasan. Polygon closure is implicit; add at least three points."}</small>
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>
