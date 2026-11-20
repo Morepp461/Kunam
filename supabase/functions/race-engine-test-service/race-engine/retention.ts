@@ -36,14 +36,30 @@ export function resolveRaceRetention(input: RaceRetentionInput): RaceRetentionDe
 
   const replayExpiresAtMs = completedAtMs + RACE_REPLAY_RETENTION_HOURS * 60 * 60 * 1000;
   const replayExpiresAt = new Date(replayExpiresAtMs).toISOString();
-  if (input.replayPurgedAt && !Number.isFinite(Date.parse(input.replayPurgedAt))) {
+  const replayPurgedAtMs = input.replayPurgedAt ? Date.parse(input.replayPurgedAt) : null;
+  const keyFactsArchivedAtMs = input.keyFactsArchivedAt ? Date.parse(input.keyFactsArchivedAt) : null;
+  const detailsPurgedAtMs = input.detailsPurgedAt ? Date.parse(input.detailsPurgedAt) : null;
+  if (replayPurgedAtMs !== null && !Number.isFinite(replayPurgedAtMs)) {
     throw new Error("replayPurgedAt must be a valid timestamp");
   }
-  if (input.keyFactsArchivedAt && !Number.isFinite(Date.parse(input.keyFactsArchivedAt))) {
+  if (keyFactsArchivedAtMs !== null && !Number.isFinite(keyFactsArchivedAtMs)) {
     throw new Error("keyFactsArchivedAt must be a valid timestamp");
   }
-  if (input.detailsPurgedAt && !Number.isFinite(Date.parse(input.detailsPurgedAt))) {
+  if (detailsPurgedAtMs !== null && !Number.isFinite(detailsPurgedAtMs)) {
     throw new Error("detailsPurgedAt must be a valid timestamp");
+  }
+  if ([replayPurgedAtMs, keyFactsArchivedAtMs, detailsPurgedAtMs].some((timestamp) => timestamp !== null && timestamp > nowMs)) {
+    throw new Error("Retention markers cannot be in the future");
+  }
+  if (replayPurgedAtMs !== null && replayPurgedAtMs < replayExpiresAtMs) {
+    throw new Error("Replay cannot be purged before the 48-hour retention window ends");
+  }
+  if (detailsPurgedAtMs !== null && (
+    keyFactsArchivedAtMs === null ||
+    detailsPurgedAtMs < offSeasonEndMs ||
+    detailsPurgedAtMs < keyFactsArchivedAtMs
+  )) {
+    throw new Error("Full race details cannot be purged before off-season key-fact archive");
   }
 
   let replay: RetentionAction;
