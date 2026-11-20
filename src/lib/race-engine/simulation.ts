@@ -19,8 +19,11 @@ import {
 } from "./tyres";
 import { TYRE_COMPOUNDS } from "./tyres";
 import type { TyreSimulationModel, TyreState } from "./tyres";
+import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from "./weather";
+import type { WeatherSimulationModel, WeatherState } from "./weather";
 
-export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 3;
+export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 4;
+export const LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 3;
 
 export type RaceSimulationStatus = "running" | "completed";
 export type RaceEventType =
@@ -37,6 +40,7 @@ export interface SegmentPerformanceContext {
   readonly segment: CircuitSegmentSnapshot;
   readonly baseSegmentTimeMs: number;
   readonly tyreState: TyreState | null;
+  readonly weatherState?: WeatherState | null;
 }
 
 export interface SegmentPerformanceModel {
@@ -62,6 +66,9 @@ export interface RaceSimulationConfig {
   readonly tyreModelId: string | null;
   readonly tyreModelVersion: string | null;
   readonly tyreModelSnapshot: JsonValue | null;
+  readonly weatherModelId?: string | null;
+  readonly weatherModelVersion?: string | null;
+  readonly weatherModelSnapshot?: JsonValue | null;
 }
 
 export interface RaceSimulationEvent {
@@ -105,7 +112,7 @@ interface MutableEntrantState {
 }
 
 export interface RaceSimulationCheckpoint {
-  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION;
+  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
   readonly engineVersion: string;
   readonly raceId: string;
   readonly snapshot: RaceStartSnapshot;
@@ -115,6 +122,7 @@ export interface RaceSimulationCheckpoint {
   readonly tick: number;
   readonly entrants: readonly EntrantSimulationState[];
   readonly events: readonly RaceSimulationEvent[];
+  readonly weatherState?: WeatherState | null;
 }
 
 export interface AdvanceResult {
@@ -196,6 +204,8 @@ export class RaceSimulation {
   private random: SeededRandom;
   private readonly performanceModel: SegmentPerformanceModel;
   private readonly tyreModel?: TyreSimulationModel;
+  private readonly weatherModel?: WeatherSimulationModel;
+  private weatherStateValue?: WeatherState;
   private readonly mutableEntrants: MutableEntrantState[];
   private readonly mutableEvents: RaceSimulationEvent[] = [];
   private statusValue: RaceSimulationStatus = "running";
@@ -208,12 +218,14 @@ export class RaceSimulation {
       performanceModel?: SegmentPerformanceModel;
       randomState?: RandomGeneratorState;
       tyreModel?: TyreSimulationModel;
+      weatherModel?: WeatherSimulationModel;
     }
   ) {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
     this.snapshot = immutableSnapshot;
     this.performanceModel = options?.performanceModel ?? NEUTRAL_PERFORMANCE_MODEL;
     this.tyreModel = options?.tyreModel;
+    this.weatherModel = options?.weatherModel;
     const config: RaceSimulationConfig = {
       noiseAmplitudeMs: options?.config?.noiseAmplitudeMs ?? 0,
       performanceModelId: this.performanceModel.id,
@@ -221,7 +233,10 @@ export class RaceSimulation {
       performanceModelSnapshot: cloneJsonValue(this.performanceModel.snapshot),
       tyreModelId: this.tyreModel?.id ?? null,
       tyreModelVersion: this.tyreModel?.version ?? null,
-      tyreModelSnapshot: this.tyreModel ? cloneJsonValue(this.tyreModel.snapshot) : null
+      tyreModelSnapshot: this.tyreModel ? cloneJsonValue(this.tyreModel.snapshot) : null,
+      weatherModelId: this.weatherModel?.id ?? null,
+      weatherModelVersion: this.weatherModel?.version ?? null,
+      weatherModelSnapshot: this.weatherModel ? cloneJsonValue(this.weatherModel.snapshot) : null
     };
     if (options?.config?.performanceModelId && options.config.performanceModelId !== config.performanceModelId) {
       throw new Error("Configured performance model ID does not match the injected model");
@@ -253,8 +268,25 @@ export class RaceSimulation {
     ) {
       throw new Error("Configured tyre model snapshot does not match the injected model");
     }
+    const weatherFields = [config.weatherModelId ?? null, config.weatherModelVersion ?? null, config.weatherModelSnapshot ?? null];
+    const allWeatherNull = weatherFields.every((value) => value === null);
+    const allWeatherPresent = weatherFields.every((value) => value !== null);
+    if (!allWeatherNull && !allWeatherPresent) throw new Error("Weather model configuration is invalid");
+    if (this.weatherModel && (
+      config.weatherModelId !== this.weatherModel.id ||
+      config.weatherModelVersion !== this.weatherModel.version ||
+      canonicalJson(config.weatherModelSnapshot as JsonValue) !== canonicalJson(this.weatherModel.snapshot)
+    )) throw new Error("Configured weather model does not match the injected model");
+    if (!this.weatherModel && !allWeatherNull) throw new Error("Weather model configuration requires an injected weather model");
     assertConfig(config);
     this.config = deepFreeze(config);
+    if (this.weatherModel) {
+      const firstInput = getWeatherInput(this.weatherModel, 1, immutableSnapshot.circuit.segments[0].id);
+      this.weatherStateValue = createInitialWeatherState(firstInput, this.weatherModel.profile);
+      for (let lap = 1; lap <= immutableSnapshot.circuit.totalLaps; lap += 1) {
+        for (const segment of immutableSnapshot.circuit.segments) getWeatherInput(this.weatherModel, lap, segment.id);
+      }
+    }
     this.random = options?.randomState
       ? SeededRandom.restore(options.randomState)
       : new SeededRandom(immutableSnapshot.seed);
@@ -302,9 +334,11 @@ export class RaceSimulation {
   static restore(
     checkpoint: RaceSimulationCheckpoint,
     performanceModel: SegmentPerformanceModel = NEUTRAL_PERFORMANCE_MODEL,
-    tyreModel?: TyreSimulationModel
+    tyreModel?: TyreSimulationModel,
+    weatherModel?: WeatherSimulationModel
   ): RaceSimulation {
-    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION) {
+    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
+        checkpoint.schemaVersion !== LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION) {
       throw new Error("Unsupported simulation checkpoint schema version");
     }
     if (checkpoint.engineVersion !== RACE_ENGINE_VERSION) {
@@ -331,6 +365,16 @@ export class RaceSimulation {
     )) {
       throw new Error("Checkpoint tyre model ID, version, or snapshot does not match");
     }
+    const checkpointHasWeatherModel = (checkpoint.config.weatherModelId ?? null) !== null;
+    if (checkpointHasWeatherModel !== Boolean(weatherModel)) throw new Error("Checkpoint requires the same weather simulation model");
+    if (weatherModel && (
+      checkpoint.config.weatherModelId !== weatherModel.id ||
+      checkpoint.config.weatherModelVersion !== weatherModel.version ||
+      canonicalJson(checkpoint.config.weatherModelSnapshot as JsonValue) !== canonicalJson(weatherModel.snapshot)
+    )) throw new Error("Checkpoint weather model ID, version, or snapshot does not match");
+    if (checkpoint.schemaVersion === LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION && weatherModel) {
+      throw new Error("Legacy checkpoints cannot be restored with a weather model");
+    }
     const validation = validateRaceStartSnapshot(checkpoint.snapshot);
     if (!validation.valid) throw new Error(`Checkpoint snapshot is invalid: ${validation.errors.join("; ")}`);
 
@@ -338,6 +382,7 @@ export class RaceSimulation {
       config: checkpoint.config,
       performanceModel,
       tyreModel,
+      weatherModel,
       randomState: checkpoint.randomState
     });
     const maxTicks = simulation.snapshot.circuit.totalLaps * simulation.snapshot.circuit.segments.length;
@@ -413,6 +458,18 @@ export class RaceSimulation {
         throw new Error("Checkpoint event references an unknown driver");
       }
     });
+    if (simulation.weatherModel) {
+      if (!checkpoint.weatherState) throw new Error("Checkpoint weather state is missing");
+      const weather = checkpoint.weatherState;
+      if (![weather.trackWaterDepthMm, weather.trackWetness, weather.gripPercent, weather.airTempC,
+        weather.surfaceTempC, weather.relativeHumidityPercent, weather.rainfallMmPerHour,
+        weather.windSpeedMps, weather.windDirectionDeg, weather.visibilityMeters].every(Number.isFinite) ||
+        weather.trackWaterDepthMm < 0 || weather.trackWetness < 0 || weather.trackWetness > 1 ||
+        weather.gripPercent < 0 || weather.gripPercent > 100) throw new Error("Checkpoint weather state is invalid");
+      simulation.weatherStateValue = Object.freeze({ ...weather });
+    } else if (checkpoint.weatherState != null) {
+      throw new Error("Checkpoint contains unexpected weather state");
+    }
     simulation.mutableEvents.push(...checkpoint.events.map(copyEvent));
     simulation.statusValue = checkpoint.status;
     simulation.tickValue = checkpoint.tick;
@@ -438,6 +495,10 @@ export class RaceSimulation {
 
   get tick(): number {
     return this.tickValue;
+  }
+
+  get weatherState(): WeatherState | null {
+    return this.weatherStateValue ? { ...this.weatherStateValue } : null;
   }
 
   get events(): readonly RaceSimulationEvent[] {
@@ -494,6 +555,15 @@ export class RaceSimulation {
       });
     };
 
+    const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished);
+    const weatherLap = weatherReferenceState ? weatherReferenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
+    const weatherSegment = weatherReferenceState
+      ? segments[weatherReferenceState.segmentIndex]
+      : segments[segments.length - 1];
+    const weatherInputForTick = this.weatherModel
+      ? getWeatherInput(this.weatherModel, weatherLap, weatherSegment.id)
+      : undefined;
+    let globalTickDurationMs = 0;
     for (const state of stagedEntrants) {
       if (state.finished) continue;
       const entrant = this.snapshot.entrants.find((item) => item.driverId === state.driverId);
@@ -508,7 +578,8 @@ export class RaceSimulation {
         segmentDistanceMeters: segment.distanceMeters,
         segment,
         baseSegmentTimeMs,
-        tyreState: state.tyreState ?? null
+        tyreState: state.tyreState ?? null,
+        weatherState: this.weatherStateValue ?? null
       });
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
@@ -517,6 +588,7 @@ export class RaceSimulation {
         ? 0
         : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
+      globalTickDurationMs = Math.max(globalTickDurationMs, durationMs);
       if (durationMs <= 0) throw new Error(`Segment duration must be positive for ${state.driverId}`);
 
       if (this.tyreModel && state.tyreState) {
@@ -526,7 +598,9 @@ export class RaceSimulation {
           segment.id
         );
         const tyreInput = createTyreSegmentInput(
-          environment,
+          this.weatherStateValue
+            ? { ...environment, trackWetness: this.weatherStateValue.trackWetness, surfaceTempC: this.weatherStateValue.surfaceTempC }
+            : environment,
           segment.distanceMeters,
           entrant.driverAttributes.tyre_management,
           entrant.carTeamAttributes.team_tyre_management,
@@ -585,6 +659,12 @@ export class RaceSimulation {
     this.mutableEntrants.splice(0, this.mutableEntrants.length, ...stagedEntrants);
     this.mutableEvents.push(...stagedEvents);
     this.random = stagedRandom;
+    if (this.weatherModel && this.weatherStateValue) {
+      if (!weatherInputForTick) throw new Error("Weather input for the current simulation tick is missing");
+      this.weatherStateValue = advanceWeatherState(
+        this.weatherStateValue, weatherInputForTick, globalTickDurationMs / 1000, this.weatherModel.profile
+      );
+    }
     this.tickValue += 1;
     if (this.mutableEntrants.every((entrant) => entrant.finished)) {
       this.statusValue = "completed";
@@ -628,7 +708,8 @@ export class RaceSimulation {
       status: this.statusValue,
       tick: this.tickValue,
       entrants: this.entrantStates,
-      events: this.events
+      events: this.events,
+      weatherState: this.weatherStateValue ? { ...this.weatherStateValue } : null
     };
   }
 }

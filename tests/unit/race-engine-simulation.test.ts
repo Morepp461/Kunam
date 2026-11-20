@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { RaceSimulation } from "../../src/lib/race-engine/simulation";
 import type { SegmentPerformanceModel } from "../../src/lib/race-engine/simulation";
 import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
+import { createWeatherSimulationModel } from "../../src/lib/race-engine/weather";
 
 const seededModel: SegmentPerformanceModel = {
   id: "test-driver-order",
@@ -78,6 +79,46 @@ describe("Race simulation kernel", () => {
 
     expect(restored.classification).toEqual(uninterrupted.classification);
     expect(restored.events).toEqual(uninterrupted.events);
+  });
+
+
+  it("advances one shared weather clock and restores weather state exactly from checkpoints", () => {
+    const snapshot = createSyntheticRaceFixture({ seed: 42, driverCount: 4, teamCount: 2, totalLaps: 2 });
+    const weatherModel = createWeatherSimulationModel({
+      schemaVersion: 1,
+      id: "test-rain",
+      version: "1",
+      waterRetentionMultiplier: 1,
+      evaporationMmPerHourPerSurfaceDegree: 0,
+      windDryingMmPerHourPerMps: 0,
+      maximumWaterDepthMm: 10,
+      gripLossPercentPerMmWater: 1,
+      rubberingGripGainPercentAtFull: 0,
+      minimumGripPercent: 0,
+      maximumGripPercent: 100
+    }, Object.fromEntries(snapshot.circuit.segments.map((segment) => [segment.id, {
+      airTempC: 25,
+      surfaceTempC: 25,
+      relativeHumidityPercent: 80,
+      rainfallMmPerHour: 36,
+      windSpeedMps: 0,
+      windDirectionDeg: 0,
+      visibilityMeters: 10000,
+      baseGripPercent: 90,
+      rubberingInPercent: 0
+    }])));
+    const simulation = new RaceSimulation(snapshot, { weatherModel });
+    expect(simulation.weatherState?.trackWaterDepthMm).toBe(0);
+    simulation.advanceOneSegment();
+    expect(simulation.weatherState?.trackWaterDepthMm).toBeCloseTo(0.144, 8);
+    const checkpoint = simulation.createCheckpoint();
+    const restored = RaceSimulation.restore(checkpoint, undefined, undefined, weatherModel);
+    expect(restored.weatherState).toEqual(simulation.weatherState);
+    simulation.runToCompletion();
+    restored.runToCompletion();
+    expect(restored.events).toEqual(simulation.events);
+    expect(restored.classification).toEqual(simulation.classification);
+    expect(restored.weatherState).toEqual(simulation.weatherState);
   });
 
   it("does not mutate the input snapshot and keeps stable tie ordering", () => {
