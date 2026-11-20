@@ -25,8 +25,9 @@ export interface RaceTelemetrySample {
   };
   readonly ersDeploymentPercent: number;
   readonly drsActive: boolean;
-  /** Classified race position, separate from physical track distance. */
+  /** Classified race position, separate from physical track coordinates and distance. */
   readonly racePosition: number;
+  readonly trackCoordinates: { readonly x: number; readonly y: number };
   readonly trackPositionMeters: number;
 }
 
@@ -61,6 +62,9 @@ export function validateRaceTelemetrySample(sample: RaceTelemetrySample): RaceTe
   if (!isFiniteInRange(sample.ersDeploymentPercent, 0, 100)) errors.push("ersDeploymentPercent must be between 0 and 100");
   if (typeof sample.drsActive !== "boolean") errors.push("drsActive must be boolean");
   if (!Number.isInteger(sample.racePosition) || sample.racePosition < 1) errors.push("racePosition must be a positive integer");
+  if (!isFiniteInRange(sample.trackCoordinates.x, 0, 1) || !isFiniteInRange(sample.trackCoordinates.y, 0, 1)) {
+    errors.push("trackCoordinates must use normalized coordinates between 0 and 1");
+  }
   if (!Number.isFinite(sample.trackPositionMeters) || sample.trackPositionMeters < 0) {
     errors.push("trackPositionMeters must be non-negative");
   }
