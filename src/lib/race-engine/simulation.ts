@@ -240,6 +240,12 @@ export class RaceSimulation {
       if (!state.finished && state.lapCompleted === simulation.snapshot.circuit.totalLaps) {
         throw new Error(`Unfinished driver ${state.driverId} has completed the configured distance`);
       }
+      const segmentCount = simulation.snapshot.circuit.segments.length;
+      const completedSegments = state.lapCompleted * segmentCount + state.segmentIndex;
+      const expectedSegments = state.finished ? maxTicks : checkpoint.tick;
+      if (completedSegments !== expectedSegments) {
+        throw new Error(`Checkpoint progress for ${state.driverId} does not match the simulation tick`);
+      }
     }
 
     for (let index = 0; index < simulation.mutableEntrants.length; index += 1) {
@@ -260,11 +266,17 @@ export class RaceSimulation {
     simulation.statusValue = checkpoint.status;
     simulation.tickValue = checkpoint.tick;
 
-    if (simulation.statusValue === "completed" && simulation.mutableEntrants.some((entrant) => !entrant.finished)) {
-      throw new Error("Completed checkpoint contains an unfinished entrant");
+    if (simulation.statusValue === "completed" && (
+      checkpoint.tick !== maxTicks ||
+      simulation.mutableEntrants.some((entrant) => !entrant.finished)
+    )) {
+      throw new Error("Completed checkpoint contains an unfinished or incomplete race");
     }
-    if (simulation.statusValue === "running" && simulation.mutableEntrants.every((entrant) => entrant.finished)) {
-      throw new Error("Running checkpoint cannot contain only finished entrants");
+    if (simulation.statusValue === "running" && (
+      checkpoint.tick >= maxTicks ||
+      simulation.mutableEntrants.some((entrant) => entrant.finished)
+    )) {
+      throw new Error("Running checkpoint has invalid race progress");
     }
     return simulation;
   }
