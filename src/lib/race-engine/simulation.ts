@@ -112,7 +112,7 @@ interface MutableEntrantState {
 }
 
 export interface RaceSimulationCheckpoint {
-  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION;
+  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
   readonly engineVersion: string;
   readonly raceId: string;
   readonly snapshot: RaceStartSnapshot;
