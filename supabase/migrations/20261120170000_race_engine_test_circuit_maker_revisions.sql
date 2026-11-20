@@ -33,15 +33,14 @@ create policy "Authenticated users read circuit revisions"
   on public.caleris_circuit_revisions for select
   to authenticated using (true);
 
-drop policy if exists "FIA and Admin manage circuit revisions" on public.caleris_circuit_revisions;
-create policy "FIA and Admin manage circuit revisions"
-  on public.caleris_circuit_revisions for all
+drop policy if exists "FIA and Admin insert circuit revisions" on public.caleris_circuit_revisions;
+create policy "FIA and Admin insert circuit revisions"
+  on public.caleris_circuit_revisions for insert
   to authenticated
-  using (public.is_caleris_fia_or_admin())
   with check (public.is_caleris_fia_or_admin());
 
-grant select on public.caleris_circuit_revisions to authenticated;
-grant insert, update, delete on public.caleris_circuit_revisions to authenticated;
+grant select, insert on public.caleris_circuit_revisions to authenticated;
+revoke update, delete on public.caleris_circuit_revisions from authenticated;
 
 create or replace function public.save_caleris_circuit_revision(
   p_circuit_id uuid,
@@ -88,6 +87,47 @@ $$;
 
 revoke all on function public.save_caleris_circuit_revision(uuid,jsonb) from public, anon;
 grant execute on function public.save_caleris_circuit_revision(uuid,jsonb) to authenticated;
+
+create or replace view public.caleris_circuit_pool as
+select
+  c.id,
+  c.name,
+  c.country_code,
+  c.total_laps,
+  c.avg_track_temp_c,
+  c.drs_zones,
+  c.straights,
+  c.low_speed_corners,
+  c.high_speed_corners,
+  c.grip_level,
+  least(c.initial_lap_record_ms, race_record.fastest_lap_ms) as lap_record_ms,
+  c.image_url,
+  case
+    when race_record.fastest_lap_ms is not null
+      and (c.initial_lap_record_ms is null or race_record.fastest_lap_ms < c.initial_lap_record_ms)
+    then race_record.driver_name
+    else c.initial_lap_record_driver_name
+  end as lap_record_driver_name,
+  c.geometry_draft,
+  c.source_provenance,
+  c.geometry_status,
+  c.circuit_geometry,
+  c.geometry_revision,
+  c.circuit_kind
+from public.caleris_circuits c
+left join lateral (
+  select
+    e.fastest_lap_ms,
+    m.character_name as driver_name
+  from public.license_rounds r
+  join public.caleris_race_result_entries e on e.round_id = r.id
+  left join public.members m on m.id = e.member_id
+  where lower(trim(r.circuit_name)) = lower(trim(c.name))
+    and r.circuit_country_code = c.country_code
+    and e.fastest_lap_ms is not null
+  order by e.fastest_lap_ms, e.recorded_at, e.id
+  limit 1
+) race_record on true;
 
 comment on table public.caleris_circuit_revisions is
   'Append-only revision history for the Testing Circuit Maker; historical race snapshots must keep their referenced revision.';
