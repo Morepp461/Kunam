@@ -25,6 +25,10 @@ The active `RaceSimulation` lifecycle now owns the following Phase 2 systems:
 
 The simulation emits facts only. It does not write wallet, maintenance, prize, or economy ledger transactions. The host game's Economy Engine remains the sole settlement owner.
 
+
+- Strategy Quality and Pit Stop Efficiency now feed the pit decision cost and actual pit-lane time through explicit calibration channels. The model exposes the per-entrant adjustments; missing channels remain zero and no default coefficients are invented.
+- Sensitivity validation now includes 1,000-seed direction checks for Race Pace and Reliability in addition to Mistake Rate. These use synthetic test-only coefficients and do not constitute approved production calibration.
+
 ## Validation gates and remaining release decisions
 
 1. Full-grid Monte Carlo validation runs 1,000 seeds at 20 drivers/10 teams. A separate interleaved-session test verifies that two races remain isolated and replay-equivalent.
