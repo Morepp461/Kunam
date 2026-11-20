@@ -24,6 +24,13 @@ jobs:
       - name: Full dependency security audit (report-only)
         run: npm audit --audit-level=high
         continue-on-error: true
+      - name: Verify Deno worker source parity
+        run: npm run sync:race-engine-edge && git diff --exit-code -- supabase/functions/race-engine-test-service/race-engine
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Race Engine Edge Function and persistent worker
+        run: deno check supabase/functions/race-engine-test-service/index.ts workers/race-engine-worker/main.ts
       - run: npm run check
       - run: npm run build
       - name: Unit and schema validation tests
