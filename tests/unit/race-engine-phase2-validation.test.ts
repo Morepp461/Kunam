@@ -84,6 +84,7 @@ describe("Phase 2 deterministic Monte Carlo validation", () => {
       RACE_ATTRIBUTE_DEFINITIONS.map((definition) => [definition.id, { segment_pace_ms_per_point: -0.001 }])
     );
     attributes["driver.race_pace"] = { segment_pace_ms_per_point: -1 };
+    attributes["driver.mistake_rate"] = { mistake_probability_per_point: 0.0001 };
     attributes["driver.aggression"] = {
       overtake_advantage_per_point: 0.001,
       defense_advantage_per_point: 0.001
