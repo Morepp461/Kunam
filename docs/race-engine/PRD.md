@@ -259,3 +259,172 @@ If a worker invocation fails, the lease expires and a later scheduled invocation
 ### Rollout gates
 
 The managed dispatcher must first be implemented and tested in the Testing project. Required tests include browser-closed progression, forced invocation termination, lease expiry/reclaim, duplicate dispatch, concurrent sessions, and replay after worker shutdown. The required `pg_net` extension and machine-auth secret must be configured securely (Supabase Vault/Function secrets). Never expose service-role credentials to the client. Production race persistence remains disabled until migration parity, RLS, security, load, recovery, and release gates pass.
+
+
+---
+
+## Owner decision addendum — Detailed simulation, race operations, and release requirements
+
+**Decision date:** 20 November 2026  
+**Status:** Requirements confirmed by the product owner through the 50-item decision round and the subsequent clarification of Aggression vs Mistake Rate.  
+**Change policy:** This section is additive. All preceding PRD content is retained verbatim. Where a prior open recommendation or baseline statement conflicts with an explicit decision in this addendum, this dated owner decision is the newer requirement for future implementation; it does not authorize deleting or rewriting historical requirements or race data.
+
+### 1. Simulation realism and competitive model
+
+- Target simulation quality is **pro-realistic**. This is a product target, not a claim of validated fidelity; formulas and coefficients still require calibration, sensitivity analysis, repeatable scenario tests, and statistical review.
+- Car/team performance has the larger overall influence on results than driver attributes. Driver skill remains materially influential and must not become cosmetic.
+- A stronger driver may lose because of car specification, team strategy, weather, tyre condition, incidents, mistakes, race-control events, or other race conditions.
+- Simulation includes deterministic per-lap variability. With identical engine version, seed, ruleset, circuit revision, and input snapshots, the complete event/state sequence and result must remain reproducible.
+- Every one of the 24 baseline attributes must have a measurable, testable effect in every applicable race session. An attribute may affect different phases or contexts through different calibrated paths; it must not be assigned a meaningless placeholder modifier.
+- Attribute direction, scale, bounds, interaction effects, and version must be explicit. Effects must be bounded and tested for monotonicity where appropriate. No uncalibrated coefficient may be treated as an established fact.
+
+### 2. Driver attributes — semantic distinction
+
+The baseline remains exactly eight driver attributes. No attribute is removed, merged, or silently renamed.
+
+- **Aggression:** assertiveness during racing, influencing attack, defence, and wheel-to-wheel decisions. Its effect can be beneficial or costly depending on context.
+- **Mistake Rate:** driver recklessness/risk-taking tendency. A higher value means the driver is more likely to choose risky actions; those actions can produce an advantage but also increase the chance of errors or adverse outcomes. It is not a measure of general driving skill.
+- The model must keep these two attributes independent. Examples used for acceptance: high Aggression + low Mistake Rate represents assertive but measured driving; low Aggression + high Mistake Rate represents less assertive but still risk-prone decisions; high values in both represent assertive and highly risky behaviour.
+- The other six driver attributes retain their existing names and baseline definitions. Their exact formula paths must be verified against the repository's actual schema and simulation contracts before implementation.
+
+### 3. Car, reliability, and Team HQ effects
+
+- The baseline remains exactly 16 car/team attributes.
+- **Reliability** must influence the probability/risk of mechanical, engine, or component failures. Failure events must be attributable to the relevant component/system and remain deterministic under the race seed.
+- Team HQ facilities have levels 1–8. Every applicable facility level must create a measurable simulation effect or unlock a defined capability. The facility-to-effect mapping must be explicit, configurable/versioned, and covered by tests.
+- Race-start snapshots freeze car, driver, Team HQ, setup, and relevant configuration inputs. Upgrades during an active race do not retroactively alter that race.
+
+### 4. Tyre, weather, and track conditions
+
+Tyre compounds and their intended relative behaviour:
+
+- **Soft:** highest pace potential and highest degradation.
+- **Medium:** balanced pace and durability.
+- **Hard:** more durable with lower pace potential.
+- **Intermediate:** for light/wet transitional conditions.
+- **Full Wet:** for heavy rain and high water conditions.
+
+Tyre degradation and performance must account for compound, tyre age/temperature, air and track temperature, circuit surface and geometry, load, driving style, setup, weather, and track water/grip state. Interactions must be calibrated rather than represented by arbitrary fixed penalties.
+
+Dynamic weather evolves gradually and with uncertainty. Weather state includes relevant temperature, humidity, rainfall, water level/wetness, wind where modelled, and grip evolution. Weather changes must be seeded and deterministic for replay. Rain must affect grip, water accumulation, tyre suitability, and pit strategy.
+
+### 5. Car setup and team strategy
+
+- Car setup is part of the pre-race team preparation and immutable race input snapshot.
+- Setup dimensions include at least aero configuration, suspension, brake balance, and tyre pressure.
+- Setup values must be bounded by circuit/team/car constraints and affect relevant simulation outcomes through calibrated effects.
+- Setup selection and strategy preparation belong to the team workflow before the race begins. Setup changes during a race are only permitted if an explicitly modelled and authorized procedure allows them.
+
+### 6. Strategy authority and live decision workflow
+
+- AI strategy is the default when no authorized human operator is actively controlling strategy.
+- When a team owner watches the live race, the owner may manually control strategy for both drivers belonging to that team.
+- A driver watching the live race may control that driver's own strategy, within the permissions and available command types defined by the host game.
+- If both owner and driver are watching, the driver may submit a strategy suggestion. The owner remains the decision-maker for the team's driver strategy and may accept the driver's suggestion or choose another strategy.
+- Strategy commands must be server-authorized, timestamped, associated with the acting user and affected driver/team, validated against current race state, and written to an audit/event record.
+- AI must continue to operate safely when an owner/driver disconnects, closes the browser, or does not submit a command. Browser presence must never be a runtime dependency.
+
+### 7. Pit-stop constraints
+
+- Minimum and maximum pit-stop constraints must be configurable by the applicable ruleset/event configuration.
+- Strategy validation must consider current tyre state, weather, race distance, traffic, pit loss, pit lane status, race-control restrictions, and the configured pit-stop limits.
+- Invalid or disallowed pit commands must be rejected server-side and recorded where auditability is required.
+
+### 8. Incidents, penalties, and evidence
+
+- The event model must support the full agreed incident catalogue, including mechanical/engine/component failure, spin, off-track, track-limit infringement, collision, crash, pit events, and retirement.
+- Incident severity is dynamic and classified into a criticality/severity level based on the event context and its validated inputs. Severity thresholds and probabilities are configurable/versioned and tested.
+- Penalties are automatically detected/assigned by the engine/ruleset where the rule is deterministic. FIA may intervene while observing a live race within the FIA capability boundary.
+- Supported penalty outcomes include warning, 5-second, 10-second, drive-through, stop-go, grid penalty, time penalty, disqualification (DSQ), and race ban.
+- DSQ and race-ban outcomes must have very low calibrated occurrence rates and require strong rule/evidence conditions. They must not be used as ordinary random incidents.
+- Every incident/penalty requiring adjudication must retain supporting evidence and an audit record: event timestamp, driver, circuit location/segment, reason/rule reference, relevant state/context, detection source, and operator action if any.
+- FIA may suspend a driver when watching a live race, within the defined authority and audit process. FIA does not receive Admin god-mode or Economy permissions.
+
+### 9. Flags, safety procedures, and restart rules
+
+- Support yellow flag, double yellow, Full Course Yellow (FCY), Virtual Safety Car (VSC), Safety Car (SC), and red flag procedures.
+- SC/VSC procedures must model deployment, speed/pace control, field ordering or gap control as applicable, pit restrictions, ending/withdrawal, and restart.
+- Support both standing and rolling restarts where the configured ruleset allows them.
+- Red-flag decision **B** from the owner decision round is locked: restart order uses the positions from before the interruption/last valid classification point as defined by the selected rule. Implementation must preserve the exact selected rule in the versioned ruleset and scenario tests; it must not invent an alternative restart-order policy.
+- All flag/restart transitions must be deterministic, sequenced, auditable, and tested for interrupted sessions, pit states, lapped cars, and worker recovery.
+
+### 10. Race-control authority and result governance
+
+- FIA may manage race control, issue or reverse penalties within its permission set, and ratify race results.
+- A penalty ratification performed by FIA must be forwarded to Admin for audit visibility. This does not grant FIA authority over economy, wallet balances, tariffs, members, teams, or other Admin-only capabilities.
+- Both Admin and FIA are authorized to cancel a race, with the action and reason audited.
+- Only Admin may correct an already-ratified official result. A correction creates an auditable superseding result version; the original result and its history must never be deleted or overwritten invisibly.
+- Official result publication updates all applicable official records: division standings, championships, sprint classification/points, pole position, fastest lap, and driver/team statistics according to the configured ruleset.
+- Race Engine emits validated facts and classifications only. Economy Engine remains the sole owner of rewards, maintenance charges, taxes, wallet movements, and ledger settlement. Race Engine must not directly write balances or financial ledger entries.
+
+### 11. Circuit data, fidelity, and track limits
+
+- Research reliable sources for circuit data and record source provenance, version, date, and applicable usage/licensing conditions.
+- Real-circuit fidelity target is full geometry/specification fidelity to the approved reference source. The implementation must define measurable comparison criteria and tolerances; do not claim exact fidelity without a verifiable source and validation.
+- Preserve circuit geometry and relevant specifications, including layout, dimensions, sectors, segments, elevation/banking where available, pit lane, DRS zones, surface, and track-limit boundaries.
+- Admin must have both a visual editor and specification editor for fictional circuits and required circuit configuration. Changes create a new circuit revision and cannot mutate an active or historical race snapshot.
+- Track-limit detection must use circuit geometry and generate auditable events with location, timestamp, participant, and evidence/context. It must not rely solely on arbitrary visual/UI boundaries.
+- Circuit data must only be imported/used where its source and licensing terms permit the intended use. A source being publicly viewable does not automatically grant reuse rights.
+
+### 12. Telemetry, replay, broadcast, and spectators
+
+Telemetry must support the agreed full set of relevant fields, including at least speed, throttle, braking, gear, tyre compound/condition, ERS, DRS, position, lap, sector, and timestamps. Additional state needed for faithful replay and broadcast may be persisted as versioned projections/events.
+
+- Telemetry is intended to be available in real time through authorized projections.
+- Replay requirements include position movement, circuit map, tyre and pit information, incidents and penalties, driver comparison, weather, and race-control state.
+- Broadcast mode is required in addition to timing, circuit, telemetry, and race-control views.
+- Public/member spectators may access the authorized spectator experience after release approval. Admin and FIA retain only their separately authorized controls; spectator access does not grant operator permissions.
+- Each viewer's replay playback controls remain independent and cannot mutate authoritative race state.
+- Detailed race data remains available through the end of the relevant off-season. At the end of off-season, preserve a key-data snapshot for Hall of Fame and lifetime statistics.
+- Replay retention is a separate policy: replay availability/storage is limited to 48 hours after the race. The implementation must preserve the required underlying official result and the end-of-off-season archive facts independently of the short replay window. Any dispute/legal/operational hold must prevent premature deletion of data needed for adjudication.
+
+### 13. Race scale, concurrency, and division configuration
+
+- Support up to **25 drivers per division**.
+- Concurrency target **E** from the owner decision round is **10 simultaneous races**. This is a target to validate through load and recovery benchmarks, not a capacity guarantee before measurement.
+- Premio and Zwei use the same engine core and rules framework, but retain separate ruleset/configuration and schedule data. Both divisions may race on the same day and may use the same circuit on that day.
+- Isolation is mandatory across sessions: race state, participants, event sequence, leases, checkpoints, telemetry, commands, and result versions.
+- A race must not starve or overwrite another session. Concurrency limits and worker fairness must be tested at the target of 10 simultaneous sessions with realistic participant counts and data volume.
+
+### 14. Runtime rollout and infrastructure budget
+
+- Begin with the managed Supabase runtime already adopted for Testing: Cron dispatch plus bounded Edge Function execution, durable Postgres state, leases, checkpoints, and persisted events. No single invocation may attempt to hold an entire multi-hour race open.
+- The owner is also willing to transition to a full VPS worker once the infrastructure is ready and demonstrated to work reliably. VPS adoption is a later runtime option/transition, not a prerequisite for continuing the managed-runtime validation.
+- Managed and VPS workers must use the same versioned engine contract, database source of truth, event ordering, checkpoint format, idempotency rules, and recovery semantics. Runtime migration must not reset or fork race state.
+- Before transition, benchmark the managed runtime, document its limits, compare VPS resource requirements, test failover/recovery, and prove that a session can resume from a valid checkpoint without duplicate events.
+- Total target infrastructure budget is approximately **Rp300,000 per month**, including an Indonesian cloud VPS if/when selected. This replaces the earlier Rp100,000 planning ceiling for future sizing decisions. It is a budget target, not proof that a specific provider/specification is available at that price.
+- Select VPS provider/region/specification only after current pricing, CPU policy, network latency to Supabase, storage, backup, security, and measured workload have been reviewed. Do not purchase or activate infrastructure solely from an unverified estimate.
+
+### 15. Scheduling, manual start, notifications, and release activation
+
+- Scheduled race start remains automatic and must not depend on an operator browser being open.
+- Admin may also initiate an authorized manual start when needed, including to coordinate a TikTok Live broadcast. Manual start must validate readiness and schedule/race state, be idempotent, and record actor, timestamp, and reason.
+- Discord notifications are sent to Admin only for the agreed operational alerts. Do not broadcast private operational alerts to ordinary members or spectators.
+- Official race activation remains disabled until every release gate is passed and the owner has personally tested the delivered experience and explicitly approved official activation.
+- Passing CI or deploying a build does not by itself authorize official/public race activation.
+
+### 16. Final release gates and owner acceptance
+
+All of the following are mandatory before official activation:
+
+1. Deterministic replay: same engine version, seed, ruleset, circuit revision, and immutable inputs produce identical event/state history and result.
+2. Physics calibration: approved calibration report, attribute effect tests, sensitivity analysis, and statistically reviewed Monte Carlo results.
+3. Race control: penalty, evidence, flags, SC/VSC, red-flag, standing/rolling restart, cancellation, and result-correction scenarios pass.
+4. Concurrency: target of 10 simultaneous races passes load, isolation, fairness, and recovery tests with the supported participant scale.
+5. Recovery: forced worker termination, lease expiry/reclaim, database/network interruption handling, checkpoint validation, and duplicate prevention pass.
+6. Security: Admin/FIA/driver/team-owner/spectator authorization and RLS are verified server-side; secrets are absent from client bundles and logs.
+7. Data governance: result supersession, audit trail, replay 48-hour retention, off-season archive, Hall of Fame/lifetime-stat snapshot, and dispute holds are tested.
+8. Database: migrations are additive/backward-compatible, Testing schema is verified, migration ledger parity is reconciled, and production changes are separately reviewed and approved.
+9. QA/CI: required tests, build, lint/type checks, security checks, and repository CI pass.
+10. Deployment: Vercel deployment is verified READY; runtime deployment/health checks pass for the selected environment.
+11. Owner acceptance: the owner has tested the available web experience and explicitly approved official race activation. Until then, official race activation and public race operation remain disabled.
+
+### 17. Decision record — 50-item owner confirmation
+
+The 50-item decision round is recorded as confirmed. The detailed requirements above are the authoritative implementation interpretation. Specific option-based decisions retained from that round:
+- Red-flag restart policy: option **B**, using the prior/last-valid positions as defined in the selected ruleset.
+- Concurrency: option **E**, target of **10 simultaneous races**.
+- Runtime: managed Supabase runtime first; transition to a full VPS worker when ready and validated.
+- Official activation: only after all release gates and explicit owner test/approval.
+
+The Aggression/Mistake Rate clarification is recorded separately in section 2 above: both attributes remain in the 24-attribute baseline and represent different behaviours.
