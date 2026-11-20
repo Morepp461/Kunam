@@ -5,13 +5,14 @@ import {
 } from "./contracts";
 import type {
   CircuitSegmentSnapshot,
+  JsonValue,
   RaceEntrantSnapshot,
   RaceStartSnapshot
 } from "./contracts";
 import { SeededRandom } from "./random";
 import type { RandomGeneratorState } from "./random";
 
-export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 1;
+export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 2;
 
 export type RaceSimulationStatus = "running" | "completed";
 export type RaceEventType =
@@ -30,15 +31,17 @@ export interface SegmentPerformanceContext {
 }
 
 export interface SegmentPerformanceModel {
-  /** Implementations must be pure and deterministic for the same context and version. */
+  /** Implementations must be pure and deterministic for the same context, version, and snapshot. */
   readonly id: string;
   readonly version: string;
+  readonly snapshot: JsonValue;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
 }
 
 export const NEUTRAL_PERFORMANCE_MODEL: SegmentPerformanceModel = Object.freeze({
   id: "neutral",
   version: "1",
+  snapshot: { model: "neutral", version: 1 },
   calculateAdjustmentMs: () => 0
 });
 
@@ -46,6 +49,7 @@ export interface RaceSimulationConfig {
   readonly noiseAmplitudeMs: number;
   readonly performanceModelId: string;
   readonly performanceModelVersion: string;
+  readonly performanceModelSnapshot: JsonValue;
 }
 
 export interface RaceSimulationEvent {
@@ -115,6 +119,24 @@ function assertConfig(config: RaceSimulationConfig): void {
   }
 }
 
+function cloneJsonValue<T extends JsonValue>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => cloneJsonValue(item)) as T;
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [key, cloneJsonValue(child as JsonValue)])
+    ) as T;
+  }
+  return value;
+}
+
+function canonicalJson(value: JsonValue): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 function copyEvent(event: RaceSimulationEvent): RaceSimulationEvent {
   return { ...event };
 }
@@ -154,13 +176,20 @@ export class RaceSimulation {
     const config: RaceSimulationConfig = {
       noiseAmplitudeMs: options?.config?.noiseAmplitudeMs ?? 0,
       performanceModelId: this.performanceModel.id,
-      performanceModelVersion: this.performanceModel.version
+      performanceModelVersion: this.performanceModel.version,
+      performanceModelSnapshot: cloneJsonValue(this.performanceModel.snapshot)
     };
     if (options?.config?.performanceModelId && options.config.performanceModelId !== config.performanceModelId) {
       throw new Error("Configured performance model ID does not match the injected model");
     }
     if (options?.config?.performanceModelVersion && options.config.performanceModelVersion !== config.performanceModelVersion) {
       throw new Error("Configured performance model version does not match the injected model");
+    }
+    if (
+      options?.config?.performanceModelSnapshot &&
+      canonicalJson(options.config.performanceModelSnapshot) !== canonicalJson(config.performanceModelSnapshot)
+    ) {
+      throw new Error("Configured performance model snapshot does not match the injected model");
     }
     assertConfig(config);
     this.config = Object.freeze(config);
@@ -192,7 +221,8 @@ export class RaceSimulation {
     }
     if (
       checkpoint.config.performanceModelId !== performanceModel.id ||
-      checkpoint.config.performanceModelVersion !== performanceModel.version
+      checkpoint.config.performanceModelVersion !== performanceModel.version ||
+      canonicalJson(checkpoint.config.performanceModelSnapshot) !== canonicalJson(performanceModel.snapshot)
     ) {
       throw new Error("Checkpoint requires the same performance model ID and version");
     }
@@ -449,7 +479,10 @@ export class RaceSimulation {
       engineVersion: RACE_ENGINE_VERSION,
       raceId: this.snapshot.raceId,
       snapshot: this.snapshot as RaceStartSnapshot,
-      config: { ...this.config },
+      config: {
+        ...this.config,
+        performanceModelSnapshot: cloneJsonValue(this.config.performanceModelSnapshot)
+      },
       randomState: this.random.snapshot(),
       status: this.statusValue,
       tick: this.tickValue,
