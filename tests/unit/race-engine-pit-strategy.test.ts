@@ -40,22 +40,27 @@ describe("Pit strategy selector", () => {
   });
 
 
-  it("applies calibrated Strategy Quality and Pit Stop Efficiency adjustments to candidate costs", () => {
+  it("uses calibrated Strategy Quality to reduce candidate-specific risk penalties", () => {
     const model = createPitStrategyModel(profile);
-    const baseline = choosePitDecision(model, input);
+    const candidates = input.candidates.map((candidate) => ({
+      ...candidate,
+      riskPenaltyMs: candidate.compound === "hard" ? 10_000 : 0
+    }));
+    const baseline = choosePitDecision(model, { ...input, candidates });
     const calibrated = choosePitDecision(model, {
       ...input,
-      strategyQualityAdjustmentMs: -1_000,
+      candidates,
+      strategyQualityRiskMultiplier: -1,
       pitStopTimeAdjustmentMs: -2_000
     });
-    expect(calibrated.selectedCompound).toBe(baseline.selectedCompound);
-    expect(calibrated.expectedTimeCostMs).toBe(baseline.expectedTimeCostMs! - 3_000);
+    expect(baseline.selectedCompound).toBe("medium");
+    expect(calibrated.selectedCompound).toBe("hard");
   });
 
   it("rejects non-finite calibrated pit strategy adjustments", () => {
     const model = createPitStrategyModel(profile);
-    expect(() => choosePitDecision(model, { ...input, strategyQualityAdjustmentMs: Number.NaN }))
-      .toThrow(/strategyQualityAdjustmentMs/);
+    expect(() => choosePitDecision(model, { ...input, strategyQualityRiskMultiplier: Number.NaN }))
+      .toThrow(/strategyQualityRiskMultiplier/);
     expect(() => choosePitDecision(model, { ...input, pitStopTimeAdjustmentMs: Number.POSITIVE_INFINITY }))
       .toThrow(/pitStopTimeAdjustmentMs/);
   });
