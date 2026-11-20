@@ -7,6 +7,7 @@
 - Dedicated test-only persistence in `caleris-masters-testing`: sessions, checkpoints, event stream, and idempotent commands.
 - RLS enabled on all test tables. Browser roles have no table privileges; only the server-side service role can read/write test data.
 - Atomic database functions for worker leases and checkpoint/event commits.
+- Server-authorized 1x/5x/10x/15x speed commands. Speed affects simulation clock progression/batch cadence only, not physics or attributes, and every change is persisted in the control-command audit log.
 - Admin-authenticated Supabase Edge Function. It validates the user's JWT against the production Auth project and verifies the `site_admins` row before accessing test data.
 - Admin Race Engine Lab replaces the static mock page at `/admin/live-race`. It creates synthetic races, advances the simulation, displays classification/tyres/weather/events, and validates checkpoint restoration.
 - Synthetic test profiles exercise the 24-attribute calibration interface, tyres, weather, pit strategy, Strategy Quality, Pit Stop Efficiency, incidents, and race-control flags. They are explicitly test-only and must never be selected as production calibration.
@@ -18,7 +19,7 @@
 1. Sign in to CALERIS MASTERS with an Admin account.
 2. Open **Admin → LIVE RACE** (`/admin/live-race`).
 3. Create a test session. Defaults are 20 AI drivers, 10 teams, 5 laps, and a fixed seed.
-4. Use **Advance 5 segments** for incremental testing or **Run to completion** for a full synthetic race.
+4. Use the 1x/5x/10x/15x selector, **Advance** for incremental testing, or **Run to completion** for a full synthetic race.
 5. Inspect classification, tyre wear, wetness/grip, pit stops, incidents, flags, and persisted event history.
 6. Use **Verify recovery** to restore the last persisted checkpoint and validate the engine state.
 7. Create another session with the same seed to compare deterministic behavior within each session; race IDs remain unique.
