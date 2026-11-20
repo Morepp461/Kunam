@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { createIncidentModel, evaluateSegmentIncident } from "../../src/lib/race-engine/incidents";
+import { createCalibratedPerformanceModel } from "../../src/lib/race-engine/calibration";
+import type { RacePhysicsCalibrationProfile } from "../../src/lib/race-engine/calibration";
+import { RACE_ATTRIBUTE_DEFINITIONS } from "../../src/lib/race-engine/attributes";
+import { RaceSimulation } from "../../src/lib/race-engine/simulation";
+import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
 import type { IncidentCalibrationProfile, IncidentType } from "../../src/lib/race-engine/incidents";
 
 const incidentTypes: readonly IncidentType[] = ["spin", "off_track", "collision", "crash", "mechanical_failure", "engine_failure"];
