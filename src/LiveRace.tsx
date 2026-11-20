@@ -135,6 +135,14 @@ export default function LiveRace() {
   useEffect(() => { void refreshSessions(); }, [refreshSessions]);
   useEffect(() => { if (selectedId) void loadDetail(selectedId); }, [selectedId, loadDetail]);
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      void refreshSessions(selectedId || undefined);
+      if (selectedId) void loadDetail(selectedId);
+    }, 10000);
+    return () => window.clearInterval(timer);
+  }, [selectedId, refreshSessions, loadDetail]);
+
   const loadReplay = useCallback(async (id: string) => {
     if (!id) return;
     setReplayLoading(true);
@@ -291,7 +299,7 @@ export default function LiveRace() {
   return <div className="workspace live-race-workspace">
     <header className="page-heading live-race-heading">
       <div>
-        <span className="eyebrow">CALERIS RACE CONTROL · PHASE 3</span>
+        <span className="eyebrow">CALERIS RACE CONTROL · PHASE 4</span>
         <h1 className="page-title">RACE ENGINE LAB</h1>
         <p className="page-description">Jalankan simulasi deterministik, simpan checkpoint, dan uji pemulihan sesi dari web.</p>
       </div>
