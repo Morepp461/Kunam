@@ -24,7 +24,7 @@ import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from 
 import type { WeatherSimulationModel, WeatherState } from "./weather";
 import { choosePitDecision } from "./pit-strategy";
 import type { PitStrategyModel } from "./pit-strategy";
-import { evaluateSegmentIncident, resolveRaceControl, INCIDENT_TYPES } from "./incidents";
+import { evaluateSegmentIncident, resolveRaceControl, validateRaceControlProfile } from "./incidents";
 import type { IncidentModel, RaceControlProfile, RaceControlFlag, IncidentType } from "./incidents";
 
 export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 6;
@@ -287,15 +287,8 @@ export class RaceSimulation {
     this.raceControlProfile = options?.raceControlProfile;
     if (Boolean(this.incidentModel) !== Boolean(this.raceControlProfile)) throw new Error("Incident model and race-control profile must be configured together");
     if (this.raceControlProfile) {
-      if (!this.raceControlProfile.id.trim() || !this.raceControlProfile.version.trim()) throw new Error("Race-control profile ID and version are required");
-      for (const type of INCIDENT_TYPES) {
-        const flag = this.raceControlProfile.flagByIncident[type];
-        if (!flag) throw new Error(`Race-control profile is missing a flag for ${type}`);
-        if (flag !== "green") {
-          const duration = this.raceControlProfile.durationMsByFlag[flag];
-          if (!Number.isFinite(duration) || duration < 0) throw new Error(`Race-control duration for ${flag} is invalid`);
-        }
-      }
+      const validation = validateRaceControlProfile(this.raceControlProfile);
+      if (!validation.valid) throw new Error(`Invalid race-control profile: ${validation.errors.join("; ")}`);
     }
     if (this.pitModel && !this.tyreModel) throw new Error("Pit strategy requires an active tyre simulation model");
     if (this.pitModel) {
@@ -781,7 +774,12 @@ export class RaceSimulation {
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
       }
-      const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
+      const raceControlTimeMultiplier = stagedRaceControlFlags.reduce((maximum, active) => {
+        const multiplier = this.raceControlProfile?.paceTimeMultiplierByFlag?.[active.flag] ?? 1;
+        return Math.max(maximum, multiplier);
+      }, 1);
+      const raceControlAdjustmentMs = baseSegmentTimeMs * (raceControlTimeMultiplier - 1);
+      const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs + raceControlAdjustmentMs);
       let incident: ReturnType<typeof evaluateSegmentIncident> = null;
       if (this.incidentModel) {
         const attributes: Record<string, number> = {};
