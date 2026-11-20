@@ -48,24 +48,33 @@ export interface CircuitMakerBuildResult {
 }
 
 export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMakerBuildResult {
-  const segments: CircuitGeometrySegment[] = input.segments.map((segment) => ({
-    id: segment.id,
-    sectorNumber: segment.sectorNumber,
-    distanceMeters: segment.distanceMeters,
-    gripFactor: segment.gripFactor,
-    lowSpeedDemand: segment.lowSpeedDemand,
-    highSpeedDemand: segment.highSpeedDemand,
-    tractionDemand: segment.tractionDemand,
-    brakingDemand: segment.brakingDemand,
-    drsAvailable: segment.drsAvailable,
-    ersAvailable: segment.ersAvailable,
-    overtakingOpportunity: segment.overtakingOpportunity,
-    defendingOpportunity: segment.defendingOpportunity,
-    cornerType: segment.cornerType,
-    cornerRadiusMeters: segment.cornerRadiusMeters,
-    elevationChangeMeters: segment.elevationChangeMeters,
-    trackWidthMeters: segment.trackWidthMeters
-  }));
+  let distanceCursor = 0;
+  const segments: CircuitGeometrySegment[] = input.segments.map((segment) => {
+    const segmentStart = distanceCursor;
+    const segmentEnd = segmentStart + segment.distanceMeters;
+    distanceCursor = segmentEnd;
+    const overlapsDrsZone = (input.specifications?.drsZones ?? []).some((zone) =>
+      zone.startDistanceMeters < segmentEnd && zone.endDistanceMeters > segmentStart
+    );
+    return {
+      id: segment.id,
+      sectorNumber: segment.sectorNumber,
+      distanceMeters: segment.distanceMeters,
+      gripFactor: segment.gripFactor,
+      lowSpeedDemand: segment.lowSpeedDemand,
+      highSpeedDemand: segment.highSpeedDemand,
+      tractionDemand: segment.tractionDemand,
+      brakingDemand: segment.brakingDemand,
+      drsAvailable: segment.drsAvailable || overlapsDrsZone,
+      ersAvailable: segment.ersAvailable,
+      overtakingOpportunity: segment.overtakingOpportunity,
+      defendingOpportunity: segment.defendingOpportunity,
+      cornerType: segment.cornerType,
+      cornerRadiusMeters: segment.cornerRadiusMeters,
+      elevationChangeMeters: segment.elevationChangeMeters,
+      trackWidthMeters: segment.trackWidthMeters
+    };
+  });
   const definition: CircuitGeometryDefinition = {
     schemaVersion: CIRCUIT_GEOMETRY_SCHEMA_VERSION,
     id: input.id,
