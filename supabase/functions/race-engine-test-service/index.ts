@@ -1,10 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import { RACE_ENGINE_VERSION } from "https://raw.githubusercontent.com/Morepp461/Kunam/083255ebd15824407440d6b6ccde1632657f662d/supabase/functions/race-engine-test-service/race-engine/contracts.ts";
+import { RACE_ENGINE_VERSION } from "https://raw.githubusercontent.com/Morepp461/Kunam/36a711140ce624eb256e42e06cb4f81997ae6008/supabase/functions/race-engine-test-service/race-engine/contracts.ts";
 import type { RaceStartSnapshot } from "./race-engine/contracts.ts";
-import { RaceSimulation } from "https://raw.githubusercontent.com/Morepp461/Kunam/083255ebd15824407440d6b6ccde1632657f662d/supabase/functions/race-engine-test-service/race-engine/simulation.ts";
+import { RaceSimulation } from "https://raw.githubusercontent.com/Morepp461/Kunam/36a711140ce624eb256e42e06cb4f81997ae6008/supabase/functions/race-engine-test-service/race-engine/simulation.ts";
 import type { RaceSimulationCheckpoint } from "./race-engine/simulation.ts";
-import { createSyntheticRaceFixture } from "https://raw.githubusercontent.com/Morepp461/Kunam/083255ebd15824407440d6b6ccde1632657f662d/supabase/functions/race-engine-test-service/race-engine/synthetic-fixture.ts";
-import { createRaceEngineTestModels } from "https://raw.githubusercontent.com/Morepp461/Kunam/083255ebd15824407440d6b6ccde1632657f662d/supabase/functions/race-engine-test-service/race-engine/test-profiles.ts";
+import { createSyntheticRaceFixture } from "https://raw.githubusercontent.com/Morepp461/Kunam/36a711140ce624eb256e42e06cb4f81997ae6008/supabase/functions/race-engine-test-service/race-engine/synthetic-fixture.ts";
+import { createRaceEngineTestModels } from "https://raw.githubusercontent.com/Morepp461/Kunam/36a711140ce624eb256e42e06cb4f81997ae6008/supabase/functions/race-engine-test-service/race-engine/test-profiles.ts";
 
 const TEST_URL = Deno.env.get("SUPABASE_URL")!;
 const TEST_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
