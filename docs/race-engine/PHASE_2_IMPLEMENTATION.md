@@ -85,3 +85,6 @@ The current Testing database configuration was inspected on 2026-11-20:
 - Pit Crew Training Center currently has empty `effects_by_level` entries at every configured level. A team with this facility above level 0 is reported as unresolved and cannot pass the HQ snapshot validation gate.
 
 Configured facility maxima currently read as level 8 for Premio and level 6 for Zwei. These are read from the database configuration and are not hardcoded as the authority. The Pit Crew Training Center race effect and its calibrated influence remain an explicit release blocker; no effect has been invented.
+
+
+The Admin LIVE RACE test form now accepts Premio/Zwei and the four race-relevant HQ facility levels. The Testing Edge Function loads the current `caleris_team_hq_facility_configs` rows, resolves the configured effects, and freezes the result into every synthetic entrant. A non-zero Pit Crew Training Center level is rejected while its race effects remain empty. This is Testing-only instrumentation; it does not load real team wallets or enable official race scheduling.
