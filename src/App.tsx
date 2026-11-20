@@ -90,12 +90,14 @@ function Application(){
  const [session,setSession]=useState<Session|null>(null),[authReady,setAuthReady]=useState(false),[theme,setTheme]=useState<"dark"|"light">(()=>{try{return localStorage.getItem("caleris-theme")==="light"?"light":"dark"}catch{return "dark"}});
  const [profile,setProfile]=useState<AccountProfile|null>(null),[profileReady,setProfileReady]=useState(false),[isAdmin,setIsAdmin]=useState(false),[isPrimaryOwner,setIsPrimaryOwner]=useState(false),[panelAccess,setPanelAccess]=useState<PanelAccess>(NO_PANEL_ACCESS);
  const location=useLocation();const {toast,loading}=useUI();
+ const sessionUserIdRef=useRef<string|null>(null);
+ const userId=session?.user.id??null;
  const refreshProfile=useCallback(async()=>{
-  if(!supabase||!session){setProfile(null);setIsAdmin(false);setIsPrimaryOwner(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
+  if(!supabase||!userId){setProfile(null);setIsAdmin(false);setIsPrimaryOwner(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
   setProfileReady(false);
   const [profileResult,adminResult,ownerResult]=await Promise.all([
-   supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",session.user.id).maybeSingle(),
-   supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle(),
+   supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",userId).maybeSingle(),
+   supabase.from("site_admins").select("user_id").eq("user_id",userId).maybeSingle(),
    supabase.from("caleris_developer_api_owner").select("owner_user_id").eq("singleton",true).maybeSingle()
   ]);
   if(profileResult.error)toast("error","Profil gagal dimuat",profileResult.error.message);
@@ -103,7 +105,7 @@ function Application(){
   if(ownerResult.error)toast("error","Akses Developer API gagal diperiksa",ownerResult.error.message);
   let account=profileResult.data as AccountProfile|null;
   const admin=Boolean(adminResult.data?.user_id);
-  setIsPrimaryOwner(ownerResult.data?.owner_user_id===session.user.id);
+  setIsPrimaryOwner(ownerResult.data?.owner_user_id===userId);
   let memberRole:string|null=null;
   if(account?.member_id){
    const {data:member,error:memberError}=await supabase.from("members").select("role").eq("id",account.member_id).maybeSingle();
@@ -124,10 +126,11 @@ function Application(){
   setProfile(account);
   setIsAdmin(Boolean(adminResult.data?.user_id));
   setProfileReady(true);
- },[session,toast]);
+ },[userId,toast]);
  useEffect(()=>{if(document.querySelector("script[data-cinematic-motion]"))return;const script=document.createElement("script");script.src="/cinematic-motion.js";script.dataset.cinematicMotion="true";script.async=true;document.body.append(script)},[]);
  useEffect(()=>{document.body.classList.toggle("light",theme==="light");try{localStorage.setItem("caleris-theme",theme)}catch{}},[theme]);
- useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data,error})=>{if(error)toast("error","Session gagal dimuat",error.message);setSession(data.session);setAuthReady(true)});const {data}=supabase.auth.onAuthStateChange((_e,s)=>{setSession(s);setProfileReady(false);setAuthReady(true)});return()=>data.subscription.unsubscribe()},[toast]);
+ useEffect(()=>{const markBackground=()=>document.body.classList.toggle("app-backgrounded",document.visibilityState==="hidden");const onPageShow=()=>document.body.classList.remove("app-backgrounded");const onPageHide=()=>document.body.classList.add("app-backgrounded");document.addEventListener("visibilitychange",markBackground);window.addEventListener("pageshow",onPageShow);window.addEventListener("pagehide",onPageHide);markBackground();return()=>{document.removeEventListener("visibilitychange",markBackground);window.removeEventListener("pageshow",onPageShow);window.removeEventListener("pagehide",onPageHide);document.body.classList.remove("app-backgrounded")}},[]);
+ useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data,error})=>{if(error)toast("error","Session gagal dimuat",error.message);sessionUserIdRef.current=data.session?.user.id??null;setSession(data.session);setAuthReady(true)});const {data}=supabase.auth.onAuthStateChange((event,s)=>{const nextUserId=s?.user.id??null;const identityChanged=sessionUserIdRef.current!==nextUserId;sessionUserIdRef.current=nextUserId;setSession(s);if(identityChanged||event==="USER_UPDATED")setProfileReady(false);setAuthReady(true)});return()=>data.subscription.unsubscribe()},[toast]);
  useEffect(()=>{if(authReady)void refreshProfile()},[authReady,refreshProfile]);
  useEffect(()=>{window.scrollTo(0,0);loading(true);const frame=requestAnimationFrame(()=>loading(false));return()=>cancelAnimationFrame(frame)},[location.pathname,loading]);
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
@@ -294,7 +297,7 @@ function PaddockAccess({session,onComplete}:{session:Session;onComplete:()=>Prom
   <label className="settings-field">Caleris Nickname<input value={nickname} onChange={e=>setNickname(e.target.value)} maxLength={32} autoComplete="nickname" placeholder="Caleris Nickname"/>{errors.nickname&&<small className="field-error">{errors.nickname}</small>}</label>
   <PaddockRolePicker value={preferredRole} onChange={setPreferredRole}/>{errors.preferredRole&&<small className="field-error">{errors.preferredRole}</small>}
   {registration?.status==="rejected"&&<div className="mer-notice">Pengajuan sebelumnya ditolak. {registration.review_note?`Catatan Admin: ${registration.review_note}`:"Kamu dapat mengirim pengajuan baru."}</div>}
-  <label className="privacy-consent"><input type="checkbox" checked={privacyAccepted} onChange={e=>{setPrivacyAccepted(e.target.checked);setErrors(v=>({...v,privacy:""}));}}/><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></label>
+  <button type="button" role="checkbox" aria-checked={privacyAccepted} className={"privacy-consent"+(privacyAccepted?" is-checked":"")} onClick={()=>{setPrivacyAccepted(value=>!value);setErrors(v=>({...v,privacy:""}));}}><span className="privacy-consent-box" aria-hidden="true">{privacyAccepted&&<Check size={12}/>}</span><span>Saya setuju data diri saya disimpan di database dan hanya digunakan untuk keamanan akun. Data tidak akan dipublikasikan.</span></button>
   {errors.privacy&&<small className="field-error">{errors.privacy}</small>}
   {preferredRole&&<PaddockRoleDetails role={preferredRole==="Team Owner"?"Team Owner":"Driver"} saving={saving} onSubmit={submit}/>}
  </div></div></section>;

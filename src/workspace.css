@@ -99,8 +99,11 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .paddock-access-form .settings-field input,.paddock-access-form .settings-field select{width:100%;min-height:46px;padding:0 13px;border:1px solid rgba(198,163,58,.3);border-radius:5px;background:rgba(0,0,0,.4);color:#f4f3ef;outline:none;color-scheme:dark}
 .paddock-access-form .settings-field select option{background:#101317;color:#f4f3ef}
 .paddock-access-form .settings-field input:focus,.paddock-access-form .settings-field select:focus{border-color:#d6b85e;box-shadow:0 0 0 2px rgba(198,163,58,.12)}
-.privacy-consent{display:flex;align-items:flex-start;gap:10px;margin:16px 0 7px;padding:13px;border:1px solid rgba(198,163,58,.24);border-radius:6px;background:rgba(198,163,58,.055);color:#c9c7bf;font-size:11px;line-height:1.65;cursor:pointer}
-.privacy-consent input{flex:none;width:15px;height:15px;margin:1px 0 0;accent-color:#c5a64f}
+.privacy-consent{display:flex;align-items:flex-start;gap:10px;width:100%;margin:16px 0 7px;padding:13px;border:1px solid rgba(198,163,58,.24);border-radius:6px;background:rgba(198,163,58,.055);color:#c9c7bf;font:inherit;font-size:11px;line-height:1.65;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.privacy-consent:focus-visible{outline:2px solid #d6b85e;outline-offset:3px}
+.privacy-consent-box{display:grid;place-items:center;flex:none;width:18px;height:18px;margin:0 1px 0 0;border:1px solid rgba(198,163,58,.72);border-radius:3px;background:rgba(0,0,0,.28);color:#15120a}
+.privacy-consent.is-checked .privacy-consent-box{border-color:#d7b958;background:linear-gradient(135deg,#f0d77e,#b58b2d)}
+.privacy-consent>span:last-child{flex:1;min-width:0}
 .turnstile-section{padding:15px 0 5px;border-top:1px solid rgba(198,163,58,.18);margin-top:7px}
 .turnstile-widget{display:flex;justify-content:flex-start;min-height:66px;margin-top:12px;overflow:visible}
 .turnstile-success{display:inline-flex;align-items:center;gap:6px;margin-top:8px;color:#b8d7b0;font-size:11px}
@@ -190,6 +193,7 @@ body.light .paddock-access-shell{background:linear-gradient(145deg,rgba(250,247,
 body.light .paddock-avatar-field{background:rgba(183,143,43,.06);border-color:rgba(143,108,30,.22)}
 body.light .paddock-avatar-preview{background:#eee6d4;color:#80621b;border-color:rgba(143,108,30,.42)}
 body.light .privacy-consent{background:rgba(183,143,43,.08);border-color:rgba(143,108,30,.26);color:#494337}
+body.light .privacy-consent-box{background:#fffaf0;border-color:rgba(143,108,30,.55)}
 body.light .turnstile-section{border-color:rgba(143,108,30,.2)}
 body.light .back-link,body.light .text-link{color:#80621b}
 body.light .text-link:hover{color:#493713}
