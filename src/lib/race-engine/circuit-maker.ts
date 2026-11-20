@@ -7,9 +7,9 @@ import type {
   CircuitGeometryDefinition,
   CircuitGeometrySegment,
   CircuitPathPoint,
-  CircuitGeometrySpecifications,
-  TrackLimitPoint
+  CircuitGeometrySpecifications
 } from "./circuit-geometry";
+import type { TrackLimitPoint } from "./track-limits";
 
 export interface CircuitMakerSegmentInput {
   id: string;
