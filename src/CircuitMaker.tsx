@@ -183,8 +183,16 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           {points.map((point,index) => <circle key={point.id} cx={point.x*500} cy={point.y*320} r={index===0?6:4} className={index===0?"start":"point"}/>)}
           {points.length > 0 && <text x={points[0].x*500+10} y={points[0].y*320-10} className="circuit-maker-start-label">START / FINISH</text>}
         </svg>
-        <div className="circuit-maker-canvas-actions"><button type="button" onClick={undo} disabled={!points.length}>Undo point</button><button type="button" onClick={closeLoop} disabled={points.length<4}>Close loop</button><button type="button" onClick={() => setPoints([])} disabled={!points.length}>Clear layout</button></div>
-        <small>Tap/click canvas untuk menambah titik centerline. Tutup lintasan dengan Close loop. Semua titik masih dapat diubah dengan Undo.</small>
+        <div className="circuit-maker-canvas-actions">
+          <button type="button" className={drawingMode==="centerline"?"active":""} onClick={()=>setDrawingMode("centerline")}>Draw centerline</button>
+          <button type="button" className={drawingMode==="track_limit"?"active":""} onClick={()=>{setDrawingMode("track_limit");setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,method:"polygon"}}));}}>Draw track boundary</button>
+        </div>
+        <div className="circuit-maker-canvas-actions">
+          <button type="button" onClick={undo} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Undo active point</button>
+          <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
+          <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
+        </div>
+        <small>{drawingMode==="centerline"?"Tap canvas to draw the centerline, then close its loop.":"Tap canvas to draw the measured track-limit boundary polygon. Polygon closure is implicit; add at least three points."}</small>
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>
