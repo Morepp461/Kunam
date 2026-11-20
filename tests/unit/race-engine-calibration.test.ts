@@ -18,6 +18,10 @@ function createProfile(): RacePhysicsCalibrationProfile {
     ])
   );
   attributes["driver.race_pace"] = { segment_pace_ms_per_point: -1 };
+  attributes["driver.aggression"] = {
+    overtake_advantage_per_point: 0.5,
+    defense_advantage_per_point: 0.5
+  };
   attributes["driver.mistake_rate"] = { mistake_probability_per_point: 0.01 };
 
   return {
@@ -60,6 +64,97 @@ describe("Race physics calibration profiles", () => {
       attributes: { ...profile.attributes, "driver.race_pace": { segment_pace_ms_per_point: 0 } }
     };
     expect(validatePhysicsCalibrationProfile(zero).valid).toBe(false);
+  });
+
+  it("keeps Aggression focused on attack/defence duels and independent from Mistake Rate", () => {
+    const profile = createProfile();
+    expect(validatePhysicsCalibrationProfile(profile).valid).toBe(true);
+
+    const noDuelEffect = {
+      ...profile,
+      attributes: {
+        ...profile.attributes,
+        "driver.aggression": { segment_pace_ms_per_point: -0.01 }
+      }
+    };
+    expect(validatePhysicsCalibrationProfile(noDuelEffect).errors.some((error) => error.includes("Aggression"))).toBe(true);
+
+    const conflated = {
+      ...profile,
+      attributes: {
+        ...profile.attributes,
+        "driver.aggression": {
+          overtake_advantage_per_point: 0.5,
+          mistake_probability_per_point: 0.01
+        }
+      }
+    };
+    expect(validatePhysicsCalibrationProfile(conflated).errors.some((error) => error.includes("separate from Mistake Rate"))).toBe(true);
+  });
+
+  it("keeps the four Aggression/Mistake Rate combinations independently observable", () => {
+    const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
+    const profile = createProfile();
+    const evaluate = (aggression: number, mistakeRate: number) => evaluateAttributeInfluences({
+      ...fixture.entrants[0],
+      driverAttributes: {
+        ...fixture.entrants[0].driverAttributes,
+        aggression,
+        mistake_rate: mistakeRate
+      }
+    }, profile);
+
+    const measured = evaluate(60, 50);
+    const cautious = evaluate(50, 60);
+    const combined = evaluate(60, 60);
+    const baseline = evaluate(50, 50);
+
+    expect(measured.overtake_advantage_per_point).toBeGreaterThan(baseline.overtake_advantage_per_point);
+    expect(measured.defense_advantage_per_point).toBeGreaterThan(baseline.defense_advantage_per_point);
+    expect(measured.mistake_probability_per_point).toBe(baseline.mistake_probability_per_point);
+    expect(cautious.mistake_probability_per_point).toBeGreaterThan(baseline.mistake_probability_per_point);
+    expect(cautious.overtake_advantage_per_point).toBe(baseline.overtake_advantage_per_point);
+    expect(cautious.defense_advantage_per_point).toBe(baseline.defense_advantage_per_point);
+    expect(combined.overtake_advantage_per_point).toBe(measured.overtake_advantage_per_point);
+    expect(combined.defense_advantage_per_point).toBe(measured.defense_advantage_per_point);
+    expect(combined.mistake_probability_per_point).toBe(cautious.mistake_probability_per_point);
+  });
+
+  it("applies Aggression only when an eligible attack or defence duel exists", () => {
+    const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
+    const profile = createProfile();
+    const model = createCalibratedPerformanceModel(profile);
+    const baseEntrant = fixture.entrants[0];
+    const aggressiveEntrant = {
+      ...baseEntrant,
+      driverAttributes: { ...baseEntrant.driverAttributes, aggression: 60 }
+    };
+    const segment = {
+      ...fixture.circuit.segments[2],
+      overtakingOpportunity: true,
+      defendingOpportunity: true
+    };
+    const context = {
+      entrant: aggressiveEntrant,
+      lapNumber: 1,
+      segmentIndex: 2,
+      segmentDistanceMeters: segment.distanceMeters,
+      segment,
+      baseSegmentTimeMs: 10000,
+      tyreState: null
+    };
+    const neutral = model.calculateAdjustmentMs({ ...context, entrant: baseEntrant });
+    const attacking = model.calculateAdjustmentMs({
+      ...context,
+      battleContext: { attackingGapMs: 100 }
+    });
+    const defending = model.calculateAdjustmentMs({
+      ...context,
+      battleContext: { defendingGapMs: 100 }
+    });
+
+    expect(attacking - neutral).toBe(-5);
+    expect(defending - neutral).toBe(5);
   });
 
   it("enforces the confirmed higher-is-riskier direction for Mistake Rate", () => {
