@@ -43,6 +43,8 @@ export interface RaceControlProfile {
   readonly version: string;
   readonly flagByIncident: Readonly<Record<IncidentType, RaceControlFlag>>;
   readonly durationMsByFlag: Readonly<Record<Exclude<RaceControlFlag, "green">, number>>;
+  /** Optional calibrated segment-time multipliers while each flag is active; omitted flags have no pace effect. */
+  readonly paceTimeMultiplierByFlag?: Readonly<Partial<Record<Exclude<RaceControlFlag, "green">, number>>>;
 }
 
 export interface RaceControlDecision {
@@ -101,6 +103,10 @@ export function validateIncidentCalibrationProfile(profile: IncidentCalibrationP
     for (const [attributeId, coefficient] of Object.entries(calibration.attributeRatePerPoint)) {
       if (!attributeId.trim() || !finite(coefficient) || Math.abs(coefficient) > 1_000_000) errors.push(`${type} has an invalid attribute coefficient`);
       if (attributeId === "driver.mistake_rate" && coefficient < 0) errors.push("Higher Mistake Rate must not reduce incident probability");
+      if ((type === "mechanical_failure" || type === "engine_failure") &&
+          attributeId === "car_team.reliability" && coefficient > 0) {
+        errors.push("Higher Reliability must not increase mechanical or engine failure probability");
+      }
     }
   }
   return { valid: errors.length === 0, errors };
@@ -171,6 +177,29 @@ export function evaluateSegmentIncident(input: {
     maintenanceCostEligible: MAINTENANCE_COST_TYPES.has(selected.type),
     retiresDriver: model.profile.incidents[selected.type].retiresDriver ?? false
   });
+}
+
+export function validateRaceControlProfile(profile: RaceControlProfile): IncidentValidationResult {
+  const errors: string[] = [];
+  if (!profile.id.trim() || !profile.version.trim()) errors.push("Race-control profile ID and version are required");
+  for (const type of INCIDENT_TYPES) {
+    const flag = profile.flagByIncident[type];
+    if (!flag || !["green", "yellow", "double_yellow", "virtual_safety_car", "safety_car", "red_flag"].includes(flag)) {
+      errors.push(`Race-control profile has an invalid flag for ${type}`);
+      continue;
+    }
+    if (flag !== "green") {
+      const duration = profile.durationMsByFlag[flag];
+      if (!finite(duration) || duration < 0) errors.push(`Race-control duration for ${flag} must be non-negative`);
+    }
+  }
+  for (const [flag, multiplier] of Object.entries(profile.paceTimeMultiplierByFlag ?? {})) {
+    if (!["yellow", "double_yellow", "virtual_safety_car", "safety_car", "red_flag"].includes(flag) ||
+        !finite(multiplier) || multiplier < 1) {
+      errors.push(`Race-control pace multiplier for ${flag} must be finite and at least 1`);
+    }
+  }
+  return { valid: errors.length === 0, errors };
 }
 
 export function resolveRaceControl(
