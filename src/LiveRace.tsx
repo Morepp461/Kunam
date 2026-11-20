@@ -123,21 +123,53 @@ function labelEvent(type: string): string {
   return type.replaceAll("_", " ").toUpperCase();
 }
 
+async function getTestingAccessToken(forceRefresh = false): Promise<string> {
+  if (!supabase) throw new Error("Supabase Testing belum terkonfigurasi pada website.");
+
+  const configuredProject = new URL(supabase.supabaseUrl).hostname.split(".")[0];
+  if (configuredProject !== "vxwvhyyvoipjwucbrvlu") {
+    throw new Error("Website masih memakai project Supabase yang berbeda dari database Testing. Samakan VITE_SUPABASE_URL ke project caleris-masters-testing lalu login ulang.");
+  }
+
+  const { data: current, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw new Error("Gagal membaca sesi login Testing. Silakan login ulang.");
+
+  const expiresSoon = Boolean(current.session?.expires_at && current.session.expires_at <= Math.floor(Date.now() / 1000) + 45);
+  if (forceRefresh || !current.session || expiresSoon) {
+    const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession();
+    if (refreshError || !refreshed.session?.access_token) {
+      throw new Error("Sesi login Testing sudah kedaluwarsa. Logout lalu login kembali menggunakan akun Admin Testing.");
+    }
+    return refreshed.session.access_token;
+  }
+
+  return current.session.access_token;
+}
+
 async function raceApi(action: string, payload: Record<string, unknown> = {}) {
-  if (!supabase) throw new Error("Supabase production belum terkonfigurasi.");
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session?.access_token) throw new Error("Sesi login tidak ditemukan. Login ulang sebagai Admin.");
-  const response = await fetch(TEST_API_URL, {
+  let accessToken = await getTestingAccessToken();
+  const send = (token: string) => fetch(TEST_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...createRaceEngineTestAuthHeaders(TEST_API_KEY, data.session.access_token)
+      ...createRaceEngineTestAuthHeaders(TEST_API_KEY, token)
     },
     body: JSON.stringify({ action, ...payload })
   });
+
+  let response = await send(accessToken);
+  if (response.status === 401) {
+    const refreshedToken = await getTestingAccessToken(true);
+    if (refreshedToken !== accessToken) {
+      accessToken = refreshedToken;
+      response = await send(accessToken);
+    }
+  }
+
   const result = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(result.error || `Race Engine API gagal (${response.status}).`);
   return result;
+}
 }
 
 export default function LiveRace() {
@@ -453,7 +485,7 @@ export default function LiveRace() {
         <div><span className="eyebrow">NEW TEST SESSION</span><h2>Simulation Setup</h2></div>
         <span className="live-race-demo-label">TEST ONLY</span>
       </div>
-      <div className="race-engine-form-grid">
+      <div className="race-engine-form-grid race-engine-quick-grid">
         <label>Drivers
           <select value={driverCount} onChange={(event) => {
             const value = Number(event.target.value);
@@ -476,43 +508,45 @@ export default function LiveRace() {
         <label>Deterministic seed
           <input inputMode="numeric" value={seed} onChange={(event) => setSeed(event.target.value)} />
         </label>
-        <label>Aero setting <small>Test scale · 0–100</small>
-          <input type="number" min={0} max={100} value={aeroSetting} onChange={(event) => setAeroSetting(Number(event.target.value))} />
-        </label>
-        <label>Suspension setting <small>Test scale · 0–100</small>
-          <input type="number" min={0} max={100} value={suspensionSetting} onChange={(event) => setSuspensionSetting(Number(event.target.value))} />
-        </label>
-        <label>Front brake balance <small>40–60%</small>
-          <input type="number" min={40} max={60} step={0.5} value={brakeBalanceFrontPercent} onChange={(event) => setBrakeBalanceFrontPercent(Number(event.target.value))} />
-        </label>
-        <label>Front tyre pressure <small>15–35 PSI · test profile</small>
-          <input type="number" min={15} max={35} step={0.1} value={frontTyrePressurePsi} onChange={(event) => setFrontTyrePressurePsi(Number(event.target.value))} />
-        </label>
-        <label>Rear tyre pressure <small>15–35 PSI · test profile</small>
-          <input type="number" min={15} max={35} step={0.1} value={rearTyrePressurePsi} onChange={(event) => setRearTyrePressurePsi(Number(event.target.value))} />
-        </label>
-        <label>HQ division
-          <select value={hqDivision} onChange={(event) => { const next = event.target.value as "premio" | "zwei"; setHqDivision(next); if (next === "zwei") { setHqEngineeringLevel((value) => Math.min(6, value)); setHqRdLevel((value) => Math.min(6, value)); setHqSimulatorLevel((value) => Math.min(6, value)); setHqPitCrewLevel((value) => Math.min(6, value)); } }}>
-            <option value="premio">Premio · max level 8</option>
-            <option value="zwei">Zwei · max level 6</option>
-          </select>
-        </label>
-        <label>Engineering Department <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
-          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqEngineeringLevel} onChange={(event) => setHqEngineeringLevel(Number(event.target.value))} />
-        </label>
-        <label>R&amp;D Center <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
-          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqRdLevel} onChange={(event) => setHqRdLevel(Number(event.target.value))} />
-        </label>
-        <label>Simulator Facility <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
-          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqSimulatorLevel} onChange={(event) => setHqSimulatorLevel(Number(event.target.value))} />
-        </label>
-        <label>Pit Crew Training Center <small>Currently no race effect configured</small>
-          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqPitCrewLevel} onChange={(event) => setHqPitCrewLevel(Number(event.target.value))} />
-        </label>
       </div>
+      <details className="race-engine-advanced-settings">
+        <summary>Advanced setup <span>Car setup &amp; HQ effects · optional</span></summary>
+        <div className="race-engine-form-grid">
+          <label>Aero setting <small>Test scale · 0–100</small>
+            <input type="number" min={0} max={100} value={aeroSetting} onChange={(event) => setAeroSetting(Number(event.target.value))} />
+          </label>
+          <label>Suspension setting <small>Test scale · 0–100</small>
+            <input type="number" min={0} max={100} value={suspensionSetting} onChange={(event) => setSuspensionSetting(Number(event.target.value))} />
+          </label>
+          <label>Front brake balance <small>40–60%</small>
+            <input type="number" min={40} max={60} step={0.5} value={brakeBalanceFrontPercent} onChange={(event) => setBrakeBalanceFrontPercent(Number(event.target.value))} />
+          </label>
+          <label>Front tyre pressure <small>15–35 PSI · test profile</small>
+            <input type="number" min={15} max={35} step={0.1} value={frontTyrePressurePsi} onChange={(event) => setFrontTyrePressurePsi(Number(event.target.value))} />
+          </label>
+          <label>Rear tyre pressure <small>15–35 PSI · test profile</small>
+            <input type="number" min={15} max={35} step={0.1} value={rearTyrePressurePsi} onChange={(event) => setRearTyrePressurePsi(Number(event.target.value))} />
+          </label>
+          <label>HQ division
+            <select value={hqDivision} onChange={(event) => { const next = event.target.value as "premio" | "zwei"; setHqDivision(next); if (next === "zwei") { setHqEngineeringLevel((value) => Math.min(6, value)); setHqRdLevel((value) => Math.min(6, value)); setHqSimulatorLevel((value) => Math.min(6, value)); setHqPitCrewLevel((value) => Math.min(6, value)); } }}>
+              <option value="premio">Premio · max level 8</option>
+              <option value="zwei">Zwei · max level 6</option>
+            </select>
+          </label>
+          <label>Engineering Department <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
+            <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqEngineeringLevel} onChange={(event) => setHqEngineeringLevel(Number(event.target.value))} />
+          </label>
+          <label>R&amp;D Center <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
+            <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqRdLevel} onChange={(event) => setHqRdLevel(Number(event.target.value))} />
+          </label>
+          <label>Simulator Facility <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
+            <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqSimulatorLevel} onChange={(event) => setHqSimulatorLevel(Number(event.target.value))} />
+          </label>
+        </div>
+      </details>
       <div className="race-engine-form-footer">
         <span>Up to 25 AI drivers · 10 teams · setup and HQ levels use Testing configuration only</span>
-        <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !seed.trim()}>
+        <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !/^\\d+$/.test(seed) || !Number.isSafeInteger(Number(seed)) || Number(seed) > 0xffffffff}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>
       </div>
