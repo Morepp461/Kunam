@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, CheckCircle2, ChevronRight, Clock3, Flag,
-  Gauge, LoaderCircle, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Timer,
+  Gauge, LoaderCircle, MapPin, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Timer,
   Trophy, Waves, Wrench
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
@@ -616,8 +616,8 @@ export default function LiveRace() {
             {detail?.projection?.circuitLayout?.length ? <svg viewBox="0 0 1000 1000" role="img" aria-label="Approximate driver positions on the circuit layout" style={{ width: "100%", maxHeight: 340 }}>
               <polyline points={detail.projection.circuitLayout.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" ")} fill="none" stroke="currentColor" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"/>
               {detail.projection.timingRows.map((row) => <g key={row.driverId}>
-                <circle cx={row.trackPosition.x * 1000} cy={row.trackPosition.y * 1000} r="19" fill="currentColor" stroke="var(--background)" strokeWidth="5"/>
-                <text x={row.trackPosition.x * 1000} y={row.trackPosition.y * 1000} textAnchor="middle" dominantBaseline="central" fill="var(--background)" fontSize="20" fontWeight="700">{row.position ?? "X"}</text>
+                <circle cx={row.trackPosition.x * 1000} cy={row.trackPosition.y * 1000} r="19" fill="currentColor" stroke="var(--background, #fff)" strokeWidth="5"/>
+                <text x={row.trackPosition.x * 1000} y={row.trackPosition.y * 1000} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize="20" fontWeight="700">{row.position ?? "X"}</text>
               </g>)}
             </svg> : <p className="race-engine-empty">Circuit map tersedia setelah geometry dimuat ke race snapshot.</p>}
           </section>
