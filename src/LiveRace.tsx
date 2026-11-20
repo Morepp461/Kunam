@@ -333,7 +333,7 @@ export default function LiveRace() {
             setDriverCount(value);
             if (teamCount > value) setTeamCount(value);
           }}>
-            {[2,4,6,10,12,16,20].map((value) => <option key={value} value={value}>{value} drivers</option>)}
+            {[2,4,6,10,12,16,20,25].map((value) => <option key={value} value={value}>{value} drivers</option>)}
           </select>
         </label>
         <label>Teams
@@ -351,7 +351,7 @@ export default function LiveRace() {
         </label>
       </div>
       <div className="race-engine-form-footer">
-        <span>Up to 20 AI drivers · 10 teams · 10 laps · 9 circuit segments per lap</span>
+        <span>Up to 25 AI drivers · 10 teams · 10 laps · 9 circuit segments per lap</span>
         <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !seed.trim()}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>

@@ -31,14 +31,14 @@ function benchmarkProfile(): RacePhysicsCalibrationProfile {
 }
 
 describe("Phase 2 full-grid simulation validation", () => {
-  it("runs 1,000 seeded 20-driver/10-team races with calibrated performance and stable classifications", () => {
+  it("runs 1,000 seeded 25-driver/10-team races with calibrated performance and stable classifications", () => {
     const model = createCalibratedPerformanceModel(benchmarkProfile());
     const winnerCounts = new Map<string, number>();
 
     for (let seed = 1; seed <= 1000; seed += 1) {
       const snapshot = createSyntheticRaceFixture({
         seed,
-        driverCount: 20,
+        driverCount: 25,
         teamCount: 10,
         totalLaps: 1
       });
@@ -46,9 +46,9 @@ describe("Phase 2 full-grid simulation validation", () => {
       const classification = simulation.runToCompletion();
 
       expect(simulation.status).toBe("completed");
-      expect(classification).toHaveLength(20);
+      expect(classification).toHaveLength(25);
       expect(classification.every((entry) => entry.finished && !entry.retired && Number.isFinite(entry.elapsedMs))).toBe(true);
-      expect(new Set(classification.map((entry) => entry.driverId)).size).toBe(20);
+      expect(new Set(classification.map((entry) => entry.driverId)).size).toBe(25);
       expect(new Set(classification.map((entry) => entry.teamId)).size).toBe(10);
       winnerCounts.set(classification[0].driverId, (winnerCounts.get(classification[0].driverId) ?? 0) + 1);
     }
