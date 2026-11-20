@@ -69,6 +69,7 @@ describe("Race telemetry contract", () => {
   it("returns an immutable sample and immutable tyre snapshot", () => {
     const created = createRaceTelemetrySample(sample());
     expect(Object.isFrozen(created)).toBe(true);
+    expect(Object.isFrozen(created.trackCoordinates)).toBe(true);
     expect(Object.isFrozen(created.tyre)).toBe(true);
     expect(() => createRaceTelemetrySample({ ...sample(), lapNumber: 0 })).toThrow(/lapNumber/);
   });
