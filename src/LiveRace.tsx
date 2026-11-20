@@ -170,7 +170,6 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
   if (!response.ok) throw new Error(result.error || `Race Engine API gagal (${response.status}).`);
   return result;
 }
-}
 
 export default function LiveRace() {
   const [sessions, setSessions] = useState<RaceSession[]>([]);
