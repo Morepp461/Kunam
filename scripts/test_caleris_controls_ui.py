@@ -37,9 +37,6 @@ assert 'expanded.includes(title)' not in NAV
 assert 'Semua role dapat melakukan check-in pada jendela waktu race.' in CHECKIN
 assert 'border-left:2px solid rgba(214,184,94,.88)' in CONTROLS
 
-print("CALERIS dropdown, Job Search license filter, readability and navigation regression checks passed.")
-
-
 # All native select fields must open the shared CALERIS sheet, avoiding OS-native grey popups.
 assert "function CalerisSelectOverlay()" in APP
 assert "caleris-select-backdrop" in APP
@@ -57,7 +54,7 @@ assert '{title:"ACCOUNT",items:' not in NAV
 
 # Header search indexes every registered panel route and global event card.
 assert 'import PanelPage,{panelGroups} from "./PanelPages";' in APP
-assert 'const routePages=panelGroups.flatMap' in APP
+assert 'const routePages=panelGroups.filter' in APP and '.flatMap(group=>group.tabs.map' in APP
 assert 'PAGES & CONTENT' in APP
 
 # Page selection cards use opaque red liquid-glass surfaces on both themes.
