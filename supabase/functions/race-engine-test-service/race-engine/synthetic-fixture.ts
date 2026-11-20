@@ -2,15 +2,15 @@ import {
   ATTRIBUTE_SCHEMA_VERSION,
   CAR_TEAM_ATTRIBUTE_DEFINITIONS,
   DRIVER_ATTRIBUTE_DEFINITIONS
-} from "./attributes";
-import type { CarTeamAttributeValues, DriverAttributeValues } from "./attributes";
+} from "./attributes.ts";
+import type { CarTeamAttributeValues, DriverAttributeValues } from "./attributes.ts";
 import {
   RACE_ENGINE_VERSION,
   RACE_START_SNAPSHOT_SCHEMA_VERSION
-} from "./contracts";
-import type { RaceStartSnapshot } from "./contracts";
-import { SeededRandom } from "./random";
-import type { CircuitGeometryDefinition } from "./circuit-geometry";
+} from "./contracts.ts";
+import type { RaceStartSnapshot } from "./contracts.ts";
+import { SeededRandom } from "./random.ts";
+import type { CircuitGeometryDefinition } from "./circuit-geometry.ts";
 
 export interface SyntheticRaceFixtureOptions {
   readonly seed?: number;
