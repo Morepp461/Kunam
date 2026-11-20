@@ -1,4 +1,4 @@
-import type { CircuitSegmentSnapshot } from "./contracts";
+import type { CircuitSegmentSnapshot } from "./contracts.ts";
 
 export const CIRCUIT_GEOMETRY_SCHEMA_VERSION = 1;
 export const CIRCUIT_SECTOR_COUNT = 3;
