@@ -65,6 +65,20 @@ describe("Race replay and archive retention policy", () => {
     }));
   });
 
+  it("rejects premature purge markers and future archive/purge timestamps", () => {
+    expect(() => resolveRaceRetention(input({
+      now: "2026-11-21T12:00:00.000Z",
+      replayPurgedAt: "2026-11-21T12:00:00.000Z"
+    }))).toThrow(/before the 48-hour retention window/i);
+    expect(() => resolveRaceRetention(input({
+      now: "2026-12-02T00:00:00.000Z",
+      detailsPurgedAt: "2026-12-02T00:00:00.000Z"
+    }))).toThrow(/before off-season key-fact archive/i);
+    expect(() => resolveRaceRetention(input({
+      keyFactsArchivedAt: "2026-12-02T00:00:00.000Z"
+    }))).toThrow(/cannot be in the future/i);
+  });
+
   it("rejects invalid timestamps and off-season dates before race completion", () => {
     expect(() => resolveRaceRetention(input({ now: "invalid" })).toThrow(/timestamps must be valid/i);
     expect(() => resolveRaceRetention(input({
