@@ -110,7 +110,146 @@ export interface RaceControlValidation {
   readonly errors: readonly string[];
 }
 
+export type ResolvedClassificationStatus = "classified" | "retired" | "disqualified" | "race_banned";
+
+export interface ResolvedRaceClassificationEntry {
+  readonly position: number | null;
+  readonly originalPosition: number;
+  readonly driverId: string;
+  readonly teamId: string;
+  readonly lapCompleted: number;
+  readonly elapsedMs: number;
+  readonly finished: boolean;
+  readonly retired?: boolean;
+  readonly pitStopCount?: number;
+  readonly status: ResolvedClassificationStatus;
+  readonly penaltyTimeMs: number;
+  readonly appliedPenaltyIds: readonly string[];
+  readonly pendingGridPenaltyPositions: number;
+}
+
+export interface StartingGridEntry {
+  readonly driverId: string;
+  readonly gridPosition: number;
+}
+
+export interface ResolvedStartingGridEntry extends StartingGridEntry {
+  readonly appliedGridPenaltyIds: readonly string[];
+}
+
+
 const TIMED_PENALTIES = new Set<RacePenaltyType>(["time_5s", "time_10s", "time_penalty", "drive_through", "stop_go"]);
+
+const FIXED_PENALTY_TIME_MS: Partial<Record<RacePenaltyType, number>> = {
+  time_5s: 5000,
+  time_10s: 10000
+};
+
+function activeRatifiedPenalties(penalties: readonly RaceControlPenalty[]): RaceControlPenalty[] {
+  return penalties.filter((penalty) => Boolean(penalty.ratifiedByAdminId) && !penalty.reversedByEventId);
+}
+
+/** Applies only ratified, unreversed race-time and exclusion penalties to the final classification. */
+export function resolveRaceClassificationWithPenalties(
+  classification: readonly RaceClassificationEntry[],
+  penalties: readonly RaceControlPenalty[]
+): readonly ResolvedRaceClassificationEntry[] {
+  const active = activeRatifiedPenalties(penalties);
+  const resolved = classification.map((entry) => {
+    const driverPenalties = active.filter((penalty) => penalty.driverId === entry.driverId);
+    let penaltyTimeMs = 0;
+    let disqualified = false;
+    let raceBanned = false;
+    let pendingGridPenaltyPositions = 0;
+    const appliedPenaltyIds: string[] = [];
+
+    for (const penalty of driverPenalties) {
+      if (penalty.type === "warning") {
+        appliedPenaltyIds.push(penalty.id);
+      } else if (penalty.type === "time_5s" || penalty.type === "time_10s") {
+        penaltyTimeMs += FIXED_PENALTY_TIME_MS[penalty.type] ?? 0;
+        appliedPenaltyIds.push(penalty.id);
+      } else if (penalty.type === "time_penalty" || penalty.type === "drive_through" || penalty.type === "stop_go") {
+        penaltyTimeMs += penalty.durationMs ?? 0;
+        appliedPenaltyIds.push(penalty.id);
+      } else if (penalty.type === "disqualification") {
+        disqualified = true;
+        appliedPenaltyIds.push(penalty.id);
+      } else if (penalty.type === "race_ban") {
+        raceBanned = true;
+        appliedPenaltyIds.push(penalty.id);
+      } else if (penalty.type === "grid_penalty") {
+        pendingGridPenaltyPositions += penalty.gridPositions ?? 0;
+      }
+    }
+
+    return {
+      originalPosition: entry.position,
+      driverId: entry.driverId,
+      teamId: entry.teamId,
+      lapCompleted: entry.lapCompleted,
+      elapsedMs: entry.elapsedMs + penaltyTimeMs,
+      finished: entry.finished,
+      ...(entry.retired !== undefined ? { retired: entry.retired } : {}),
+      ...(entry.pitStopCount !== undefined ? { pitStopCount: entry.pitStopCount } : {}),
+      status: raceBanned ? "race_banned" as const : disqualified ? "disqualified" as const : entry.retired ? "retired" as const : "classified" as const,
+      penaltyTimeMs,
+      appliedPenaltyIds: Object.freeze(appliedPenaltyIds),
+      pendingGridPenaltyPositions
+    };
+  });
+
+  resolved.sort((a, b) => {
+    const aExcluded = a.status === "disqualified" || a.status === "race_banned";
+    const bExcluded = b.status === "disqualified" || b.status === "race_banned";
+    if (aExcluded !== bExcluded) return aExcluded ? 1 : -1;
+    if (aExcluded && bExcluded) return a.originalPosition - b.originalPosition;
+    if (a.lapCompleted !== b.lapCompleted) return b.lapCompleted - a.lapCompleted;
+    if (a.elapsedMs !== b.elapsedMs) return a.elapsedMs - b.elapsedMs;
+    return a.originalPosition - b.originalPosition;
+  });
+
+  let position = 0;
+  return Object.freeze(resolved.map((entry) => {
+    const excluded = entry.status === "disqualified" || entry.status === "race_banned";
+    if (!excluded) position += 1;
+    return Object.freeze({ ...entry, position: excluded ? null : position });
+  }));
+}
+
+/** Applies grid penalties to a starting order before the first simulation tick. */
+export function resolveStartingGridWithPenalties(
+  grid: readonly StartingGridEntry[],
+  penalties: readonly RaceControlPenalty[]
+): readonly ResolvedStartingGridEntry[] {
+  const ids = new Set<string>();
+  for (const entry of grid) {
+    if (!entry.driverId.trim() || ids.has(entry.driverId)) throw new Error("Starting-grid driver IDs must be present and unique");
+    if (!Number.isInteger(entry.gridPosition) || entry.gridPosition < 1) throw new Error("Starting-grid positions must be positive integers");
+    ids.add(entry.driverId);
+  }
+  const ordered = [...grid].sort((a, b) => a.gridPosition - b.gridPosition || a.driverId.localeCompare(b.driverId))
+    .map((entry) => ({ driverId: entry.driverId, appliedGridPenaltyIds: [] as string[] }));
+  const activeGridPenalties = activeRatifiedPenalties(penalties)
+    .filter((penalty) => penalty.type === "grid_penalty" && (penalty.gridPositions ?? 0) > 0)
+    .sort((a, b) => a.issuedAt.localeCompare(b.issuedAt) || a.id.localeCompare(b.id));
+
+  for (const penalty of activeGridPenalties) {
+    const currentIndex = ordered.findIndex((entry) => entry.driverId === penalty.driverId);
+    if (currentIndex < 0) continue;
+    const targetIndex = Math.min(ordered.length - 1, currentIndex + (penalty.gridPositions ?? 0));
+    const [driver] = ordered.splice(currentIndex, 1);
+    driver.appliedGridPenaltyIds.push(penalty.id);
+    ordered.splice(targetIndex, 0, driver);
+  }
+
+  return Object.freeze(ordered.map((entry, index) => Object.freeze({
+    driverId: entry.driverId,
+    gridPosition: index + 1,
+    appliedGridPenaltyIds: Object.freeze(entry.appliedGridPenaltyIds)
+  })));
+}
+
 
 function validTimestamp(value: string): boolean {
   return Number.isFinite(Date.parse(value));
