@@ -175,6 +175,52 @@ describe("Race simulation kernel", () => {
     expect(restored.classification).toEqual(simulation.classification);
   });
 
+
+  it("applies only explicitly configured race-control pace multipliers to following segments", () => {
+    const snapshot = createSyntheticRaceFixture({ seed: 111, driverCount: 4, teamCount: 2, totalLaps: 2 });
+    const incidentProfile: IncidentCalibrationProfile = {
+      schemaVersion: 1, id: "race-control-pace-test", version: "1.0.0",
+      baselineAttributeValue: 50, maximumRatePerKm: 100,
+      incidents: {
+        spin: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        off_track: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        collision: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        crash: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        mechanical_failure: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        engine_failure: { baseRatePerKm: 100, attributeRatePerPoint: {}, timeLossMs: 0 }
+      }
+    };
+    const incidentModel = createIncidentModel(incidentProfile);
+    const baseControl: RaceControlProfile = {
+      id: "race-control-base", version: "1.0.0",
+      flagByIncident: {
+        spin: "green", off_track: "green", collision: "green",
+        crash: "green", mechanical_failure: "green", engine_failure: "red_flag"
+      },
+      durationMsByFlag: {
+        yellow: 1000, double_yellow: 2000, virtual_safety_car: 3000,
+        safety_car: 4000, red_flag: 100_000
+      }
+    };
+    const slowedControl: RaceControlProfile = {
+      ...baseControl,
+      id: "race-control-slowed",
+      paceTimeMultiplierByFlag: { red_flag: 1.5 }
+    };
+    const baseline = new RaceSimulation(snapshot, { incidentModel, raceControlProfile: baseControl });
+    const slowed = new RaceSimulation(snapshot, { incidentModel, raceControlProfile: slowedControl });
+    baseline.advanceOneSegment();
+    slowed.advanceOneSegment();
+    expect(slowed.activeRaceControlFlags.length).toBeGreaterThan(0);
+    const baselineBefore = baseline.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0);
+    const slowedBefore = slowed.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0);
+    baseline.advanceOneSegment();
+    slowed.advanceOneSegment();
+    const baselineDelta = baseline.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0) - baselineBefore;
+    const slowedDelta = slowed.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0) - slowedBefore;
+    expect(slowedDelta).toBeGreaterThan(baselineDelta);
+  });
+
   it("does not mutate the input snapshot and keeps stable tie ordering", () => {
     const snapshot = createSyntheticRaceFixture({ driverCount: 4, teamCount: 2, totalLaps: 1 });
     const before = JSON.stringify(snapshot);
