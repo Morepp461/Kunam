@@ -21,7 +21,12 @@ describe("Race timing projection", () => {
       tick: 1,
       status: "running"
     });
+    expect(projection.circuitLayout.length).toBeGreaterThanOrEqual(4);
     expect(projection.timingRows).toHaveLength(6);
+    expect(projection.timingRows.every((row) =>
+      row.trackPosition.x >= 0 && row.trackPosition.x <= 1 &&
+      row.trackPosition.y >= 0 && row.trackPosition.y <= 1
+    )).toBe(true);
     expect(projection.segmentTelemetry.length).toBeGreaterThan(0);
     expect(projection.segmentTelemetry.every((point) =>
       Number.isFinite(point.averageSpeedKph) && point.averageSpeedKph > 0 &&
