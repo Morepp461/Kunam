@@ -1,4 +1,4 @@
-import type { RaceClassificationEntry, RaceSimulationCheckpoint } from "./simulation.ts";
+import type { RaceSimulationCheckpoint } from "./simulation.ts";
 
 export const RACE_TIMING_PROJECTION_SCHEMA_VERSION = 1;
 
@@ -21,6 +21,17 @@ export interface RaceTimingProjectionRow {
     readonly carcassTempC: number;
     readonly gripPercent: number;
   };
+}
+
+export interface RaceTimingProjectionClassificationEntry {
+  readonly position: number | null;
+  readonly driverId: string;
+  readonly teamId: string;
+  readonly lapCompleted: number;
+  readonly elapsedMs: number;
+  readonly finished: boolean;
+  readonly retired?: boolean;
+  readonly pitStopCount?: number;
 }
 
 export interface RaceTimingProjection {
@@ -54,7 +65,7 @@ export interface RaceTimingProjection {
 
 export function buildRaceTimingProjection(
   checkpoint: RaceSimulationCheckpoint,
-  classification: readonly RaceClassificationEntry[],
+  classification: readonly RaceTimingProjectionClassificationEntry[],
   generatedAt: string
 ): RaceTimingProjection {
   if (!Number.isFinite(Date.parse(generatedAt))) throw new Error("Projection generatedAt must be a valid timestamp");
@@ -93,7 +104,7 @@ export function buildRaceTimingProjection(
       gripPercent: state.tyreState.gripPercent
     }) : null;
     return Object.freeze({
-      position: entry.position ?? index + 1,
+      position: entry.position,
       driverId: entry.driverId,
       teamId: entry.teamId,
       lapCompleted: entry.lapCompleted,
