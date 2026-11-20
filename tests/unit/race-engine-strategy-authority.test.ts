@@ -19,10 +19,9 @@ function request(overrides: Partial<StrategyCommandRequest> = {}): StrategyComma
 
 describe("Race strategy authority", () => {
   it("uses owner, then driver, then AI as the default authority hierarchy", () => {
-    const target = request().target;
-    expect(resolveStrategyAuthority(target, { ownerOnline: true, driverOnline: true })).toBe("team_owner");
-    expect(resolveStrategyAuthority(target, { ownerOnline: false, driverOnline: true })).toBe("driver");
-    expect(resolveStrategyAuthority(target, { ownerOnline: false, driverOnline: false })).toBe("ai");
+    expect(resolveStrategyAuthority({ ownerOnline: true, driverOnline: true })).toBe("team_owner");
+    expect(resolveStrategyAuthority({ ownerOnline: false, driverOnline: true })).toBe("driver");
+    expect(resolveStrategyAuthority({ ownerOnline: false, driverOnline: false })).toBe("ai");
   });
 
   it("allows a verified team owner to command either driver on their own team", () => {
