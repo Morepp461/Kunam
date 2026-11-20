@@ -131,6 +131,11 @@ export default function LiveRace() {
   const [teamCount, setTeamCount] = useState(10);
   const [totalLaps, setTotalLaps] = useState(5);
   const [seed, setSeed] = useState("20261120");
+  const [aeroSetting, setAeroSetting] = useState(50);
+  const [suspensionSetting, setSuspensionSetting] = useState(50);
+  const [brakeBalanceFrontPercent, setBrakeBalanceFrontPercent] = useState(50);
+  const [frontTyrePressurePsi, setFrontTyrePressurePsi] = useState(25);
+  const [rearTyrePressurePsi, setRearTyrePressurePsi] = useState(25);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -261,7 +266,8 @@ export default function LiveRace() {
     setNotice("");
     try {
       const result = await raceApi("create", {
-        driverCount, teamCount, totalLaps, seed: Number(seed)
+        driverCount, teamCount, totalLaps, seed: Number(seed),
+        carSetup: { aeroSetting, suspensionSetting, brakeBalanceFrontPercent, frontTyrePressurePsi, rearTyrePressurePsi }
       });
       await refreshSessions(result.session.id);
       await loadDetail(result.session.id);
@@ -446,9 +452,24 @@ export default function LiveRace() {
         <label>Deterministic seed
           <input inputMode="numeric" value={seed} onChange={(event) => setSeed(event.target.value)} />
         </label>
+        <label>Aero setting <small>Test scale · 0–100</small>
+          <input type="number" min={0} max={100} value={aeroSetting} onChange={(event) => setAeroSetting(Number(event.target.value))} />
+        </label>
+        <label>Suspension setting <small>Test scale · 0–100</small>
+          <input type="number" min={0} max={100} value={suspensionSetting} onChange={(event) => setSuspensionSetting(Number(event.target.value))} />
+        </label>
+        <label>Front brake balance <small>40–60%</small>
+          <input type="number" min={40} max={60} step={0.5} value={brakeBalanceFrontPercent} onChange={(event) => setBrakeBalanceFrontPercent(Number(event.target.value))} />
+        </label>
+        <label>Front tyre pressure <small>15–35 PSI · test profile</small>
+          <input type="number" min={15} max={35} step={0.1} value={frontTyrePressurePsi} onChange={(event) => setFrontTyrePressurePsi(Number(event.target.value))} />
+        </label>
+        <label>Rear tyre pressure <small>15–35 PSI · test profile</small>
+          <input type="number" min={15} max={35} step={0.1} value={rearTyrePressurePsi} onChange={(event) => setRearTyrePressurePsi(Number(event.target.value))} />
+        </label>
       </div>
       <div className="race-engine-form-footer">
-        <span>Up to 25 AI drivers · 10 teams · 10 laps · 9 circuit segments per lap</span>
+        <span>Up to 25 AI drivers · 10 teams · setup values use synthetic test calibration only</span>
         <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !seed.trim()}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>
