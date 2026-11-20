@@ -56,7 +56,8 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
     baselineAttributeValue: 50,
     battleDetectionGapMs: 2500,
     attributes,
-    hqEffects: {}
+    hqEffects: {},
+    carSetup: carSetupCalibration
   };
   const performanceModel = createCalibratedPerformanceModel(performanceProfile);
 
