@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
     if (action === "list") {
       const { data, error } = await service
         .from("race_engine_test_sessions")
-        .select("id,status,seed,driver_count,team_count,total_laps,engine_version,tick,total_ticks,created_at,updated_at,completed_at,last_error")
+        .select("id,status,seed,driver_count,team_count,total_laps,engine_version,tick,total_ticks,speed_multiplier,created_at,updated_at,completed_at,last_error")
         .eq("created_by", user.id)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -174,15 +174,33 @@ Deno.serve(async (req: Request) => {
         .from("race_engine_test_events")
         .select("sequence,event_type,driver_id,lap_number,simulation_time_ms,payload")
         .eq("session_id", sessionId)
-        .order("sequence", { ascending: true })
-        .limit(500);
+        .order("sequence", { ascending: false })
+        .limit(150);
       if (eventError) throw eventError;
-      return json({ session, events: events ?? [] }, 200, origin);
+      const { data: commands, error: commandError } = await service
+        .from("race_engine_test_commands")
+        .select("id,command_type,result,created_at")
+        .eq("session_id", sessionId)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (commandError) throw commandError;
+      return json({ session, events: events ?? [], commands: commands ?? [] }, 200, origin);
+    }
+
+    if (action === "set_speed") {
+      const speedMultiplier = Number(body.speedMultiplier);
+      if (![1, 5, 10, 15].includes(speedMultiplier)) throw new Error("Kecepatan hanya mendukung 1x, 5x, 10x, atau 15x.");
+      const { data: result, error } = await service.rpc("race_engine_set_test_speed", {
+        p_session_id: sessionId,
+        p_actor_id: user.id,
+        p_speed_multiplier: speedMultiplier,
+        p_command_id: crypto.randomUUID()
+      });
+      if (error) throw error;
+      return json({ result }, 200, origin);
     }
 
     if (action === "advance") {
-      const steps = Number(body.steps ?? 5);
-      if (!Number.isInteger(steps) || steps < 1 || steps > 10) throw new Error("Satu perintah hanya boleh memproses 1 sampai 10 segmen.");
       const workerId = crypto.randomUUID();
       const { data: claimed, error: claimError } = await service.rpc("race_engine_claim_test_session", {
         p_session_id: sessionId,
@@ -195,6 +213,7 @@ Deno.serve(async (req: Request) => {
       const checkpoint = claimed.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
       const expectedTick = Number(claimed.tick);
+      const steps = Number(claimed.speed_multiplier ?? 1);
       const previousEventCount = simulation.events.length;
       for (let index = 0; index < steps && simulation.status !== "completed"; index += 1) {
         simulation.advanceOneSegment();
