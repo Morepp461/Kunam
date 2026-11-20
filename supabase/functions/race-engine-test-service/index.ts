@@ -18,6 +18,7 @@ import {
   validateRaceControlAuditTrail
 } from "./race-engine/race-control.ts";
 import { resolveTeamHqRaceEffects } from "./race-engine/hq.ts";
+import { buildRaceTimingProjection } from "./race-engine/projection.ts";
 import type { TeamHqDivision, TeamHqFacilityConfigInput } from "./race-engine/hq.ts";
 import type {
   RaceControlAuditEvent,
@@ -94,6 +95,28 @@ function restoreSimulation(checkpoint: RaceSimulationCheckpoint) {
   );
 }
 
+async function persistTimingProjection(
+  sessionId: string,
+  simulation: RaceSimulation,
+  classification = simulation.classification
+) {
+  const checkpoint = simulation.createCheckpoint();
+  const projection = buildRaceTimingProjection(checkpoint, classification, new Date().toISOString());
+  const { error } = await service.from("race_engine_test_projections").upsert({
+    session_id: sessionId,
+    schema_version: projection.schemaVersion,
+    engine_version: projection.engineVersion,
+    tick: projection.tick,
+    status: projection.status,
+    simulation_time_ms: projection.simulationTimeMs,
+    projection,
+    generated_at: projection.generatedAt,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "session_id" });
+  if (error) throw error;
+  return projection;
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Payload request tidak valid.");
@@ -106,6 +129,8 @@ async function processBackgroundBatch() {
     .from("race_engine_test_sessions")
     .select("id,created_by,speed_multiplier")
     .in("status", ["queued", "running"])
+    // Rotate work by last update so the first three long races cannot starve later sessions.
+    .order("updated_at", { ascending: true })
     .order("created_at", { ascending: true })
     .limit(3);
   if (listError) throw listError;
@@ -190,6 +215,13 @@ async function processBackgroundBatch() {
         p_actor_id: session.created_by
       });
       if (commitError) throw commitError;
+      if (committed?.ok === true) {
+        await persistTimingProjection(
+          session.id,
+          simulation,
+          resolvedClassification ?? simulation.classification
+        );
+      }
       processed.push({
         sessionId: session.id,
         status: simulation.status,
@@ -439,6 +471,7 @@ Deno.serve(async (req: Request) => {
         .from("race_engine_test_checkpoints")
         .insert({ session_id: id, tick: 0, engine_version: RACE_ENGINE_VERSION, checkpoint });
       if (checkpointError) throw checkpointError;
+      await persistTimingProjection(id, simulation);
       return json({ session: data, syntheticOnly: true, productionCalibration: false }, 201, origin);
     }
 
@@ -580,6 +613,12 @@ Deno.serve(async (req: Request) => {
         .order("sequence", { ascending: false })
         .limit(150);
       if (eventError) throw eventError;
+      const { data: projectionRow, error: projectionError } = await service
+        .from("race_engine_test_projections")
+        .select("projection")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+      if (projectionError) throw projectionError;
       const { data: commands, error: commandError } = await service
         .from("race_engine_test_commands")
         .select("id,command_type,result,created_at")
@@ -587,7 +626,7 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(20);
       if (commandError) throw commandError;
-      return json({ session, events: events ?? [], commands: commands ?? [] }, 200, origin);
+      return json({ session, projection: projectionRow?.projection ?? null, events: events ?? [], commands: commands ?? [] }, 200, origin);
     }
 
     if (action === "replay") {
@@ -703,6 +742,9 @@ Deno.serve(async (req: Request) => {
       });
       if (commitError) throw commitError;
       if (committed?.conflict) return json({ error: "Checkpoint berubah karena worker lain.", conflict: true }, 409, origin);
+      const timingProjection = committed?.ok === true
+        ? await persistTimingProjection(sessionId, simulation, classification ?? simulation.classification)
+        : null;
       return json({
         result: committed,
         sessionId,
@@ -711,6 +753,7 @@ Deno.serve(async (req: Request) => {
         status,
         eventsAdded,
         classification,
+        projection: timingProjection,
         checkpointSchema: nextCheckpoint.schemaVersion
       }, 200, origin);
     }
