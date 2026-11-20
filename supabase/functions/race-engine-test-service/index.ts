@@ -80,7 +80,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 async function processBackgroundBatch() {
   const { data: sessions, error: listError } = await service
     .from("race_engine_test_sessions")
-    .select("id,created_by")
+    .select("id,created_by,speed_multiplier")
     .in("status", ["queued", "running"])
     .order("created_at", { ascending: true })
     .limit(3);
@@ -104,7 +104,7 @@ async function processBackgroundBatch() {
       const checkpoint = claim.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
       const previousEventCount = simulation.events.length;
-      const maxSteps = Math.max(1, Math.min(15, Number(claim.speed_multiplier ?? 1)));
+      const maxSteps = Math.max(1, Math.min(15, Number(session.speed_multiplier ?? 1)));
       for (let index = 0; index < maxSteps && simulation.status !== "completed"; index += 1) {
         simulation.advanceOneSegment();
       }
@@ -185,7 +185,7 @@ Deno.serve(async (req: Request) => {
       const teamCount = Number(body.teamCount ?? 10);
       const totalLaps = Number(body.totalLaps ?? 5);
       const seed = Number(body.seed ?? 20261120);
-      if (!Number.isInteger(driverCount) || driverCount < 2 || driverCount > 20) throw new Error("Jumlah driver harus 2 sampai 20.");
+      if (!Number.isInteger(driverCount) || driverCount < 2 || driverCount > 25) throw new Error("Jumlah driver harus 2 sampai 25.");
       if (!Number.isInteger(teamCount) || teamCount < 1 || teamCount > 10 || teamCount > driverCount) throw new Error("Jumlah team harus 1 sampai 10 dan tidak melebihi driver.");
       if (!Number.isInteger(totalLaps) || totalLaps < 1 || totalLaps > 10) throw new Error("Jumlah lap harus 1 sampai 10.");
       if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error("Seed harus berupa integer 32-bit unsigned.");
