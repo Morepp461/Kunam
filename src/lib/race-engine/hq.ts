@@ -1,0 +1,137 @@
+export const TEAM_HQ_RACE_SNAPSHOT_SCHEMA_VERSION = 1;
+
+export const RACE_RELEVANT_HQ_FACILITY_KEYS = [
+  "engineering_department",
+  "rd_center",
+  "simulator_facility",
+  "pit_crew_training_center"
+] as const;
+
+export const RACE_HQ_EFFECT_KEYS = [
+  "race_pace_bonus",
+  "reliability_bonus",
+  "aero_power_bonus"
+] as const;
+
+export type TeamHqDivision = "premio" | "zwei";
+export type RaceHqEffectKey = (typeof RACE_HQ_EFFECT_KEYS)[number];
+
+export interface TeamHqFacilityLevelInput {
+  readonly facilityKey: string;
+  readonly level: number;
+}
+
+export interface TeamHqFacilityConfigInput {
+  readonly facilityKey: string;
+  readonly isEnabled: boolean;
+  readonly maxLevelPremio: number;
+  readonly maxLevelZwei: number;
+  readonly effectsByLevel: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  readonly updatedAt: string;
+}
+
+export interface TeamHqFacilityAppliedSnapshot {
+  readonly facilityKey: string;
+  readonly level: number;
+  readonly configUpdatedAt: string;
+  readonly appliedEffects: Readonly<Partial<Record<RaceHqEffectKey, number>>>;
+}
+
+export interface TeamHqRaceEffectSnapshot {
+  readonly schemaVersion: typeof TEAM_HQ_RACE_SNAPSHOT_SCHEMA_VERSION;
+  readonly division: TeamHqDivision;
+  readonly capturedAt: string;
+  readonly facilityLevels: Readonly<Record<string, number>>;
+  readonly facilities: readonly TeamHqFacilityAppliedSnapshot[];
+  readonly effects: Readonly<Partial<Record<RaceHqEffectKey, number>>>;
+}
+
+export interface TeamHqRaceEffectResolution {
+  readonly snapshot: TeamHqRaceEffectSnapshot;
+  readonly unresolvedFacilityKeys: readonly string[];
+}
+
+function validTimestamp(value: string): boolean {
+  return Number.isFinite(Date.parse(value));
+}
+
+/**
+ * Resolves only effects explicitly present in the current HQ configuration.
+ * It does not infer a gameplay bonus from a facility's name or level.
+ */
+export function resolveTeamHqRaceEffects(
+  division: TeamHqDivision,
+  levels: readonly TeamHqFacilityLevelInput[],
+  configs: readonly TeamHqFacilityConfigInput[],
+  capturedAt: string
+): TeamHqRaceEffectResolution {
+  if (!validTimestamp(capturedAt)) throw new Error("HQ race-effect capture timestamp is invalid");
+
+  const configByKey = new Map<string, TeamHqFacilityConfigInput>();
+  for (const config of configs) {
+    if (!config.facilityKey.trim() || configByKey.has(config.facilityKey)) {
+      throw new Error("HQ facility config keys must be present and unique");
+    }
+    if (!validTimestamp(config.updatedAt)) throw new Error(`HQ config ${config.facilityKey} has an invalid revision timestamp`);
+    configByKey.set(config.facilityKey, config);
+  }
+
+  const levelByKey = new Map<string, number>();
+  for (const item of levels) {
+    if (!item.facilityKey.trim() || levelByKey.has(item.facilityKey)) {
+      throw new Error("HQ facility level keys must be present and unique");
+    }
+    const config = configByKey.get(item.facilityKey);
+    if (!config) throw new Error(`HQ config is missing for ${item.facilityKey}`);
+    const maximum = division === "premio" ? config.maxLevelPremio : config.maxLevelZwei;
+    if (!Number.isInteger(item.level) || item.level < 0 || item.level > maximum) {
+      throw new Error(`HQ facility ${item.facilityKey} level is outside its configured division limit`);
+    }
+    levelByKey.set(item.facilityKey, item.level);
+  }
+
+  const effects: Partial<Record<RaceHqEffectKey, number>> = {};
+  const facilities: TeamHqFacilityAppliedSnapshot[] = [];
+  const unresolved: string[] = [];
+
+  for (const facilityKey of RACE_RELEVANT_HQ_FACILITY_KEYS) {
+    const level = levelByKey.get(facilityKey) ?? 0;
+    const config = configByKey.get(facilityKey);
+    if (!config) {
+      if (level > 0) unresolved.push(facilityKey);
+      continue;
+    }
+    if (level === 0 || !config.isEnabled) continue;
+
+    const configured = config.effectsByLevel[String(level)] ?? {};
+    const applied: Partial<Record<RaceHqEffectKey, number>> = {};
+    for (const effectKey of RACE_HQ_EFFECT_KEYS) {
+      const value = configured[effectKey];
+      if (value === undefined) continue;
+      if (!Number.isFinite(value)) throw new Error(`HQ effect ${facilityKey}.${effectKey} must be finite`);
+      applied[effectKey] = value;
+      effects[effectKey] = (effects[effectKey] ?? 0) + value;
+    }
+
+    if (Object.keys(applied).length === 0) unresolved.push(facilityKey);
+    facilities.push(Object.freeze({
+      facilityKey,
+      level,
+      configUpdatedAt: config.updatedAt,
+      appliedEffects: Object.freeze(applied)
+    }));
+  }
+
+  const facilityLevels = Object.freeze(Object.fromEntries([...levelByKey.entries()].sort(([a], [b]) => a.localeCompare(b))));
+  return Object.freeze({
+    snapshot: Object.freeze({
+      schemaVersion: TEAM_HQ_RACE_SNAPSHOT_SCHEMA_VERSION,
+      division,
+      capturedAt,
+      facilityLevels,
+      facilities: Object.freeze(facilities),
+      effects: Object.freeze(effects)
+    }),
+    unresolvedFacilityKeys: Object.freeze(unresolved.sort())
+  });
+}
