@@ -160,6 +160,8 @@ export interface RaceSimulationCheckpoint {
   readonly entrants: readonly EntrantSimulationState[];
   readonly events: readonly RaceSimulationEvent[];
   readonly weatherState?: WeatherState | null;
+  readonly simulationClockMs?: number;
+  readonly activeRaceControlFlags?: readonly ActiveRaceControlFlag[];
 }
 
 export interface ActiveRaceControlFlag {
