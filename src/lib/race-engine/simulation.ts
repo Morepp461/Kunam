@@ -116,6 +116,8 @@ export interface RaceSimulationEvent {
   readonly maintenanceCostEligible?: boolean;
   readonly retiresDriver?: boolean;
   readonly raceControlFlag?: RaceControlFlag;
+  readonly restartMode?: "standing" | "rolling";
+  readonly restartPolicy?: "last_valid_classification";
 }
 
 export interface EntrantSimulationState {
@@ -692,6 +694,27 @@ export class RaceSimulation {
     this.activeRaceControlFlagsValue = this.activeRaceControlFlagsValue.filter(
       (flag) => !flag.incidentId.startsWith("manual:")
     );
+  }
+
+  recordRaceRestart(
+    mode: "standing" | "rolling",
+    commandId: string,
+    policy: "last_valid_classification" = "last_valid_classification"
+  ): void {
+    if (!commandId.trim()) throw new Error("Race restart command ID is required");
+    const incidentId = `manual-restart:${commandId}`;
+    if (this.mutableEvents.some((event) => event.incidentId === incidentId)) return;
+    const leader = this.classification[0];
+    this.mutableEvents.push({
+      sequence: this.mutableEvents.length + 1,
+      type: "race_control",
+      lapNumber: leader?.lapCompleted ?? 0,
+      simulationTimeMs: this.simulationClockMsValue,
+      raceControlFlag: "green",
+      incidentId,
+      restartMode: mode,
+      restartPolicy: policy
+    });
   }
 
   get weatherState(): WeatherState | null {
