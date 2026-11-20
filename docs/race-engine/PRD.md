@@ -109,9 +109,14 @@ A race starts automatically when its configured schedule is due. FIA/Admin do no
 15. DRS Efficiency
 16. ERS Efficiency
 
-**Data-model discrepancy:** the current documented lists contain 24 attributes total, while an earlier planning note mentioned 32. The additional eight must not be invented. Audit current repository/database definitions before locking the engine contract.
+**Baseline resmi: 24 atribut.** Race Engine v1 menggunakan tepat 8 Driver Attributes dan 16 Car/Team Attributes yang tercantum di atas. Angka 32 tidak lagi menjadi target atau asumsi. Daftar 24 atribut ini menjadi baseline kontrak awal, setelah dicocokkan dengan definisi aktual repository/database pada fase audit.
 
 Team HQ facility levels 1–8 must have measurable effects on simulation performance or unlocks. Race-start input snapshots freeze driver, car, and facility effects for that session. Mid-race upgrades cannot retroactively modify an active race.
+
+### Attribute schema evolution
+The initial engine contract contains exactly 24 attributes. The data model must remain extensible so attributes may be added, renamed, redefined, deprecated, or disabled in future versions without destructive schema changes. Attribute definitions must use stable identifiers independent of display labels and include at least: key/ID, display name, entity scope (driver or car/team), data type, unit/scale, valid range, direction/meaning, default or migration behavior, effective engine version, and status. Changes to an attribute's meaning, scale, or calculation are versioned semantic changes, not simple label edits.
+
+Every race stores an immutable, versioned attribute/config snapshot and the engine/ruleset version used at race start. Existing race snapshots and replays must retain their original definitions and interpretation. New/changed attributes apply only to races created under the compatible newer configuration. Database migrations must be additive/backward-compatible where possible; do not delete or reinterpret historical values. Deprecation precedes removal, with compatibility mapping and tests. Any future attribute change requires a new feature branch, migration review where needed, testing-DB validation, deterministic replay compatibility tests, QA/CI, and an explicit rollout plan.
 
 ## 6. Circuit and environment
 
@@ -211,14 +216,13 @@ Release gates: deterministic replay passes; worker restart resumes correctly; co
 
 ## 16. Open items
 
-1. Confirm whether eight additional attributes exist; current known list totals 24.
-2. Confirm source/reference standard and licensing for real circuit geometry.
-3. Calibrate physics, tyre degradation, weather transitions, incident probabilities, and severity with simulation tests.
-4. Verify whether the Rp100,000 VPS ceiling can support the desired concurrent sessions.
-5. Select provider only after current offers and prototype benchmarks are compared.
-6. Finalize telemetry frequency and storage granularity.
-7. Finalize database schema, event schema, API versioning, and worker authentication after schema/migration audit.
-8. Confirm whether official results should be archived beyond the off-season retention target.
+1. Confirm source/reference standard and licensing for real circuit geometry.
+2. Calibrate physics, tyre degradation, weather transitions, incident probabilities, and severity with simulation tests.
+3. Verify whether the Rp100,000 VPS ceiling can support the desired concurrent sessions.
+4. Select provider only after current offers and prototype benchmarks are compared.
+5. Finalize telemetry frequency and storage granularity.
+6. Finalize database schema, event schema, API versioning, and worker authentication after schema/migration audit.
+7. Confirm whether official results should be archived beyond the off-season retention target.
 
 ## Appendix: LIVE RACE development page
 
