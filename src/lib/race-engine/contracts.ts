@@ -2,13 +2,15 @@ import {
   ATTRIBUTE_SCHEMA_VERSION,
   validateAttributeValues
 } from "./attributes";
+import { validateCircuitGeometryDefinition } from "./circuit-geometry";
+import type { CircuitGeometryDefinition } from "./circuit-geometry";
 import type {
   CarTeamAttributeValues,
   DriverAttributeValues
 } from "./attributes";
 
-export const RACE_ENGINE_VERSION = "0.3.0";
-export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 1;
+export const RACE_ENGINE_VERSION = "0.4.0";
+export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 2;
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
@@ -40,14 +42,7 @@ export interface RaceStartSnapshot {
   readonly raceId: string;
   readonly seed: number;
   readonly createdAt: string;
-  readonly circuit: {
-    readonly id: string;
-    readonly revision: string;
-    readonly name: string;
-    readonly totalLaps: number;
-    readonly targetLapTimeMs: number;
-    readonly segments: readonly CircuitSegmentSnapshot[];
-  };
+  readonly circuit: CircuitGeometryDefinition;
   readonly entrants: readonly RaceEntrantSnapshot[];
 }
 
@@ -73,40 +68,8 @@ export function validateRaceStartSnapshot(
     errors.push("seed must be an unsigned 32-bit integer");
   }
   if (!Number.isFinite(Date.parse(value.createdAt))) errors.push("createdAt must be a valid timestamp");
-  if (!value.circuit.id.trim() || !value.circuit.revision.trim()) {
-    errors.push("Circuit ID and revision are required");
-  }
-  if (!Number.isInteger(value.circuit.totalLaps) || value.circuit.totalLaps < 1) {
-    errors.push("Circuit totalLaps must be a positive integer");
-  }
-  if (!Number.isFinite(value.circuit.targetLapTimeMs) || value.circuit.targetLapTimeMs <= 0) {
-    errors.push("Circuit targetLapTimeMs must be positive");
-  }
-  if (value.circuit.segments.length === 0) errors.push("Circuit must contain at least one segment");
-
-  const segmentIds = new Set<string>();
-  for (const segment of value.circuit.segments) {
-    if (!segment.id.trim() || segmentIds.has(segment.id)) {
-      errors.push("Circuit segment IDs must be present and unique");
-    }
-    segmentIds.add(segment.id);
-    if (!Number.isInteger(segment.sectorNumber) || segment.sectorNumber < 1) {
-      errors.push(`Segment ${segment.id} has an invalid sectorNumber`);
-    }
-    if (!Number.isFinite(segment.distanceMeters) || segment.distanceMeters <= 0) {
-      errors.push(`Segment ${segment.id} distanceMeters must be positive`);
-    }
-    for (const [key, demand] of [
-      ["gripFactor", segment.gripFactor],
-      ["lowSpeedDemand", segment.lowSpeedDemand],
-      ["highSpeedDemand", segment.highSpeedDemand],
-      ["tractionDemand", segment.tractionDemand]
-    ] as const) {
-      if (!Number.isFinite(demand) || demand < 0) {
-        errors.push(`Segment ${segment.id} ${key} must be a non-negative finite number`);
-      }
-    }
-  }
+  const circuitValidation = validateCircuitGeometryDefinition(value.circuit);
+  errors.push(...circuitValidation.errors.map((error) => `Circuit: ${error}`));
 
   if (value.entrants.length === 0) errors.push("Race must contain at least one entrant");
   const driverIds = new Set<string>();

@@ -13,6 +13,7 @@ import {
 } from "../../src/lib/race-engine/contracts";
 import type { RaceStartSnapshot } from "../../src/lib/race-engine/contracts";
 import { SeededRandom } from "../../src/lib/race-engine/random";
+import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
 
 const driverAttributes = Object.fromEntries(
   DRIVER_ATTRIBUTE_DEFINITIONS.map((definition) => [definition.key, 50])
@@ -22,38 +23,24 @@ const carTeamAttributes = Object.fromEntries(
 ) as Record<string, number>;
 
 function validSnapshot(): RaceStartSnapshot {
-  return {
-    schemaVersion: 1,
-    engineVersion: RACE_ENGINE_VERSION,
-    attributeSchemaVersion: ATTRIBUTE_SCHEMA_VERSION,
-    raceId: "race-test-001",
+  const fixture = createSyntheticRaceFixture({
     seed: 123456,
+    totalLaps: 5,
+    driverCount: 1,
+    teamCount: 1
+  });
+  return {
+    ...fixture,
+    raceId: "race-test-001",
     createdAt: "2026-11-20T00:00:00.000Z",
-    circuit: {
-      id: "synthetic-test-track",
-      revision: "1",
-      name: "Synthetic Test Track",
-      totalLaps: 5,
-      targetLapTimeMs: 90000,
-      segments: [{
-        id: "sector-1-segment-1",
-        sectorNumber: 1,
-        distanceMeters: 1000,
-        gripFactor: 1,
-        lowSpeedDemand: 0.5,
-        highSpeedDemand: 0.5,
-        tractionDemand: 0.5,
-        drsAvailable: false
-      }]
-    },
     entrants: [{
+      ...fixture.entrants[0],
       driverId: "driver-001",
       teamId: "team-001",
       driverNameSnapshot: "Test Driver",
       teamNameSnapshot: "Test Team",
       driverAttributes: driverAttributes as RaceStartSnapshot["entrants"][number]["driverAttributes"],
-      carTeamAttributes: carTeamAttributes as RaceStartSnapshot["entrants"][number]["carTeamAttributes"],
-      hqEffects: {}
+      carTeamAttributes: carTeamAttributes as RaceStartSnapshot["entrants"][number]["carTeamAttributes"]
     }]
   };
 }
@@ -118,6 +105,7 @@ describe("Race start snapshot validation", () => {
     expect(Object.isFrozen(frozen)).toBe(true);
     expect(Object.isFrozen(frozen.circuit)).toBe(true);
     expect(Object.isFrozen(frozen.circuit.segments)).toBe(true);
+    expect(Object.isFrozen(frozen.circuit.layout)).toBe(true);
     expect(Object.isFrozen(frozen.entrants[0].driverAttributes)).toBe(true);
   });
 
@@ -134,13 +122,13 @@ describe("Race start snapshot validation", () => {
     expect(result.errors.some((error) => error.includes("unique"))).toBe(true);
   });
 
-  it("rejects malformed circuit segments", () => {
+  it("rejects malformed circuit geometry and segments", () => {
     const snapshot = validSnapshot();
     const invalid = {
       ...snapshot,
       circuit: {
         ...snapshot.circuit,
-        segments: [{ ...snapshot.circuit.segments[0], distanceMeters: 0 }]
+        segments: snapshot.circuit.segments.map((segment, index) => index === 0 ? { ...segment, distanceMeters: 0 } : segment)
       }
     };
     expect(validateRaceStartSnapshot(invalid).valid).toBe(false);

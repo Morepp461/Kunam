@@ -10,6 +10,7 @@ import {
 } from "./contracts";
 import type { RaceStartSnapshot } from "./contracts";
 import { SeededRandom } from "./random";
+import type { CircuitGeometryDefinition } from "./circuit-geometry";
 
 export interface SyntheticRaceFixtureOptions {
   readonly seed?: number;
@@ -65,7 +66,7 @@ export function createSyntheticRaceFixture(
 
   const distances = [800, 600, 500, 900, 700, 400, 500, 350, 250];
   const sectors = [1, 1, 1, 2, 2, 2, 3, 3, 3];
-  const segments = distances.map((distanceMeters, index) => ({
+  const segments: CircuitGeometryDefinition["segments"] = distances.map((distanceMeters, index) => ({
     id: `synthetic-segment-${String(index + 1).padStart(2, "0")}`,
     sectorNumber: sectors[index],
     distanceMeters,
@@ -73,7 +74,11 @@ export function createSyntheticRaceFixture(
     lowSpeedDemand: index % 3 === 0 ? 0.8 : 0.3,
     highSpeedDemand: index % 3 === 1 ? 0.8 : 0.3,
     tractionDemand: index % 3 === 2 ? 0.8 : 0.3,
-    drsAvailable: index === 2 || index === 7
+    drsAvailable: index === 2 || index === 7,
+    cornerType: index === 2 || index === 7 ? "straight" : index % 2 === 0 ? "slow" : "fast",
+    cornerRadiusMeters: index === 2 || index === 7 ? null : 45,
+    elevationChangeMeters: 0,
+    trackWidthMeters: 12
   }));
 
   return {
@@ -84,6 +89,20 @@ export function createSyntheticRaceFixture(
     seed,
     createdAt: "2026-01-01T00:00:00.000Z",
     circuit: {
+      schemaVersion: 1,
+      countryCode: "ID",
+      trackLengthMeters: distances.reduce((total, distance) => total + distance, 0),
+      layout: [
+        { id: "p1", x: 0.50, y: 0.10, elevationMeters: 10 },
+        { id: "p2", x: 0.80, y: 0.20, elevationMeters: 12 },
+        { id: "p3", x: 0.90, y: 0.50, elevationMeters: 14 },
+        { id: "p4", x: 0.75, y: 0.80, elevationMeters: 11 },
+        { id: "p5", x: 0.50, y: 0.90, elevationMeters: 9 },
+        { id: "p6", x: 0.20, y: 0.80, elevationMeters: 7 },
+        { id: "p7", x: 0.10, y: 0.50, elevationMeters: 8 },
+        { id: "p8", x: 0.20, y: 0.20, elevationMeters: 9 },
+        { id: "p9", x: 0.50, y: 0.10, elevationMeters: 10 }
+      ],
       id: "synthetic-grand-prix-circuit",
       revision: "1",
       name: "Synthetic Grand Prix Circuit",
