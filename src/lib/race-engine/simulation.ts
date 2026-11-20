@@ -15,14 +15,18 @@ import {
   advanceTyreState,
   createInitialTyreState,
   createTyreSegmentInput,
-  getTyreSegmentEnvironment
+  getTyreSegmentEnvironment,
+  replaceTyreSet
 } from "./tyres";
 import { TYRE_COMPOUNDS } from "./tyres";
 import type { TyreSimulationModel, TyreState } from "./tyres";
 import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from "./weather";
 import type { WeatherSimulationModel, WeatherState } from "./weather";
+import { choosePitDecision } from "./pit-strategy";
+import type { PitStrategyModel } from "./pit-strategy";
 
-export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 4;
+export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 5;
+export const WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 4;
 export const LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 3;
 
 export type RaceSimulationStatus = "running" | "completed";
@@ -30,7 +34,8 @@ export type RaceEventType =
   | "segment_completed"
   | "sector_completed"
   | "lap_completed"
-  | "race_completed";
+  | "race_completed"
+  | "pit_stop";
 
 export interface SegmentPerformanceContext {
   readonly entrant: RaceEntrantSnapshot;
@@ -69,6 +74,9 @@ export interface RaceSimulationConfig {
   readonly weatherModelId?: string | null;
   readonly weatherModelVersion?: string | null;
   readonly weatherModelSnapshot?: JsonValue | null;
+  readonly pitModelId?: string | null;
+  readonly pitModelVersion?: string | null;
+  readonly pitModelSnapshot?: JsonValue | null;
 }
 
 export interface RaceSimulationEvent {
@@ -80,6 +88,8 @@ export interface RaceSimulationEvent {
   readonly segmentId?: string;
   readonly simulationTimeMs: number;
   readonly durationMs?: number;
+  readonly selectedCompound?: string;
+  readonly pitReason?: string;
 }
 
 export interface EntrantSimulationState {
@@ -90,6 +100,8 @@ export interface EntrantSimulationState {
   readonly elapsedMs: number;
   readonly finished: boolean;
   readonly tyreState?: TyreState;
+  readonly pitStopCount?: number;
+  readonly lastPitLap?: number | null;
 }
 
 export interface RaceClassificationEntry {
@@ -99,6 +111,7 @@ export interface RaceClassificationEntry {
   readonly lapCompleted: number;
   readonly elapsedMs: number;
   readonly finished: boolean;
+  readonly pitStopCount?: number;
 }
 
 interface MutableEntrantState {
@@ -109,10 +122,12 @@ interface MutableEntrantState {
   elapsedMs: number;
   finished: boolean;
   tyreState?: TyreState;
+  pitStopCount: number;
+  lastPitLap: number | null;
 }
 
 export interface RaceSimulationCheckpoint {
-  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
+  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
   readonly engineVersion: string;
   readonly raceId: string;
   readonly snapshot: RaceStartSnapshot;
@@ -206,6 +221,7 @@ export class RaceSimulation {
   private readonly tyreModel?: TyreSimulationModel;
   private readonly weatherModel?: WeatherSimulationModel;
   private weatherStateValue?: WeatherState;
+  private readonly pitModel?: PitStrategyModel;
   private readonly mutableEntrants: MutableEntrantState[];
   private readonly mutableEvents: RaceSimulationEvent[] = [];
   private statusValue: RaceSimulationStatus = "running";
@@ -219,6 +235,7 @@ export class RaceSimulation {
       randomState?: RandomGeneratorState;
       tyreModel?: TyreSimulationModel;
       weatherModel?: WeatherSimulationModel;
+      pitModel?: PitStrategyModel;
     }
   ) {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
@@ -226,6 +243,15 @@ export class RaceSimulation {
     this.performanceModel = options?.performanceModel ?? NEUTRAL_PERFORMANCE_MODEL;
     this.tyreModel = options?.tyreModel;
     this.weatherModel = options?.weatherModel;
+    this.pitModel = options?.pitModel;
+    if (this.pitModel && !this.tyreModel) throw new Error("Pit strategy requires an active tyre simulation model");
+    if (this.pitModel) {
+      for (let lap = this.pitModel.profile.pitWindowStartLap; lap <= Math.min(this.pitModel.profile.pitWindowEndLap, immutableSnapshot.circuit.totalLaps); lap += 1) {
+        if (!this.pitModel.candidatesByLap[String(lap)] && !this.pitModel.candidatesByLap.default) {
+          throw new Error(`Pit strategy is missing calibrated candidates for lap ${lap}`);
+        }
+      }
+    }
     const config: RaceSimulationConfig = {
       noiseAmplitudeMs: options?.config?.noiseAmplitudeMs ?? 0,
       performanceModelId: this.performanceModel.id,
@@ -236,7 +262,10 @@ export class RaceSimulation {
       tyreModelSnapshot: this.tyreModel ? cloneJsonValue(this.tyreModel.snapshot) : null,
       weatherModelId: this.weatherModel?.id ?? null,
       weatherModelVersion: this.weatherModel?.version ?? null,
-      weatherModelSnapshot: this.weatherModel ? cloneJsonValue(this.weatherModel.snapshot) : null
+      weatherModelSnapshot: this.weatherModel ? cloneJsonValue(this.weatherModel.snapshot) : null,
+      pitModelId: this.pitModel?.id ?? null,
+      pitModelVersion: this.pitModel?.version ?? null,
+      pitModelSnapshot: this.pitModel ? cloneJsonValue(this.pitModel.snapshot) : null
     };
     if (options?.config?.performanceModelId && options.config.performanceModelId !== config.performanceModelId) {
       throw new Error("Configured performance model ID does not match the injected model");
@@ -305,6 +334,16 @@ export class RaceSimulation {
         }
       }
     }
+    const pitFields = [config.pitModelId ?? null, config.pitModelVersion ?? null, config.pitModelSnapshot ?? null];
+    const allPitNull = pitFields.every((value) => value === null);
+    const allPitPresent = pitFields.every((value) => value !== null);
+    if (!allPitNull && !allPitPresent) throw new Error("Pit model configuration is invalid");
+    if (this.pitModel && (
+      config.pitModelId !== this.pitModel.id ||
+      config.pitModelVersion !== this.pitModel.version ||
+      canonicalJson(config.pitModelSnapshot as JsonValue) !== canonicalJson(this.pitModel.snapshot)
+    )) throw new Error("Configured pit model does not match the injected model");
+    if (!this.pitModel && !allPitNull) throw new Error("Pit model configuration requires an injected pit model");
     this.mutableEntrants = immutableSnapshot.entrants.map((entrant) => {
       const firstSegment = immutableSnapshot.circuit.segments[0];
       const firstEnvironment = this.tyreModel
@@ -326,6 +365,8 @@ export class RaceSimulation {
         segmentIndex: 0,
         elapsedMs: 0,
         finished: false,
+        pitStopCount: 0,
+        lastPitLap: null,
         ...(tyreState ? { tyreState } : {})
       };
     });
@@ -335,9 +376,11 @@ export class RaceSimulation {
     checkpoint: RaceSimulationCheckpoint,
     performanceModel: SegmentPerformanceModel = NEUTRAL_PERFORMANCE_MODEL,
     tyreModel?: TyreSimulationModel,
-    weatherModel?: WeatherSimulationModel
+    weatherModel?: WeatherSimulationModel,
+    pitModel?: PitStrategyModel
   ): RaceSimulation {
     if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
+        checkpoint.schemaVersion !== WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
         checkpoint.schemaVersion !== LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION) {
       throw new Error("Unsupported simulation checkpoint schema version");
     }
@@ -372,6 +415,16 @@ export class RaceSimulation {
       checkpoint.config.weatherModelVersion !== weatherModel.version ||
       canonicalJson(checkpoint.config.weatherModelSnapshot as JsonValue) !== canonicalJson(weatherModel.snapshot)
     )) throw new Error("Checkpoint weather model ID, version, or snapshot does not match");
+    const checkpointHasPitModel = (checkpoint.config.pitModelId ?? null) !== null;
+    if (checkpointHasPitModel !== Boolean(pitModel)) throw new Error("Checkpoint requires the same pit strategy model");
+    if (pitModel && (
+      checkpoint.config.pitModelId !== pitModel.id ||
+      checkpoint.config.pitModelVersion !== pitModel.version ||
+      canonicalJson(checkpoint.config.pitModelSnapshot as JsonValue) !== canonicalJson(pitModel.snapshot)
+    )) throw new Error("Checkpoint pit model ID, version, or snapshot does not match");
+    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION && pitModel) {
+      throw new Error("Legacy checkpoints cannot be restored with a pit strategy model");
+    }
     if (checkpoint.schemaVersion === LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION && weatherModel) {
       throw new Error("Legacy checkpoints cannot be restored with a weather model");
     }
@@ -383,6 +436,7 @@ export class RaceSimulation {
       performanceModel,
       tyreModel,
       weatherModel,
+      pitModel,
       randomState: checkpoint.randomState
     });
     const maxTicks = simulation.snapshot.circuit.totalLaps * simulation.snapshot.circuit.segments.length;
@@ -411,7 +465,9 @@ export class RaceSimulation {
         state.segmentIndex < 0 ||
         state.segmentIndex >= simulation.snapshot.circuit.segments.length ||
         !Number.isFinite(state.elapsedMs) ||
-        state.elapsedMs < 0
+        state.elapsedMs < 0 ||
+        (state.pitStopCount !== undefined && (!Number.isInteger(state.pitStopCount) || state.pitStopCount < 0)) ||
+        (state.lastPitLap !== undefined && state.lastPitLap !== null && (!Number.isInteger(state.lastPitLap) || state.lastPitLap < 1 || state.lastPitLap > state.lapCompleted))
       ) {
         throw new Error(`Checkpoint state for ${state.driverId} is invalid`);
       }
@@ -447,7 +503,11 @@ export class RaceSimulation {
     for (let index = 0; index < simulation.mutableEntrants.length; index += 1) {
       const state = checkpoint.entrants.find((item) => item.driverId === simulation.mutableEntrants[index].driverId);
       if (!state) throw new Error("Checkpoint is missing an entrant state");
-      simulation.mutableEntrants[index] = { ...state };
+      simulation.mutableEntrants[index] = {
+        ...state,
+        pitStopCount: state.pitStopCount ?? 0,
+        lastPitLap: state.lastPitLap ?? null
+      };
     }
 
     checkpoint.events.forEach((event, index) => {
@@ -641,6 +701,45 @@ export class RaceSimulation {
           lapNumber: state.lapCompleted,
           simulationTimeMs: state.elapsedMs
         });
+          if (this.pitModel && state.tyreState && state.lapCompleted < this.snapshot.circuit.totalLaps) {
+            const candidates = this.pitModel.candidatesByLap[String(state.lapCompleted)] ?? this.pitModel.candidatesByLap.default ?? [];
+            const trackWetness = this.weatherStateValue?.trackWetness ??
+              getTyreSegmentEnvironment(this.tyreModel as TyreSimulationModel, state.lapCompleted, segments[segments.length - 1].id).trackWetness;
+            const decision = choosePitDecision(this.pitModel, {
+              currentLap: state.lapCompleted,
+              totalLaps: this.snapshot.circuit.totalLaps,
+              currentWearPercent: state.tyreState.wearPercent,
+              currentCompound: state.tyreState.compound,
+              currentStopCount: state.pitStopCount,
+              lastStopLap: state.lastPitLap,
+              trackWetness,
+              candidates
+            });
+            if (decision.shouldPit && decision.selectedCompound) {
+              const candidate = candidates.find((item) => item.compound === decision.selectedCompound);
+              if (!candidate) throw new Error("Pit strategy selected a compound without a calibrated candidate");
+              state.elapsedMs += candidate.pitLaneLossMs;
+              state.tyreState = replaceTyreSet(
+                candidate.compound,
+                trackWetness,
+                state.tyreState.surfaceTempC,
+                state.tyreState.carcassTempC,
+                (this.tyreModel as TyreSimulationModel).profile
+              );
+              state.pitStopCount += 1;
+              state.lastPitLap = state.lapCompleted;
+              appendEvent({
+                type: "pit_stop",
+                driverId: state.driverId,
+                lapNumber: state.lapCompleted,
+                segmentId: segment.id,
+                simulationTimeMs: state.elapsedMs,
+                durationMs: candidate.pitLaneLossMs,
+                selectedCompound: candidate.compound,
+                pitReason: decision.reason
+              });
+            }
+          }
         if (state.lapCompleted >= this.snapshot.circuit.totalLaps) {
           state.finished = true;
           appendEvent({
