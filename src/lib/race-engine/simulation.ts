@@ -729,7 +729,7 @@ export class RaceSimulation {
 
     const activeRedFlags = stagedRaceControlFlags.filter((flag) => flag.flag === "red_flag");
     if (activeRedFlags.length > 0) {
-      const resumeAtSimulationTimeMs = Math.max(...activeRedFlags.map((flag) => flag.expiresAtSimulationTimeMs));
+      const resumeAtSimulationTimeMs = Math.max(stagedSimulationClockMs, ...activeRedFlags.map((flag) => flag.expiresAtSimulationTimeMs));
       const suspensionDurationMs = Math.max(0, resumeAtSimulationTimeMs - stagedSimulationClockMs);
       for (const state of stagedEntrants) {
         if (!state.finished && !state.retired) state.elapsedMs += suspensionDurationMs;
@@ -923,7 +923,7 @@ export class RaceSimulation {
         });
           if (this.pitModel && state.tyreState && state.lapCompleted < this.snapshot.circuit.totalLaps) {
             const candidates = this.pitModel.candidatesByLap[String(state.lapCompleted)] ?? this.pitModel.candidatesByLap.default ?? [];
-            const trackWetness = this.weatherStateValue?.trackWetness ??
+            const trackWetness = stagedWeatherState?.trackWetness ??
               getTyreSegmentEnvironment(this.tyreModel as TyreSimulationModel, state.lapCompleted, segments[segments.length - 1].id).trackWetness;
             const decision = choosePitDecision(this.pitModel, {
               currentLap: state.lapCompleted,
