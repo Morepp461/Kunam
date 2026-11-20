@@ -64,7 +64,7 @@ function json(data: unknown, status = 200, origin: string | null = null): Respon
 async function requireTestingAdmin(req: Request) {
   // The gateway credential authenticates the Testing project; this separate user token must also belong to Testing.
   const authorization = req.headers.get("x-caleris-testing-authorization") ?? "";
-  const token = authorization.replace(/^Bearer\\s+/i, "").trim();
+  const token = authorization.replace(/^Bearer\s+/i, "").trim();
   if (!token) throw new Error("Sesi Admin Testing diperlukan.");
   if (!TEST_ANON_KEY) throw new Error("Konfigurasi SUPABASE_ANON_KEY Testing belum tersedia.");
 
