@@ -70,6 +70,7 @@ import "./driver-training.css";
 import "./season-calendar.css";
 import "./team-contracts.css";
 import "./admin-users.css";
+import "./caleris-controls.css";
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};

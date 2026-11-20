@@ -1,0 +1,142 @@
+/* CALERIS control system: shared dropdown appearance across every workspace. */
+:root{
+  --caleris-control-gold:#d6b85e;
+  --caleris-control-gold-soft:rgba(214,184,94,.32);
+  --caleris-control-panel:#0b0e12;
+}
+select,
+.settings-field select,
+.market-filter-grid select,
+.paddock-access-form select,
+.admin-section select{
+  appearance:none;
+  -webkit-appearance:none;
+  color-scheme:dark;
+  min-height:44px;
+  padding:10px 42px 10px 13px;
+  border:1px solid var(--caleris-control-gold-soft);
+  border-radius:6px;
+  background-color:#0b0e12;
+  background-image:
+    linear-gradient(145deg,rgba(214,184,94,.075),transparent 48%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d6b85e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat,no-repeat;
+  background-position:center,right 13px center;
+  background-size:auto,16px;
+  color:#f2eee3;
+  font:inherit;
+  line-height:1.4;
+  cursor:pointer;
+  transition:border-color .16s ease,box-shadow .16s ease,background-color .16s ease;
+}
+select:hover,
+.settings-field select:hover,
+.market-filter-grid select:hover,
+.paddock-access-form select:hover,
+.admin-section select:hover{
+  border-color:rgba(214,184,94,.72);
+  background-color:#11151a;
+}
+select:focus-visible,
+.settings-field select:focus-visible,
+.market-filter-grid select:focus-visible,
+.paddock-access-form select:focus-visible,
+.admin-section select:focus-visible{
+  outline:2px solid rgba(214,184,94,.42);
+  outline-offset:2px;
+  border-color:#e4c96f;
+  box-shadow:0 0 0 3px rgba(198,163,58,.12),inset 0 0 18px rgba(198,163,58,.035);
+}
+select:disabled,
+.settings-field select:disabled,
+.market-filter-grid select:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+select option,
+select optgroup{
+  background:#101419;
+  color:#f1eee5;
+}
+select option:checked{
+  background:#6e5926;
+  color:#fff4c9;
+}
+body.light select,
+body.light .settings-field select,
+body.light .market-filter-grid select,
+body.light .paddock-access-form select,
+body.light .admin-section select{
+  color-scheme:light;
+  color:#28251e;
+  background-color:#f7f2e6;
+  border-color:rgba(143,108,30,.38);
+  background-image:
+    linear-gradient(145deg,rgba(183,143,43,.08),transparent 48%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238c6d28' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+body.light select option,body.light select optgroup{background:#fffaf0;color:#28251e}
+
+/* Headline descriptions stay legible over the cinematic paddock artwork. */
+.page-heading .page-description{
+  max-width:min(100%,780px);
+  margin-top:13px;
+  padding:11px 14px;
+  border-left:2px solid rgba(214,184,94,.88);
+  border-top:1px solid rgba(214,184,94,.16);
+  border-bottom:1px solid rgba(214,184,94,.12);
+  border-radius:0 5px 5px 0;
+  background:linear-gradient(100deg,rgba(5,7,10,.88),rgba(5,7,10,.58) 78%,rgba(5,7,10,.2));
+  color:#f0eee8;
+  font-size:14px;
+  line-height:1.75;
+  font-weight:500;
+  text-shadow:0 2px 7px rgba(0,0,0,.95);
+  box-shadow:inset 10px 0 22px rgba(198,163,58,.035);
+}
+body.light .page-heading .page-description{
+  color:#29261e;
+  background:linear-gradient(100deg,rgba(255,250,239,.96),rgba(255,250,239,.82));
+  text-shadow:none;
+  border-color:rgba(143,108,30,.24);
+  border-left-color:#a78332;
+}
+
+/* Small, explicit optional-filter helper text. */
+.market-filter-hint{
+  display:block;
+  margin-top:-3px;
+  color:#d6c58e;
+  font-size:10px;
+  line-height:1.4;
+  letter-spacing:.025em;
+}
+.market-filter-grid>label select{width:100%;min-height:43px;padding-top:9px;padding-bottom:9px}
+
+/* Compact, exclusive accordion navigation: one expanded category at a time. */
+.sidebar-category-toggle{
+  position:relative;
+  min-height:42px;
+  border-left:2px solid transparent;
+}
+.sidebar-category.is-open>.sidebar-category-toggle{
+  border-left-color:#d6b85e;
+  background:linear-gradient(90deg,rgba(198,163,58,.14),rgba(198,163,58,.035) 72%,transparent);
+  color:#f2d77f;
+}
+.sidebar-category-chevron{flex:none;transition:transform .18s ease,color .18s ease}
+.sidebar-category.is-open>.sidebar-category-toggle .sidebar-category-chevron{
+  transform:rotate(180deg);
+  color:#e2c36a;
+}
+.sidebar-category-content{
+  padding:3px 0 8px 8px;
+  border-left:1px solid rgba(198,163,58,.2);
+  margin-left:19px;
+  animation:calerisNavReveal .16s ease-out;
+}
+@keyframes calerisNavReveal{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:620px){
+  .page-heading .page-description{font-size:12px;line-height:1.7;padding:10px 12px}
+}
+@media(prefers-reduced-motion:reduce){.sidebar-category-content{animation:none}}

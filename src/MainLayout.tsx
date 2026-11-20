@@ -72,7 +72,7 @@ function groupQuickAccess(groups:NavCategory[]):NavItem[]{
 
 export default function MainLayout({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,panelAccess,globalSearch,toast,loading}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:LayoutProfile|null;isAdmin:boolean;isPrimaryOwner:boolean;panelAccess:PanelAccess;globalSearch:ReactNode;toast:Toast;loading:(value:boolean)=>void}){
  const [menuOpen,setMenuOpen]=useState(false),[navOpen,setNavOpen]=useState(false),[collapsed,setCollapsed]=useState(false),[search,setSearch]=useState("");
- const [expanded,setExpanded]=useState<string[]>([]);
+ const [expanded,setExpanded]=useState<string|null>(null);
  const navigate=useNavigate();const location=useLocation();
  useEffect(()=>{setMenuOpen(false);setNavOpen(false)},[location.pathname]);
  const logout=async()=>{if(!supabase)return;loading(true);const {error}=await supabase.auth.signOut();loading(false);setMenuOpen(false);if(error)toast("error","Logout gagal",error.message);else{toast("success","Berhasil logout","Sesi akun sudah diakhiri.");navigate("/")}};
@@ -88,16 +88,16 @@ export default function MainLayout({children,theme,setTheme,session,profile,isAd
 
  const categories=useMemo(()=>groupNavigation(navigationGroups),[navigationGroups]);
  const quickAccess=groupQuickAccess(navigationGroups);
- useEffect(()=>{const active=categories.find(g=>g.items.some(i=>location.pathname===i.to||location.pathname.startsWith(i.to+"/")));if(active)setExpanded(prev=>prev.includes(active.title)?prev:[...prev,active.title])},[location.pathname,categories]);
+ useEffect(()=>{const active=categories.find(g=>g.items.some(i=>location.pathname===i.to||location.pathname.startsWith(i.to+"/")));if(active)setExpanded(active.title)},[location.pathname]);
  const filteredCategories=useMemo(()=>categories.map(group=>({...group,items:group.items.filter(item=>(item.label+" "+item.description+" "+item.to).toLowerCase().includes(search.trim().toLowerCase()))})).filter(group=>group.items.length>0),[categories,search]);
- const toggleCategory=(title:string)=>setExpanded(prev=>prev.includes(title)?prev.filter(x=>x!==title):[...prev,title]);
+ const toggleCategory=(title:string)=>setExpanded(prev=>prev===title?null:title);
  const renderSidebar=(mobile=false)=><aside className={"caleris-sidebar"+(collapsed&&!mobile?" is-collapsed":"")+(mobile?" is-mobile-drawer":"")}>
   <div className="sidebar-topline"><span className="sidebar-brand-label">CALERIS NAVIGATION</span>{mobile?<button className="sidebar-icon-button" aria-label="Tutup navigasi" onClick={()=>setNavOpen(false)}><X size={19}/></button>:<button className="sidebar-icon-button sidebar-collapse" aria-label={collapsed?"Perluas sidebar":"Perkecil sidebar"} title={collapsed?"Perluas sidebar":"Perkecil sidebar"} onClick={()=>setCollapsed(v=>!v)}>{collapsed?<PanelLeftOpen size={18}/>:<PanelLeftClose size={18}/>}</button>}</div>
   <label className="sidebar-search" onClick={()=>{if(collapsed)setCollapsed(false)}}><Search size={16}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari halaman..." aria-label="Cari halaman navigasi"/>{search&&<button type="button" aria-label="Hapus pencarian" onClick={()=>setSearch("")}><X size={14}/></button>}</label>
   <div className="sidebar-quick"><span className="sidebar-section-label">QUICK ACCESS</span>{quickAccess.map(item=><NavLink key={item.to} to={item.to} title={collapsed?item.label:undefined} onClick={()=>setNavOpen(false)} className={({isActive})=>"sidebar-quick-link"+(isActive?" active":"")}><span className="sidebar-item-icon">{item.icon}</span><span className="sidebar-item-label">{item.label}</span></NavLink>)}</div>
   <nav className="sidebar-navigation" aria-label="Navigasi utama">
    <span className="sidebar-section-label">NAVIGATION</span>
-   {filteredCategories.map(group=>{const isExpanded=search.trim().length>0||expanded.includes(group.title);const buckets=mainCategories[group.title]||["Pages"];return <section className={"sidebar-category"+(isExpanded?" is-open":"")} key={group.title}>
+   {filteredCategories.map(group=>{const isExpanded=search.trim().length>0||expanded===group.title;const buckets=mainCategories[group.title]||["Pages"];return <section className={"sidebar-category"+(isExpanded?" is-open":"")} key={group.title}>
     <button type="button" className="sidebar-category-toggle" aria-expanded={isExpanded} onClick={()=>collapsed&&!mobile?setCollapsed(false):toggleCategory(group.title)} title={collapsed&&!mobile?group.title:undefined}><span className="sidebar-category-icon">{group.title==="Main Event"?<Flag size={17}/>:group.title==="Driver Center"?<UserRound size={17}/>:group.title==="Team Management"?<Building2 size={17}/>:group.title==="FIA Control"?<Shield size={17}/>:group.title==="Administration"?<Settings size={17}/>:<UserCircle size={17}/>}</span><span className="sidebar-category-label">{group.title}</span><ChevronDown className="sidebar-category-chevron" size={15}/></button>
     {isExpanded&&<div className="sidebar-category-content">{buckets.map(bucket=>{const items=group.items.filter(item=>subcategory(group.title,item)===bucket);if(!items.length)return null;return <div className="sidebar-subcategory" key={bucket}><span className="sidebar-subcategory-label">{bucket}</span>{items.map(item=><NavLink key={item.to} to={item.to} title={collapsed&&!mobile?item.label:undefined} onClick={()=>setNavOpen(false)} className={({isActive})=>"sidebar-page-link"+(isActive?" active":"")}><span className="sidebar-item-icon">{item.icon}</span><span className="sidebar-item-label">{item.label}</span></NavLink>)}</div>})}</div>}
    </section>})}
