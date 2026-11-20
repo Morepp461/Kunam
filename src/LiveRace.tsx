@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, CheckCircle2, ChevronRight, Clock3, Flag,
-  Gauge, LoaderCircle, Play, RefreshCw, RotateCcw, ShieldCheck, Timer,
+  Gauge, LoaderCircle, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Timer,
   Trophy, Waves, Wrench
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
@@ -96,6 +96,11 @@ export default function LiveRace() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(true);
+  const [replayEvents, setReplayEvents] = useState<RaceEvent[]>([]);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [replaySpeed, setReplaySpeed] = useState(1);
+  const [replayPlaying, setReplayPlaying] = useState(false);
+  const [replayLoading, setReplayLoading] = useState(false);
 
   const refreshSessions = useCallback(async (preferId?: string) => {
     try {
@@ -130,6 +135,50 @@ export default function LiveRace() {
   useEffect(() => { void refreshSessions(); }, [refreshSessions]);
   useEffect(() => { if (selectedId) void loadDetail(selectedId); }, [selectedId, loadDetail]);
 
+  const loadReplay = useCallback(async (id: string) => {
+    if (!id) return;
+    setReplayLoading(true);
+    setReplayPlaying(false);
+    setReplayIndex(0);
+    try {
+      const allEvents: RaceEvent[] = [];
+      const pageSize = 500;
+      let offset = 0;
+      while (true) {
+        const page = await raceApi("replay", { sessionId: id, offset, limit: pageSize });
+        const batch = (page.events ?? []) as RaceEvent[];
+        allEvents.push(...batch);
+        if (batch.length < pageSize) break;
+        offset += pageSize;
+      }
+      setReplayEvents(allEvents);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal memuat replay.");
+      setReplayEvents([]);
+    } finally {
+      setReplayLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedId) void loadReplay(selectedId);
+    else setReplayEvents([]);
+  }, [selectedId, loadReplay]);
+
+  useEffect(() => {
+    if (!replayPlaying || replayEvents.length === 0) return;
+    const timer = window.setInterval(() => {
+      setReplayIndex((current) => {
+        if (current >= replayEvents.length - 1) {
+          setReplayPlaying(false);
+          return current;
+        }
+        return current + 1;
+      });
+    }, Math.max(125, 1000 / replaySpeed));
+    return () => window.clearInterval(timer);
+  }, [replayPlaying, replayEvents.length, replaySpeed]);
+
   const active = detail?.session?.id === selectedId ? detail.session : sessions.find((item) => item.id === selectedId) ?? null;
   const progress = active ? Math.min(100, Math.round((active.tick / Math.max(1, active.total_ticks)) * 100)) : 0;
   const checkpoint = detail?.session?.id === selectedId ? detail.session.checkpoint : null;
@@ -139,6 +188,7 @@ export default function LiveRace() {
   const classification = active?.classification ?? [];
   const recentEvents = useMemo(() => [...(detail?.events ?? [])].reverse().slice(-35).reverse(), [detail?.events]);
   const recentCommands = useMemo(() => [...(detail?.commands ?? [])].slice(0, 12), [detail?.commands]);
+  const replayEvent = replayEvents[replayIndex] ?? null;
 
   async function createSession() {
     setBusy("create");
@@ -406,6 +456,33 @@ export default function LiveRace() {
             <time>{formatTime(event.simulation_time_ms)}</time>
           </article>)}
           {!recentEvents.length && <p className="race-engine-empty">Belum ada event. Jalankan beberapa segmen untuk menghasilkan data.</p>}
+        </div>
+      </section>
+
+      <section className="race-engine-replay-section">
+        <div className="live-race-subheading">
+          <h3><Play size={15}/> Race Replay</h3>
+          <span>{replayEvents.length} PERSISTED EVENTS</span>
+        </div>
+        <div className="race-engine-replay-panel">
+          <div className="race-engine-replay-current">
+            <span className="eyebrow">EVENT {replayEvents.length ? replayIndex + 1 : 0} / {replayEvents.length}</span>
+            <strong>{replayEvent ? labelEvent(replayEvent.event_type) : replayLoading ? "LOADING REPLAY..." : "NO REPLAY EVENTS"}</strong>
+            <small>{replayEvent ? `LAP ${replayEvent.lap_number} · ${replayEvent.driver_id ?? "Race control"} · ${formatTime(replayEvent.simulation_time_ms)}` : "Replay menggunakan event timeline yang sudah tersimpan di Supabase."}</small>
+            {replayEvent && <p>{String(replayEvent.payload.segmentId ?? "Race event")}{replayEvent.payload.raceControlFlag ? ` · ${String(replayEvent.payload.raceControlFlag).toUpperCase()}` : ""}</p>}
+          </div>
+          <div className="race-engine-replay-controls">
+            <button className="race-engine-secondary-button" onClick={() => setReplayPlaying((value) => !value)} disabled={replayLoading || replayEvents.length === 0}>
+              {replayPlaying ? <Pause size={14}/> : <Play size={14}/>} {replayPlaying ? "Pause" : "Play"}
+            </button>
+            <button className="race-engine-secondary-button" onClick={() => { setReplayPlaying(false); setReplayIndex(0); }} disabled={replayLoading || replayEvents.length === 0}>Restart</button>
+            <div className="race-engine-replay-speed">
+              <span>PLAYBACK SPEED</span>
+              {[1,2,4,8].map((speed) => <button key={speed} className={replaySpeed === speed ? "active" : ""} onClick={() => setReplaySpeed(speed)}>{speed}x</button>)}
+            </div>
+          </div>
+          <input className="race-engine-replay-seek" aria-label="Replay event position" type="range" min={0} max={Math.max(0, replayEvents.length - 1)} value={Math.min(replayIndex, Math.max(0, replayEvents.length - 1))} onChange={(event) => { setReplayPlaying(false); setReplayIndex(Number(event.target.value)); }} disabled={replayLoading || replayEvents.length === 0}/>
+          <div className="race-engine-replay-foot"><span>START</span><span>{replayEvent ? `SEQ ${replayEvent.sequence}` : "EVENT TIMELINE"}</span><span>FINISH</span></div>
         </div>
       </section>
 
