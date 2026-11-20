@@ -126,7 +126,9 @@ function labelEvent(type: string): string {
 async function getTestingAccessToken(forceRefresh = false): Promise<string> {
   if (!supabase) throw new Error("Supabase Testing belum terkonfigurasi pada website.");
 
-  const configuredProject = new URL(supabase.supabaseUrl).hostname.split(".")[0];
+  const configuredUrl = import.meta.env.VITE_SUPABASE_URL?.trim();
+  if (!configuredUrl) throw new Error("VITE_SUPABASE_URL belum dikonfigurasi untuk database Testing.");
+  const configuredProject = new URL(configuredUrl).hostname.split(".")[0];
   if (configuredProject !== "vxwvhyyvoipjwucbrvlu") {
     throw new Error("Website masih memakai project Supabase yang berbeda dari database Testing. Samakan VITE_SUPABASE_URL ke project caleris-masters-testing lalu login ulang.");
   }
