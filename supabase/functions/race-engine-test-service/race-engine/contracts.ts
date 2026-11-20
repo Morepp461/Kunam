@@ -24,6 +24,7 @@ export interface CircuitSegmentSnapshot {
   readonly lowSpeedDemand: number;
   readonly highSpeedDemand: number;
   readonly tractionDemand: number;
+  readonly brakingDemand?: number;
   readonly drsAvailable: boolean;
   readonly ersAvailable?: boolean;
   readonly overtakingOpportunity?: boolean;
