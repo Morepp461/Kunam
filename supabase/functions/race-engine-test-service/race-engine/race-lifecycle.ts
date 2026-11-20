@@ -18,6 +18,7 @@ export interface RaceStartRequest {
   readonly idempotencyKey: string;
   readonly manualReason?: string;
   readonly existingStartIdempotencyKey?: string | null;
+  readonly existingStartActorId?: string | null;
 }
 
 export interface RaceStartDecision {
@@ -51,8 +52,11 @@ export function authorizeRaceStart(request: RaceStartRequest): RaceStartDecision
   } else if (!Number.isFinite(Date.parse(request.requestedAt)) || !Number.isFinite(Date.parse(request.scheduledAt))) {
     reason = "Race start timestamps are invalid";
   } else if (request.status === "running" && request.existingStartIdempotencyKey === request.idempotencyKey) {
-    accepted = true;
-    idempotentReplay = true;
+    if (request.existingStartActorId !== actor.id) reason = "Idempotency key belongs to a different start actor";
+    else {
+      accepted = true;
+      idempotentReplay = true;
+    }
   } else if (request.status !== "queued") {
     reason = "Race can only start from the queued state";
   } else if (!request.readiness.ready || blockers.length > 0) {
