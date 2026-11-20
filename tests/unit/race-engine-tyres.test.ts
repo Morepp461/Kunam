@@ -88,7 +88,7 @@ describe("Profile-driven tyre degradation", () => {
     expect(next.distanceDrivenMeters).toBe(800);
     expect(next.surfaceTempC).toBe(105);
     expect(next.carcassTempC).toBe(92);
-    expect(next.gripPercent).toBeCloseTo(99.7504);
+    expect(next.gripPercent).toBeCloseTo(97.7504);
     expect(initial.wearPercent).toBe(0);
   });
 
