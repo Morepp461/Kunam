@@ -7,9 +7,11 @@ import type {
   CircuitGeometryDefinition,
   CircuitGeometrySegment,
   CircuitPathPoint,
-  CircuitGeometrySpecifications
+  CircuitGeometrySpecifications,
+  CircuitSourceProvenance
 } from "./circuit-geometry";
 import type { TrackLimitPoint } from "./track-limits";
+import type { CircuitGeoJsonImportDraft } from "./circuit-import";
 
 export interface CircuitMakerSegmentInput {
   id: string;
@@ -44,11 +46,22 @@ export interface CircuitMakerInput {
   kind: "fictional" | "real";
   specifications?: CircuitGeometrySpecifications;
   trackLimitBoundary?: readonly TrackLimitPoint[];
+  sourceProvenance?: CircuitSourceProvenance;
 }
 
 export interface CircuitMakerBuildResult {
   definition: CircuitGeometryDefinition | null;
   errors: readonly string[];
+}
+
+/** Converts only supplied GeoJSON measurements; missing elevation remains absent. */
+export function circuitLayoutFromGeoJsonDraft(draft: CircuitGeoJsonImportDraft): CircuitPathPoint[] {
+  return draft.points.map((point) => ({
+    id: point.id,
+    x: point.normalizedX,
+    y: point.normalizedY,
+    ...(point.elevationMeters === null ? {} : { elevationMeters: point.elevationMeters })
+  }));
 }
 
 export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMakerBuildResult {
@@ -82,6 +95,7 @@ export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMa
     targetLapTimeMs: input.targetLapTimeMs,
     trackLengthMeters: segments.reduce((sum, segment) => sum + segment.distanceMeters, 0),
     kind: input.kind,
+    ...(input.sourceProvenance ? { sourceProvenance: { ...input.sourceProvenance } } : {}),
     layout: input.layout.map((point) => ({ ...point })),
     segments,
     ...(input.trackLimitBoundary?.length ? { trackLimitGeometry: {

@@ -18,3 +18,11 @@
 .circuit-maker-track-boundary-line{fill:none;stroke:#d4b15b;stroke-width:2;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
 .circuit-maker-canvas-panel svg .boundary-point{fill:#d4b15b;stroke:#171717;stroke-width:1.5}
 .circuit-maker-canvas-actions button.active{border-color:rgba(212,177,91,.65);background:rgba(212,177,91,.12);color:#f1d99a}
+
+.circuit-maker-import-source{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0;padding:10px 12px;border:1px solid rgba(212,177,91,.25);border-radius:7px;background:rgba(212,177,91,.06)}
+.circuit-maker-import-source>div{display:flex;flex-direction:column;gap:4px;min-width:0}
+.circuit-maker-import-source strong{color:#e6d19b;font-size:10px}
+.circuit-maker-import-source small{color:var(--muted,#aeb1b4);font-size:9px}
+.circuit-maker-import-source button{flex-shrink:0;padding:7px 10px;border:1px solid rgba(212,177,91,.4);border-radius:5px;background:rgba(212,177,91,.12);color:#f1d99a;font-size:9px;font-weight:700}
+.circuit-maker-source-note{margin:8px 0;color:var(--muted,#aeb1b4);font-size:9px}
+@media(max-width:520px){.circuit-maker-import-source{align-items:flex-start;flex-direction:column}.circuit-maker-import-source button{width:100%}}

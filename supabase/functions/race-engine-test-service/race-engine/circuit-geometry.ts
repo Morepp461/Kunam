@@ -29,7 +29,8 @@ export interface CircuitPathPoint {
   /** Normalized map coordinate in the inclusive range 0..1. */
   readonly x: number;
   readonly y: number;
-  readonly elevationMeters: number;
+  /** Omitted when the source does not provide a measured elevation value. */
+  readonly elevationMeters?: number;
 }
 
 export interface CircuitGeometrySegment extends CircuitSegmentSnapshot {
@@ -208,8 +209,8 @@ export function validateCircuitGeometryDefinition(
     if (!isFiniteInRange(point.x, 0, 1) || !isFiniteInRange(point.y, 0, 1)) {
       errors.push(`Layout point ${point.id} coordinates must be normalized between 0 and 1`);
     }
-    if (!Number.isFinite(point.elevationMeters)) {
-      errors.push(`Layout point ${point.id} elevationMeters must be finite`);
+    if (point.elevationMeters !== undefined && !Number.isFinite(point.elevationMeters)) {
+      errors.push(`Layout point ${point.id} elevationMeters must be finite when supplied`);
     }
     const previous = circuit.layout[index - 1];
     if (previous && Math.hypot(point.x - previous.x, point.y - previous.y) < 0.000001) {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildCircuitMakerDefinition } from "../../src/lib/race-engine/circuit-maker";
+import { buildCircuitMakerDefinition, circuitLayoutFromGeoJsonDraft } from "../../src/lib/race-engine/circuit-maker";
+import { importCircuitGeoJsonDraft } from "../../src/lib/race-engine/circuit-import";
 import { validateCircuitReleaseReadiness } from "../../src/lib/race-engine/circuit-geometry";
 
 const layout = [
@@ -106,5 +107,42 @@ describe("Circuit Maker geometry builder", () => {
     });
     expect(crossing.definition).toBeNull();
     expect(crossing.errors.some((error) => error.includes("self-intersect"))).toBe(true);
+  });
+
+  it("loads imported GeoJSON into Circuit Maker without fabricating missing elevation and preserves provenance", async () => {
+    const raw = JSON.stringify({
+      type: "LineString",
+      coordinates: [
+        [103.8, 1.3], [103.801, 1.3], [103.801, 1.301],
+        [103.8, 1.301], [103.8, 1.3]
+      ]
+    });
+    const draft = await importCircuitGeoJsonDraft(raw, {
+      provider: "Open circuit dataset",
+      sourceUrl: "https://data.example.org/circuit.geojson",
+      licenseId: "ODbL-1.0",
+      attribution: "Circuit data contributors",
+      retrievedAt: "2026-11-20T12:00:00.000Z",
+      sourceRevision: "dataset-rev-4"
+    });
+    const importedLayout = circuitLayoutFromGeoJsonDraft(draft);
+    expect(importedLayout).toHaveLength(5);
+    expect(importedLayout[0]).not.toHaveProperty("elevationMeters");
+
+    const result = buildCircuitMakerDefinition({
+      id: "geojson-imported",
+      revision: "rev-1",
+      name: "Imported Ring",
+      countryCode: "ID",
+      totalLaps: 5,
+      targetLapTimeMs: 92000,
+      layout: importedLayout,
+      segments,
+      kind: "real",
+      sourceProvenance: draft.sourceProvenance
+    });
+    expect(result.errors).toEqual([]);
+    expect(result.definition?.sourceProvenance).toEqual(draft.sourceProvenance);
+    expect(result.definition?.layout[0]).not.toHaveProperty("elevationMeters");
   });
 });
