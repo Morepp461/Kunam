@@ -37,4 +37,36 @@ assert 'expanded.includes(title)' not in NAV
 assert 'Semua role dapat melakukan check-in pada jendela waktu race.' in CHECKIN
 assert 'border-left:2px solid rgba(214,184,94,.88)' in CONTROLS
 
-print("CALERIS dropdown, Job Search license filter, readability and navigation regression checks passed.")
+# All native select fields must open the shared CALERIS sheet, avoiding OS-native grey popups.
+assert "function CalerisSelectOverlay()" in APP
+assert "caleris-select-backdrop" in APP
+assert 'document.addEventListener("pointerdown",openSelect,true)' in APP
+assert 'document.addEventListener("click",suppressNativeClick,true)' in APP
+assert ".caleris-select-sheet" in CONTROLS
+assert "rgba(91,20,34,.99)" in CONTROLS
+
+# The account menu is consolidated at the sidebar bottom; the duplicate category/header avatar is removed.
+assert "sidebar-account-dropdown" in NAV
+assert 'to="/profile"' in NAV and 'to="/account/settings"' in NAV
+assert "account-avatar-button" not in NAV
+assert '"Account":["Account"]' not in NAV
+assert '{title:"ACCOUNT",items:' not in NAV
+
+# Header search indexes every registered panel route and global event card.
+assert 'import PanelPage,{panelGroups} from "./PanelPages";' in APP
+assert 'const routePages=panelGroups.filter' in APP and '.flatMap(group=>group.tabs.map' in APP
+assert 'PAGES & CONTENT' in APP
+
+# Page selection cards use opaque red liquid-glass surfaces on both themes.
+WORKSPACE = (ROOT / "src" / "workspace.css").read_text(encoding="utf-8")
+assert "rgba(111,25,43,.98)" in WORKSPACE
+assert "panel-feature-card:before" in WORKSPACE
+
+print("CALERIS custom dropdown, account hub, global search and red page-card regression checks passed.")
+
+EDGE = (ROOT / "supabase" / "functions" / "member-directory" / "index.ts").read_text(encoding="utf-8")
+assert 'select("id,role,character_name")' in EDGE
+assert 'from("caleris_announcements")' in EDGE
+assert 'from("caleris_sponsorship_story_events")' in EDGE
+assert 'PAGES & CONTENT' in APP
+print("CALERIS custom dropdown, account hub, global search, content indexing and red page-card regression checks passed.")
