@@ -13,6 +13,11 @@ alter table public.caleris_circuits
 alter table public.caleris_circuits
   validate constraint caleris_circuits_circuit_kind_check;
 
+alter table public.race_engine_test_sessions
+  add column if not exists circuit_id uuid references public.caleris_circuits(id) on delete set null,
+  add column if not exists circuit_revision integer,
+  add column if not exists circuit_name_snapshot text;
+
 create table if not exists public.caleris_circuit_revisions (
   id uuid primary key default gen_random_uuid(),
   circuit_id uuid not null references public.caleris_circuits(id) on delete cascade,
@@ -88,7 +93,7 @@ $$;
 revoke all on function public.save_caleris_circuit_revision(uuid,jsonb) from public, anon;
 grant execute on function public.save_caleris_circuit_revision(uuid,jsonb) to authenticated;
 
-create or replace view public.caleris_circuit_pool as
+create or replace view public.caleris_circuit_pool with (security_invoker = true) as
 select
   c.id,
   c.name,
