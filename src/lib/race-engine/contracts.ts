@@ -15,6 +15,7 @@ import { validateTeamHqRaceEffectSnapshot } from "./hq";
 
 export const RACE_ENGINE_VERSION = "0.5.0";
 export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 2;
+export const MAX_RACE_ENTRANTS = 25;
 
 export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
@@ -83,6 +84,9 @@ export function validateRaceStartSnapshot(
   errors.push(...circuitValidation.errors.map((error) => `Circuit: ${error}`));
 
   if (value.entrants.length === 0) errors.push("Race must contain at least one entrant");
+  if (value.entrants.length > MAX_RACE_ENTRANTS) {
+    errors.push(`Race cannot contain more than ${MAX_RACE_ENTRANTS} drivers in one division`);
+  }
   const driverIds = new Set<string>();
   const startingGridPositions = new Set<number>();
   for (const entrant of value.entrants) {
