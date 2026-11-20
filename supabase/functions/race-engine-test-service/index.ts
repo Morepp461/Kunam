@@ -4,7 +4,7 @@ import type { RaceStartSnapshot } from "./race-engine/contracts.ts";
 import { RaceSimulation } from "./race-engine/simulation.ts";
 import type { RaceSimulationCheckpoint } from "./race-engine/simulation.ts";
 import { createSyntheticRaceFixture } from "./race-engine/synthetic-fixture.ts";
-import { createRaceEngineTestModels } from "https://raw.githubusercontent.com/Morepp461/Kunam/36a711140ce624eb256e42e06cb4f81997ae6008/supabase/functions/race-engine-test-service/race-engine/test-profiles.ts";
+import { createRaceEngineTestModels } from "./race-engine/test-profiles.ts";
 
 const TEST_URL = Deno.env.get("SUPABASE_URL")!;
 const TEST_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
