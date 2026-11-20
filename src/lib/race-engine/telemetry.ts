@@ -49,7 +49,7 @@ export function validateRaceTelemetrySample(sample: RaceTelemetrySample): RaceTe
   if (!Number.isFinite(sample.simulationTimeMs) || sample.simulationTimeMs < 0) errors.push("simulationTimeMs must be non-negative");
   if (!Number.isInteger(sample.lapNumber) || sample.lapNumber < 1) errors.push("lapNumber must be a positive integer");
   if (![1, 2, 3].includes(sample.sectorNumber)) errors.push("sectorNumber must be 1, 2, or 3");
-  if (!isFiniteInRange(sample.speedKph, 0, 600)) errors.push("speedKph must be between 0 and 600");
+  if (!Number.isFinite(sample.speedKph) || sample.speedKph < 0) errors.push("speedKph must be non-negative");
   if (!isFiniteInRange(sample.throttlePercent, 0, 100)) errors.push("throttlePercent must be between 0 and 100");
   if (!isFiniteInRange(sample.brakingPercent, 0, 100)) errors.push("brakingPercent must be between 0 and 100");
   if (!Number.isInteger(sample.gear) || sample.gear < 0) errors.push("gear must be a non-negative integer");
