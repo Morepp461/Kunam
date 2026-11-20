@@ -4,6 +4,7 @@ import {
   validateRaceStartSnapshot
 } from "./contracts";
 import type {
+  CircuitSegmentSnapshot,
   RaceEntrantSnapshot,
   RaceStartSnapshot
 } from "./contracts";
@@ -24,10 +25,12 @@ export interface SegmentPerformanceContext {
   readonly lapNumber: number;
   readonly segmentIndex: number;
   readonly segmentDistanceMeters: number;
+  readonly segment: CircuitSegmentSnapshot;
   readonly baseSegmentTimeMs: number;
 }
 
 export interface SegmentPerformanceModel {
+  /** Implementations must be pure and deterministic for the same context and version. */
   readonly id: string;
   readonly version: string;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
@@ -340,6 +343,7 @@ export class RaceSimulation {
         lapNumber: state.lapCompleted + 1,
         segmentIndex: state.segmentIndex,
         segmentDistanceMeters: segment.distanceMeters,
+        segment,
         baseSegmentTimeMs
       });
       if (!Number.isFinite(adjustmentMs)) {
