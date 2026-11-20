@@ -3,6 +3,7 @@ import type {Session} from "@supabase/supabase-js";
 import {CalendarDays,CheckCircle2,Clock3,RefreshCw,Wallet,ArrowUpRight} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
+import RewardedAdsQuest from "./RewardedAdsQuest";
 
 type Quest={
  id:string;quest_key:string;title:string;description:string;category:string;
@@ -91,6 +92,7 @@ export default function QuestPage({session,scope}:{session:Session;scope:"driver
   <header className="page-heading quest-heading"><div><span className="section-eyebrow">{scope==="driver"?"DRIVER PANEL":"TEAM PANEL"} · QUEST ENGINE</span><h1 className="page-title">{title}</h1><p className="page-description">Selesaikan aktivitas yang diminta, lalu klaim reward setelah target Quest tercapai. Pembayaran masuk ke wallet pribadi sesuai role karakter.</p></div><button className="quest-refresh" onClick={()=>void load()} disabled={loading}><RefreshCw size={15}/> Refresh</button></header>
   {loading?<div className="workspace-card quest-empty">Memuat quest dan progress...</div>:error?<div className="workspace-card quest-empty quest-error">{error}</div>:board?<>
    <div className="quest-wallet-strip"><div><span>Wallet {scope==="driver"?"Driver":"Team Owner"}</span><strong>{money(board.wallet_balance)}</strong></div><span className="quest-wallet-icon"><Wallet size={21}/></span></div>
+   <RewardedAdsQuest/>
    <section className="quest-section"><div className="quest-section-heading"><div><span className="section-eyebrow">RESET HARIAN</span><h2>Daily Quest</h2><p>{new Date(board.date+"T00:00:00").toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p></div><span className="quest-count">{board.daily.length} quest</span></div>
     {board.daily.length?<div className="quest-grid">{board.daily.map(q=><QuestCard key={q.id} quest={q} scope={scope} onClaim={claim} claiming={claimingId===q.id}/>)}</div>:<div className="workspace-card quest-empty">Belum ada Daily Quest yang memenuhi kondisi aktivitas hari ini.</div>}
    </section>
