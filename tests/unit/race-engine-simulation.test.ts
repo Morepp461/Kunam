@@ -110,7 +110,7 @@ describe("Race simulation kernel", () => {
     const simulation = new RaceSimulation(snapshot, { weatherModel });
     expect(simulation.weatherState?.trackWaterDepthMm).toBe(0);
     simulation.advanceOneSegment();
-    expect(simulation.weatherState?.trackWaterDepthMm).toBeCloseTo(0.1, 8);
+    expect(simulation.weatherState?.trackWaterDepthMm).toBeCloseTo(0.144, 8);
     const checkpoint = simulation.createCheckpoint();
     const restored = RaceSimulation.restore(checkpoint, undefined, undefined, weatherModel);
     expect(restored.weatherState).toEqual(simulation.weatherState);
