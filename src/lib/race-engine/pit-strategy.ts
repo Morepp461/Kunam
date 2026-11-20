@@ -49,6 +49,7 @@ export interface PitStrategyModel {
   readonly version: string;
   readonly snapshot: JsonValue;
   readonly profile: PitStrategyProfile;
+  readonly candidatesByLap: Readonly<Record<string, readonly PitStopCandidate[]>>;
 }
 
 export interface PitStrategyValidationResult {
@@ -78,15 +79,38 @@ function deepFreeze<T>(value: T): T {
   return value;
 }
 
-export function createPitStrategyModel(profile: PitStrategyProfile): PitStrategyModel {
+export function createPitStrategyModel(
+  profile: PitStrategyProfile,
+  candidatesByLap: Readonly<Record<string, readonly PitStopCandidate[]>> = {}
+): PitStrategyModel {
   const validation = validatePitStrategyProfile(profile);
   if (!validation.valid) throw new Error(`Invalid pit strategy profile: ${validation.errors.join("; ")}`);
-  const snapshot = deepFreeze(JSON.parse(JSON.stringify(profile)) as JsonValue);
+  if (Object.keys(candidatesByLap).some((lap) => lap !== "default" && (!Number.isInteger(Number(lap)) || Number(lap) < 1))) {
+    throw new Error("Pit candidate keys must be positive lap numbers or default");
+  }
+  for (const [lap, candidates] of Object.entries(candidatesByLap)) {
+    if (!Array.isArray(candidates) || candidates.length === 0) throw new Error(`Pit candidate list for ${lap} must not be empty`);
+    const seen = new Set<string>();
+    for (const candidate of candidates) {
+      if (seen.has(candidate.compound)) throw new Error(`Duplicate pit candidate compound for ${lap}: ${candidate.compound}`);
+      seen.add(candidate.compound);
+      const values = [candidate.pitLaneLossMs, candidate.expectedLapTimeDeltaMs, candidate.expectedDegradationMsPerLap,
+        candidate.riskPenaltyMs, candidate.compatibleWetnessMin, candidate.compatibleWetnessMax];
+      if (values.some((value) => !finite(value)) || candidate.pitLaneLossMs < 0 || candidate.riskPenaltyMs < 0 ||
+          candidate.compatibleWetnessMin < 0 || candidate.compatibleWetnessMax > 1 ||
+          candidate.compatibleWetnessMin > candidate.compatibleWetnessMax ||
+          !(TYRE_COMPOUNDS as readonly string[]).includes(candidate.compound)) {
+        throw new Error(`Invalid pit candidate in lap ${lap}`);
+      }
+    }
+  }
+  const snapshot = deepFreeze(JSON.parse(JSON.stringify({ profile, candidatesByLap })) as JsonValue);
   return Object.freeze({
     id: `pit.${profile.id}`,
     version: profile.version,
     snapshot,
-    profile: deepFreeze(JSON.parse(JSON.stringify(profile)) as PitStrategyProfile)
+    profile: deepFreeze(JSON.parse(JSON.stringify(profile)) as PitStrategyProfile),
+    candidatesByLap: deepFreeze(JSON.parse(JSON.stringify(candidatesByLap)) as Record<string, readonly PitStopCandidate[]>)
   });
 }
 
