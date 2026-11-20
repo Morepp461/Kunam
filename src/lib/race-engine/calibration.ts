@@ -35,6 +35,8 @@ export interface RacePhysicsCalibrationProfile {
   readonly id: string;
   readonly version: string;
   readonly baselineAttributeValue: number;
+  /** Maximum elapsed-time gap for an adjacent attack/defence interaction; supplied by calibration. */
+  readonly battleDetectionGapMs: number;
   /** One coefficient map for every stable attribute ID. Values are intentionally supplied by calibration, not guessed here. */
   readonly attributes: Readonly<Record<string, AttributeInfluenceWeights>>;
   /** Optional effects not already folded into effective car/team attribute values. */
@@ -100,6 +102,9 @@ export function validatePhysicsCalibrationProfile(
   }
   if (!profile.id.trim() || !profile.version.trim()) {
     errors.push("Calibration profile ID and version are required");
+  }
+  if (!Number.isFinite(profile.battleDetectionGapMs) || profile.battleDetectionGapMs < 0) {
+    errors.push("battleDetectionGapMs must be a non-negative finite calibration value");
   }
   if (
     !Number.isFinite(profile.baselineAttributeValue) ||
@@ -187,17 +192,33 @@ export function evaluateAttributeInfluences(
 }
 
 function calculateSegmentPaceAdjustmentUnchecked(
-  entrant: RaceEntrantSnapshot,
-  segment: CircuitSegmentSnapshot,
+  context: SegmentPerformanceContext,
   profile: RacePhysicsCalibrationProfile
 ): number {
-  const totals = evaluateAttributeInfluencesUnchecked(entrant, profile);
+  const totals = evaluateAttributeInfluencesUnchecked(context.entrant, profile);
+  const segment = context.segment;
+  const tyreWearAdjustment = context.tyreState
+    ? context.tyreState.wearPercent * totals.tyre_degradation_per_point
+    : 0;
+  const wetGripAdjustment = context.weatherState
+    ? context.weatherState.trackWetness * totals.wet_grip_per_point
+    : 0;
+  const attackAdjustment = context.battleContext?.attackingGapMs !== undefined && segment.overtakingOpportunity
+    ? -totals.overtake_advantage_per_point
+    : 0;
+  const defenseAdjustment = context.battleContext?.defendingGapMs !== undefined && segment.defendingOpportunity
+    ? totals.defense_advantage_per_point
+    : 0;
+  const consistencyAdjustment = (context.consistencySample ?? 0) *
+    (totals.consistency_variance_ms_per_point + totals.morale_consistency_per_point);
   return (
     totals.segment_pace_ms_per_point +
     totals.low_speed_pace_ms_per_point * segment.lowSpeedDemand +
     totals.high_speed_pace_ms_per_point * segment.highSpeedDemand +
     totals.traction_pace_ms_per_point * segment.tractionDemand +
-    (segment.drsAvailable ? totals.drs_pace_ms_per_point : 0)
+    (segment.drsAvailable ? totals.drs_pace_ms_per_point : 0) +
+    (segment.ersAvailable ? totals.ers_efficiency_per_point : 0) +
+    tyreWearAdjustment + wetGripAdjustment + attackAdjustment + defenseAdjustment + consistencyAdjustment
   );
 }
 
@@ -218,7 +239,7 @@ export function createCalibratedPerformanceModel(
     version: profile.version,
     snapshot: snapshot as unknown as JsonValue,
     calculateAdjustmentMs: (context: SegmentPerformanceContext) =>
-      calculateSegmentPaceAdjustmentUnchecked(context.entrant, context.segment, snapshot)
+      calculateSegmentPaceAdjustmentUnchecked(context, snapshot)
   });
 }
 
