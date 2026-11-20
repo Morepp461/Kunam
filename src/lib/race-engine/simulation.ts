@@ -65,6 +65,7 @@ export interface SegmentPerformanceModel {
   readonly snapshot: JsonValue;
   readonly battleDetectionGapMs?: number;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
+  validateEntrant?(entrant: RaceEntrantSnapshot): void;
   calculatePitStrategyAdjustments?(entrant: RaceEntrantSnapshot): {
     readonly strategyQualityRiskMultiplier: number;
     readonly pitStopTimeAdjustmentMs: number;
@@ -289,6 +290,7 @@ export class RaceSimulation {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
     this.snapshot = immutableSnapshot;
     this.performanceModel = options?.performanceModel ?? NEUTRAL_PERFORMANCE_MODEL;
+    for (const entrant of immutableSnapshot.entrants) this.performanceModel.validateEntrant?.(entrant);
     this.tyreModel = options?.tyreModel;
     this.weatherModel = options?.weatherModel;
     this.pitModel = options?.pitModel;
