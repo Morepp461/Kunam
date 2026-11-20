@@ -1,6 +1,7 @@
 import { RACE_ATTRIBUTE_DEFINITIONS } from "./attributes";
 import { createCalibratedPerformanceModel } from "./calibration";
 import type { RacePhysicsCalibrationProfile } from "./calibration";
+import type { CarSetupCalibration } from "./setup";
 import { createIncidentModel } from "./incidents";
 import type { IncidentCalibrationProfile, IncidentType, RaceControlProfile } from "./incidents";
 import { createPitStrategyModel } from "./pit-strategy";
@@ -30,6 +31,23 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
   attributes["car_team.mechanical_grip"] = { wet_grip_per_point: -0.001 };
   attributes["car_team.strategy_quality"] = { strategy_quality_per_point: -0.03 };
   attributes["car_team.pit_stop_efficiency"] = { pit_stop_time_ms_per_point: -25 };
+  const carSetupCalibration: CarSetupCalibration = {
+    schemaVersion: 1,
+    ranges: {
+      aeroSetting: { minimum: 0, maximum: 100, baseline: 50 },
+      suspensionSetting: { minimum: 0, maximum: 100, baseline: 50 },
+      brakeBalanceFrontPercent: { minimum: 40, maximum: 60, baseline: 50 },
+      frontTyrePressurePsi: { minimum: 15, maximum: 35, baseline: 25 },
+      rearTyrePressurePsi: { minimum: 15, maximum: 35, baseline: 25 }
+    },
+    influences: {
+      aeroSetting: { low_speed_pace_ms_per_point: 0.02, high_speed_pace_ms_per_point: -0.02 },
+      suspensionSetting: { traction_pace_ms_per_point: -0.02, low_speed_pace_ms_per_point: -0.01 },
+      brakeBalanceFrontPercent: { braking_pace_ms_per_point: 0.02 },
+      frontTyrePressurePsi: { tyre_degradation_per_point: 0.02 },
+      rearTyrePressurePsi: { tyre_degradation_per_point: 0.02 }
+    }
+  };
   const performanceProfile: RacePhysicsCalibrationProfile = {
     schemaVersion: 2,
     attributeSchemaVersion: 1,
@@ -38,7 +56,8 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
     baselineAttributeValue: 50,
     battleDetectionGapMs: 2500,
     attributes,
-    hqEffects: {}
+    hqEffects: {},
+    carSetup: carSetupCalibration
   };
   const performanceModel = createCalibratedPerformanceModel(performanceProfile);
 
