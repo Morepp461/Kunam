@@ -134,7 +134,15 @@ function canonicalJson(value: JsonValue): string {
   if (value !== null && typeof value === "object") {
     return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
   }
-  return JSON.stringify(value);
+  return JSON.stringify(value) ?? "null";
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.values(value as Record<string, unknown>).forEach((child) => deepFreeze(child));
+    Object.freeze(value);
+  }
+  return value;
 }
 
 function copyEvent(event: RaceSimulationEvent): RaceSimulationEvent {
@@ -186,13 +194,13 @@ export class RaceSimulation {
       throw new Error("Configured performance model version does not match the injected model");
     }
     if (
-      options?.config?.performanceModelSnapshot &&
+      options?.config?.performanceModelSnapshot !== undefined &&
       canonicalJson(options.config.performanceModelSnapshot) !== canonicalJson(config.performanceModelSnapshot)
     ) {
       throw new Error("Configured performance model snapshot does not match the injected model");
     }
     assertConfig(config);
-    this.config = Object.freeze(config);
+    this.config = deepFreeze(config);
     this.random = options?.randomState
       ? SeededRandom.restore(options.randomState)
       : new SeededRandom(immutableSnapshot.seed);
