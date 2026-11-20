@@ -34,6 +34,8 @@ export interface TeamHqFacilityAppliedSnapshot {
   readonly facilityKey: string;
   readonly level: number;
   readonly configUpdatedAt: string;
+  readonly maximumLevel: number;
+  readonly isEnabled: boolean;
   readonly appliedEffects: Readonly<Partial<Record<RaceHqEffectKey, number>>>;
 }
 
@@ -43,6 +45,7 @@ export interface TeamHqRaceEffectSnapshot {
   readonly capturedAt: string;
   readonly facilityLevels: Readonly<Record<string, number>>;
   readonly facilities: readonly TeamHqFacilityAppliedSnapshot[];
+  readonly unresolvedFacilityKeys: readonly string[];
   readonly effects: Readonly<Partial<Record<RaceHqEffectKey, number>>>;
 }
 
@@ -63,6 +66,8 @@ export function validateTeamHqRaceEffectSnapshot(snapshot: TeamHqRaceEffectSnaps
   for (const [key, level] of Object.entries(snapshot.facilityLevels)) {
     if (!key.trim() || !Number.isInteger(level) || level < 0 || level > 8) errors.push(`HQ snapshot level for ${key} is invalid`);
   }
+  if (!Array.isArray(snapshot.unresolvedFacilityKeys)) errors.push("HQ snapshot unresolved facility list is invalid");
+  else if (snapshot.unresolvedFacilityKeys.length > 0) errors.push(`HQ facilities have no configured race effect: ${snapshot.unresolvedFacilityKeys.join(", ")}`);
   const aggregate: Partial<Record<RaceHqEffectKey, number>> = {};
   for (const facility of snapshot.facilities) {
     if (!RACE_RELEVANT_HQ_FACILITY_KEYS.includes(facility.facilityKey as (typeof RACE_RELEVANT_HQ_FACILITY_KEYS)[number])) {
@@ -72,6 +77,8 @@ export function validateTeamHqRaceEffectSnapshot(snapshot: TeamHqRaceEffectSnaps
       errors.push(`HQ snapshot level mismatch for ${facility.facilityKey}`);
     }
     if (!validTimestamp(facility.configUpdatedAt)) errors.push(`HQ config revision timestamp is invalid for ${facility.facilityKey}`);
+    if (!Number.isInteger(facility.maximumLevel) || facility.maximumLevel < 0 || facility.level > facility.maximumLevel) errors.push(`HQ snapshot configured maximum is invalid for ${facility.facilityKey}`);
+    if (facility.level > 0 && !facility.isEnabled) errors.push(`HQ facility ${facility.facilityKey} is disabled`);
     for (const [key, value] of Object.entries(facility.appliedEffects)) {
       if (!(RACE_HQ_EFFECT_KEYS as readonly string[]).includes(key) || !Number.isFinite(value)) {
         errors.push(`HQ snapshot effect ${facility.facilityKey}.${key} is invalid`);
@@ -138,7 +145,8 @@ export function resolveTeamHqRaceEffects(
       if (level > 0) unresolved.push(facilityKey);
       continue;
     }
-    if (level === 0 || !config.isEnabled) continue;
+    if (level === 0) continue;
+    if (!config.isEnabled) { unresolved.push(facilityKey); continue; }
 
     const configured = config.effectsByLevel[String(level)] ?? {};
     const applied: Partial<Record<RaceHqEffectKey, number>> = {};
@@ -155,6 +163,8 @@ export function resolveTeamHqRaceEffects(
       facilityKey,
       level,
       configUpdatedAt: config.updatedAt,
+      maximumLevel: division === "premio" ? config.maxLevelPremio : config.maxLevelZwei,
+      isEnabled: config.isEnabled,
       appliedEffects: Object.freeze(applied)
     }));
   }
@@ -167,6 +177,7 @@ export function resolveTeamHqRaceEffects(
       capturedAt,
       facilityLevels,
       facilities: Object.freeze(facilities),
+      unresolvedFacilityKeys: Object.freeze(unresolved.sort()),
       effects: Object.freeze(effects)
     }),
     unresolvedFacilityKeys: Object.freeze(unresolved.sort())
