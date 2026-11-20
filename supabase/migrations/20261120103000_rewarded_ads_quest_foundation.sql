@@ -64,11 +64,11 @@ create policy caleris_rewarded_ads_config_admin_read on public.caleris_rewarded_
 
 drop policy if exists caleris_rewarded_ads_events_member_read on public.caleris_rewarded_ads_events;
 create policy caleris_rewarded_ads_events_member_read on public.caleris_rewarded_ads_events
-  for select to authenticated using (exists(select 1 from public.profiles p where p.user_id=(select auth.uid()) and p.member_id=member_id));
+  for select to authenticated using (exists(select 1 from public.profiles p where p.user_id=(select auth.uid()) and p.member_id=caleris_rewarded_ads_events.member_id));
 
 drop policy if exists caleris_rewarded_ads_claims_member_read on public.caleris_rewarded_ads_claims;
 create policy caleris_rewarded_ads_claims_member_read on public.caleris_rewarded_ads_claims
-  for select to authenticated using (exists(select 1 from public.profiles p where p.user_id=(select auth.uid()) and p.member_id=member_id));
+  for select to authenticated using (exists(select 1 from public.profiles p where p.user_id=(select auth.uid()) and p.member_id=caleris_rewarded_ads_claims.member_id));
 
 create or replace function public.admin_get_rewarded_ads_config()
 returns jsonb
