@@ -310,7 +310,7 @@ Deno.serve(async (req: Request) => {
       if (announcements.error || stories.error) {
         console.error("Published content search failed:", { announcements: announcements.error?.message, stories: stories.error?.message });
       }
-      const pages = (content ?? []).flatMap((row) => {
+      const sitePages = (content ?? []).flatMap((row) => {
         const value = row.content as Record<string, unknown>;
         const title = typeof value?.title === "string" ? value.title : row.slug;
         const searchableText = JSON.stringify(value ?? {}).replace(/[{}":,]/g, " ");
@@ -322,8 +322,8 @@ Deno.serve(async (req: Request) => {
         ...(announcements.data ?? []).map((row) => ({ title: row.title, slug: "announcement-" + row.id, excerpt: String(row.body ?? "").replace(/\s+/g, " ").slice(0, 150), href: "/main-event/newsroom" })),
         ...(stories.data ?? []).map((row) => ({ title: row.headline, slug: "paddock-story-" + row.id, excerpt: String(row.body ?? "").replace(/\s+/g, " ").slice(0, 150), href: "/main-event/newsroom" })),
       ];
-      const mergedPages = [...contentResults, ...pages].filter((item, index, all) => all.findIndex((candidate) => candidate.slug === item.slug) === index).slice(0, 20);
-      return respond(200, { members, teams, pages: mergedPages });
+      const pages = [...contentResults, ...sitePages].filter((item, index, all) => all.findIndex((candidate) => candidate.slug === item.slug) === index).slice(0, 20);
+      return respond(200, { members, teams, pages });
     }
 
     if (action === "update_member_id") {
