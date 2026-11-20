@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCalibratedPerformanceModel } from "../../src/lib/race-engine/calibration";
+import type { RacePhysicsCalibrationProfile } from "../../src/lib/race-engine/calibration";
 import { RaceSimulation } from "../../src/lib/race-engine/simulation";
 import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-fixture";
 import { createRaceEngineTestModels } from "../../src/lib/race-engine/test-profiles";
@@ -83,31 +84,25 @@ describe("Race Engine team HQ effect snapshots", () => {
       { facilityKey: "simulator_facility", level: 8 },
       { facilityKey: "pit_crew_training_center", level: 8 }
     ], configs(), updatedAt);
+    const resolvedForRace = resolveTeamHqRaceEffects("premio", [
+      { facilityKey: "engineering_department", level: 8 },
+      { facilityKey: "rd_center", level: 8 },
+      { facilityKey: "simulator_facility", level: 8 }
+    ], configs(), updatedAt);
     const snapshot = {
       ...fixture,
       entrants: fixture.entrants.map((entrant) => ({
         ...entrant,
-        hqEffects: result.snapshot.effects,
-        hqFacilitySnapshot: result.snapshot
+        hqEffects: resolvedForRace.snapshot.effects,
+        hqFacilitySnapshot: resolvedForRace.snapshot
       }))
     };
     const models = createRaceEngineTestModels(snapshot);
     const simulation = new RaceSimulation(snapshot, models);
     expect(simulation.createCheckpoint().snapshot.entrants[0].hqFacilitySnapshot).toEqual(result.snapshot);
 
-    const uncalibrated = createCalibratedPerformanceModel({
-      schemaVersion: 2,
-      attributeSchemaVersion: 1,
-      id: "uncalibrated-hq-test",
-      version: "1",
-      baselineAttributeValue: 50,
-      battleDetectionGapMs: 2500,
-      attributes: Object.fromEntries(
-        Object.keys(models.performanceModel.snapshot.attributes as Record<string, unknown>)
-          .map((key) => [key, { segment_pace_ms_per_point: 0 }])
-      ),
-      hqEffects: {}
-    });
+    const baseProfile = models.performanceModel.snapshot as unknown as RacePhysicsCalibrationProfile;
+    const uncalibrated = createCalibratedPerformanceModel({ ...baseProfile, hqEffects: {} });
     expect(() => new RaceSimulation(snapshot, { performanceModel: uncalibrated }))
       .toThrow(/requires an explicit calibration mapping/i);
   });
