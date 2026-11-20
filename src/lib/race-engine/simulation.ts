@@ -995,21 +995,36 @@ export class RaceSimulation {
       };
     }
 
-    // Commit the tick only after every entrant has advanced successfully.
-    this.mutableEntrants.splice(0, this.mutableEntrants.length, ...stagedEntrants);
-    this.mutableEvents.push(...stagedEvents);
-    this.random = stagedRandom;
+    const nextSimulationClockMs = stagedSimulationClockMs + globalTickDurationMs;
+    const expiredAtTickEnd = stagedRaceControlFlags.filter(
+      (flag) => flag.expiresAtSimulationTimeMs <= nextSimulationClockMs
+    );
+    for (const flag of expiredAtTickEnd) {
+      appendEvent({
+        type: "race_control",
+        lapNumber: stagedEntrants.find((entrant) => !entrant.finished && !entrant.retired)?.lapCompleted ?? 0,
+        simulationTimeMs: nextSimulationClockMs,
+        incidentId: flag.incidentId,
+        raceControlFlag: "green"
+      });
+    }
+    stagedRaceControlFlags = stagedRaceControlFlags.filter(
+      (flag) => flag.expiresAtSimulationTimeMs > nextSimulationClockMs
+    );
     if (this.weatherModel && stagedWeatherState) {
       if (!weatherInputForTick) throw new Error("Weather input for the current simulation tick is missing");
       stagedWeatherState = advanceWeatherState(
         stagedWeatherState, weatherInputForTick, globalTickDurationMs / 1000, this.weatherModel.profile
       );
     }
+
+    // Commit the tick only after every entrant and shared lifecycle state advanced successfully.
+    this.mutableEntrants.splice(0, this.mutableEntrants.length, ...stagedEntrants);
+    this.mutableEvents.push(...stagedEvents);
+    this.random = stagedRandom;
     this.weatherStateValue = stagedWeatherState;
-    this.simulationClockMsValue = stagedSimulationClockMs + globalTickDurationMs;
-    this.activeRaceControlFlagsValue = stagedRaceControlFlags.filter(
-      (flag) => flag.expiresAtSimulationTimeMs > this.simulationClockMsValue
-    );
+    this.simulationClockMsValue = nextSimulationClockMs;
+    this.activeRaceControlFlagsValue = stagedRaceControlFlags;
     this.tickValue += 1;
     if (this.mutableEntrants.every((entrant) => entrant.finished || entrant.retired)) {
       this.statusValue = "completed";
