@@ -19,7 +19,7 @@ describe("Managed Race Engine batch metrics", () => {
       busyCount: 1,
       retryPendingCount: 1,
       suspendedCount: 1,
-      oldestActiveAgeMs: 300000
+      oldestSelectedSessionAgeMs: 300000
     });
   });
 
@@ -28,7 +28,7 @@ describe("Managed Race Engine batch metrics", () => {
       batchSize: 0,
       activeQueueDepth: 0,
       progressedCount: 0,
-      oldestActiveAgeMs: null
+      oldestSelectedSessionAgeMs: null
     });
   });
 
