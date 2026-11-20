@@ -545,7 +545,7 @@ export default function LiveRace() {
         </div>
       </details>
       <div className="race-engine-form-footer">
-        <span>Up to 25 AI drivers · 10 teams · setup and HQ levels use Testing configuration only</span>
+        <span>Quick Test hanya butuh 4 input. Setup mobil dan efek HQ tersedia di Advanced Setup.</span>
         <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !/^\d+$/.test(seed) || !Number.isSafeInteger(Number(seed)) || Number(seed) > 0xffffffff}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>
