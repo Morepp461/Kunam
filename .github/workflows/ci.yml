@@ -29,8 +29,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check Race Engine Edge Function and persistent worker
-        run: deno check supabase/functions/race-engine-test-service/index.ts workers/race-engine-worker/main.ts
+      - name: Type-check Supabase Edge Functions and persistent worker
+        run: deno check supabase/functions/complete-paddock-access/index.ts supabase/functions/race-engine-test-service/index.ts workers/race-engine-worker/main.ts
       - run: npm run check
       - run: npm run build
       - name: Unit and schema validation tests
@@ -40,6 +40,8 @@ jobs:
       - name: Browser smoke tests
         run: npm run test:e2e
       - run: python3 -B scripts/validate.py
+      - name: Paddock Access CORS regression checks
+        run: python3 -B scripts/test_paddock_access_cors.py
       - name: Economy transaction regression checks
         run: python3 -B scripts/test_economy_regressions.py
       - name: Economy wallet lifecycle checks
