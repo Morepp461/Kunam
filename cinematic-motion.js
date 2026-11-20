@@ -79,10 +79,18 @@
   }
 
   const observer = new ResizeObserver(resize);
+  const onVisibilityChange = () => document.hidden ? stop() : start();
+  const onPageHide = () => { stop(); observer.disconnect(); };
+  const onPageShow = () => {
+    observer.observe(host);
+    resize();
+    if (!document.hidden) start();
+  };
   observer.observe(host);
   resize();
   start();
   reducedMotion.addEventListener?.("change", start);
-  document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());
-  window.addEventListener("pagehide", () => { stop(); observer.disconnect(); }, { once: true });
+  document.addEventListener("visibilitychange", onVisibilityChange);
+  window.addEventListener("pagehide", onPageHide);
+  window.addEventListener("pageshow", onPageShow);
 })();
