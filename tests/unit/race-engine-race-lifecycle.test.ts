@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { authorizeRaceStart } from "../../src/lib/race-engine/race-lifecycle";
+import type { RaceStartRequest } from "../../src/lib/race-engine/race-lifecycle";
 
-function request(overrides: Record<string, unknown> = {}) {
+function request(overrides: Partial<RaceStartRequest> = {}): RaceStartRequest {
   return {
     raceId: "race-1",
     source: "scheduled" as const,
