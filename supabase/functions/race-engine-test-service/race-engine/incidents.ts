@@ -1,5 +1,5 @@
-import type { JsonValue } from "./contracts";
-import { SeededRandom } from "./random";
+import type { JsonValue } from "./contracts.ts";
+import { SeededRandom } from "./random.ts";
 
 export const INCIDENT_MODEL_SCHEMA_VERSION = 1;
 
