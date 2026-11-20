@@ -35,8 +35,7 @@ import type {
 
 const TEST_URL = Deno.env.get("SUPABASE_URL")!;
 const TEST_SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const PRODUCTION_URL = "https://asltczqrmoxnayusvjta.supabase.co";
-const PRODUCTION_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzbHRjenFybW94bmF5dXN2anRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ0MjY0NDksImV4cCI6MjExMDAwMjQ0OX0.IQQijox_4_s8wMM_7mK998AXIXy42k1d8yH1Oe2cCCQ";
+const TEST_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const ALLOWED_ORIGINS = new Set([
   "https://calerismasters.com",
   "https://www.calerismasters.com",
@@ -50,7 +49,7 @@ const service = createClient(TEST_URL, TEST_SERVICE_KEY, {
 function responseHeaders(origin: string | null): Headers {
   const headers = new Headers({
     "Content-Type": "application/json",
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-caleris-production-authorization",
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-caleris-testing-authorization",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin"
   });
@@ -62,25 +61,29 @@ function json(data: unknown, status = 200, origin: string | null = null): Respon
   return new Response(JSON.stringify(data), { status, headers: responseHeaders(origin) });
 }
 
-async function requireProductionAdmin(req: Request) {
-  // Supabase gateway Authorization is a Testing-project JWT; the production user token is validated separately here.
-  const authorization = req.headers.get("x-caleris-production-authorization") ?? "";
-  const token = authorization.replace(/^Bearer\s+/i, "").trim();
-  if (!token) throw new Error("Sesi admin diperlukan.");
+async function requireTestingAdmin(req: Request) {
+  // The gateway credential authenticates the Testing project; this separate user token must also belong to Testing.
+  const authorization = req.headers.get("x-caleris-testing-authorization") ?? "";
+  const token = authorization.replace(/^Bearer\\s+/i, "").trim();
+  if (!token) throw new Error("Sesi Admin Testing diperlukan.");
+  if (!TEST_ANON_KEY) throw new Error("Konfigurasi SUPABASE_ANON_KEY Testing belum tersedia.");
 
-  const userClient = createClient(PRODUCTION_URL, PRODUCTION_ANON_KEY, {
+  const userClient = createClient(TEST_URL, TEST_ANON_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } }
   });
   const { data: userData, error: userError } = await userClient.auth.getUser(token);
-  if (userError || !userData.user) throw new Error("Sesi login tidak valid atau sudah kedaluwarsa.");
+  if (userError || !userData.user) {
+    throw new Error("Token login tidak valid untuk Supabase Testing. Logout lalu login kembali melalui akun Admin Testing.");
+  }
 
-  const { data: adminRow, error: adminError } = await userClient
+  const { data: adminRow, error: adminError } = await service
     .from("site_admins")
     .select("user_id")
     .eq("user_id", userData.user.id)
     .maybeSingle();
-  if (adminError || !adminRow) throw new Error("Akses Race Engine Lab hanya untuk Admin.");
+  if (adminError) throw new Error("Gagal memeriksa hak Admin pada database Testing.");
+  if (!adminRow) throw new Error("Akun ini belum terdaftar sebagai Admin di database Testing.");
 
   return { user: userData.user, token };
 }
@@ -406,7 +409,7 @@ Deno.serve(async (req: Request) => {
       return json({ ok: true, ...(await processBackgroundBatch()) }, 200, origin);
     }
 
-    const { user } = await requireProductionAdmin(req);
+    const { user } = await requireTestingAdmin(req);
 
     if (action === "list") {
       const { data, error } = await service
