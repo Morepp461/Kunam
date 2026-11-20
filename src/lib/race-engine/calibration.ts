@@ -114,7 +114,7 @@ export function validatePhysicsCalibrationProfile(
   if (!isRecord(profile.attributes)) errors.push("attributes must be an object");
   if (!isRecord(profile.hqEffects)) errors.push("hqEffects must be an object");
 
-  const expectedIds = new Set(RACE_ATTRIBUTE_DEFINITIONS.map((definition) => definition.id));
+  const expectedIds = new Set<string>(RACE_ATTRIBUTE_DEFINITIONS.map((definition) => definition.id));
   for (const definition of RACE_ATTRIBUTE_DEFINITIONS) {
     const weights = attributeWeights[definition.id] as AttributeInfluenceWeights | undefined;
     if (!weights) {
