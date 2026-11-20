@@ -80,7 +80,7 @@ export function validateCircuitReleaseReadiness(
       errors.push("Real circuits require source provenance");
     } else {
       if (!source.provider.trim()) errors.push("Circuit source provider is required");
-      if (!/^https:\\/\\//i.test(source.sourceUrl)) errors.push("Circuit source URL must use HTTPS");
+      if (!/^https:\/\//i.test(source.sourceUrl)) errors.push("Circuit source URL must use HTTPS");
       if (!source.licenseId.trim()) errors.push("Circuit source license is required");
       if (!source.attribution.trim()) errors.push("Circuit source attribution is required");
       if (!Number.isFinite(Date.parse(source.retrievedAt))) errors.push("Circuit source retrieval timestamp is invalid");
