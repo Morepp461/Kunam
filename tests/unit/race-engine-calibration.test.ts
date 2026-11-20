@@ -225,6 +225,54 @@ describe("Race physics calibration profiles", () => {
     });
   });
 
+  it("validates immutable setup bounds and applies calibrated aero, suspension, brake, and tyre-pressure effects", () => {
+    const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
+    const profile = createProfile();
+    const carSetup = {
+      schemaVersion: 1 as const,
+      aeroSetting: 60,
+      suspensionSetting: 40,
+      brakeBalanceFrontPercent: 55,
+      frontTyrePressurePsi: 26,
+      rearTyrePressurePsi: 24
+    };
+    const setupCalibration = {
+      schemaVersion: 1 as const,
+      ranges: {
+        aeroSetting: { minimum: 0, maximum: 100, baseline: 50 },
+        suspensionSetting: { minimum: 0, maximum: 100, baseline: 50 },
+        brakeBalanceFrontPercent: { minimum: 40, maximum: 60, baseline: 50 },
+        frontTyrePressurePsi: { minimum: 15, maximum: 35, baseline: 25 },
+        rearTyrePressurePsi: { minimum: 15, maximum: 35, baseline: 25 }
+      },
+      influences: {
+        aeroSetting: { low_speed_pace_ms_per_point: -1, high_speed_pace_ms_per_point: 2 },
+        suspensionSetting: { traction_pace_ms_per_point: 0.5 },
+        brakeBalanceFrontPercent: { braking_pace_ms_per_point: 3 },
+        frontTyrePressurePsi: { tyre_degradation_per_point: 2 },
+        rearTyrePressurePsi: { tyre_degradation_per_point: 1 }
+      }
+    };
+    const calibrated = { ...profile, carSetup: setupCalibration };
+    const model = createCalibratedPerformanceModel(calibrated);
+    const entrant = { ...fixture.entrants[0], carSetup };
+    const totals = evaluateAttributeInfluences(entrant, calibrated);
+    expect(totals.low_speed_pace_ms_per_point).toBe(-10);
+    expect(totals.high_speed_pace_ms_per_point).toBe(20);
+    expect(totals.traction_pace_ms_per_point).toBe(-5);
+    expect(totals.braking_pace_ms_per_point).toBe(15);
+    expect(totals.tyre_degradation_per_point).toBe(1);
+    expect(() => model.validateEntrant?.({ ...entrant, carSetup: { ...carSetup, frontTyrePressurePsi: 50 } }))
+      .toThrow(/frontTyrePressurePsi must be between 15 and 35/i);
+    expect(() => createCalibratedPerformanceModel(profile).validateEntrant?.(entrant))
+      .toThrow(/requires a calibrated carSetup profile/i);
+
+    const simulation = new RaceSimulation({ ...fixture, entrants: [entrant] }, { performanceModel: model });
+    const checkpoint = simulation.createCheckpoint();
+    expect(checkpoint.snapshot.entrants[0].carSetup).toEqual(carSetup);
+    expect(checkpoint.config.performanceModelSnapshot).toEqual(calibrated);
+  });
+
   it("persists the full calibration profile in checkpoints and requires the same profile to resume", () => {
     const profile = createProfile();
     const model = createCalibratedPerformanceModel(profile);

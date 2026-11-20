@@ -221,7 +221,8 @@ export function validateCircuitGeometryDefinition(
     for (const [key, demand] of [
       ["lowSpeedDemand", segment.lowSpeedDemand],
       ["highSpeedDemand", segment.highSpeedDemand],
-      ["tractionDemand", segment.tractionDemand]
+      ["tractionDemand", segment.tractionDemand],
+      ["brakingDemand", segment.brakingDemand ?? 0]
     ] as const) {
       if (!isFiniteInRange(demand, 0, 1)) {
         errors.push(`Segment ${segment.id} ${key} must be between 0 and 1`);
@@ -321,6 +322,7 @@ export function toCircuitSegmentSnapshots(
     lowSpeedDemand: segment.lowSpeedDemand,
     highSpeedDemand: segment.highSpeedDemand,
     tractionDemand: segment.tractionDemand,
+    ...(segment.brakingDemand !== undefined ? { brakingDemand: segment.brakingDemand } : {}),
     drsAvailable: segment.drsAvailable
   }));
 }
