@@ -25,7 +25,8 @@ export const ATTRIBUTE_INFLUENCE_CHANNELS = [
   "ers_efficiency_per_point",
   "wet_grip_per_point",
   "strategy_quality_per_point",
-  "morale_consistency_per_point"
+  "morale_consistency_per_point",
+  "braking_pace_ms_per_point"
 ] as const;
 
 export type AttributeInfluenceChannel = (typeof ATTRIBUTE_INFLUENCE_CHANNELS)[number];
@@ -43,6 +44,7 @@ export interface RacePhysicsCalibrationProfile {
   readonly attributes: Readonly<Record<string, AttributeInfluenceWeights>>;
   /** Optional effects not already folded into effective car/team attribute values. */
   readonly hqEffects: Readonly<Record<string, AttributeInfluenceWeights>>;
+  readonly carSetup?: CarSetupCalibration;
 }
 
 export interface CalibrationValidationResult {
