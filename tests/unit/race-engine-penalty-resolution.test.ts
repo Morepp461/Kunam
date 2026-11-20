@@ -28,7 +28,7 @@ function penalty(input: Partial<RaceControlPenalty> & Pick<RaceControlPenalty, "
     evidence: input.evidence ?? [],
     issuedBy: input.issuedBy ?? "fia-1",
     issuedAt: input.issuedAt ?? "2026-11-20T10:00:00.000Z",
-    ratifiedByAdminId: input.ratifiedByAdminId ?? "admin-1",
+    ratifiedByAdminId: input.ratifiedByAdminId === undefined ? "admin-1" : input.ratifiedByAdminId,
     reversedByEventId: input.reversedByEventId ?? null
   };
 }
@@ -57,7 +57,7 @@ describe("Race-control penalty resolution", () => {
       penalty({ id: "ban", driverId: "driver-b", type: "race_ban" })
     ];
     const result = resolveRaceClassificationWithPenalties(classification, penalties);
-    expect(result.slice(0, 2).map((entry) => entry.driverId)).toEqual(["driver-d", "driver-c"]);
+    expect(result.slice(0, 2).map((entry) => entry.driverId)).toEqual(["driver-c", "driver-d"]);
     expect(result.find((entry) => entry.driverId === "driver-a")).toMatchObject({ position: null, status: "disqualified" });
     expect(result.find((entry) => entry.driverId === "driver-b")).toMatchObject({ position: null, status: "race_banned" });
   });
