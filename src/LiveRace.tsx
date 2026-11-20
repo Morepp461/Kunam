@@ -338,6 +338,7 @@ export default function LiveRace() {
         source: "replay",
         capturedAt: new Date().toISOString(),
         lapNumber: Number(evidenceLap),
+        ...(typeof payload.driverId === "string" ? { driverId: payload.driverId } : {}),
         description: evidenceDescription.trim(),
         artifactRef: evidenceRef.trim()
       }];
