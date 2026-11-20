@@ -169,7 +169,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
       return open.slice(0,start===undefined?Math.max(0,open.length-1):start);
     });
   };
-  const clearActiveDrawing = () => drawingMode === "track_limit" ? setTrackLimitBoundary([]) : setPoints([]);
+  const clearActiveDrawing = () => { if(drawingMode==="track_limit"){boundaryStrokeStarts.current=[];setTrackLimitBoundary([])}else{centerlineStrokeStarts.current=[];setPoints([])} };
   const updateSegment = (id: string, key: keyof SegmentForm, next: string|boolean) => setSegments((current) => current.map((segment) => segment.id === id ? ({...segment, [key]: next}) : segment));
   const addSegment = () => setSegments((current) => [...current, {
     ...initialSegments[activeSector-1],
