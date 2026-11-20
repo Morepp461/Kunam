@@ -289,7 +289,7 @@ export default function LiveRace() {
     const timer = window.setInterval(() => {
       void refreshSessions(selectedId || undefined);
       if (selectedId) void loadDetail(selectedId);
-    }, 10000);
+    }, 5000);
     return () => window.clearInterval(timer);
   }, [selectedId, refreshSessions, loadDetail]);
 
@@ -694,10 +694,19 @@ export default function LiveRace() {
             <div className="live-race-subheading"><h3><MapPin size={15}/> Circuit position map</h3><span>APPROX. SEGMENT POSITION</span></div>
             {detail?.projection?.circuitLayout?.length ? <svg viewBox="0 0 1000 1000" role="img" aria-label="Approximate driver positions on the circuit layout" style={{ width: "100%", maxHeight: 340 }}>
               <polyline points={detail.projection.circuitLayout.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" ")} fill="none" stroke="currentColor" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"/>
-              {detail.projection.timingRows.map((row) => <g key={row.driverId}>
-                <circle cx={row.trackPosition.x * 1000} cy={row.trackPosition.y * 1000} r="19" fill="currentColor" stroke="var(--background, #fff)" strokeWidth="5"/>
-                <text x={row.trackPosition.x * 1000} y={row.trackPosition.y * 1000} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize="20" fontWeight="700">{row.position ?? "X"}</text>
-              </g>)}
+              {detail.projection.timingRows.map((row, index, rows) => {
+                const peers=rows.filter((item)=>Math.hypot(item.trackPosition.x-row.trackPosition.x,item.trackPosition.y-row.trackPosition.y)<0.012);
+                const slot=peers.findIndex((item)=>item.driverId===row.driverId);
+                const angle=(Math.PI*2*slot)/Math.max(1,peers.length);
+                const radius=peers.length>1?Math.min(34,12+peers.length*1.25):0;
+                const x=row.trackPosition.x*1000+Math.cos(angle)*radius;
+                const y=row.trackPosition.y*1000+Math.sin(angle)*radius;
+                return <g key={row.driverId} style={{transition:"transform 1.5s linear"}}>
+                  {peers.length>1&&<line x1={row.trackPosition.x*1000} y1={row.trackPosition.y*1000} x2={x} y2={y} stroke="currentColor" strokeOpacity=".45" strokeWidth="2"/>}
+                  <circle cx={x} cy={y} r="19" fill="currentColor" stroke="var(--background, #fff)" strokeWidth="5" style={{transition:"cx 1.5s linear, cy 1.5s linear"}}><title>{row.position ? "P"+row.position+" · ":""}{row.driverId}</title></circle>
+                  <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize="20" fontWeight="700">{row.position ?? "X"}</text>
+                </g>;
+              })}
             </svg> : <p className="race-engine-empty">Circuit map tersedia setelah geometry dimuat ke race snapshot.</p>}
           </section>
 
