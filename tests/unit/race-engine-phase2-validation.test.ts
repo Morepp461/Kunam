@@ -84,6 +84,10 @@ describe("Phase 2 deterministic Monte Carlo validation", () => {
       RACE_ATTRIBUTE_DEFINITIONS.map((definition) => [definition.id, { segment_pace_ms_per_point: -0.001 }])
     );
     attributes["driver.race_pace"] = { segment_pace_ms_per_point: -1 };
+    attributes["driver.aggression"] = {
+      overtake_advantage_per_point: 0.001,
+      defense_advantage_per_point: 0.001
+    };
     const calibration: RacePhysicsCalibrationProfile = {
       schemaVersion: 2, attributeSchemaVersion: 1, id: "race-pace-sensitivity",
       version: "1.0.0", baselineAttributeValue: 50, battleDetectionGapMs: 0,
