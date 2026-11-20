@@ -28,6 +28,8 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
   attributes["car_team.ers_efficiency"] = { ers_efficiency_per_point: -0.001 };
   attributes["car_team.car_tyre_wear"] = { tyre_degradation_per_point: 0.001 };
   attributes["car_team.mechanical_grip"] = { wet_grip_per_point: -0.001 };
+  attributes["car_team.strategy_quality"] = { strategy_quality_per_point: -0.03 };
+  attributes["car_team.pit_stop_efficiency"] = { pit_stop_time_ms_per_point: -25 };
   const performanceProfile: RacePhysicsCalibrationProfile = {
     schemaVersion: 2,
     attributeSchemaVersion: 1,
