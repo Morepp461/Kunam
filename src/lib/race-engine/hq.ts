@@ -55,6 +55,43 @@ function validTimestamp(value: string): boolean {
   return Number.isFinite(Date.parse(value));
 }
 
+export function validateTeamHqRaceEffectSnapshot(snapshot: TeamHqRaceEffectSnapshot): readonly string[] {
+  const errors: string[] = [];
+  if (snapshot.schemaVersion !== TEAM_HQ_RACE_SNAPSHOT_SCHEMA_VERSION) errors.push("Unsupported HQ race-effect snapshot schema version");
+  if (snapshot.division !== "premio" && snapshot.division !== "zwei") errors.push("HQ snapshot division is invalid");
+  if (!validTimestamp(snapshot.capturedAt)) errors.push("HQ snapshot capture timestamp is invalid");
+  for (const [key, level] of Object.entries(snapshot.facilityLevels)) {
+    if (!key.trim() || !Number.isInteger(level) || level < 0 || level > 8) errors.push(`HQ snapshot level for ${key} is invalid`);
+  }
+  const aggregate: Partial<Record<RaceHqEffectKey, number>> = {};
+  for (const facility of snapshot.facilities) {
+    if (!RACE_RELEVANT_HQ_FACILITY_KEYS.includes(facility.facilityKey as (typeof RACE_RELEVANT_HQ_FACILITY_KEYS)[number])) {
+      errors.push(`HQ snapshot contains unknown race facility ${facility.facilityKey}`);
+    }
+    if (snapshot.facilityLevels[facility.facilityKey] !== facility.level) {
+      errors.push(`HQ snapshot level mismatch for ${facility.facilityKey}`);
+    }
+    if (!validTimestamp(facility.configUpdatedAt)) errors.push(`HQ config revision timestamp is invalid for ${facility.facilityKey}`);
+    for (const [key, value] of Object.entries(facility.appliedEffects)) {
+      if (!(RACE_HQ_EFFECT_KEYS as readonly string[]).includes(key) || !Number.isFinite(value)) {
+        errors.push(`HQ snapshot effect ${facility.facilityKey}.${key} is invalid`);
+        continue;
+      }
+      const effectKey = key as RaceHqEffectKey;
+      aggregate[effectKey] = (aggregate[effectKey] ?? 0) + value;
+    }
+  }
+  for (const key of RACE_HQ_EFFECT_KEYS) {
+    if (Math.abs((aggregate[key] ?? 0) - (snapshot.effects[key] ?? 0)) > 1e-9) {
+      errors.push(`HQ snapshot aggregate effect mismatch for ${key}`);
+    }
+    if (snapshot.effects[key] !== undefined && !Number.isFinite(snapshot.effects[key])) {
+      errors.push(`HQ snapshot effect ${key} must be finite`);
+    }
+  }
+  return Object.freeze(errors);
+}
+
 /**
  * Resolves only effects explicitly present in the current HQ configuration.
  * It does not infer a gameplay bonus from a facility's name or level.
