@@ -26,7 +26,7 @@ assert "},[userId,toast]);" in application
 auth_callback = application[application.index("supabase.auth.onAuthStateChange"):application.index("useEffect(()=>{if(authReady)")]
 assert "identityChanged=sessionUserIdRef.current!==nextUserId" in auth_callback
 assert "if(identityChanged||event===\"USER_UPDATED\")setProfileReady(false)" in auth_callback
-assert "setProfileReady(false);setAuthReady(true)" not in auth_callback
+assert "setSession(s);setProfileReady(false);setAuthReady(true)" not in auth_callback
 
 # Background/restore lifecycle should pause effects without reloading or dropping auth.
 assert 'document.addEventListener("visibilitychange",markBackground)' in application
