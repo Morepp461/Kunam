@@ -138,20 +138,6 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     trackLimitBoundary
   }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, sourceProvenance, trackLimitBoundary, value?.revision, value?.sourceProvenance]);
 
-  const addPoint = (event: MouseEvent<SVGSVGElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
-    if (drawingMode === "track_limit") {
-      setTrackLimitBoundary((current) => [...current, { x, y }]);
-      return;
-    }
-    setPoints((current) => {
-      const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y
-        ? current.slice(0, -1) : current;
-      return [...open, { id: `point-${open.length+1}`, x, y }];
-    });
-  };
   const loadImportedCenterline = () => {
     if (!importedGeoJsonDraft) return;
     setPoints(circuitLayoutFromGeoJsonDraft(importedGeoJsonDraft));
