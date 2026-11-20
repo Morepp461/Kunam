@@ -606,7 +606,8 @@ export class RaceSimulation {
         ...state,
         pitStopCount: state.pitStopCount ?? 0,
         lastPitLap: state.lastPitLap ?? null,
-        retired: state.retired ?? false
+        retired: state.retired ?? false,
+        startingGridPosition: state.startingGridPosition ?? simulation.mutableEntrants[index].startingGridPosition
       };
     }
 
