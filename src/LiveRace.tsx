@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, AlertTriangle, CheckCircle2, ChevronRight, Clock3, Flag,
   Gauge, LoaderCircle, MapPin, Pause, Play, RefreshCw, RotateCcw, ShieldCheck, Timer,
-  Trophy, Waves, Wrench
+  Trophy, Waves, Wrench, Maximize2
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { createRaceEngineTestAuthHeaders } from "./lib/race-engine/api-auth";
@@ -187,6 +187,10 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
 }
 
 export default function LiveRace() {
+  const raceWorkspaceRef=useRef<HTMLDivElement|null>(null);
+  const [fullScreen,setFullScreen]=useState(false);
+  useEffect(()=>{const sync=()=>setFullScreen(Boolean(document.fullscreenElement&&raceWorkspaceRef.current?.contains(document.fullscreenElement)));document.addEventListener("fullscreenchange",sync);return()=>document.removeEventListener("fullscreenchange",sync)},[]);
+  const toggleFullScreen=async()=>{try{if(document.fullscreenElement){await document.exitFullscreen();return}await raceWorkspaceRef.current?.requestFullscreen();try{await (screen.orientation as any).lock?.("landscape")}catch{}}catch{}};
   const [sessions, setSessions] = useState<RaceSession[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [detail, setDetail] = useState<{ session: RaceSession; projection: RaceTimingProjection | null; events: RaceEvent[]; commands: RaceCommand[] } | null>(null);
@@ -486,14 +490,14 @@ export default function LiveRace() {
     }
   }
 
-  return <div className="workspace live-race-workspace">
+  return <div ref={raceWorkspaceRef} className={"workspace live-race-workspace"+(fullScreen?" is-fullscreen":"")}>
     <header className="page-heading live-race-heading">
       <div>
         <span className="eyebrow">CALERIS RACE CONTROL · PHASE 4</span>
         <h1 className="page-title">RACE ENGINE LAB</h1>
         <p className="page-description">Jalankan simulasi deterministik, simpan checkpoint, dan uji pemulihan sesi dari web.</p>
       </div>
-      <span className="live-race-admin-tag"><ShieldCheck size={14}/> ADMIN ONLY</span>
+      <div className="live-race-heading-actions"><span className="live-race-admin-tag"><ShieldCheck size={14}/> ADMIN ONLY</span><button type="button" className="live-race-fullscreen-button" onClick={toggleFullScreen}><Maximize2 size={14}/>{fullScreen?"Exit fullscreen":"Landscape fullscreen"}</button></div>
     </header>
 
     <div className="live-race-preview-notice">
