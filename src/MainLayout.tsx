@@ -88,7 +88,7 @@ export default function MainLayout({children,theme,setTheme,session,profile,isAd
 
  const categories=useMemo(()=>groupNavigation(navigationGroups),[navigationGroups]);
  const quickAccess=groupQuickAccess(navigationGroups);
- useEffect(()=>{const active=categories.find(g=>g.items.some(i=>location.pathname===i.to||location.pathname.startsWith(i.to+"/")));if(active)setExpanded(active.title)},[location.pathname,categories]);
+ useEffect(()=>{const active=categories.find(g=>g.items.some(i=>location.pathname===i.to||location.pathname.startsWith(i.to+"/")));if(active)setExpanded(active.title)},[location.pathname]);
  const filteredCategories=useMemo(()=>categories.map(group=>({...group,items:group.items.filter(item=>(item.label+" "+item.description+" "+item.to).toLowerCase().includes(search.trim().toLowerCase()))})).filter(group=>group.items.length>0),[categories,search]);
  const toggleCategory=(title:string)=>setExpanded(prev=>prev===title?null:title);
  const renderSidebar=(mobile=false)=><aside className={"caleris-sidebar"+(collapsed&&!mobile?" is-collapsed":"")+(mobile?" is-mobile-drawer":"")}>
