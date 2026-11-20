@@ -2,7 +2,7 @@ import {
   ATTRIBUTE_SCHEMA_VERSION,
   RACE_ATTRIBUTE_DEFINITIONS
 } from "./attributes";
-import type { RaceEntrantSnapshot, CircuitSegmentSnapshot } from "./contracts";
+import type { JsonValue, RaceEntrantSnapshot, CircuitSegmentSnapshot } from "./contracts";
 import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation";
 
 export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 1;
@@ -109,9 +109,14 @@ export function validatePhysicsCalibrationProfile(
     errors.push("Baseline attribute value must be between 50 and 100");
   }
 
+  const attributeWeights = isRecord(profile.attributes) ? profile.attributes : {};
+  const hqWeights = isRecord(profile.hqEffects) ? profile.hqEffects : {};
+  if (!isRecord(profile.attributes)) errors.push("attributes must be an object");
+  if (!isRecord(profile.hqEffects)) errors.push("hqEffects must be an object");
+
   const expectedIds = new Set(RACE_ATTRIBUTE_DEFINITIONS.map((definition) => definition.id));
   for (const definition of RACE_ATTRIBUTE_DEFINITIONS) {
-    const weights = profile.attributes[definition.id];
+    const weights = attributeWeights[definition.id] as AttributeInfluenceWeights | undefined;
     if (!weights) {
       errors.push(`Missing calibration for attribute ${definition.id}`);
       continue;
@@ -126,10 +131,10 @@ export function validatePhysicsCalibrationProfile(
     }
   }
 
-  for (const id of Object.keys(profile.attributes)) {
+  for (const id of Object.keys(attributeWeights)) {
     if (!expectedIds.has(id)) errors.push(`Unknown calibration attribute ID: ${id}`);
   }
-  for (const [key, weights] of Object.entries(profile.hqEffects)) {
+  for (const [key, weights] of Object.entries(hqWeights)) {
     if (!key.trim()) {
       errors.push("HQ effect keys must not be empty");
       continue;
@@ -140,15 +145,10 @@ export function validatePhysicsCalibrationProfile(
   return { valid: errors.length === 0, errors };
 }
 
-export function evaluateAttributeInfluences(
+function evaluateAttributeInfluencesUnchecked(
   entrant: RaceEntrantSnapshot,
   profile: RacePhysicsCalibrationProfile
 ): AttributeInfluenceTotals {
-  const validation = validatePhysicsCalibrationProfile(profile);
-  if (!validation.valid) {
-    throw new Error(`Invalid physics calibration profile: ${validation.errors.join("; ")}`);
-  }
-
   const totals = Object.fromEntries(
     ATTRIBUTE_INFLUENCE_CHANNELS.map((channel) => [channel, 0])
   ) as Record<AttributeInfluenceChannel, number>;
@@ -175,12 +175,23 @@ export function evaluateAttributeInfluences(
   return totals;
 }
 
-export function calculateSegmentPaceAdjustmentMs(
+export function evaluateAttributeInfluences(
+  entrant: RaceEntrantSnapshot,
+  profile: RacePhysicsCalibrationProfile
+): AttributeInfluenceTotals {
+  const validation = validatePhysicsCalibrationProfile(profile);
+  if (!validation.valid) {
+    throw new Error(`Invalid physics calibration profile: ${validation.errors.join("; ")}`);
+  }
+  return evaluateAttributeInfluencesUnchecked(entrant, profile);
+}
+
+function calculateSegmentPaceAdjustmentUnchecked(
   entrant: RaceEntrantSnapshot,
   segment: CircuitSegmentSnapshot,
   profile: RacePhysicsCalibrationProfile
 ): number {
-  const totals = evaluateAttributeInfluences(entrant, profile);
+  const totals = evaluateAttributeInfluencesUnchecked(entrant, profile);
   return (
     totals.segment_pace_ms_per_point +
     totals.low_speed_pace_ms_per_point * segment.lowSpeedDemand +
@@ -201,12 +212,20 @@ export function createCalibratedPerformanceModel(
   if (!validation.valid) {
     throw new Error(`Invalid physics calibration profile: ${validation.errors.join("; ")}`);
   }
-  const snapshot = JSON.parse(JSON.stringify(profile)) as RacePhysicsCalibrationProfile;
+  const snapshot = deepFreeze(JSON.parse(JSON.stringify(profile)) as RacePhysicsCalibrationProfile);
   return Object.freeze({
     id: `calibration.${profile.id}`,
     version: profile.version,
-    snapshot,
+    snapshot: snapshot as unknown as JsonValue,
     calculateAdjustmentMs: (context: SegmentPerformanceContext) =>
-      calculateSegmentPaceAdjustmentMs(context.entrant, context.segment, snapshot)
+      calculateSegmentPaceAdjustmentUnchecked(context.entrant, context.segment, snapshot)
   });
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.values(value as Record<string, unknown>).forEach((child) => deepFreeze(child));
+    Object.freeze(value);
+  }
+  return value;
 }
