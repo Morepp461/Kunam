@@ -17,6 +17,15 @@ const verifiedTrackLimitGeometry = {
   ]
 };
 
+const verifiedTrackLimitSpecifications = {
+  direction: "clockwise" as const,
+  surface: "asphalt" as const,
+  elevationDataStatus: "measured" as const,
+  pitLane: { enabled: false, lengthMeters: null, speedLimitKph: null, entryDistanceMeters: null, exitDistanceMeters: null },
+  drsZones: [],
+  trackLimits: { method: "polygon" as const, sourceNote: "Measured source boundary" }
+};
+
 const verifiedSource = {
   provider: "Open data provider",
   sourceUrl: "https://data.example.org/circuit.geojson",
@@ -48,7 +57,8 @@ describe("Circuit official-release provenance gate", () => {
   });
 
   it("blocks real circuits with missing or incomplete source provenance", () => {
-    const missing = validateCircuitReleaseReadiness({ ...syntheticCircuit, kind: "real", trackLimitGeometry: verifiedTrackLimitGeometry });
+    const missing = validateCircuitReleaseReadiness({ ...syntheticCircuit, kind: "real", trackLimitGeometry: verifiedTrackLimitGeometry,
+      specifications: verifiedTrackLimitSpecifications });
     expect(missing.ready).toBe(false);
     expect(missing.errors).toContain("Real circuits require source provenance");
 
@@ -56,6 +66,7 @@ describe("Circuit official-release provenance gate", () => {
       ...syntheticCircuit,
       kind: "real",
       trackLimitGeometry: verifiedTrackLimitGeometry,
+      specifications: verifiedTrackLimitSpecifications,
       sourceProvenance: { ...verifiedSource, sourceUrl: "http://data.example.org/track.geojson", geometryHash: "bad" }
     });
     expect(incomplete.ready).toBe(false);
@@ -68,6 +79,7 @@ describe("Circuit official-release provenance gate", () => {
       ...syntheticCircuit,
       kind: "real",
       trackLimitGeometry: verifiedTrackLimitGeometry,
+      specifications: verifiedTrackLimitSpecifications,
       sourceProvenance: verifiedSource
     });
     expect(ready.ready).toBe(true);
@@ -77,6 +89,7 @@ describe("Circuit official-release provenance gate", () => {
       ...syntheticCircuit,
       kind: "real",
       trackLimitGeometry: verifiedTrackLimitGeometry,
+      specifications: verifiedTrackLimitSpecifications,
       sourceProvenance: { ...verifiedSource, fidelityStatus: "approximate" }
     });
     expect(approximate.ready).toBe(false);
