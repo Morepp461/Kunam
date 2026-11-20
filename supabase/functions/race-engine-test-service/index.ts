@@ -164,6 +164,46 @@ Deno.serve(async (req: Request) => {
       });
       if (authError) throw authError;
       if (authorized !== true) return json({ error: "Worker authentication failed." }, 401, origin);
+
+      if (action === "background_seed_test") {
+        const ownerId = String(body.ownerId ?? "");
+        if (!/^[0-9a-f-]{36}$/i.test(ownerId)) throw new Error("Owner ID tidak valid.");
+        const id = crypto.randomUUID();
+        const fixture = createSyntheticRaceFixture({
+          seed: 20261120,
+          driverCount: 4,
+          teamCount: 2,
+          totalLaps: 1
+        });
+        const snapshot: RaceStartSnapshot = { ...fixture, raceId: id };
+        const models = createRaceEngineTestModels(snapshot);
+        const simulation = new RaceSimulation(snapshot, models);
+        const checkpoint = simulation.createCheckpoint();
+        const { error: sessionError } = await service.from("race_engine_test_sessions").insert({
+          id,
+          created_by: ownerId,
+          status: "queued",
+          seed: snapshot.seed,
+          driver_count: 4,
+          team_count: 2,
+          total_laps: 1,
+          engine_version: RACE_ENGINE_VERSION,
+          snapshot,
+          checkpoint,
+          tick: 0,
+          total_ticks: snapshot.circuit.totalLaps * snapshot.circuit.segments.length
+        });
+        if (sessionError) throw sessionError;
+        const { error: checkpointError } = await service.from("race_engine_test_checkpoints").insert({
+          session_id: id,
+          tick: 0,
+          engine_version: RACE_ENGINE_VERSION,
+          checkpoint
+        });
+        if (checkpointError) throw checkpointError;
+        return json({ ok: true, sessionId: id, syntheticOnly: true }, 201, origin);
+      }
+
       return json({ ok: true, ...(await processBackgroundBatch()) }, 200, origin);
     }
 
