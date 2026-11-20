@@ -376,7 +376,7 @@ export default function LiveRace() {
           {recentEvents.map((event) => <article key={event.sequence}>
             <span className="event-lap">LAP {event.lap_number}</span>
             <span className={"event-marker " + (event.event_type === "incident" ? "gold" : event.event_type === "race_control" ? "blue" : "green")}/>
-            <div><strong>{labelEvent(event.event_type)}</strong><small>{event.driver_id ?? "Race control"} · {event.payload.segmentId ?? "—"}{event.payload.raceControlFlag ? ` · ${String(event.payload.raceControlFlag).toUpperCase()}` : ""}</small></div>
+            <div><strong>{labelEvent(event.event_type)}</strong><small>{event.driver_id ?? "Race control"} · {String(event.payload.segmentId ?? "—")}{event.payload.raceControlFlag ? ` · ${String(event.payload.raceControlFlag).toUpperCase()}` : ""}</small></div>
             <time>{formatTime(event.simulation_time_ms)}</time>
           </article>)}
           {!recentEvents.length && <p className="race-engine-empty">Belum ada event. Jalankan beberapa segmen untuk menghasilkan data.</p>}
