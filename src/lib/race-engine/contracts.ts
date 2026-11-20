@@ -7,8 +7,10 @@ import type {
   DriverAttributeValues
 } from "./attributes";
 
-export const RACE_ENGINE_VERSION = "0.2.0";
+export const RACE_ENGINE_VERSION = "0.3.0";
 export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 1;
+
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export interface CircuitSegmentSnapshot {
   readonly id: string;
