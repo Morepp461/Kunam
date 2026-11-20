@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
-import type { MouseEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
+import { Maximize2 } from "lucide-react";
 import { buildCircuitMakerDefinition, circuitLayoutFromGeoJsonDraft } from "./lib/race-engine/circuit-maker";
 import type { CircuitMakerSegmentInput } from "./lib/race-engine/circuit-maker";
 import type { CircuitGeometryDefinition, CircuitPathPoint, CircuitCornerType, CircuitGeometrySpecifications, CircuitSourceProvenance } from "./lib/race-engine/circuit-geometry";
@@ -52,6 +53,22 @@ const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
 }));
 const toPoints = (points: readonly { readonly x: number; readonly y: number }[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
 const numberValue = (value: string) => value.trim() === "" ? Number.NaN : Number(value);
+const smoothStroke = (input: readonly {x:number;y:number}[]) => {
+  if(input.length<3)return input.map((point,index)=>({id:"point-"+(index+1),...point}));
+  const output:CircuitPathPoint[]=[];
+  const get=(index:number)=>input[Math.max(0,Math.min(input.length-1,index))];
+  for(let i=0;i<input.length-1;i++){
+    const p0=get(i-1),p1=get(i),p2=get(i+1),p3=get(i+2);
+    for(let step=0;step<6;step++){
+      const t=step/6,t2=t*t,t3=t2*t;
+      const x=.5*(2*p1.x+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3);
+      const y=.5*(2*p1.y+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3);
+      output.push({id:"point-"+(output.length+1),x:Math.max(0,Math.min(1,x)),y:Math.max(0,Math.min(1,y))});
+    }
+  }
+  output.push({id:"point-"+(output.length+1),...input[input.length-1]});
+  return output;
+};
 
 export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, value, importedGeoJsonDraft = null, sourceProvenance = null, onChange }: Props) {
   const [points, setPoints] = useState<CircuitPathPoint[]>(() => value?.layout.map((point) => ({...point})) ?? []);
