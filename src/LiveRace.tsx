@@ -5,6 +5,7 @@ import {
   Trophy, Waves, Wrench
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { createRaceEngineTestAuthHeaders } from "./lib/race-engine/api-auth";
 import "./live-race.css";
 
 const TEST_API_URL = "https://vxwvhyyvoipjwucbrvlu.supabase.co/functions/v1/race-engine-test-service";
@@ -120,9 +121,7 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "apikey": TEST_API_KEY,
-      "Authorization": `Bearer ${TEST_API_KEY}`,
-      "x-caleris-production-authorization": `Bearer ${data.session.access_token}`
+      ...createRaceEngineTestAuthHeaders(TEST_API_KEY, data.session.access_token)
     },
     body: JSON.stringify({ action, ...payload })
   });
