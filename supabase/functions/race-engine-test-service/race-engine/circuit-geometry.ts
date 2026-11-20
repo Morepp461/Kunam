@@ -108,7 +108,9 @@ export function validateCircuitReleaseReadiness(
   } else if (circuit.kind === "synthetic") {
     errors.push("Synthetic circuits are test-only and cannot be used for official races");
   } else if (circuit.kind === "real") {
-    if (!circuit.trackLimitGeometry) errors.push("Real circuits require a measured track-limit boundary polygon");
+    if (!circuit.trackLimitGeometry || circuit.specifications?.trackLimits.method !== "polygon") {
+      errors.push("Real circuits require a measured track-limit boundary polygon and polygon method");
+    }
     const source = circuit.sourceProvenance;
     if (!source) {
       errors.push("Real circuits require source provenance");
