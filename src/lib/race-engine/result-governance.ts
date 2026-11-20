@@ -1,6 +1,6 @@
 export type ResultGovernanceActorRole = "fia" | "admin" | "driver" | "team_owner" | "spectator" | "anonymous";
-export type OfficialResultStatus = "provisional" | "ratified" | "superseded" | "cancelled";
-export type ResultGovernanceAction = "ratify" | "correct" | "cancel";
+export type OfficialResultStatus = "provisional" | "ratified" | "superseded";
+export type ResultGovernanceAction = "ratify" | "correct";
 
 export interface OfficialRaceResult {
   readonly id: string;
@@ -22,7 +22,12 @@ export interface ResultGovernanceRequest {
 export interface ResultGovernanceDecision {
   readonly accepted: boolean;
   readonly resultStatus: OfficialResultStatus;
-  readonly supersedingResult: OfficialRaceResult | null;
+  readonly supersedingResult: {
+    readonly id: string;
+    readonly raceId: string;
+    readonly version: number;
+    readonly supersedesResultId: string;
+  } | null;
   readonly reason: string | null;
   readonly audit: {
     readonly action: ResultGovernanceAction;
@@ -35,12 +40,12 @@ export interface ResultGovernanceDecision {
   };
 }
 
-/** Governance only: it never writes standings, wallet balances, or economy ledger entries. */
+/** Result governance never writes standings, wallet balances, or economy ledger entries. */
 export function authorizeResultGovernance(request: ResultGovernanceRequest): ResultGovernanceDecision {
   const { actor, currentResult } = request;
   let accepted = false;
   let resultStatus = currentResult.status;
-  let supersedingResult: OfficialRaceResult | null = null;
+  let supersedingResult: ResultGovernanceDecision["supersedingResult"] = null;
   let reason: string | null = null;
   let newResultId: string | null = null;
 
@@ -57,14 +62,6 @@ export function authorizeResultGovernance(request: ResultGovernanceRequest): Res
       accepted = true;
       resultStatus = "ratified";
     }
-  } else if (request.action === "cancel") {
-    if (actor.role !== "fia" && actor.role !== "admin") reason = "Only FIA or Admin may cancel a race result";
-    else if (currentResult.status === "cancelled") reason = "Race result is already cancelled";
-    else if (!request.reason?.trim()) reason = "Result cancellation requires an auditable reason";
-    else {
-      accepted = true;
-      resultStatus = "cancelled";
-    }
   } else if (request.action === "correct") {
     if (actor.role !== "admin") reason = "Only Admin may correct an official race result";
     else if (currentResult.status !== "ratified") reason = "Only a ratified result may be corrected";
@@ -80,12 +77,9 @@ export function authorizeResultGovernance(request: ResultGovernanceRequest): Res
         id: request.replacementResultId,
         raceId: currentResult.raceId,
         version: currentResult.version + 1,
-        status: "ratified",
         supersedesResultId: currentResult.id
       });
     }
-  } else {
-    reason = "Unsupported result governance action";
   }
 
   return Object.freeze({
@@ -101,6 +95,56 @@ export function authorizeResultGovernance(request: ResultGovernanceRequest): Res
       previousResultId: currentResult.id,
       newResultId,
       reason: request.reason?.trim() ?? null
+    })
+  });
+}
+
+export interface RaceCancellationRequest {
+  readonly raceId: string;
+  readonly raceStatus: "queued" | "running" | "suspended" | "completed" | "cancelled";
+  readonly actor: { readonly id: string; readonly role: ResultGovernanceActorRole };
+  readonly occurredAt: string;
+  readonly reason: string;
+}
+
+export interface RaceCancellationDecision {
+  readonly accepted: boolean;
+  readonly reason: string | null;
+  readonly audit: {
+    readonly raceId: string;
+    readonly actorId: string;
+    readonly actorRole: ResultGovernanceActorRole;
+    readonly occurredAt: string;
+    readonly reason: string;
+  };
+}
+
+/** Race cancellation is separate from result correction and is available to FIA or Admin. */
+export function authorizeRaceCancellation(request: RaceCancellationRequest): RaceCancellationDecision {
+  let accepted = false;
+  let reason: string | null = null;
+  if (!request.raceId.trim() || !request.actor.id.trim()) {
+    reason = "Race and actor identities are required";
+  } else if (!Number.isFinite(Date.parse(request.occurredAt))) {
+    reason = "Race cancellation timestamp is invalid";
+  } else if (request.actor.role !== "fia" && request.actor.role !== "admin") {
+    reason = "Only FIA or Admin may cancel a race";
+  } else if (request.raceStatus === "cancelled") {
+    reason = "Race is already cancelled";
+  } else if (!request.reason.trim()) {
+    reason = "Race cancellation requires an auditable reason";
+  } else {
+    accepted = true;
+  }
+  return Object.freeze({
+    accepted,
+    reason,
+    audit: Object.freeze({
+      raceId: request.raceId,
+      actorId: request.actor.id,
+      actorRole: request.actor.role,
+      occurredAt: request.occurredAt,
+      reason: request.reason.trim()
     })
   });
 }
