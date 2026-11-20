@@ -72,3 +72,16 @@ The race-start entrant snapshot now optionally carries a versioned car setup con
 A calibration profile may define explicit per-setting bounds, baselines, and influence coefficients. The engine rejects a setup if its calibration is absent, incomplete, or out of range. Configured setup influences feed the segment pace, low/high-speed, traction, braking-demand, and tyre-degradation channels. Circuit segments may carry an optional normalized braking-demand value; legacy circuits remain compatible and default to no braking-specific setup effect.
 
 No physical ranges or coefficients are embedded as production defaults. Test coverage uses synthetic calibration values only. A reviewed production calibration profile and setup validation against approved team/car constraints remain release gates.
+
+
+## Team HQ effect snapshots and release blockers
+
+Race-start entrant snapshots can now carry a versioned HQ facility snapshot: division, capture time, each facility level, the configured maximum level, the exact configuration revision timestamp, and the effects applied. Race-relevant effects are resolved only from `effects_by_level`; the engine does not infer bonuses from a facility name or level. Effects must have explicit calibration mappings before a simulation can use them.
+
+The current Testing database configuration was inspected on 2026-11-20:
+- Engineering Department supplies `reliability_bonus`.
+- R&D Center supplies `aero_power_bonus`.
+- Simulator Facility supplies `race_pace_bonus` and `qualifying_pace_bonus`; only the race effect is used by the race simulation.
+- Pit Crew Training Center currently has empty `effects_by_level` entries at every configured level. A team with this facility above level 0 is reported as unresolved and cannot pass the HQ snapshot validation gate.
+
+Configured facility maxima currently read as level 8 for Premio and level 6 for Zwei. These are read from the database configuration and are not hardcoded as the authority. The Pit Crew Training Center race effect and its calibrated influence remain an explicit release blocker; no effect has been invented.
