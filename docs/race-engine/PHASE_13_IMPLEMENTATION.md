@@ -6,6 +6,7 @@
 - Projection rows expose position, driver/team, completed lap, elapsed time, pit count, current segment, distance completed, and tyre state where present.
 - Projection carries simulation clock, weather summary, active race-control flags, and the latest 20 event references.
 - The Edge test service writes the projection after a successful checkpoint commit and seeds tick-zero projection on session creation.
+- Segment-completion events are converted into derived average-speed samples using circuit segment distance and the recorded movement duration; latest samples are shown in LIVE RACE.
 - Admin detail reads now include the persisted projection; LIVE RACE displays the segment alongside the timing tower.
 - Projection persistence is an upsert keyed by session, so retrying a committed checkpoint cannot create duplicate projection records.
 - Background dispatch now orders active sessions by oldest update first. This prevents the same three long-running sessions from permanently occupying the first batch and starving later sessions.
