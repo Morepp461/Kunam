@@ -8,6 +8,8 @@ import type {
   CarTeamAttributeValues,
   DriverAttributeValues
 } from "./attributes";
+import type { CarSetupSnapshot } from "./setup";
+import { validateCarSetupSnapshot } from "./setup";
 
 export const RACE_ENGINE_VERSION = "0.5.0";
 export const RACE_START_SNAPSHOT_SCHEMA_VERSION = 2;
@@ -37,6 +39,7 @@ export interface RaceEntrantSnapshot {
   readonly carTeamAttributes: CarTeamAttributeValues;
   readonly hqEffects: Readonly<Record<string, number>>;
   readonly startingGridPosition?: number;
+  readonly carSetup?: CarSetupSnapshot;
 }
 
 export interface RaceStartSnapshot {
@@ -97,6 +100,7 @@ export function validateRaceStartSnapshot(
     if (!entrant.teamNameSnapshot.trim()) errors.push(`Entrant ${entrant.driverId} must have a team name snapshot`);
     errors.push(...validateAttributeValues("driver", entrant.driverAttributes).errors.map((error) => `${entrant.driverId}: ${error}`));
     errors.push(...validateAttributeValues("car_team", entrant.carTeamAttributes).errors.map((error) => `${entrant.driverId}: ${error}`));
+    if (entrant.carSetup) errors.push(...validateCarSetupSnapshot(entrant.carSetup).errors.map((error) => `${entrant.driverId}: ${error}`));
     for (const [key, effect] of Object.entries(entrant.hqEffects)) {
       if (!Number.isFinite(effect)) errors.push(`${entrant.driverId}: HQ effect ${key} must be finite`);
     }
