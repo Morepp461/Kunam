@@ -51,8 +51,10 @@ type RaceTimingProjection = {
   tick: number;
   simulationTimeMs: number;
   timingRows: Array<{ driverId: string; segmentId: string | null; segmentIndex: number | null; segmentDistanceCompletedMeters: number }>;
+  circuitLayout: Array<{ id: string; x: number; y: number }>;
   segmentTelemetry: Array<{
     sequence: number; driverId: string; racePosition: number | null; lapNumber: number;
+    trackPosition: { x: number; y: number };
     sectorNumber: number | null; segmentId: string; simulationTimeMs: number;
     segmentDurationMs: number; distanceMeters: number; averageSpeedKph: number; trackPositionMeters: number;
   }>;
@@ -608,6 +610,17 @@ export default function LiveRace() {
             {!tyreStates.length && <p className="race-engine-empty">Tyre state akan muncul setelah checkpoint dimuat.</p>}
           </div>
         </section>
+
+          <section className="race-engine-result-section">
+            <div className="live-race-subheading"><h3><MapPin size={15}/> Circuit position map</h3><span>APPROX. SEGMENT POSITION</span></div>
+            {detail?.projection?.circuitLayout?.length ? <svg viewBox="0 0 1000 1000" role="img" aria-label="Approximate driver positions on the circuit layout" style={{ width: "100%", maxHeight: 340 }}>
+              <polyline points={detail.projection.circuitLayout.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" ")} fill="none" stroke="currentColor" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"/>
+              {detail.projection.timingRows.map((row) => <g key={row.driverId}>
+                <circle cx={row.trackPosition.x * 1000} cy={row.trackPosition.y * 1000} r="19" fill="currentColor" stroke="var(--background)" strokeWidth="5"/>
+                <text x={row.trackPosition.x * 1000} y={row.trackPosition.y * 1000} textAnchor="middle" dominantBaseline="central" fill="var(--background)" fontSize="20" fontWeight="700">{row.position ?? "X"}</text>
+              </g>)}
+            </svg> : <p className="race-engine-empty">Circuit map tersedia setelah geometry dimuat ke race snapshot.</p>}
+          </section>
 
         <section className="race-engine-result-section">
           <div className="live-race-subheading"><h3><Activity size={15}/> Segment telemetry</h3><span>DERIVED FROM SIMULATION</span></div>
