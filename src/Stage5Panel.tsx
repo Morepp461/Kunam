@@ -132,7 +132,8 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       isDriverCharacterPage ? supabase.from("caleris_fan_populations").select("member_id,population").eq("entity_kind", "driver") : Promise.resolve(EMPTY_ROWS),
       needsDriverReputation ? supabase.from("caleris_driver_reputation").select("member_id,score,band") : Promise.resolve(EMPTY_ROWS),
       needsSponsorshipData ? supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,target_team_id,season_id,contract_amount,annual_contract_amount,duration_seasons,status,started_at,ended_at,renewal_status").eq("target_kind", "team").eq("status", "active").order("started_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
-      needsSponsorshipData ? supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name") : Promise.resolve(EMPTY_ROWS)
+      needsSponsorshipData ? supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name") : Promise.resolve(EMPTY_ROWS),
+       isCompetitionSchedulePage ? supabase.from("caleris_circuit_pool").select("*").order("name") : Promise.resolve(EMPTY_ROWS)
     ]);
     const errors = [
       p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ,
