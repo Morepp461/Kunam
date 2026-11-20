@@ -3,8 +3,9 @@ import {
   RACE_REPLAY_RETENTION_HOURS,
   resolveRaceRetention
 } from "../../src/lib/race-engine/retention";
+import type { RaceRetentionInput } from "../../src/lib/race-engine/retention";
 
-function input(overrides: Record<string, unknown> = {}) {
+function input(overrides: Partial<RaceRetentionInput> = {}): RaceRetentionInput {
   return {
     raceCompletedAt: "2026-11-20T12:00:00.000Z",
     now: "2026-11-21T12:00:00.000Z",
