@@ -534,7 +534,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
           {(data.periods||[]).map((period: Row)=>{
             const visibleDivisions=(data.activeDivisions||[]).filter((division: Row)=>!divisionFilter||String(division.division_key||"").toLowerCase()===divisionFilter);
             const divisionIds=new Set<string>(visibleDivisions.map((division: Row)=>division.id));
-            const periodRounds=getScheduleRoundsForPeriod((data.rounds||[]) as Row[],(data.periodMappings||[]) as Row[],period.id,divisionIds);
+            const periodRounds=getScheduleRoundsForPeriod((data.rounds||[]) as any[],(data.periodMappings||[]) as any[],period.id,divisionIds);
             return <section className="schedule-circuit-period" key={period.id}>
               <header className="schedule-circuit-period-head">
                 <div><strong>{period.title}</strong><small>{dateLabel(period.starts_on)} – {dateLabel(period.ends_on)}</small></div>
@@ -542,7 +542,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
               </header>
               {periodRounds.length?<div className="schedule-circuit-grid">
                 {periodRounds.map((round: Row)=>{
-                  const circuit=findCircuitForRound((data.circuits||[]) as Row[],round);
+                  const circuit=findCircuitForRound((data.circuits||[]) as any[],round as any);
                   const division=visibleDivisions.find((item: Row)=>item.id===round.season_division_id);
                   return <button type="button" className="circuit-reveal-card schedule-circuit-card" key={round.id} onClick={()=>setSelectedSchedule({round,circuit})} aria-label={`Buka preview ${round.title||"Round "+round.round_number}`}>
                     <span className="circuit-card-art">
