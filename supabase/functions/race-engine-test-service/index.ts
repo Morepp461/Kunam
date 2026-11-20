@@ -188,9 +188,10 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "replay") {
-      const offset = Math.max(0, Math.floor(Number(body.offset ?? 0)));
-      const limit = Math.min(500, Math.max(1, Math.floor(Number(body.limit ?? 250))));
-      if (!Number.isSafeInteger(offset)) throw new Error("Replay offset tidak valid.");
+      const offset = Number(body.offset ?? 0);
+      const limit = Number(body.limit ?? 250);
+      if (!Number.isSafeInteger(offset) || offset < 0) throw new Error("Replay offset tidak valid.");
+      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 500) throw new Error("Replay page size harus 1 sampai 500.");
       const { data: session, error: sessionError } = await service
         .from("race_engine_test_sessions")
         .select("id")
