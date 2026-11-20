@@ -4,6 +4,26 @@ import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-
 import { createRaceEngineTestModels } from "../../src/lib/race-engine/test-profiles";
 
 describe("Race Engine Lab synthetic service profiles", () => {
+  it("applies configured safety-car pace effects to the next deterministic simulation tick", () => {
+    const snapshot = createSyntheticRaceFixture({
+      seed: 61122,
+      driverCount: 4,
+      teamCount: 2,
+      totalLaps: 3
+    });
+    const models = createRaceEngineTestModels(snapshot);
+    const baseline = new RaceSimulation(snapshot, models);
+    const controlled = new RaceSimulation(snapshot, models);
+
+    controlled.applyExternalRaceControlFlag("safety_car", "rc-safety-car", 1_000_000);
+    baseline.advanceOneSegment();
+    controlled.advanceOneSegment();
+
+    const baselineElapsed = baseline.entrantStates.reduce((sum, entry) => sum + entry.elapsedMs, 0);
+    const controlledElapsed = controlled.entrantStates.reduce((sum, entry) => sum + entry.elapsedMs, 0);
+    expect(controlledElapsed).toBeGreaterThan(baselineElapsed);
+  });
+
   it("applies and checkpoints externally commanded yellow flags without deleting incident flags", () => {
     const snapshot = createSyntheticRaceFixture({
       seed: 61121,
