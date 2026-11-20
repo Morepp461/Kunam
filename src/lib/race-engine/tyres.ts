@@ -211,7 +211,9 @@ export function createInitialTyreState(
   if (!(TYRE_COMPOUNDS as readonly string[]).includes(compound)) {
     throw new RangeError("Unsupported tyre compound");
   }
-  assertUnitInterval("trackWetness", trackWetness, []);
+  if (!isFiniteNumber(trackWetness) || trackWetness < 0 || trackWetness > 1) {
+    throw new RangeError("trackWetness must be between 0 and 1");
+  }
   if (!isFiniteNumber(surfaceTempC) || !isFiniteNumber(carcassTempC)) {
     throw new RangeError("Tyre temperatures must be finite");
   }
@@ -241,7 +243,9 @@ export function advanceTyreState(
   }
   if (
     !isFiniteNumber(state.wearPercent) || state.wearPercent < 0 || state.wearPercent > 100 ||
-    !isFiniteNumber(state.distanceDrivenMeters) || state.distanceDrivenMeters < 0
+    !isFiniteNumber(state.distanceDrivenMeters) || state.distanceDrivenMeters < 0 ||
+    !isFiniteNumber(state.surfaceTempC) || !isFiniteNumber(state.carcassTempC) ||
+    !isFiniteNumber(state.gripPercent) || state.gripPercent < 0 || state.gripPercent > 100
   ) {
     throw new RangeError("Tyre state wear and distance are invalid");
   }
