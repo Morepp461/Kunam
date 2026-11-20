@@ -640,8 +640,8 @@ export class RaceSimulation {
     simulation.tickValue = checkpoint.tick;
 
     if (simulation.statusValue === "completed" && (
-      checkpoint.tick !== maxTicks ||
-      simulation.mutableEntrants.some((entrant) => !entrant.finished && !entrant.retired)
+      simulation.mutableEntrants.some((entrant) => !entrant.finished && !entrant.retired) ||
+      (simulation.mutableEntrants.every((entrant) => entrant.finished) && checkpoint.tick !== maxTicks)
     )) {
       throw new Error("Completed checkpoint contains an unfinished or incomplete race");
     }
