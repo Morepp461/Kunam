@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCircuitMakerDefinition } from "../../src/lib/race-engine/circuit-maker";
+import { validateCircuitReleaseReadiness } from "../../src/lib/race-engine/circuit-geometry";
 
 const layout = [
   { id: "p1", x: 0.1, y: 0.1, elevationMeters: 0 },
