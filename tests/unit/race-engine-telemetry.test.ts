@@ -29,6 +29,7 @@ function sample(): RaceTelemetrySample {
     ersDeploymentPercent: 72,
     drsActive: true,
     racePosition: 3,
+    trackCoordinates: { x: 0.42, y: 0.61 },
     trackPositionMeters: 1842.5
   };
 }
