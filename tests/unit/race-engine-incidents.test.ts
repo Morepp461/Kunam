@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createIncidentModel,
   evaluateSegmentIncident,
+  validateRaceControlProfile,
   resolveRaceControl
 } from "../../src/lib/race-engine/incidents";
 import type { IncidentCalibrationProfile, IncidentType, RaceControlProfile } from "../../src/lib/race-engine/incidents";
@@ -68,6 +69,32 @@ describe("Deterministic incident and race control models", () => {
     expect(resolveRaceControl(incident, control)).toEqual({
       flag: "safety_car", durationMs: 40_000, incidentId: incident.id
     });
+  });
+
+  it("enforces higher Reliability as a protective factor for mechanical and engine failures", () => {
+    const profile = makeProfile("mechanical_failure");
+    const invalid = {
+      ...profile,
+      incidents: {
+        ...profile.incidents,
+        mechanical_failure: {
+          ...profile.incidents.mechanical_failure,
+          attributeRatePerPoint: { "car_team.reliability": 0.01 }
+        }
+      }
+    };
+    expect(() => createIncidentModel(invalid)).toThrow(/Higher Reliability/);
+  });
+
+  it("validates optional race-control pace multipliers without inventing defaults", () => {
+    expect(validateRaceControlProfile({
+      ...control,
+      paceTimeMultiplierByFlag: { red_flag: 1.4 }
+    }).valid).toBe(true);
+    expect(validateRaceControlProfile({
+      ...control,
+      paceTimeMultiplierByFlag: { red_flag: 0.9 }
+    }).valid).toBe(false);
   });
 
   it("rejects invalid calibration and enforces higher-is-riskier Mistake Rate", () => {
