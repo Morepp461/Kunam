@@ -65,6 +65,7 @@ export function validateRaceStartSnapshot(
   if (value.attributeSchemaVersion !== ATTRIBUTE_SCHEMA_VERSION) {
     errors.push("Unsupported attribute schema version");
   }
+  if (!value.engineVersion.trim()) errors.push("engineVersion is required");
   if (!value.raceId.trim()) errors.push("raceId is required");
   if (!Number.isInteger(value.seed) || value.seed < 0 || value.seed > 0xffff_ffff) {
     errors.push("seed must be an unsigned 32-bit integer");
@@ -113,6 +114,8 @@ export function validateRaceStartSnapshot(
     }
     driverIds.add(entrant.driverId);
     if (!entrant.teamId.trim()) errors.push(`Entrant ${entrant.driverId} must have a teamId`);
+    if (!entrant.driverNameSnapshot.trim()) errors.push(`Entrant ${entrant.driverId} must have a driver name snapshot`);
+    if (!entrant.teamNameSnapshot.trim()) errors.push(`Entrant ${entrant.driverId} must have a team name snapshot`);
     errors.push(...validateAttributeValues("driver", entrant.driverAttributes).errors.map((error) => `${entrant.driverId}: ${error}`));
     errors.push(...validateAttributeValues("car_team", entrant.carTeamAttributes).errors.map((error) => `${entrant.driverId}: ${error}`));
     for (const [key, effect] of Object.entries(entrant.hqEffects)) {
@@ -121,4 +124,38 @@ export function validateRaceStartSnapshot(
   }
 
   return { valid: errors.length === 0, errors };
+}
+
+function cloneSnapshotValue<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => cloneSnapshotValue(item)) as unknown as T;
+  }
+  if (value !== null && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .map(([key, child]) => [key, cloneSnapshotValue(child)]);
+    return Object.fromEntries(entries) as T;
+  }
+  return value;
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.values(value as Record<string, unknown>).forEach((child) => deepFreeze(child));
+    Object.freeze(value);
+  }
+  return value;
+}
+
+/**
+ * Clones and deeply freezes the race-start inputs before the simulation begins.
+ * Invalid snapshots fail closed rather than allowing partial race initialization.
+ */
+export function createImmutableRaceStartSnapshot(
+  value: RaceStartSnapshot
+): Readonly<RaceStartSnapshot> {
+  const validation = validateRaceStartSnapshot(value);
+  if (!validation.valid) {
+    throw new Error(`Invalid race-start snapshot: ${validation.errors.join("; ")}`);
+  }
+  return deepFreeze(cloneSnapshotValue(value));
 }
