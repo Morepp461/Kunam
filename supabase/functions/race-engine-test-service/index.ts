@@ -17,6 +17,8 @@ import {
   resolveStartingGridWithPenalties,
   validateRaceControlAuditTrail
 } from "./race-engine/race-control.ts";
+import { resolveTeamHqRaceEffects } from "./race-engine/hq.ts";
+import type { TeamHqDivision, TeamHqFacilityConfigInput } from "./race-engine/hq.ts";
 import type {
   RaceControlAuditEvent,
   RaceControlCommandContext,
@@ -367,6 +369,31 @@ Deno.serve(async (req: Request) => {
 
       const id = crypto.randomUUID();
       const fixture = createSyntheticRaceFixture({ seed, driverCount, teamCount, totalLaps });
+      const division = String(body.division ?? "premio") as TeamHqDivision;
+      if (division !== "premio" && division !== "zwei") throw new Error("Division HQ tidak valid.");
+      const hqInput = body.hqFacilityLevels === undefined ? {} : asRecord(body.hqFacilityLevels);
+      const hqFacilityKeys = ["engineering_department", "rd_center", "simulator_facility", "pit_crew_training_center"] as const;
+      const { data: hqConfigRows, error: hqConfigError } = await service
+        .from("caleris_team_hq_facility_configs")
+        .select("facility_key,is_enabled,max_level_premio,max_level_zwei,effects_by_level,updated_at")
+        .in("facility_key", [...hqFacilityKeys]);
+      if (hqConfigError) throw hqConfigError;
+      const hqConfigs: TeamHqFacilityConfigInput[] = (hqConfigRows ?? []).map((row) => ({
+        facilityKey: row.facility_key,
+        isEnabled: row.is_enabled,
+        maxLevelPremio: row.max_level_premio,
+        maxLevelZwei: row.max_level_zwei,
+        effectsByLevel: row.effects_by_level as Record<string, Record<string, number>>,
+        updatedAt: row.updated_at
+      }));
+      const hqLevels = hqFacilityKeys.map((facilityKey) => ({
+        facilityKey,
+        level: Number(hqInput[facilityKey] ?? 0)
+      }));
+      const hqResolution = resolveTeamHqRaceEffects(division, hqLevels, hqConfigs, new Date().toISOString());
+      if (hqResolution.unresolvedFacilityKeys.length > 0) {
+        throw new Error(`HQ belum siap untuk simulasi: ${hqResolution.unresolvedFacilityKeys.join(", ")} belum memiliki efek balap terkonfigurasi.`);
+      }
       const setupInput = body.carSetup === undefined ? null : asRecord(body.carSetup);
       const carSetup = setupInput ? {
         schemaVersion: 1 as const,
@@ -381,6 +408,8 @@ Deno.serve(async (req: Request) => {
         raceId: id,
         entrants: fixture.entrants.map((entrant) => ({
           ...entrant,
+          hqEffects: hqResolution.snapshot.effects,
+          hqFacilitySnapshot: hqResolution.snapshot,
           ...(carSetup ? { carSetup } : {})
         }))
       };
