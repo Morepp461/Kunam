@@ -2,30 +2,30 @@ import {
   createImmutableRaceStartSnapshot,
   RACE_ENGINE_VERSION,
   validateRaceStartSnapshot
-} from "./contracts";
+} from "./contracts.ts";
 import type {
   CircuitSegmentSnapshot,
   JsonValue,
   RaceEntrantSnapshot,
   RaceStartSnapshot
-} from "./contracts";
-import { SeededRandom } from "./random";
-import type { RandomGeneratorState } from "./random";
+} from "./contracts.ts";
+import { SeededRandom } from "./random.ts";
+import type { RandomGeneratorState } from "./random.ts";
 import {
   advanceTyreState,
   createInitialTyreState,
   createTyreSegmentInput,
   getTyreSegmentEnvironment,
   replaceTyreSet
-} from "./tyres";
-import { TYRE_COMPOUNDS } from "./tyres";
-import type { TyreSimulationModel, TyreState } from "./tyres";
-import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from "./weather";
-import type { WeatherSimulationModel, WeatherState } from "./weather";
-import { choosePitDecision } from "./pit-strategy";
-import type { PitStrategyModel } from "./pit-strategy";
-import { evaluateSegmentIncident, resolveRaceControl, validateRaceControlProfile } from "./incidents";
-import type { IncidentModel, RaceControlProfile, RaceControlFlag, IncidentType } from "./incidents";
+} from "./tyres.ts";
+import { TYRE_COMPOUNDS } from "./tyres.ts";
+import type { TyreSimulationModel, TyreState } from "./tyres.ts";
+import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from "./weather.ts";
+import type { WeatherSimulationModel, WeatherState } from "./weather.ts";
+import { choosePitDecision } from "./pit-strategy.ts";
+import type { PitStrategyModel } from "./pit-strategy.ts";
+import { evaluateSegmentIncident, resolveRaceControl, validateRaceControlProfile } from "./incidents.ts";
+import type { IncidentModel, RaceControlProfile, RaceControlFlag, IncidentType } from "./incidents.ts";
 
 export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 6;
 export const WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 4;
