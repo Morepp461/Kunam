@@ -39,6 +39,27 @@ describe("Pit strategy selector", () => {
     expect(decision.selectedCompound).toBeNull();
   });
 
+
+  it("applies calibrated Strategy Quality and Pit Stop Efficiency adjustments to candidate costs", () => {
+    const model = createPitStrategyModel(profile);
+    const baseline = choosePitDecision(model, input);
+    const calibrated = choosePitDecision(model, {
+      ...input,
+      strategyQualityAdjustmentMs: -1_000,
+      pitStopTimeAdjustmentMs: -2_000
+    });
+    expect(calibrated.selectedCompound).toBe(baseline.selectedCompound);
+    expect(calibrated.expectedTimeCostMs).toBe(baseline.expectedTimeCostMs! - 3_000);
+  });
+
+  it("rejects non-finite calibrated pit strategy adjustments", () => {
+    const model = createPitStrategyModel(profile);
+    expect(() => choosePitDecision(model, { ...input, strategyQualityAdjustmentMs: Number.NaN }))
+      .toThrow(/strategyQualityAdjustmentMs/);
+    expect(() => choosePitDecision(model, { ...input, pitStopTimeAdjustmentMs: Number.POSITIVE_INFINITY }))
+      .toThrow(/pitStopTimeAdjustmentMs/);
+  });
+
   it("rejects invalid profile and candidate inputs", () => {
     expect(() => createPitStrategyModel({ ...profile, maximumStops: -1 })).toThrow(/Invalid pit strategy profile/);
     expect(() => choosePitDecision(createPitStrategyModel(profile), {
