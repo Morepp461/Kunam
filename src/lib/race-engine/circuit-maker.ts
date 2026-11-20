@@ -7,7 +7,8 @@ import type {
   CircuitGeometryDefinition,
   CircuitGeometrySegment,
   CircuitPathPoint,
-  CircuitGeometrySpecifications
+  CircuitGeometrySpecifications,
+  CircuitSourceProvenance
 } from "./circuit-geometry";
 import type { TrackLimitPoint } from "./track-limits";
 
@@ -44,6 +45,7 @@ export interface CircuitMakerInput {
   kind: "fictional" | "real";
   specifications?: CircuitGeometrySpecifications;
   trackLimitBoundary?: readonly TrackLimitPoint[];
+  sourceProvenance?: CircuitSourceProvenance;
 }
 
 export interface CircuitMakerBuildResult {
@@ -82,6 +84,7 @@ export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMa
     targetLapTimeMs: input.targetLapTimeMs,
     trackLengthMeters: segments.reduce((sum, segment) => sum + segment.distanceMeters, 0),
     kind: input.kind,
+    ...(input.sourceProvenance ? { sourceProvenance: { ...input.sourceProvenance } } : {}),
     layout: input.layout.map((point) => ({ ...point })),
     segments,
     ...(input.trackLimitBoundary?.length ? { trackLimitGeometry: {
