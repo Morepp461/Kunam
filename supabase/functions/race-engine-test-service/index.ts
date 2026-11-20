@@ -439,7 +439,7 @@ Deno.serve(async (req: Request) => {
           countryCode: row.country_code,
           kind: row.circuit_kind,
           revision: row.geometry_revision,
-          readyForTesting: Boolean(geometry && geometryValidation?.valid),
+          readyForTesting: Boolean(releaseValidation?.ready),
           officialReady: Boolean(releaseValidation?.ready),
           validationErrors: geometryValidation?.errors ?? ["Circuit Maker geometry belum dibuat."]
         };
