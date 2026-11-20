@@ -4,6 +4,39 @@ import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-
 import { createRaceEngineTestModels } from "../../src/lib/race-engine/test-profiles";
 
 describe("Race Engine Lab synthetic service profiles", () => {
+  it("applies and checkpoints externally commanded yellow flags without deleting incident flags", () => {
+    const snapshot = createSyntheticRaceFixture({
+      seed: 61121,
+      driverCount: 4,
+      teamCount: 2,
+      totalLaps: 3
+    });
+    const models = createRaceEngineTestModels(snapshot);
+    const simulation = new RaceSimulation(snapshot, models);
+    const expiresAt = simulation.simulationClockMs + 5000;
+
+    simulation.applyExternalRaceControlFlag("full_course_yellow", "rc-command-1", expiresAt);
+    expect(simulation.activeRaceControlFlags).toContainEqual({
+      flag: "full_course_yellow",
+      incidentId: "manual:rc-command-1",
+      expiresAtSimulationTimeMs: expiresAt
+    });
+
+    const checkpoint = simulation.createCheckpoint();
+    const restored = RaceSimulation.restore(
+      checkpoint,
+      models.performanceModel,
+      models.tyreModel,
+      models.weatherModel,
+      models.pitModel,
+      models.incidentModel,
+      models.raceControlProfile
+    );
+    expect(restored.activeRaceControlFlags).toEqual(simulation.activeRaceControlFlags);
+    restored.clearExternalRaceControlFlags();
+    expect(restored.activeRaceControlFlags.some((flag) => flag.incidentId.startsWith("manual:"))).toBe(false);
+  });
+
   it("runs Phase 1/2 systems and restores an identical persisted checkpoint", () => {
     const snapshot = createSyntheticRaceFixture({
       seed: 61120,
