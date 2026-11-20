@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import type { MouseEvent } from "react";
 import { buildCircuitMakerDefinition } from "./lib/race-engine/circuit-maker";
 import type { CircuitMakerSegmentInput } from "./lib/race-engine/circuit-maker";
-import type { CircuitGeometryDefinition, CircuitPathPoint, CircuitCornerType, CircuitGeometrySpecifications } from "./lib/race-engine/circuit-geometry";
+import type { CircuitGeometryDefinition, CircuitPathPoint, CircuitCornerType, CircuitGeometrySpecifications, CircuitSourceProvenance } from "./lib/race-engine/circuit-geometry";
+import type { CircuitGeoJsonImportDraft } from "./lib/race-engine/circuit-import";
 import type { TrackLimitPoint } from "./lib/race-engine/track-limits";
 import "./circuit-maker.css";
 
@@ -12,6 +13,8 @@ type Props = {
   countryCode: string;
   totalLaps: number;
   value: CircuitGeometryDefinition | null;
+  importedGeoJsonDraft?: CircuitGeoJsonImportDraft | null;
+  sourceProvenance?: CircuitSourceProvenance | null;
   onChange: (value: CircuitGeometryDefinition | null) => void;
 };
 type SegmentForm = Omit<CircuitMakerSegmentInput, "distanceMeters" | "trackWidthMeters" | "gripFactor" | "lowSpeedDemand" | "highSpeedDemand" | "tractionDemand" | "brakingDemand" | "cornerRadiusMeters" | "elevationChangeMeters" | "bankingDegrees" | "gradientPercent"> & {
@@ -50,7 +53,7 @@ const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
 const toPoints = (points: readonly { readonly x: number; readonly y: number }[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
 const numberValue = (value: string) => value.trim() === "" ? Number.NaN : Number(value);
 
-export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, value, onChange }: Props) {
+export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, value, importedGeoJsonDraft = null, sourceProvenance = null, onChange }: Props) {
   const [points, setPoints] = useState<CircuitPathPoint[]>(() => value?.layout.map((point) => ({...point})) ?? []);
   const [trackLimitBoundary, setTrackLimitBoundary] = useState<TrackLimitPoint[]>(() => value?.trackLimitGeometry?.boundary.map((point) => ({...point})) ?? []);
   const [drawingMode, setDrawingMode] = useState<"centerline" | "track_limit">("centerline");
@@ -118,8 +121,24 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     setPoints((current) => {
       const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y
         ? current.slice(0, -1) : current;
-      return [...open, { id: `point-${open.length+1}`, x, y, elevationMeters: 0 }];
+      return [...open, { id: `point-${open.length+1}`, x, y }];
     });
+  };
+  const loadImportedCenterline = () => {
+    if (!importedGeoJsonDraft) return;
+    setPoints(importedGeoJsonDraft.points.map((point) => ({
+      id: point.id,
+      x: point.normalizedX,
+      y: point.normalizedY,
+      ...(point.elevationMeters === null ? {} : { elevationMeters: point.elevationMeters })
+    })));
+    setTrackLimitBoundary([]);
+    setDrawingMode("centerline");
+    setSpecifications((current) => ({
+      ...current,
+      elevationDataStatus: importedGeoJsonDraft.hasElevationData ? "measured" : "unavailable",
+      trackLimits: { ...current.trackLimits, method: "unverified" }
+    }));
   };
   const closeLoop = () => setPoints((current) => {
     if (current.length < 4) return current;
@@ -157,6 +176,11 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
       <label>Jenis circuit<select value={kind} onChange={(event) => setKind(event.target.value as "fictional"|"real")}><option value="fictional">Fictional circuit</option><option value="real">Real circuit · provenance required</option></select></label>
       <label>Target lap time (ms)<input type="number" min="1" step="1" value={targetLapTime} onChange={(event) => setTargetLapTime(event.target.value)} placeholder="Contoh: 92000"/></label>
     </div>
+    {importedGeoJsonDraft && <div className="circuit-maker-import-source">
+      <div><strong>GeoJSON source available</strong><small>{importedGeoJsonDraft.points.length} points · {Math.round(importedGeoJsonDraft.totalLengthMeters).toLocaleString("id-ID")} m · {importedGeoJsonDraft.hasElevationData ? "elevation supplied" : "elevation unavailable"}</small></div>
+      <button type="button" onClick={loadImportedCenterline}>Load GeoJSON centerline</button>
+    </div>}
+    {sourceProvenance && <p className="circuit-maker-source-note">Source provenance attached · {sourceProvenance.provider} · {sourceProvenance.licenseId} · {sourceProvenance.fidelityStatus.toUpperCase()}</p>}
 <details className="circuit-maker-advanced-specs">
 <summary>Advanced specifications · surface, pit lane, DRS, track limits</summary>
 <div className="circuit-maker-fields">
