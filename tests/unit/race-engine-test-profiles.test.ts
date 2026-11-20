@@ -24,6 +24,31 @@ describe("Race Engine Lab synthetic service profiles", () => {
     expect(controlledElapsed).toBeGreaterThan(baselineElapsed);
   });
 
+  it("records standing and rolling restarts in the replay event timeline without changing the last valid order", () => {
+    const snapshot = createSyntheticRaceFixture({
+      seed: 61123,
+      driverCount: 4,
+      teamCount: 2,
+      totalLaps: 3
+    });
+    const models = createRaceEngineTestModels(snapshot);
+    const simulation = new RaceSimulation(snapshot, models);
+    const before = simulation.classification;
+
+    simulation.recordRaceRestart("rolling", "rc-restart-1");
+    const restartEvent = simulation.events.find((event) => event.incidentId === "manual-restart:rc-restart-1");
+
+    expect(restartEvent).toMatchObject({
+      type: "race_control",
+      raceControlFlag: "green",
+      restartMode: "rolling",
+      restartPolicy: "last_valid_classification"
+    });
+    expect(simulation.classification).toEqual(before);
+    simulation.recordRaceRestart("rolling", "rc-restart-1");
+    expect(simulation.events.filter((event) => event.incidentId === "manual-restart:rc-restart-1")).toHaveLength(1);
+  });
+
   it("applies and checkpoints externally commanded yellow flags without deleting incident flags", () => {
     const snapshot = createSyntheticRaceFixture({
       seed: 61121,
