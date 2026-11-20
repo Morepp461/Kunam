@@ -94,6 +94,32 @@ describe("Race simulation kernel", () => {
     ]);
   });
 
+  it("rolls back the entire segment tick if a model fails for one entrant", () => {
+    let calls = 0;
+    const unstableModel: SegmentPerformanceModel = {
+      id: "atomic-test",
+      version: "1",
+      calculateAdjustmentMs: () => {
+        calls += 1;
+        if (calls === 3) throw new Error("injected model failure");
+        return 0;
+      }
+    };
+    const simulation = new RaceSimulation(createSyntheticRaceFixture({ driverCount: 4, teamCount: 2 }), {
+      config: { noiseAmplitudeMs: 5 },
+      performanceModel: unstableModel
+    });
+    const beforeStates = simulation.entrantStates;
+    const beforeEvents = simulation.events;
+    const beforeRandom = simulation.createCheckpoint().randomState;
+
+    expect(() => simulation.advanceOneSegment()).toThrow(/injected model failure/i);
+    expect(simulation.tick).toBe(0);
+    expect(simulation.entrantStates).toEqual(beforeStates);
+    expect(simulation.events).toEqual(beforeEvents);
+    expect(simulation.createCheckpoint().randomState).toEqual(beforeRandom);
+  });
+
   it("rejects a checkpoint restored with a different performance model version", () => {
     const simulation = new RaceSimulation(createSyntheticRaceFixture(), { performanceModel: seededModel });
     simulation.advanceOneSegment();
