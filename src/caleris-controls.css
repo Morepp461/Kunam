@@ -209,3 +209,26 @@ body.light .market-license-options>label.is-selected{background:linear-gradient(
 @keyframes calerisSelectFade{from{opacity:0}to{opacity:1}}
 @media(max-width:620px){.caleris-select-backdrop{align-items:flex-end;padding:0;background:rgba(1,2,4,.78)}.caleris-select-sheet{width:100%;max-height:min(78svh,720px);border-radius:22px 22px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -18px 65px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,210,216,.17)}.caleris-select-heading{padding:18px 20px}.caleris-select-option{min-height:58px;padding:14px 16px;font-size:15px}}
 @media(prefers-reduced-motion:reduce){.caleris-select-backdrop{animation:none}.caleris-select-option{transition:none}}
+
+
+/* Sidebar account hub: profile, preferences and sign-out live in one bottom-left menu. */
+.sidebar-account{position:relative;flex:0 0 auto;margin-top:auto;padding-top:10px;border-top:1px solid rgba(198,163,58,.2)}
+.sidebar-user-trigger{width:100%;border:0;background:transparent;text-align:left;cursor:pointer}
+.sidebar-user-trigger>span{flex:1;min-width:0}
+.sidebar-user-trigger>svg:last-child{flex:none;margin-left:auto;color:#d6b85e;transition:transform .16s ease}
+.sidebar-user-trigger>svg.is-open{transform:rotate(180deg)}
+.sidebar-account-dropdown{position:absolute;left:0;right:0;bottom:calc(100% + 9px);z-index:80;display:flex;flex-direction:column;gap:4px;padding:9px;border:1px solid rgba(208,75,94,.58);border-radius:10px;background:linear-gradient(145deg,rgba(75,16,30,.99),rgba(22,8,14,.99));box-shadow:0 18px 45px rgba(0,0,0,.58),inset 0 1px 0 rgba(255,220,224,.13);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.sidebar-account-identity{display:flex;flex-direction:column;gap:4px;min-width:0;padding:8px 9px 11px;border-bottom:1px solid rgba(255,190,198,.16);margin-bottom:3px}
+.sidebar-account-identity strong{overflow:hidden;color:#fff1f2;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-account-identity small{overflow:hidden;color:rgba(255,225,228,.65);font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.sidebar-account-dropdown>a,.sidebar-account-dropdown>button{display:flex;align-items:center;gap:10px;width:100%;min-height:40px;padding:0 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:#f3e7e8;text-decoration:none;text-align:left;font:500 11px Inter,Arial,sans-serif}
+.sidebar-account-dropdown>a svg,.sidebar-account-dropdown>button svg{flex:none;color:#f0c76b}
+.sidebar-account-dropdown>a:hover,.sidebar-account-dropdown>button:hover{border-color:rgba(238,91,112,.32);background:rgba(165,35,57,.3);color:#fff}
+.caleris-sidebar.is-collapsed .sidebar-account-dropdown{left:calc(100% + 8px);right:auto;bottom:0;width:250px}
+.caleris-sidebar.is-collapsed .sidebar-user-trigger>span,.caleris-sidebar.is-collapsed .sidebar-user-trigger>svg:last-child{display:none}
+@media(max-width:900px){.caleris-sidebar.is-mobile-drawer .sidebar-account-dropdown{left:0;right:0;width:auto}}
+@media(max-width:620px){
+ .site-header .global-search.is-expanded{flex:0 1 min(360px,calc(100vw - 160px));width:min(360px,calc(100vw - 160px));min-width:min(145px,calc(100vw - 160px))}
+ .site-header .global-search.is-expanded input{font-size:11px}
+}
+@media(max-width:370px){.site-header .global-search.is-expanded{flex-basis:min(320px,calc(100vw - 145px));width:min(320px,calc(100vw - 145px));min-width:min(130px,calc(100vw - 145px))}}
