@@ -65,6 +65,10 @@ export interface SegmentPerformanceModel {
   readonly snapshot: JsonValue;
   readonly battleDetectionGapMs?: number;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
+  calculatePitStrategyAdjustments?(entrant: RaceEntrantSnapshot): {
+    readonly strategyQualityAdjustmentMs: number;
+    readonly pitStopTimeAdjustmentMs: number;
+  };
 }
 
 export const NEUTRAL_PERFORMANCE_MODEL: SegmentPerformanceModel = Object.freeze({
@@ -933,7 +937,8 @@ export class RaceSimulation {
               currentStopCount: state.pitStopCount,
               lastStopLap: state.lastPitLap,
               trackWetness,
-              candidates
+              candidates,
+              ...(this.performanceModel.calculatePitStrategyAdjustments?.(entrant) ?? {})
             });
             if (decision.shouldPit && decision.selectedCompound) {
               const candidate = candidates.find((item) => item.compound === decision.selectedCompound);
