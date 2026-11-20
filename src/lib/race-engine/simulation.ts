@@ -290,7 +290,12 @@ export class RaceSimulation {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
     this.snapshot = immutableSnapshot;
     this.performanceModel = options?.performanceModel ?? NEUTRAL_PERFORMANCE_MODEL;
-    for (const entrant of immutableSnapshot.entrants) this.performanceModel.validateEntrant?.(entrant);
+    for (const entrant of immutableSnapshot.entrants) {
+      if (entrant.carSetup && !this.performanceModel.validateEntrant) {
+        throw new Error("Car setup snapshots require a calibrated performance model");
+      }
+      this.performanceModel.validateEntrant?.(entrant);
+    }
     this.tyreModel = options?.tyreModel;
     this.weatherModel = options?.weatherModel;
     this.pitModel = options?.pitModel;
