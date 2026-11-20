@@ -143,7 +143,7 @@ export function evaluateSegmentIncident(input: {
   const totalRate = rates.reduce((sum, entry) => sum + entry.rate, 0);
   if (totalRate <= 0) return null;
 
-  const random = new SeededRandom((raceSeed ^ hashText(`${raceId}:${driverId}:${lapNumber}:${segmentId}`)) >>> 0);
+  const random = new SeededRandom(hashText(`${raceSeed}:${raceId}:${driverId}:${lapNumber}:${segmentId}`));
   const probability = 1 - Math.exp(-totalRate * distanceMeters / 1000);
   if (random.nextFloat() >= probability) return null;
   let selection = random.nextFloat() * totalRate;
