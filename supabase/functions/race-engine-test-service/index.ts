@@ -367,7 +367,23 @@ Deno.serve(async (req: Request) => {
 
       const id = crypto.randomUUID();
       const fixture = createSyntheticRaceFixture({ seed, driverCount, teamCount, totalLaps });
-      const snapshot: RaceStartSnapshot = { ...fixture, raceId: id };
+      const setupInput = body.carSetup === undefined ? null : asRecord(body.carSetup);
+      const carSetup = setupInput ? {
+        schemaVersion: 1 as const,
+        aeroSetting: Number(setupInput.aeroSetting),
+        suspensionSetting: Number(setupInput.suspensionSetting),
+        brakeBalanceFrontPercent: Number(setupInput.brakeBalanceFrontPercent),
+        frontTyrePressurePsi: Number(setupInput.frontTyrePressurePsi),
+        rearTyrePressurePsi: Number(setupInput.rearTyrePressurePsi)
+      } : undefined;
+      const snapshot: RaceStartSnapshot = {
+        ...fixture,
+        raceId: id,
+        entrants: fixture.entrants.map((entrant) => ({
+          ...entrant,
+          ...(carSetup ? { carSetup } : {})
+        }))
+      };
       const models = createRaceEngineTestModels(snapshot);
       const simulation = new RaceSimulation(snapshot, models);
       const checkpoint = simulation.createCheckpoint();
