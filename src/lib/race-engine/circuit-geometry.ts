@@ -1,6 +1,6 @@
 import type { CircuitSegmentSnapshot } from "./contracts";
 import { validateTrackLimitGeometry } from "./track-limits";
-import type { TrackLimitGeometry, TrackLimitPoint } from "./track-limits";
+import type { TrackLimitGeometry } from "./track-limits";
 
 export const CIRCUIT_GEOMETRY_SCHEMA_VERSION = 1;
 export const CIRCUIT_SECTOR_COUNT = 3;
