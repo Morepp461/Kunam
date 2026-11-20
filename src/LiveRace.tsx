@@ -20,6 +20,7 @@ type RaceSession = {
   engine_version: string;
   tick: number;
   total_ticks: number;
+  speed_multiplier: number;
   created_at: string;
   updated_at?: string;
   completed_at?: string | null;
@@ -36,6 +37,8 @@ type RaceSession = {
   }> | null;
   last_error?: string | null;
 };
+
+type RaceCommand = { id: string; command_type: string; result: Record<string, unknown>; created_at: string };
 
 type RaceEvent = {
   sequence: number;
@@ -84,7 +87,7 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
 export default function LiveRace() {
   const [sessions, setSessions] = useState<RaceSession[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [detail, setDetail] = useState<{ session: RaceSession; events: RaceEvent[] } | null>(null);
+  const [detail, setDetail] = useState<{ session: RaceSession; events: RaceEvent[]; commands: RaceCommand[] } | null>(null);
   const [driverCount, setDriverCount] = useState(20);
   const [teamCount, setTeamCount] = useState(10);
   const [totalLaps, setTotalLaps] = useState(5);
@@ -117,7 +120,7 @@ export default function LiveRace() {
     if (!id) return;
     try {
       const result = await raceApi("detail", { sessionId: id });
-      setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[] });
+      setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal memuat detail sesi.");
@@ -134,7 +137,8 @@ export default function LiveRace() {
   const tyreStates = entrants.filter((entry: any) => entry.tyreState);
   const weather = checkpoint?.weatherState;
   const classification = active?.classification ?? [];
-  const recentEvents = useMemo(() => [...(detail?.events ?? [])].slice(-35).reverse(), [detail?.events]);
+  const recentEvents = useMemo(() => [...(detail?.events ?? [])].reverse().slice(-35).reverse(), [detail?.events]);
+  const recentCommands = useMemo(() => [...(detail?.commands ?? [])].slice(0, 12), [detail?.commands]);
 
   async function createSession() {
     setBusy("create");
@@ -154,9 +158,9 @@ export default function LiveRace() {
     }
   }
 
-  async function advanceSession(steps = 5) {
+  async function advanceSession() {
     if (!selectedId) return null;
-    const result = await raceApi("advance", { sessionId: selectedId, steps });
+    const result = await raceApi("advance", { sessionId: selectedId });
     await loadDetail(selectedId);
     await refreshSessions(selectedId);
     return result;
@@ -167,7 +171,7 @@ export default function LiveRace() {
     setError("");
     setNotice("");
     try {
-      const result = await advanceSession(5);
+      const result = await advanceSession();
       setNotice(`Worker memproses ${result?.result?.events_added ?? 0} event baru. Tick ${result?.tick}/${result?.totalTicks}.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Worker gagal memproses sesi.");
@@ -184,8 +188,8 @@ export default function LiveRace() {
     try {
       let latest: any = null;
       let attempts = 0;
-      while (attempts < 20) {
-        latest = await raceApi("advance", { sessionId: selectedId, steps: 10 });
+      while (attempts < 100) {
+        latest = await raceApi("advance", { sessionId: selectedId });
         attempts += 1;
         setNotice(`Worker berjalan: tick ${latest.tick}/${latest.totalTicks}.`);
         await loadDetail(selectedId);
@@ -197,6 +201,23 @@ export default function LiveRace() {
       else setNotice("Batas batch tercapai. Sesi tetap tersimpan dan bisa dilanjutkan dari checkpoint.");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Worker gagal menyelesaikan simulasi.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function setSpeed(speedMultiplier: number) {
+    if (!selectedId || ![1, 5, 10, 15].includes(speedMultiplier)) return;
+    setBusy("speed");
+    setError("");
+    setNotice("");
+    try {
+      await raceApi("set_speed", { sessionId: selectedId, speedMultiplier });
+      await loadDetail(selectedId);
+      await refreshSessions(selectedId);
+      setNotice(`Kecepatan simulasi diubah ke ${speedMultiplier}x dan tercatat di audit command.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal mengubah kecepatan.");
     } finally {
       setBusy("");
     }
@@ -297,7 +318,7 @@ export default function LiveRace() {
               <small>{session.total_laps} laps · seed {session.seed} · {formatDate(session.created_at)}</small>
             </span>
             <span className={"race-engine-status status-" + session.status}>{session.status.toUpperCase()}</span>
-            <span className="race-engine-session-progress">{session.tick}/{session.total_ticks}</span>
+            <span className="race-engine-session-progress">{session.tick}/{session.total_ticks} · {session.speed_multiplier ?? 1}x</span>
             <ChevronRight size={15}/>
           </button>)}
         </div>
@@ -319,7 +340,7 @@ export default function LiveRace() {
       </div>
       <div className="race-engine-actions">
         <button className="race-engine-primary-button" onClick={advanceOnce} disabled={Boolean(busy) || active.status === "completed"}>
-          {busy === "advance" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Advance 5 segments
+          {busy === "advance" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Advance {active.speed_multiplier ?? 1} segment{(active.speed_multiplier ?? 1) > 1 ? "s" : ""}
         </button>
         <button className="race-engine-secondary-button" onClick={runToCompletion} disabled={Boolean(busy) || active.status === "completed"}>
           {busy === "run" ? <LoaderCircle className="spin" size={15}/> : <Gauge size={15}/>} Run to completion
@@ -327,6 +348,11 @@ export default function LiveRace() {
         <button className="race-engine-secondary-button" onClick={verifyRecovery} disabled={Boolean(busy)}>
           {busy === "recover" ? <LoaderCircle className="spin" size={15}/> : <RotateCcw size={15}/>} Verify recovery
         </button>
+      </div>
+
+      <div className="race-engine-speed-control">
+        <span>LIVE SPEED · CLOCK PROGRESSION ONLY</span>
+        <div>{[1,5,10,15].map((speed) => <button key={speed} className={(active.speed_multiplier ?? 1) === speed ? "active" : ""} onClick={() => void setSpeed(speed)} disabled={Boolean(busy) || active.status === "completed"}>{speed}x</button>)}</div>
       </div>
 
       <div className="race-engine-live-metrics">
@@ -380,6 +406,18 @@ export default function LiveRace() {
             <time>{formatTime(event.simulation_time_ms)}</time>
           </article>)}
           {!recentEvents.length && <p className="race-engine-empty">Belum ada event. Jalankan beberapa segmen untuk menghasilkan data.</p>}
+        </div>
+      </section>
+
+      <section className="race-engine-event-section">
+        <div className="live-race-subheading"><h3><ShieldCheck size={15}/> Control Audit</h3><span>{recentCommands.length} COMMANDS</span></div>
+        <div className="race-engine-event-list">
+          {recentCommands.map((command) => <article key={command.id}>
+            <span className="event-lap">ADMIN</span><span className="event-marker blue"/>
+            <div><strong>{command.command_type === "set_speed" ? `SPEED CHANGED · ${String(command.result.speed_multiplier)}X` : labelEvent(command.command_type)}</strong><small>Server-authorized control command</small></div>
+            <time>{formatDate(command.created_at)}</time>
+          </article>)}
+          {!recentCommands.length && <p className="race-engine-empty">Belum ada command kontrol. Perubahan kecepatan akan tercatat di sini.</p>}
         </div>
       </section>
     </section>}
