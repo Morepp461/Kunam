@@ -109,6 +109,12 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     return open.slice(0,-1);
   });
   const updateSegment = (id: string, key: keyof SegmentForm, next: string|boolean) => setSegments((current) => current.map((segment) => segment.id === id ? ({...segment, [key]: next}) : segment));
+  const addSegment = () => setSegments((current) => [...current, {
+    ...initialSegments[activeSector-1],
+    id: "sector-"+activeSector+"-segment-"+(current.filter((segment) => segment.sectorNumber === activeSector).length+1),
+    sectorNumber: activeSector
+  }]);
+  const removeSegment = (id: string) => setSegments((current) => current.length > 3 ? current.filter((segment) => segment.id !== id) : current);
   const selected = segments.filter((segment) => segment.sectorNumber === activeSector);
   const publish = () => onChange(built.definition);
 
@@ -136,9 +142,9 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>
-        <div className="circuit-maker-sector-tabs">{([1,2,3] as const).map((sector)=><button key={sector} type="button" className={activeSector===sector?"active":""} onClick={()=>setActiveSector(sector)}>S{sector}</button>)}</div>
+        <div className="circuit-maker-sector-tabs">{([1,2,3] as const).map((sector)=><button key={sector} type="button" className={activeSector===sector?"active":""} onClick={()=>setActiveSector(sector)}>S{sector}</button>)}<button type="button" onClick={addSegment}>+ Segment</button></div>
         {selected.map((segment) => <div className="circuit-maker-segment" key={segment.id}>
-          <strong>Sector {segment.sectorNumber} · Segment</strong>
+          <div className="circuit-maker-segment-head"><strong>Sector {segment.sectorNumber} · {segment.id}</strong>{selected.length>1&&<button type="button" onClick={()=>removeSegment(segment.id)}>Remove</button>}</div>
           <div className="circuit-maker-fields">
             <label>Distance (m)<input type="number" min="0.1" step="0.1" value={segment.distanceMeters} onChange={(e)=>updateSegment(segment.id,"distanceMeters",e.target.value)}/></label>
             <label>Track width (m)<input type="number" min="0.1" step="0.1" value={segment.trackWidthMeters} onChange={(e)=>updateSegment(segment.id,"trackWidthMeters",e.target.value)}/></label>
