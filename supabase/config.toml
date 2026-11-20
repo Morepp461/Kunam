@@ -28,3 +28,8 @@ verify_jwt = false
 # Discord announcements are authenticated in-function and restricted to FIA/Admin.
 [functions.caleris-discord-notify]
 verify_jwt = true
+
+# The managed dispatcher authenticates its worker token inside the handler.
+# All user-facing actions still validate a Testing Admin JWT with auth.getUser().
+[functions.race-engine-test-service]
+verify_jwt = false
