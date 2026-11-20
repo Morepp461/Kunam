@@ -6,6 +6,7 @@ import type { JsonValue, RaceEntrantSnapshot } from "./contracts";
 import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation";
 import { CAR_SETUP_KEYS, validateCarSetupSnapshot } from "./setup";
 import type { CarSetupCalibration, CarSetupKey } from "./setup";
+import { RACE_HQ_EFFECT_KEYS } from "./hq";
 
 export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 2;
 
@@ -216,6 +217,17 @@ function evaluateAttributeInfluencesUnchecked(
       const weights = profile.carSetup.influences[key];
       for (const [channel, coefficient] of Object.entries(weights) as [AttributeInfluenceChannel, number][]) {
         totals[channel] += delta * coefficient;
+      }
+    }
+  }
+
+  if (entrant.hqFacilitySnapshot) {
+    for (const key of Object.keys(entrant.hqFacilitySnapshot.effects)) {
+      if (!profile.hqEffects[key]) throw new Error(`HQ effect ${key} requires an explicit calibration mapping`);
+    }
+    for (const key of RACE_HQ_EFFECT_KEYS) {
+      if (entrant.hqFacilitySnapshot.effects[key] !== undefined && !profile.hqEffects[key]) {
+        throw new Error(`HQ effect ${key} requires an explicit calibration mapping`);
       }
     }
   }
