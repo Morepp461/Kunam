@@ -52,7 +52,7 @@ export function authorizeRaceStart(request: RaceStartRequest): RaceStartDecision
   } else if (!Number.isFinite(Date.parse(request.requestedAt)) || !Number.isFinite(Date.parse(request.scheduledAt))) {
     reason = "Race start timestamps are invalid";
   } else if (request.status === "running" && request.existingStartIdempotencyKey === request.idempotencyKey) {
-    if (request.existingStartActorId !== actor.id) reason = "Idempotency key belongs to a different start actor";
+    if (request.existingStartActorId !== request.actor.id) reason = "Idempotency key belongs to a different start actor";
     else {
       accepted = true;
       idempotentReplay = true;
