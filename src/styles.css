@@ -609,3 +609,21 @@ body.light .caleris-sidebar{background:rgba(29,27,22,.94);color:#eeeae0}
 @media(max-width:620px){
  .app-navigation-shell>.page-content{padding:24px 17px}
 }
+
+
+/* Mobile background mode: keep the established backdrop while avoiding layered GPU effects. */
+body.app-backgrounded .scene-image,
+body.app-backgrounded .scene-light,
+body.app-backgrounded .scene-reflection,
+body.app-backgrounded .scene-flare{animation-play-state:paused!important}
+body.app-backgrounded .scene-depth{backdrop-filter:none;-webkit-backdrop-filter:none}
+@media(max-width:900px){
+ .scene:before{filter:brightness(.4) saturate(.72);transform:none}
+ .scene-image{animation:none;transform:none}
+ .scene-light,.scene-reflection,.scene-depth,.scene-flare,.dust-canvas{display:none!important}
+ .site-header,.site-footer,.paddock-access-shell{backdrop-filter:none;-webkit-backdrop-filter:none}
+}
+@media(prefers-reduced-motion:reduce){
+ .scene-image,.scene-light,.scene-reflection,.scene-flare{animation:none!important;transform:none!important}
+ .dust-canvas{display:none!important}
+}
