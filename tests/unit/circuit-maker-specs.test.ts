@@ -59,6 +59,9 @@ describe("Circuit Maker advanced specifications", () => {
     expect(result.errors).toEqual([]);
     expect(result.definition?.specifications?.pitLane.speedLimitKph).toBe(80);
     expect(result.definition?.specifications?.drsZones).toHaveLength(1);
+    expect(result.definition?.segments[0].drsAvailable).toBe(true);
+    expect(result.definition?.segments[1].drsAvailable).toBe(true);
+    expect(result.definition?.segments[2].drsAvailable).toBe(false);
   });
 
   it("keeps real circuits blocked until provenance and fidelity review are complete", () => {
