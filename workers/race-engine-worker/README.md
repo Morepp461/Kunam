@@ -1,35 +1,33 @@
-# Race Engine Test Worker
+# Optional Race Engine Worker Reference
 
-This is the persistent worker process for the isolated Race Engine test service. It polls only `race_engine_test_sessions` in the **caleris-masters-testing** Supabase project. It never writes to production race results, wallets, rewards, or economy ledgers.
+This Deno process is retained for local profiling and fault-injection experiments only. **It is not a required runtime and must not be treated as production infrastructure.** CALERIS RACE ENGINE must continue without a VPS.
 
-## Runtime
+## Target production runtime
 
-- Deno 2.x
-- Supabase JS pinned to 2.57.4
-- Bounded batch: 1, 5, 10, or 15 segment ticks per lease, controlled by the audited session speed setting
-- Lease: 60 seconds; expired leases can be reclaimed after a worker restart
-- Checkpoints and events are committed through atomic database RPCs
-- Multiple processes can run concurrently; row leases prevent two workers from advancing the same session
+- Supabase Postgres owns schedules, durable queue state, leases, checkpoints, append-only events, and final results.
+- Supabase Cron periodically dispatches due work.
+- Supabase Edge Functions execute bounded simulation batches and exit before platform CPU/wall-clock limits.
+- Every batch claims a lease, restores the last committed checkpoint, advances a bounded number of segments, and commits checkpoint plus event sequence atomically.
+- Retry and lease reclamation resume from the last valid checkpoint. Idempotency prevents duplicate events/results.
+- The browser and LIVE RACE page never run the authoritative race simulation.
 
-## Environment
+## Optional local runner
 
-Set these on the worker host. Use credentials from the testing Supabase project only.
+Deno 2.x with Supabase JS pinned to 2.57.4.
 
+Required environment:
 ```sh
-SUPABASE_URL=https://vxwvhyyvoipjwucbrvlu.supabase.co
+SUPABASE_URL=<testing-project-url>
 SUPABASE_SERVICE_ROLE_KEY=<testing-project-service-role-key>
 ```
 
-Never put the service-role key in Vercel client environment variables or browser code.
-
-## Run
-
+Run:
 ```sh
 deno run --allow-env --allow-net workers/race-engine-worker/main.ts
 ```
 
-The Admin web page can also advance a test session in bounded batches and change its speed to 1x, 5x, 10x, or 15x. Speed changes are server-authorized and written to the control-command audit log. Both paths use the same lease and checkpoint protocol, so manual test actions and a background worker cannot safely advance the same session at once.
+Use Testing credentials only. Never put service-role keys in Vercel client variables, browser code, mobile bundles, or logs.
 
 ## Deployment status
 
-The worker source is committed, but no VPS has been provisioned or connected. The web-based test runner uses the deployed Supabase Edge Function in bounded invocations until the VPS runtime is provisioned and benchmarked. Do not treat this test worker as production race infrastructure.
+This runner is not deployed. The VPS route is intentionally retired as a production dependency. The managed Supabase Cron/Edge Function dispatcher remains a release gate and must be validated in Testing before official race scheduling is enabled.

@@ -231,3 +231,31 @@ The initial page is an Admin-only UI foundation. It must visibly identify demo d
 ## Change control
 
 All changes use a new feature branch and PR. Database migrations are versioned in the repository. Dummy fixtures are inserted only into Supabase testing. Production schema/data changes require separate QA, CI, and migration review.
+
+
+---
+
+## Architecture decision addendum — VPS-independent race execution
+
+**Decision date:** 20 November 2026  
+**Owner requirement:** A VPS must not be a dependency for scheduled race execution or replay availability.
+
+This addendum supersedes the VPS runtime dependency described in the initial baseline sections. The original VPS design remains historical context only.
+
+### Required runtime model
+
+- Supabase Postgres is the durable source of truth for schedules, queued jobs, worker leases, checkpoints, ordered race events, telemetry projections, and final classifications.
+- Supabase Cron dispatches due work from the database.
+- Supabase Edge Functions process bounded simulation batches. Each invocation restores the last committed checkpoint, advances a bounded number of segments, atomically persists events and the next checkpoint, then exits.
+- No Edge Function invocation may attempt to hold a 2–3 hour race open. CPU/time quotas require chunked execution and benchmarked batch sizing.
+- The browser, Admin panel, FIA panel, and LIVE RACE view are never required to keep a race running.
+- Replay is reconstructed from persisted event/timing data and remains available independently of the LIVE RACE UI and the worker process.
+- The Deno VPS worker is optional tooling for profiling/fault injection only. It is not a production dependency.
+
+### Failure semantics
+
+If a worker invocation fails, the lease expires and a later scheduled invocation reclaims the session from its last committed checkpoint. Event sequence and idempotency constraints prevent duplicate committed events. If the Supabase database/platform itself is unavailable, progress may pause until service recovers; no worker architecture using the same database can guarantee writes during a database outage.
+
+### Rollout gates
+
+The managed dispatcher must first be implemented and tested in the Testing project. Required tests include browser-closed progression, forced invocation termination, lease expiry/reclaim, duplicate dispatch, concurrent sessions, and replay after worker shutdown. The required `pg_net` extension and machine-auth secret must be configured securely (Supabase Vault/Function secrets). Never expose service-role credentials to the client. Production race persistence remains disabled until migration parity, RLS, security, load, recovery, and release gates pass.
