@@ -65,6 +65,10 @@ export interface SegmentPerformanceModel {
   readonly snapshot: JsonValue;
   readonly battleDetectionGapMs?: number;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
+  calculatePitStrategyAdjustments?(entrant: RaceEntrantSnapshot): {
+    readonly strategyQualityRiskMultiplier: number;
+    readonly pitStopTimeAdjustmentMs: number;
+  };
 }
 
 export const NEUTRAL_PERFORMANCE_MODEL: SegmentPerformanceModel = Object.freeze({
@@ -729,7 +733,7 @@ export class RaceSimulation {
 
     const activeRedFlags = stagedRaceControlFlags.filter((flag) => flag.flag === "red_flag");
     if (activeRedFlags.length > 0) {
-      const resumeAtSimulationTimeMs = Math.max(...activeRedFlags.map((flag) => flag.expiresAtSimulationTimeMs));
+      const resumeAtSimulationTimeMs = Math.max(stagedSimulationClockMs, ...activeRedFlags.map((flag) => flag.expiresAtSimulationTimeMs));
       const suspensionDurationMs = Math.max(0, resumeAtSimulationTimeMs - stagedSimulationClockMs);
       for (const state of stagedEntrants) {
         if (!state.finished && !state.retired) state.elapsedMs += suspensionDurationMs;
@@ -923,7 +927,7 @@ export class RaceSimulation {
         });
           if (this.pitModel && state.tyreState && state.lapCompleted < this.snapshot.circuit.totalLaps) {
             const candidates = this.pitModel.candidatesByLap[String(state.lapCompleted)] ?? this.pitModel.candidatesByLap.default ?? [];
-            const trackWetness = this.weatherStateValue?.trackWetness ??
+            const trackWetness = stagedWeatherState?.trackWetness ??
               getTyreSegmentEnvironment(this.tyreModel as TyreSimulationModel, state.lapCompleted, segments[segments.length - 1].id).trackWetness;
             const decision = choosePitDecision(this.pitModel, {
               currentLap: state.lapCompleted,
@@ -933,12 +937,17 @@ export class RaceSimulation {
               currentStopCount: state.pitStopCount,
               lastStopLap: state.lastPitLap,
               trackWetness,
-              candidates
+              candidates,
+              ...(this.performanceModel.calculatePitStrategyAdjustments?.(entrant) ?? {})
             });
             if (decision.shouldPit && decision.selectedCompound) {
               const candidate = candidates.find((item) => item.compound === decision.selectedCompound);
               if (!candidate) throw new Error("Pit strategy selected a compound without a calibrated candidate");
-              state.elapsedMs += candidate.pitLaneLossMs;
+              const pitAdjustments = this.performanceModel.calculatePitStrategyAdjustments?.(entrant);
+              const actualPitLaneLossMs = Math.max(
+                0, candidate.pitLaneLossMs + (pitAdjustments?.pitStopTimeAdjustmentMs ?? 0)
+              );
+              state.elapsedMs += actualPitLaneLossMs;
               state.tyreState = replaceTyreSet(
                 candidate.compound,
                 trackWetness,
@@ -954,7 +963,7 @@ export class RaceSimulation {
                 lapNumber: state.lapCompleted,
                 segmentId: segment.id,
                 simulationTimeMs: state.elapsedMs,
-                durationMs: candidate.pitLaneLossMs,
+                durationMs: actualPitLaneLossMs,
                 selectedCompound: candidate.compound,
                 pitReason: decision.reason
               });

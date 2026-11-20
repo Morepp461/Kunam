@@ -201,6 +201,30 @@ describe("Race physics calibration profiles", () => {
     );
   });
 
+
+  it("exposes Strategy Quality and Pit Stop Efficiency adjustments to the pit decision engine", () => {
+    const fixture = createSyntheticRaceFixture({ driverCount: 1, teamCount: 1, totalLaps: 1 });
+    const profile = createProfile();
+    const attributes = {
+      ...profile.attributes,
+      "car_team.strategy_quality": { strategy_quality_per_point: -0.03 },
+      "car_team.pit_stop_efficiency": { pit_stop_time_ms_per_point: -5 }
+    };
+    const model = createCalibratedPerformanceModel({ ...profile, attributes });
+    const entrant = {
+      ...fixture.entrants[0],
+      carTeamAttributes: {
+        ...fixture.entrants[0].carTeamAttributes,
+        strategy_quality: 60,
+        pit_stop_efficiency: 70
+      }
+    };
+    expect(model.calculatePitStrategyAdjustments?.(entrant)).toEqual({
+      strategyQualityRiskMultiplier: -0.3,
+      pitStopTimeAdjustmentMs: -100
+    });
+  });
+
   it("persists the full calibration profile in checkpoints and requires the same profile to resume", () => {
     const profile = createProfile();
     const model = createCalibratedPerformanceModel(profile);
