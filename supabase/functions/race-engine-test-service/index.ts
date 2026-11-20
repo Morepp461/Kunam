@@ -20,6 +20,7 @@ import {
 import { resolveTeamHqRaceEffects } from "./race-engine/hq.ts";
 import { buildRaceTimingProjection } from "./race-engine/projection.ts";
 import type { RaceTimingProjectionClassificationEntry } from "./race-engine/projection.ts";
+import { summarizeRaceEngineBatch } from "./race-engine/runtime-metrics.ts";
 import type { TeamHqDivision, TeamHqFacilityConfigInput } from "./race-engine/hq.ts";
 import type {
   RaceControlAuditEvent,
@@ -128,7 +129,7 @@ function asRecord(value: unknown): Record<string, unknown> {
 async function processBackgroundBatch() {
   const { data: sessions, error: listError } = await service
     .from("race_engine_test_sessions")
-    .select("id,created_by,speed_multiplier")
+     .select("id,created_by,speed_multiplier,created_at,updated_at")
     .in("status", ["queued", "running"])
     // Rotate work by last update so the first three long races cannot starve later sessions.
     .order("updated_at", { ascending: true })
@@ -247,7 +248,20 @@ async function processBackgroundBatch() {
     }
   }
 
-  return { processed, checkedAt: new Date().toISOString() };
+  const checkedAt = new Date().toISOString();
+  const [{ count: activeQueueDepth, error: queueCountError }] = await Promise.all([
+    service.from("race_engine_test_sessions")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["queued", "running"])
+  ]);
+  if (queueCountError) throw queueCountError;
+  const metrics = summarizeRaceEngineBatch(
+    processed,
+    activeQueueDepth ?? 0,
+    (sessions ?? []).map((session) => session.created_at),
+    checkedAt
+  );
+  return { processed, metrics, checkedAt };
 }
 
 
