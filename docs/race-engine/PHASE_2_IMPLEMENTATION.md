@@ -28,3 +28,26 @@ These are domain model foundations, not a production-ready race lifecycle integr
 7. Only then approve Phase 2 completion and begin service integration.
 
 No database migration is required by these standalone domain modules. Persistent race storage remains in Phase 3 after the existing Testing/Production migration ledger drift is reconciled.
+
+## Active performance and race-battle integration
+
+The calibrated performance model now consumes the optional circuit capability flags
+`ersAvailable`, `overtakingOpportunity`, and `defendingOpportunity`. Missing flags
+remain disabled for backward compatibility. No circuit capability is inferred from
+track names or generated geometry.
+
+The versioned calibration profile includes `battleDetectionGapMs`, which controls
+when adjacent entrants are considered in an attack/defence interaction. The model
+uses only caller-supplied coefficients:
+- `ers_efficiency_per_point` applies only where ERS is available.
+- `overtake_advantage_per_point` and `defense_advantage_per_point` apply only in
+  configured segment opportunities and within the calibrated gap.
+- `tyre_degradation_per_point` scales current tyre wear.
+- `wet_grip_per_point` scales the current shared track wetness.
+- `consistency_variance_ms_per_point` and `morale_consistency_per_point` scale
+  the deterministic consistency sample supplied by the simulation.
+
+These are coefficient contracts, not production presets. The repository still needs
+an approved calibration dataset and benchmark evidence before a production profile
+can be selected. An absent segment capability flag or absent model coefficient must
+not silently create a gameplay effect.
