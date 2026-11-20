@@ -555,6 +555,14 @@ export class RaceSimulation {
       });
     };
 
+    const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished);
+    const weatherLap = weatherReferenceState ? weatherReferenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
+    const weatherSegment = weatherReferenceState
+      ? segments[weatherReferenceState.segmentIndex]
+      : segments[segments.length - 1];
+    const weatherInputForTick = this.weatherModel
+      ? getWeatherInput(this.weatherModel, weatherLap, weatherSegment.id)
+      : undefined;
     let globalTickDurationMs = 0;
     for (const state of stagedEntrants) {
       if (state.finished) continue;
@@ -652,12 +660,9 @@ export class RaceSimulation {
     this.mutableEvents.push(...stagedEvents);
     this.random = stagedRandom;
     if (this.weatherModel && this.weatherStateValue) {
-      const referenceState = stagedEntrants.find((entrant) => !entrant.finished);
-      const lap = referenceState ? referenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
-      const segment = referenceState ? segments[referenceState.segmentIndex] : segments[segments.length - 1];
-      const input = getWeatherInput(this.weatherModel, lap, segment.id);
+      if (!weatherInputForTick) throw new Error("Weather input for the current simulation tick is missing");
       this.weatherStateValue = advanceWeatherState(
-        this.weatherStateValue, input, globalTickDurationMs / 1000, this.weatherModel.profile
+        this.weatherStateValue, weatherInputForTick, globalTickDurationMs / 1000, this.weatherModel.profile
       );
     }
     this.tickValue += 1;
