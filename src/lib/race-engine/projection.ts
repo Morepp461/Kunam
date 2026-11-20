@@ -3,6 +3,7 @@ import type { RaceSimulationCheckpoint } from "./simulation";
 export const RACE_TIMING_PROJECTION_SCHEMA_VERSION = 1;
 
 export interface RaceTimingProjectionRow {
+  readonly trackPosition: { readonly x: number; readonly y: number };
   readonly position: number | null;
   readonly driverId: string;
   readonly teamId: string;
@@ -56,6 +57,7 @@ export interface RaceTimingProjection {
   readonly status: "running" | "completed";
   readonly simulationTimeMs: number;
   readonly generatedAt: string;
+  readonly circuitLayout: readonly { readonly id: string; readonly x: number; readonly y: number }[];
   readonly timingRows: readonly RaceTimingProjectionRow[];
   readonly segmentTelemetry: readonly RaceSegmentTelemetryPoint[];
   readonly weather: null | {
@@ -76,6 +78,37 @@ export interface RaceTimingProjection {
     readonly lapNumber: number;
     readonly simulationTimeMs: number;
   }[];
+}
+
+function resolveCircuitMapPoint(
+  layout: readonly { readonly x: number; readonly y: number }[],
+  distanceCompletedMeters: number,
+  trackLengthMeters: number
+): { readonly x: number; readonly y: number } {
+  if (layout.length < 2 || !Number.isFinite(trackLengthMeters) || trackLengthMeters <= 0) {
+    throw new Error("Circuit map requires a valid closed layout and positive track length");
+  }
+  const lengths = layout.slice(1).map((point, index) =>
+    Math.hypot(point.x - layout[index].x, point.y - layout[index].y)
+  );
+  const pathLength = lengths.reduce((total, length) => total + length, 0);
+  if (!Number.isFinite(pathLength) || pathLength <= 0) throw new Error("Circuit map path length must be positive");
+  const lapDistance = ((Math.max(0, distanceCompletedMeters) % trackLengthMeters) / trackLengthMeters) * pathLength;
+  let traversed = 0;
+  for (let index = 0; index < lengths.length; index += 1) {
+    const length = lengths[index];
+    const start = layout[index];
+    const end = layout[index + 1];
+    if (lapDistance <= traversed + length || index === lengths.length - 1) {
+      const ratio = length > 0 ? Math.min(1, Math.max(0, (lapDistance - traversed) / length)) : 0;
+      return Object.freeze({
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio
+      });
+    }
+    traversed += length;
+  }
+  return Object.freeze({ x: layout[0].x, y: layout[0].y });
 }
 
 export function buildRaceTimingProjection(
@@ -120,6 +153,11 @@ export function buildRaceTimingProjection(
     }) : null;
     return Object.freeze({
       position: entry.position,
+      trackPosition: resolveCircuitMapPoint(
+        checkpoint.snapshot.circuit.layout,
+        segmentDistanceCompletedMeters,
+        checkpoint.snapshot.circuit.trackLengthMeters
+      ),
       driverId: entry.driverId,
       teamId: entry.teamId,
       lapCompleted: entry.lapCompleted,
@@ -178,6 +216,9 @@ export function buildRaceTimingProjection(
     status: checkpoint.status,
     simulationTimeMs: checkpoint.simulationClockMs ?? 0,
     generatedAt,
+    circuitLayout: Object.freeze(checkpoint.snapshot.circuit.layout.map((point) => Object.freeze({
+      id: point.id, x: point.x, y: point.y
+    }))),
     timingRows: Object.freeze(timingRows),
     segmentTelemetry: Object.freeze(segmentTelemetry),
     weather,
