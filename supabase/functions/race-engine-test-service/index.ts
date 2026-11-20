@@ -14,6 +14,7 @@ import {
   ratifyRacePenalty,
   reverseRacePenalty,
   resolveRaceClassificationWithPenalties,
+  resolveStartingGridWithPenalties,
   validateRaceControlAuditTrail
 } from "./race-engine/race-control.ts";
 import type {
@@ -228,7 +229,7 @@ function deriveRaceControlPenalties(sessionId: string, events: readonly RaceCont
       });
     } else if (event.action === "penalty_ratified" && event.penaltyId) {
       const previous = penaltiesById.get(event.penaltyId);
-      if (previous) penaltiesById.set(event.penaltyId, { ...previous, ratifiedByAdminId: event.actorId });
+      if (previous) penaltiesById.set(event.penaltyId, { ...previous, ratifiedByAdminId: event.actorId, gridPenaltyApplied: event.gridPenaltyApplied ?? previous.gridPenaltyApplied });
     } else if (event.action === "penalty_reversed" && event.penaltyId) {
       const previous = penaltiesById.get(event.penaltyId);
       if (previous) penaltiesById.set(event.penaltyId, { ...previous, reversedByEventId: event.id });
@@ -240,7 +241,7 @@ function deriveRaceControlPenalties(sessionId: string, events: readonly RaceCont
 async function loadRaceControlContext(sessionId: string, userId: string) {
   const { data: session, error: sessionError } = await service
     .from("race_engine_test_sessions")
-    .select("id,created_by,checkpoint,status")
+    .select("id,created_by,checkpoint,status,tick,lease_owner,lease_expires_at")
     .eq("id", sessionId)
     .eq("created_by", userId)
     .maybeSingle();
@@ -405,6 +406,7 @@ Deno.serve(async (req: Request) => {
         controlState: state,
         classification: simulation.classification,
         resolvedClassification: resolveRaceClassificationWithPenalties(simulation.classification, state.penalties),
+        startingGrid: simulation.entrantStates.map((entrant) => ({ driverId: entrant.driverId, gridPosition: entrant.startingGridPosition ?? 1 })).sort((a, b) => a.gridPosition - b.gridPosition),
         audit: validateRaceControlAuditTrail(state)
       }, 200, origin);
     }
@@ -450,12 +452,47 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "control_ratify_penalty") {
-      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const { session, simulation, state } = await loadRaceControlContext(sessionId, user.id);
       const context = raceControlContext(sessionId, user.id, simulation, state, body);
       const penaltyId = String(body.penaltyId ?? "");
+      const issuedPenalty = state.penalties.find((penalty) => penalty.id === penaltyId);
       const next = ratifyRacePenalty(state, context, penaltyId);
-      const event = await persistRaceControlEvent(sessionId, next);
-      return json({ event, controlState: next }, 200, origin);
+      const event = next.events[next.events.length - 1];
+      const canApplyGridNow = issuedPenalty?.type === "grid_penalty"
+        && session.status === "queued"
+        && Number(session.tick) === 0
+        && session.lease_owner === null
+        && session.lease_expires_at === null;
+
+      if (canApplyGridNow) {
+        const grid = resolveStartingGridWithPenalties(
+          simulation.entrantStates.map((entrant) => ({
+            driverId: entrant.driverId,
+            gridPosition: entrant.startingGridPosition ?? 1
+          })),
+          next.penalties
+        );
+        simulation.applyStartingGridOrder(grid);
+        const appliedEvent: RaceControlAuditEvent = { ...event, gridPenaltyApplied: true };
+        const rpcResult = await service.rpc("race_engine_test_commit_grid_penalty_ratification", {
+          p_session_id: sessionId,
+          p_created_by: user.id,
+          p_checkpoint: simulation.createCheckpoint(),
+          p_event: appliedEvent
+        });
+        if (rpcResult.error) throw rpcResult.error;
+        const appliedState: RaceControlState = {
+          ...next,
+          events: Object.freeze([...next.events.slice(0, -1), appliedEvent]),
+          penalties: Object.freeze(next.penalties.map((penalty) => penalty.id === penaltyId
+            ? { ...penalty, gridPenaltyApplied: true }
+            : penalty))
+        };
+        return json({ event: appliedEvent, controlState: appliedState, startingGrid: grid, gridPenaltyApplied: true }, 200, origin);
+      }
+
+      const persistedEvent = await persistRaceControlEvent(sessionId, next);
+      return json({ event: persistedEvent, controlState: next, gridPenaltyApplied: false }, 200, origin);
     }
 
     if (action === "control_reverse_penalty") {
