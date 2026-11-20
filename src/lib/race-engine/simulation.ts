@@ -745,6 +745,20 @@ export class RaceSimulation {
 
       const segment = segments[state.segmentIndex];
       const baseSegmentTimeMs = this.snapshot.circuit.targetLapTimeMs * segment.distanceMeters / totalDistance;
+      const orderedEntrants = [...this.mutableEntrants]
+        .filter((item) => !item.finished && !item.retired)
+        .sort((a, b) => a.elapsedMs - b.elapsedMs || a.driverId.localeCompare(b.driverId));
+      const orderIndex = orderedEntrants.findIndex((item) => item.driverId === state.driverId);
+      const ahead = orderIndex > 0 ? orderedEntrants[orderIndex - 1] : undefined;
+      const behind = orderIndex >= 0 && orderIndex < orderedEntrants.length - 1 ? orderedEntrants[orderIndex + 1] : undefined;
+      const attackingGapMs = ahead ? state.elapsedMs - ahead.elapsedMs : undefined;
+      const defendingGapMs = behind ? behind.elapsedMs - state.elapsedMs : undefined;
+      const battleContext = {
+        ...(attackingGapMs !== undefined && attackingGapMs <= (this.performanceModel.snapshot as { battleDetectionGapMs?: number }).battleDetectionGapMs! && segment.overtakingOpportunity
+          ? { attackingGapMs } : {}),
+        ...(defendingGapMs !== undefined && defendingGapMs <= (this.performanceModel.snapshot as { battleDetectionGapMs?: number }).battleDetectionGapMs! && segment.defendingOpportunity
+          ? { defendingGapMs } : {})
+      };
       const adjustmentMs = this.performanceModel.calculateAdjustmentMs({
         entrant,
         lapNumber: state.lapCompleted + 1,
@@ -753,7 +767,9 @@ export class RaceSimulation {
         segment,
         baseSegmentTimeMs,
         tyreState: state.tyreState ?? null,
-        weatherState: this.weatherStateValue ?? null
+        weatherState: this.weatherStateValue ?? null,
+        battleContext,
+        consistencySample: this.config.noiseAmplitudeMs > 0 ? noiseMs / this.config.noiseAmplitudeMs : 0
       });
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
