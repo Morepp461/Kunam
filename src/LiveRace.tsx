@@ -26,7 +26,12 @@ type RaceSession = {
   completed_at?: string | null;
   checkpoint?: any;
   classification?: Array<{
-    position: number;
+    position: number | null;
+    originalPosition?: number;
+    status?: "classified" | "retired" | "disqualified" | "race_banned";
+    penaltyTimeMs?: number;
+    pendingGridPenaltyPositions?: number;
+    appliedPenaltyIds?: string[];
     driverId: string;
     teamId: string;
     lapCompleted: number;
@@ -60,6 +65,7 @@ type RaceControlPenalty = {
   issuedAt: string;
   ratifiedByAdminId: string | null;
   reversedByEventId: string | null;
+  gridPenaltyApplied?: boolean;
 };
 type RaceControlAuditEvent = {
   id: string;
@@ -70,6 +76,7 @@ type RaceControlAuditEvent = {
   flag?: RaceControlFlag;
   penaltyId?: string;
   penaltyType?: string;
+  gridPenaltyApplied?: boolean;
   driverId?: string;
   reason: string;
 };
@@ -134,6 +141,8 @@ export default function LiveRace() {
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replayLoading, setReplayLoading] = useState(false);
   const [controlState, setControlState] = useState<RaceControlState | null>(null);
+  const [resolvedClassification, setResolvedClassification] = useState<any[]>([]);
+  const [startingGrid, setStartingGrid] = useState<Array<{ driverId: string; gridPosition: number }>>([]);
   const [controlFlag, setControlFlag] = useState<Exclude<RaceControlFlag, "green">>("yellow");
   const [controlDurationMs, setControlDurationMs] = useState("30000");
   const [controlReason, setControlReason] = useState("");
@@ -172,6 +181,8 @@ export default function LiveRace() {
       setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
       const control = await raceApi("control_state", { sessionId: id });
       setControlState(control.controlState as RaceControlState);
+      setResolvedClassification(Array.isArray(control.resolvedClassification) ? control.resolvedClassification : []);
+      setStartingGrid(Array.isArray(control.startingGrid) ? control.startingGrid : []);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal memuat detail sesi.");
@@ -239,7 +250,7 @@ export default function LiveRace() {
   const entrants = Array.isArray(checkpoint?.entrants) ? checkpoint.entrants : [];
   const tyreStates = entrants.filter((entry: any) => entry.tyreState);
   const weather = checkpoint?.weatherState;
-  const classification = active?.classification ?? [];
+  const classification = resolvedClassification.length ? resolvedClassification : active?.classification ?? [];
   const recentEvents = useMemo(() => [...(detail?.events ?? [])].reverse().slice(-35).reverse(), [detail?.events]);
   const recentCommands = useMemo(() => [...(detail?.commands ?? [])].slice(0, 12), [detail?.commands]);
   const replayEvent = replayEvents[replayIndex] ?? null;
@@ -349,6 +360,7 @@ export default function LiveRace() {
         ...payload
       });
       setControlState(result.controlState as RaceControlState);
+      if (Array.isArray(result.startingGrid)) setStartingGrid(result.startingGrid);
       setControlReason("");
       setEvidenceDescription("");
       setEvidenceRef("");
@@ -517,10 +529,10 @@ export default function LiveRace() {
                   lapCompleted: entry.lapCompleted, elapsedMs: entry.elapsedMs,
                   finished: entry.finished, retired: entry.retired, pitStopCount: entry.pitStopCount
                 }))).map((entry: any) => <tr key={entry.driverId}>
-                  <td><strong className="driver-position">{String(entry.position).padStart(2,"0")}</strong></td>
+                  <td><strong className="driver-position">{entry.position === null ? "DSQ" : String(entry.position).padStart(2,"0")}</strong></td>
                   <td>{entry.driverId}</td><td>{entry.teamId}</td><td>{entry.lapCompleted}</td>
                   <td className="lap-time">{formatTime(entry.elapsedMs)}</td><td>{entry.pitStopCount ?? 0}</td>
-                  <td><span className={"race-engine-status status-" + (entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}</span></td>
+                  <td><span className={"race-engine-status status-" + (entry.status === "disqualified" || entry.status === "race_banned" || entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.status === "disqualified" ? "DSQ" : entry.status === "race_banned" ? "RACE BAN" : entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}{entry.penaltyTimeMs > 0 ? ` +${formatTime(entry.penaltyTimeMs)}` : ""}{entry.pendingGridPenaltyPositions > 0 ? ` · GRID +${entry.pendingGridPenaltyPositions}` : ""}</span></td>
                 </tr>)}
               </tbody>
             </table>
@@ -629,9 +641,13 @@ export default function LiveRace() {
           </button>
         </div>
 
+        {startingGrid.length > 0 && <div className="race-control-starting-grid">
+          <strong>STARTING GRID</strong>
+          <div>{startingGrid.map((entry) => <span key={entry.driverId}><b>P{entry.gridPosition}</b> {entry.driverId}</span>)}</div>
+        </div>}
         <div className="race-control-penalty-list">
           {(controlState?.penalties ?? []).map((penalty) => <article key={penalty.id}>
-            <div><strong>{penalty.type.replaceAll("_"," ").toUpperCase()} · {penalty.driverId}</strong><small>{penalty.reason} · {penalty.ratifiedByAdminId ? "RATIFIED" : "PENDING ADMIN RATIFICATION"}{penalty.reversedByEventId ? " · REVERSED" : ""}</small></div>
+            <div><strong>{penalty.type.replaceAll("_"," ").toUpperCase()} · {penalty.driverId}</strong><small>{penalty.reason} · {penalty.ratifiedByAdminId ? "RATIFIED" : "PENDING ADMIN RATIFICATION"}{penalty.gridPenaltyApplied ? " · GRID APPLIED" : ""}{penalty.reversedByEventId ? " · REVERSED" : ""}</small></div>
             {!penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_ratify_penalty", { penaltyId: penalty.id })}>Ratify</button>}
             {penalty.ratifiedByAdminId && !penalty.reversedByEventId && <button className="race-engine-secondary-button" disabled={Boolean(busy) || !controlEvidenceReady()} onClick={() => void submitControlAction("control_reverse_penalty", { penaltyId: penalty.id, supersedesEventId: controlState?.events.find((event) => event.action==="penalty_issued" && event.penaltyId===penalty.id)?.id ?? "" })}>Reverse</button>}
           </article>)}

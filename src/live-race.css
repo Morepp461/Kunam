@@ -56,3 +56,10 @@
 .race-control-audit-list article{display:block}
 @media(max-width:760px){.race-control-form-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.race-engine-control-lab{padding:14px}}
 @media(max-width:480px){.race-control-form-grid{grid-template-columns:1fr}.race-engine-control-lab .live-race-subheading{align-items:flex-start;flex-direction:column}.race-control-penalty-list article{align-items:flex-start;flex-direction:column}}
+
+
+.race-control-starting-grid{margin-top:14px;padding:12px;border:1px solid rgba(255,255,255,.1);border-radius:9px;background:rgba(255,255,255,.025)}
+.race-control-starting-grid>strong{display:block;margin-bottom:9px;font-size:10px;letter-spacing:.1em;color:var(--muted,#a1a1aa)}
+.race-control-starting-grid>div{display:flex;flex-wrap:wrap;gap:7px}
+.race-control-starting-grid span{padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.06);font-size:10px}
+.race-control-starting-grid b{margin-right:4px;color:#e7c56b}

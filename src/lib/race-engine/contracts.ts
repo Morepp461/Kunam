@@ -36,6 +36,7 @@ export interface RaceEntrantSnapshot {
   readonly driverAttributes: DriverAttributeValues;
   readonly carTeamAttributes: CarTeamAttributeValues;
   readonly hqEffects: Readonly<Record<string, number>>;
+  readonly startingGridPosition?: number;
 }
 
 export interface RaceStartSnapshot {
@@ -76,11 +77,21 @@ export function validateRaceStartSnapshot(
 
   if (value.entrants.length === 0) errors.push("Race must contain at least one entrant");
   const driverIds = new Set<string>();
+  const startingGridPositions = new Set<number>();
   for (const entrant of value.entrants) {
     if (!entrant.driverId.trim() || driverIds.has(entrant.driverId)) {
       errors.push("Entrant driver IDs must be present and unique");
     }
     driverIds.add(entrant.driverId);
+    if (entrant.startingGridPosition !== undefined) {
+      if (!Number.isInteger(entrant.startingGridPosition) || entrant.startingGridPosition < 1) {
+        errors.push(`Entrant ${entrant.driverId} startingGridPosition must be a positive integer`);
+      } else if (startingGridPositions.has(entrant.startingGridPosition)) {
+        errors.push("Starting-grid positions must be unique");
+      } else {
+        startingGridPositions.add(entrant.startingGridPosition);
+      }
+    }
     if (!entrant.teamId.trim()) errors.push(`Entrant ${entrant.driverId} must have a teamId`);
     if (!entrant.driverNameSnapshot.trim()) errors.push(`Entrant ${entrant.driverId} must have a driver name snapshot`);
     if (!entrant.teamNameSnapshot.trim()) errors.push(`Entrant ${entrant.driverId} must have a team name snapshot`);
@@ -91,6 +102,15 @@ export function validateRaceStartSnapshot(
     }
   }
 
+  const entrantsWithGridPosition = value.entrants.filter((entrant) => entrant.startingGridPosition !== undefined).length;
+  if (entrantsWithGridPosition > 0 && entrantsWithGridPosition !== value.entrants.length) {
+    errors.push("Starting-grid positions must be supplied for every entrant or none");
+  }
+  if (entrantsWithGridPosition === value.entrants.length && value.entrants.length > 0) {
+    for (let position = 1; position <= value.entrants.length; position += 1) {
+      if (!startingGridPositions.has(position)) errors.push("Starting-grid positions must be contiguous from 1");
+    }
+  }
   return { valid: errors.length === 0, errors };
 }
 
