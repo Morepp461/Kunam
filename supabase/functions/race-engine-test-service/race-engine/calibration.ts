@@ -1,9 +1,9 @@
 import {
   ATTRIBUTE_SCHEMA_VERSION,
   RACE_ATTRIBUTE_DEFINITIONS
-} from "./attributes";
-import type { JsonValue, RaceEntrantSnapshot } from "./contracts";
-import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation";
+} from "./attributes.ts";
+import type { JsonValue, RaceEntrantSnapshot } from "./contracts.ts";
+import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation.ts";
 
 export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 2;
 
