@@ -6,7 +6,8 @@ import type {
   CircuitCornerType,
   CircuitGeometryDefinition,
   CircuitGeometrySegment,
-  CircuitPathPoint
+  CircuitPathPoint,
+  CircuitGeometrySpecifications
 } from "./circuit-geometry";
 
 export interface CircuitMakerSegmentInput {
@@ -38,6 +39,7 @@ export interface CircuitMakerInput {
   layout: readonly CircuitPathPoint[];
   segments: readonly CircuitMakerSegmentInput[];
   kind: "fictional" | "real";
+  specifications?: CircuitGeometrySpecifications;
 }
 
 export interface CircuitMakerBuildResult {
@@ -75,7 +77,8 @@ export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMa
     trackLengthMeters: segments.reduce((sum, segment) => sum + segment.distanceMeters, 0),
     kind: input.kind,
     layout: input.layout.map((point) => ({ ...point })),
-    segments
+    segments,
+    ...(input.specifications ? { specifications: input.specifications } : {})
   };
   const validation = validateCircuitGeometryDefinition(definition);
   return { definition: validation.valid ? definition : null, errors: validation.errors };
