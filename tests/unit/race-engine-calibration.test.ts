@@ -26,6 +26,7 @@ function createProfile(): RacePhysicsCalibrationProfile {
     id: "calibration-test",
     version: "1.0.0",
     baselineAttributeValue: 50,
+    battleDetectionGapMs: 5000,
     attributes,
     hqEffects: {
       race_pace_bonus: { segment_pace_ms_per_point: -2 },
@@ -118,7 +119,10 @@ describe("Race physics calibration profiles", () => {
         lowSpeedDemand: 0.5,
         highSpeedDemand: 0,
         tractionDemand: 0,
-        drsAvailable: true
+        drsAvailable: true,
+        ersAvailable: true,
+        overtakingOpportunity: true,
+        defendingOpportunity: true
       },
       baseSegmentTimeMs: 14400,
       tyreState: null
