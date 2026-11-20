@@ -35,7 +35,7 @@ export interface PitDecisionInput {
   readonly trackWetness: number;
   readonly candidates: readonly PitStopCandidate[];
   /** Calibrated time adjustment from the team's Strategy Quality attribute/HQ effects. */
-  readonly strategyQualityAdjustmentMs?: number;
+  readonly strategyQualityRiskMultiplier?: number;
   /** Calibrated adjustment to the pit-lane loss from Pit Stop Efficiency and HQ effects. */
   readonly pitStopTimeAdjustmentMs?: number;
 }
@@ -125,7 +125,7 @@ export function choosePitDecision(model: PitStrategyModel, input: PitDecisionInp
       input.currentLap < 1 || input.totalLaps < input.currentLap) throw new RangeError("Race lap progress is invalid");
   if (!finite(input.currentWearPercent) || input.currentWearPercent < 0 || input.currentWearPercent > 100) throw new RangeError("currentWearPercent must be between 0 and 100");
   if (!finite(input.trackWetness) || input.trackWetness < 0 || input.trackWetness > 1) throw new RangeError("trackWetness must be between 0 and 1");
-  if (input.strategyQualityAdjustmentMs !== undefined && !finite(input.strategyQualityAdjustmentMs)) throw new RangeError("strategyQualityAdjustmentMs must be finite");
+  if (input.strategyQualityRiskMultiplier !== undefined && !finite(input.strategyQualityRiskMultiplier)) throw new RangeError("strategyQualityRiskMultiplier must be finite");
   if (input.pitStopTimeAdjustmentMs !== undefined && !finite(input.pitStopTimeAdjustmentMs)) throw new RangeError("pitStopTimeAdjustmentMs must be finite");
   if (!(TYRE_COMPOUNDS as readonly string[]).includes(input.currentCompound)) throw new RangeError("Unsupported current tyre compound");
   if (!Number.isInteger(input.currentStopCount) || input.currentStopCount < 0) throw new RangeError("currentStopCount must be a non-negative integer");
@@ -159,8 +159,7 @@ export function choosePitDecision(model: PitStrategyModel, input: PitDecisionInp
     costs[candidate.compound] = Math.max(0,
       calibratedPitLaneLossMs +
       remainingLaps * (candidate.expectedLapTimeDeltaMs + candidate.expectedDegradationMsPerLap) +
-      candidate.riskPenaltyMs +
-      (input.strategyQualityAdjustmentMs ?? 0)
+      candidate.riskPenaltyMs * Math.max(0, 1 + (input.strategyQualityRiskMultiplier ?? 0))
     );
   }
   const selected = Object.entries(costs).sort(([compoundA, costA], [compoundB, costB]) =>
