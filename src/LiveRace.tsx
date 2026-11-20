@@ -50,7 +50,10 @@ type RaceTimingProjection = {
   raceId: string;
   tick: number;
   simulationTimeMs: number;
-  timingRows: Array<{ driverId: string; segmentId: string | null; segmentIndex: number | null; segmentDistanceCompletedMeters: number }>;
+  timingRows: Array<{
+    driverId: string; position: number | null; segmentId: string | null; segmentIndex: number | null;
+    segmentDistanceCompletedMeters: number; trackPosition: { x: number; y: number };
+  }>;
   circuitLayout: Array<{ id: string; x: number; y: number }>;
   segmentTelemetry: Array<{
     sequence: number; driverId: string; racePosition: number | null; lapNumber: number;
