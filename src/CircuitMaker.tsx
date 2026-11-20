@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { MouseEvent } from "react";
-import { buildCircuitMakerDefinition } from "./lib/race-engine/circuit-maker";
+import { buildCircuitMakerDefinition, circuitLayoutFromGeoJsonDraft } from "./lib/race-engine/circuit-maker";
 import type { CircuitMakerSegmentInput } from "./lib/race-engine/circuit-maker";
 import type { CircuitGeometryDefinition, CircuitPathPoint, CircuitCornerType, CircuitGeometrySpecifications, CircuitSourceProvenance } from "./lib/race-engine/circuit-geometry";
 import type { CircuitGeoJsonImportDraft } from "./lib/race-engine/circuit-import";
@@ -127,12 +127,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   };
   const loadImportedCenterline = () => {
     if (!importedGeoJsonDraft) return;
-    setPoints(importedGeoJsonDraft.points.map((point) => ({
-      id: point.id,
-      x: point.normalizedX,
-      y: point.normalizedY,
-      ...(point.elevationMeters === null ? {} : { elevationMeters: point.elevationMeters })
-    })));
+    setPoints(circuitLayoutFromGeoJsonDraft(importedGeoJsonDraft));
     setTrackLimitBoundary([]);
     setDrawingMode("centerline");
     setSpecifications((current) => ({
