@@ -18,6 +18,9 @@ type RaceSession = {
   driver_count: number;
   team_count: number;
   total_laps: number;
+  circuit_id?: string | null;
+  circuit_revision?: number | null;
+  circuit_name_snapshot?: string | null;
   engine_version: string;
   tick: number;
   total_ticks: number;
@@ -44,6 +47,16 @@ type RaceSession = {
   last_error?: string | null;
 };
 
+type RaceCircuitOption = {
+  id: string;
+  name: string;
+  countryCode: string;
+  kind: "fictional" | "real";
+  revision: number;
+  readyForTesting: boolean;
+  officialReady: boolean;
+  validationErrors: string[];
+};
 type RaceCommand = { id: string; command_type: string; result: Record<string, unknown>; created_at: string };
 type RaceTimingProjection = {
   schemaVersion: number;
@@ -180,6 +193,9 @@ export default function LiveRace() {
   const [driverCount, setDriverCount] = useState(20);
   const [teamCount, setTeamCount] = useState(10);
   const [totalLaps, setTotalLaps] = useState(5);
+  const [availableCircuits, setAvailableCircuits] = useState<RaceCircuitOption[]>([]);
+  const [selectedCircuitId, setSelectedCircuitId] = useState("");
+  const [circuitLoading, setCircuitLoading] = useState(true);
   const [seed, setSeed] = useState("20261120");
   const [aeroSetting, setAeroSetting] = useState(50);
   const [suspensionSetting, setSuspensionSetting] = useState(50);
@@ -250,6 +266,19 @@ export default function LiveRace() {
   }, []);
 
   useEffect(() => { void refreshSessions(); }, [refreshSessions]);
+  useEffect(() => {
+    let active = true;
+    void raceApi("circuits").then((result) => {
+      if (!active) return;
+      const circuits = (result.circuits ?? []) as RaceCircuitOption[];
+      setAvailableCircuits(circuits.filter((circuit) => circuit.readyForTesting));
+    }).catch((cause) => {
+      if (active) setError(cause instanceof Error ? cause.message : "Daftar Circuit Maker gagal dimuat.");
+    }).finally(() => {
+      if (active) setCircuitLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
   useEffect(() => { if (selectedId) void loadDetail(selectedId); }, [selectedId, loadDetail]);
 
   useEffect(() => {
@@ -322,6 +351,7 @@ export default function LiveRace() {
     try {
       const result = await raceApi("create", {
         driverCount, teamCount, totalLaps, seed: Number(seed),
+        circuitId: selectedCircuitId || null,
         carSetup: { aeroSetting, suspensionSetting, brakeBalanceFrontPercent, frontTyrePressurePsi, rearTyrePressurePsi },
         division: hqDivision,
         hqFacilityLevels: { engineering_department: hqEngineeringLevel, rd_center: hqRdLevel, simulator_facility: hqSimulatorLevel, pit_crew_training_center: hqPitCrewLevel }
@@ -487,6 +517,13 @@ export default function LiveRace() {
         <span className="live-race-demo-label">TEST ONLY</span>
       </div>
       <div className="race-engine-form-grid race-engine-quick-grid">
+        <label>Circuit
+          <select value={selectedCircuitId} onChange={(event) => setSelectedCircuitId(event.target.value)} disabled={circuitLoading}>
+            <option value="">{circuitLoading ? "Loading circuits..." : "Synthetic default circuit"}</option>
+            {availableCircuits.map((circuit) => <option key={circuit.id} value={circuit.id}>{circuit.name} · rev {circuit.revision} · {circuit.kind}</option>)}
+          </select>
+          <small>{selectedCircuitId ? "Geometry snapshot akan dikunci untuk sesi ini." : "Gunakan circuit synthetic bawaan Race Engine."}</small>
+        </label>
         <label>Drivers
           <select value={driverCount} onChange={(event) => {
             const value = Number(event.target.value);
@@ -546,7 +583,7 @@ export default function LiveRace() {
         </div>
       </details>
       <div className="race-engine-form-footer">
-        <span>Quick Test hanya butuh 4 input. Setup mobil dan efek HQ tersedia di Advanced Setup.</span>
+        <span>Quick Test: circuit, drivers, teams, distance, dan seed. Setup mobil/HQ ada di Advanced Setup.</span>
         <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !/^\d+$/.test(seed) || !Number.isSafeInteger(Number(seed)) || Number(seed) > 0xffffffff}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>
