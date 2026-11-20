@@ -1,9 +1,26 @@
-import type { CircuitSegmentSnapshot } from "./contracts.ts";
+import type { CircuitSegmentSnapshot } from "./contracts";
 
 export const CIRCUIT_GEOMETRY_SCHEMA_VERSION = 1;
 export const CIRCUIT_SECTOR_COUNT = 3;
 
 export type CircuitCornerType = "straight" | "slow" | "medium" | "fast" | "chicane";
+
+export type CircuitGeometryKind = "synthetic" | "fictional" | "real";
+export type CircuitFidelityStatus = "unverified" | "approximate" | "verified";
+
+export interface CircuitSourceProvenance {
+  readonly provider: string;
+  readonly sourceUrl: string;
+  readonly licenseId: string;
+  readonly attribution: string;
+  readonly retrievedAt: string;
+  readonly sourceRevision: string;
+  readonly geometryHash: string;
+  readonly fidelityStatus: CircuitFidelityStatus;
+  readonly reviewedBy?: string;
+  readonly reviewedAt?: string;
+  readonly knownLimitations?: readonly string[];
+}
 
 export interface CircuitPathPoint {
   readonly id: string;
@@ -29,8 +46,54 @@ export interface CircuitGeometryDefinition {
   readonly totalLaps: number;
   readonly targetLapTimeMs: number;
   readonly trackLengthMeters: number;
+  /** Missing kind/provenance remains compatible with legacy synthetic fixtures but blocks official release. */
+  readonly kind?: CircuitGeometryKind;
+  readonly sourceProvenance?: CircuitSourceProvenance;
   readonly layout: readonly CircuitPathPoint[];
   readonly segments: readonly CircuitGeometrySegment[];
+}
+
+
+export interface CircuitReleaseReadinessResult {
+  readonly ready: boolean;
+  readonly errors: readonly string[];
+}
+
+/**
+ * A geometrically valid drawing is not automatically an approved real circuit.
+ * Official release requires a declared circuit kind and traceable, reviewed source provenance.
+ */
+export function validateCircuitReleaseReadiness(
+  circuit: CircuitGeometryDefinition
+): CircuitReleaseReadinessResult {
+  const errors: string[] = [];
+  const geometry = validateCircuitGeometryDefinition(circuit);
+  errors.push(...geometry.errors);
+
+  if (!circuit.kind) {
+    errors.push("Circuit kind must be declared before official release");
+  } else if (circuit.kind === "synthetic") {
+    errors.push("Synthetic circuits are test-only and cannot be used for official races");
+  } else if (circuit.kind === "real") {
+    const source = circuit.sourceProvenance;
+    if (!source) {
+      errors.push("Real circuits require source provenance");
+    } else {
+      if (!source.provider.trim()) errors.push("Circuit source provider is required");
+      if (!/^https:\/\//i.test(source.sourceUrl)) errors.push("Circuit source URL must use HTTPS");
+      if (!source.licenseId.trim()) errors.push("Circuit source license is required");
+      if (!source.attribution.trim()) errors.push("Circuit source attribution is required");
+      if (!Number.isFinite(Date.parse(source.retrievedAt))) errors.push("Circuit source retrieval timestamp is invalid");
+      if (!source.sourceRevision.trim()) errors.push("Circuit source revision is required");
+      if (!/^[a-f0-9]{64}$/i.test(source.geometryHash)) errors.push("Circuit geometry hash must be a SHA-256 hex digest");
+      if (source.fidelityStatus !== "verified") errors.push("Real circuit geometry must pass fidelity review");
+      if (!source.reviewedBy?.trim() || !source.reviewedAt || !Number.isFinite(Date.parse(source.reviewedAt))) {
+        errors.push("Real circuit fidelity review requires reviewer identity and timestamp");
+      }
+    }
+  }
+
+  return { ready: errors.length === 0, errors };
 }
 
 export interface CircuitGeometryValidationOptions {
