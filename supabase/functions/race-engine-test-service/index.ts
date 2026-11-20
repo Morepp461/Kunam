@@ -108,6 +108,21 @@ async function processBackgroundBatch() {
 
   const processed: Array<Record<string, unknown>> = [];
   for (const session of sessions ?? []) {
+    const { data: controlRows, error: controlError } = await service
+      .from("race_engine_test_control_events")
+      .select("payload")
+      .eq("session_id", session.id)
+      .order("sequence", { ascending: true });
+    if (controlError) throw controlError;
+    const controlEvents = (controlRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+    const lastSuspension = [...controlEvents].reverse().find((event) =>
+      event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+    );
+    if (lastSuspension?.action === "race_suspended") {
+      processed.push({ sessionId: session.id, status: "suspended_by_red_flag" });
+      continue;
+    }
+
     const workerId = crypto.randomUUID();
     const { data: claim, error: claimError } = await service.rpc("race_engine_claim_test_session", {
       p_session_id: session.id,
@@ -123,20 +138,6 @@ async function processBackgroundBatch() {
     try {
       const checkpoint = claim.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
-      const { data: controlRows, error: controlError } = await service
-        .from("race_engine_test_control_events")
-        .select("payload")
-        .eq("session_id", session.id)
-        .order("sequence", { ascending: true });
-      if (controlError) throw controlError;
-      const controlEvents = (controlRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
-      const lastSuspension = [...controlEvents].reverse().find((event) =>
-        event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
-      );
-      if (lastSuspension?.action === "race_suspended") {
-        processed.push({ sessionId: session.id, status: "suspended_by_red_flag" });
-        continue;
-      }
       const latestFlag = [...controlEvents].reverse().find((event) => event.flag !== undefined);
       simulation.clearExternalRaceControlFlags();
       if (
