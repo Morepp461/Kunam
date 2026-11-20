@@ -18,6 +18,10 @@ function createProfile(): RacePhysicsCalibrationProfile {
     ])
   );
   attributes["driver.race_pace"] = { segment_pace_ms_per_point: -1 };
+  attributes["driver.aggression"] = {
+    overtake_advantage_per_point: 0.5,
+    defense_advantage_per_point: 0.5
+  };
   attributes["driver.mistake_rate"] = { mistake_probability_per_point: 0.01 };
 
   return {
@@ -60,6 +64,32 @@ describe("Race physics calibration profiles", () => {
       attributes: { ...profile.attributes, "driver.race_pace": { segment_pace_ms_per_point: 0 } }
     };
     expect(validatePhysicsCalibrationProfile(zero).valid).toBe(false);
+  });
+
+  it("keeps Aggression focused on attack/defence duels and independent from Mistake Rate", () => {
+    const profile = createProfile();
+    expect(validatePhysicsCalibrationProfile(profile).valid).toBe(true);
+
+    const noDuelEffect = {
+      ...profile,
+      attributes: {
+        ...profile.attributes,
+        "driver.aggression": { segment_pace_ms_per_point: -0.01 }
+      }
+    };
+    expect(validatePhysicsCalibrationProfile(noDuelEffect).errors.some((error) => error.includes("Aggression"))).toBe(true);
+
+    const conflated = {
+      ...profile,
+      attributes: {
+        ...profile.attributes,
+        "driver.aggression": {
+          overtake_advantage_per_point: 0.5,
+          mistake_probability_per_point: 0.01
+        }
+      }
+    };
+    expect(validatePhysicsCalibrationProfile(conflated).errors.some((error) => error.includes("separate from Mistake Rate"))).toBe(true);
   });
 
   it("enforces the confirmed higher-is-riskier direction for Mistake Rate", () => {
