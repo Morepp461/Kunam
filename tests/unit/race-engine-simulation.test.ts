@@ -6,6 +6,7 @@ import { createSyntheticRaceFixture } from "../../src/lib/race-engine/synthetic-
 const seededModel: SegmentPerformanceModel = {
   id: "test-driver-order",
   version: "1",
+  snapshot: { model: "test-driver-order", version: 1 },
   calculateAdjustmentMs: ({ entrant }) => {
     const number = Number(entrant.driverId.split("-").at(-1));
     return number * 2;
@@ -99,6 +100,7 @@ describe("Race simulation kernel", () => {
     const unstableModel: SegmentPerformanceModel = {
       id: "atomic-test",
       version: "1",
+      snapshot: { model: "atomic-test", version: 1 },
       calculateAdjustmentMs: () => {
         calls += 1;
         if (calls === 3) throw new Error("injected model failure");
