@@ -17,9 +17,10 @@ import {
   createTyreSegmentInput,
   getTyreSegmentEnvironment
 } from "./tyres";
+import { TYRE_COMPOUNDS } from "./tyres";
 import type { TyreSimulationModel, TyreState } from "./tyres";
 
-export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 2;
+export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 3;
 
 export type RaceSimulationStatus = "running" | "completed";
 export type RaceEventType =
@@ -130,13 +131,14 @@ function assertConfig(config: RaceSimulationConfig): void {
   if (!config.performanceModelId.trim() || !config.performanceModelVersion.trim()) {
     throw new Error("Performance model ID and version are required");
   }
-  const hasTyreModel = config.tyreModelId !== null &&
-    config.tyreModelVersion !== null &&
-    config.tyreModelSnapshot !== null;
-  const hasPartialTyreModel = config.tyreModelId === null ||
-    config.tyreModelVersion === null ||
-    config.tyreModelSnapshot === null;
-  if (!hasTyreModel && !hasPartialTyreModel) {
+  const tyreFields = [
+    config.tyreModelId,
+    config.tyreModelVersion,
+    config.tyreModelSnapshot
+  ];
+  const allTyreFieldsNull = tyreFields.every((value) => value === null);
+  const allTyreFieldsPresent = tyreFields.every((value) => value !== null);
+  if (!allTyreFieldsNull && !allTyreFieldsPresent) {
     throw new Error("Tyre model configuration is invalid");
   }
   if (
@@ -285,15 +287,15 @@ export class RaceSimulation {
             this.tyreModel.profile
           )
         : undefined;
-      return ({
-      driverId: entrant.driverId,
-      teamId: entrant.teamId,
-      lapCompleted: 0,
-      segmentIndex: 0,
-      elapsedMs: 0,
-      finished: false,
-      ...(tyreState ? { tyreState } : {})
-    });
+      return {
+        driverId: entrant.driverId,
+        teamId: entrant.teamId,
+        lapCompleted: 0,
+        segmentIndex: 0,
+        elapsedMs: 0,
+        finished: false,
+        ...(tyreState ? { tyreState } : {})
+      };
     });
   }
 
@@ -369,7 +371,7 @@ export class RaceSimulation {
         throw new Error(`Checkpoint state for ${state.driverId} is invalid`);
       }
       if (simulation.tyreModel) {
-        if (!state.tyreState || state.tyreState.compound !== simulation.tyreModel.startingCompounds[state.driverId]) {
+        if (!state.tyreState || !(TYRE_COMPOUNDS as readonly string[]).includes(state.tyreState.compound)) {
           throw new Error(`Checkpoint tyre state for ${state.driverId} is missing or has an unexpected compound`);
         }
         if (
