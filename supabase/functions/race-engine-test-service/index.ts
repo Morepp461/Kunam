@@ -353,6 +353,71 @@ Deno.serve(async (req: Request) => {
     const sessionId = String(body.sessionId ?? "");
     if (!/^[0-9a-f-]{36}$/i.test(sessionId)) throw new Error("Session ID tidak valid.");
 
+    if (action === "control_state") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      return json({
+        controlState: state,
+        classification: simulation.classification,
+        audit: validateRaceControlAuditTrail(state)
+      }, 200, origin);
+    }
+
+    if (action === "control_flag") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const flag = String(body.flag ?? "") as RaceControlFlag;
+      const next = flag === "green"
+        ? clearRaceControlFlag(state, context)
+        : deployRaceControlFlag(state, context, flag as Exclude<RaceControlFlag, "green">);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
+    if (action === "control_restart") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const mode = String(body.mode ?? "") as RaceRestartMode;
+      if (mode !== "standing" && mode !== "rolling") throw new Error("Restart mode must be standing or rolling.");
+      const next = authorizeRaceRestart(state, context, mode);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
+    if (action === "control_penalty") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const penaltyType = String(body.penaltyType ?? "") as RacePenaltyType;
+      const durationMs = body.durationMs === undefined ? undefined : Number(body.durationMs);
+      const gridPositions = body.gridPositions === undefined ? undefined : Number(body.gridPositions);
+      const next = issueRacePenalty(state, context, {
+        driverId: String(body.driverId ?? ""),
+        type: penaltyType,
+        ...(durationMs !== undefined ? { durationMs } : {}),
+        ...(gridPositions !== undefined ? { gridPositions } : {})
+      });
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 201, origin);
+    }
+
+    if (action === "control_ratify_penalty") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const penaltyId = String(body.penaltyId ?? "");
+      const next = ratifyRacePenalty(state, context, penaltyId);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
+    if (action === "control_reverse_penalty") {
+      const { simulation, state } = await loadRaceControlContext(sessionId, user.id);
+      const context = raceControlContext(sessionId, user.id, simulation, state, body);
+      const penaltyId = String(body.penaltyId ?? "");
+      const supersedesEventId = String(body.supersedesEventId ?? "");
+      const next = reverseRacePenalty(state, context, penaltyId, supersedesEventId);
+      const event = await persistRaceControlEvent(sessionId, next);
+      return json({ event, controlState: next }, 200, origin);
+    }
+
     if (action === "detail" || action === "recover") {
       const { data: session, error } = await service
         .from("race_engine_test_sessions")
