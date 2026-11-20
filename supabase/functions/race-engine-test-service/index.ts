@@ -803,7 +803,7 @@ Deno.serve(async (req: Request) => {
     return json({ error: "Action tidak dikenal." }, 400, origin);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Internal error";
-    const status = /Sesi admin|Akses Race Engine|Sesi login/i.test(message) ? 401 : 400;
+    const status = /Sesi Admin Testing|Token login tidak valid|Sesi login/i.test(message) ? 401 : /belum terdaftar sebagai Admin/i.test(message) ? 403 : 400;
     return json({ error: message }, status, origin);
   }
 });
