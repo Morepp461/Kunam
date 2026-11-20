@@ -50,7 +50,6 @@ export interface StrategyCommandAuthorization {
 
 /** Owner has team-wide authority; otherwise a connected driver controls only their own car; AI is the fallback. */
 export function resolveStrategyAuthority(
-  target: StrategyTarget,
   presence: StrategyPresenceSnapshot
 ): StrategyAuthority {
   if (presence.ownerOnline) return "team_owner";
@@ -60,7 +59,7 @@ export function resolveStrategyAuthority(
 
 export function authorizeStrategyCommand(request: StrategyCommandRequest): StrategyCommandAuthorization {
   const { actor, target, presence } = request;
-  const authority = resolveStrategyAuthority(target, presence);
+  const authority = resolveStrategyAuthority(presence);
   let decision: StrategyCommandDecision = "rejected";
   let reason: string | null = null;
 
