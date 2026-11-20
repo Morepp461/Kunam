@@ -13,7 +13,11 @@ function benchmarkProfile(): RacePhysicsCalibrationProfile {
     ])
   );
   attributes["driver.mistake_rate"] = { mistake_probability_per_point: 0.0001 };
-  attributes["driver.overtake_skill"] = { overtake_advantage_per_point: -0.002 };
+  attributes["driver.aggression"] = {
+    overtake_advantage_per_point: 0.001,
+    defense_advantage_per_point: 0.001
+  };
+  attributes["driver.overtake_skill"] = { overtake_advantage_per_point: 0.002 };
   attributes["driver.defensive_strength"] = { defense_advantage_per_point: 0.002 };
   attributes["car_team.ers_efficiency"] = { ers_efficiency_per_point: -0.001 };
   attributes["car_team.car_tyre_wear"] = { tyre_degradation_per_point: 0.001 };
