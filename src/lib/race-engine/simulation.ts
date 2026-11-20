@@ -29,6 +29,7 @@ import type { IncidentModel, RaceControlProfile, RaceControlFlag, IncidentType }
 
 export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 6;
 export const WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 4;
+export const PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 5;
 export const LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 3;
 
 export type RaceSimulationStatus = "running" | "completed";
@@ -148,7 +149,7 @@ interface MutableEntrantState {
 }
 
 export interface RaceSimulationCheckpoint {
-  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
+  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
   readonly engineVersion: string;
   readonly raceId: string;
   readonly snapshot: RaceStartSnapshot;
@@ -451,6 +452,7 @@ export class RaceSimulation {
   ): RaceSimulation {
     if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
         checkpoint.schemaVersion !== WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
+        checkpoint.schemaVersion !== PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
         checkpoint.schemaVersion !== LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION) {
       throw new Error("Unsupported simulation checkpoint schema version");
     }
@@ -504,10 +506,11 @@ export class RaceSimulation {
       checkpoint.config.raceControlProfileVersion !== raceControlProfile.version ||
       canonicalJson(checkpoint.config.raceControlProfileSnapshot as JsonValue) !== canonicalJson(raceControlProfile as unknown as JsonValue)
     )) throw new Error("Checkpoint incident/race-control model snapshot does not match");
-    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION && (pitModel || incidentModel)) {
+    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION && incidentModel) {
       throw new Error("Legacy checkpoints cannot be restored with pit or incident models");
     }
-    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION && pitModel) {
+    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
+        checkpoint.schemaVersion !== PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION && pitModel) {
       throw new Error("Legacy checkpoints cannot be restored with a pit strategy model");
     }
     if (checkpoint.schemaVersion === LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION && weatherModel) {
@@ -716,6 +719,7 @@ export class RaceSimulation {
     const stagedEntrants = this.mutableEntrants.map((entrant) => ({ ...entrant }));
     const stagedRandom = SeededRandom.restore(this.random.snapshot());
     const stagedEvents: RaceSimulationEvent[] = [];
+    const stagedRaceControlFlags = this.activeRaceControlFlagsValue.map((flag) => ({ ...flag }));
     const appendEvent = (event: Omit<RaceSimulationEvent, "sequence">) => {
       stagedEvents.push({
         sequence: this.mutableEvents.length + stagedEvents.length + 1,
@@ -819,7 +823,7 @@ export class RaceSimulation {
           raceControlFlag: control.flag
         });
         if (control.flag !== "green" && control.durationMs > 0) {
-          this.activeRaceControlFlagsValue.push({
+          stagedRaceControlFlags.push({
             flag: control.flag,
             incidentId: incident.id,
             expiresAtSimulationTimeMs: this.simulationClockMsValue + control.durationMs
@@ -933,7 +937,7 @@ export class RaceSimulation {
       );
     }
     this.simulationClockMsValue += globalTickDurationMs;
-    this.activeRaceControlFlagsValue = this.activeRaceControlFlagsValue.filter(
+    this.activeRaceControlFlagsValue = stagedRaceControlFlags.filter(
       (flag) => flag.expiresAtSimulationTimeMs > this.simulationClockMsValue
     );
     this.tickValue += 1;
