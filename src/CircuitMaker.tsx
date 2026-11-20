@@ -96,6 +96,16 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const [targetLapTime, setTargetLapTime] = useState(value ? String(value.targetLapTimeMs) : "");
   const [kind, setKind] = useState<"fictional"|"real">(value?.kind === "real" ? "real" : "fictional");
   const [activeSector, setActiveSector] = useState<1|2|3>(1);
+  const [drawing,setDrawing]=useState(false);
+  const [fullScreen,setFullScreen]=useState(false);
+  const makerRef=useRef<HTMLElement|null>(null);
+  const strokeRef=useRef<{x:number;y:number}[]>([]);
+  useEffect(()=>{const sync=()=>setFullScreen(Boolean(document.fullscreenElement&&makerRef.current?.contains(document.fullscreenElement)));document.addEventListener("fullscreenchange",sync);return()=>document.removeEventListener("fullscreenchange",sync)},[]);
+  const toggleFullScreen=async()=>{try{if(document.fullscreenElement){await document.exitFullscreen();return}await makerRef.current?.requestFullscreen();try{await (screen.orientation as any).lock?.("landscape")}catch{}}catch{}};
+  const getPointerPoint=(event:ReactPointerEvent<SVGSVGElement>)=>{const rect=event.currentTarget.getBoundingClientRect();return{x:Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height))}};
+  const startStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);strokeRef.current=[getPointerPoint(event)];setDrawing(true)};
+  const moveStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{if(!drawing)return;const point=getPointerPoint(event),last=strokeRef.current[strokeRef.current.length-1];if(!last||Math.hypot(point.x-last.x,point.y-last.y)>.003)strokeRef.current.push(point)};
+  const finishStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{if(!drawing)return;event.preventDefault();setDrawing(false);const stroke=strokeRef.current;strokeRef.current=[];if(stroke.length<2)return;const smooth=smoothStroke(stroke);if(drawingMode==="track_limit")setTrackLimitBoundary(current=>[...current,...smooth.map(({x,y})=>({x,y}))]);else setPoints(current=>[...current,...smooth])};
   const [specifications, setSpecifications] = useState<CircuitGeometrySpecifications>(() => value?.specifications ?? { direction: "unknown", surface: "unknown", elevationDataStatus: "unavailable", pitLane: { enabled: false, lengthMeters: null, speedLimitKph: null, entryDistanceMeters: null, exitDistanceMeters: null }, drsZones: [], trackLimits: { method: "unverified", sourceNote: "" } });
 
   const inputSegments = useMemo<CircuitMakerSegmentInput[]>(() => segments.map((segment) => ({
@@ -180,10 +190,10 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const selected = segments.filter((segment) => segment.sectorNumber === activeSector);
   const publish = () => onChange(built.definition);
 
-  return <section className="circuit-maker">
+  return <section ref={makerRef} className={"circuit-maker"+(fullScreen?" is-fullscreen":"")}>
     <header className="circuit-maker-heading">
       <div><span className="section-eyebrow">CIRCUIT DESIGNER</span><h3>Circuit Maker</h3><p>Visual editor dan specification editor tersinkron dalam satu draft.</p></div>
-      <span className={built.definition ? "circuit-maker-status valid" : "circuit-maker-status"}>{built.definition ? "GEOMETRY VALID" : "DRAFT INCOMPLETE"}</span>
+      <div className="circuit-maker-head-actions"><span className={built.definition ? "circuit-maker-status valid" : "circuit-maker-status"}>{built.definition ? "GEOMETRY VALID" : "DRAFT INCOMPLETE"}</span><button type="button" className="circuit-maker-fullscreen" onClick={toggleFullScreen}><Maximize2 size={14}/>{fullScreen?"Exit fullscreen":"Landscape fullscreen"}</button></div>
     </header>
     <div className="circuit-maker-toolbar">
       <label>Jenis circuit<select value={kind} onChange={(event) => setKind(event.target.value as "fictional"|"real")}><option value="fictional">Fictional circuit</option><option value="real">Real circuit · provenance required</option></select></label>
@@ -210,7 +220,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     <div className="circuit-maker-layout">
       <div className="circuit-maker-canvas-panel">
         <div className="circuit-maker-canvas-head"><strong>TRACK CANVAS</strong><span>Centerline {points.length} · Boundary {trackLimitBoundary.length}</span></div>
-        <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker drawing canvas" onClick={addPoint}>
+        <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker freehand drawing canvas" onPointerDown={startStroke} onPointerMove={moveStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
           <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
           {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
@@ -229,7 +239,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
           <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
         </div>
-        <small>{drawingMode==="centerline"?"Tap canvas to draw the centerline, then close its loop.":"Tap canvas to draw the measured track-limit boundary polygon. Polygon closure is implicit; add at least three points."}</small>
+        <small>{drawingMode==="centerline"?"Tahan dan geser untuk menggambar centerline dengan kurva halus.":"Tahan dan geser untuk menggambar batas lintasan. Polygon closure is implicit; add at least three points."}</small>
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>
