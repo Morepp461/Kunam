@@ -13,7 +13,6 @@ const db = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false }
 });
 const workerId = crypto.randomUUID();
-const MAX_TICKS_PER_BATCH = 10;
 const LEASE_SECONDS = 60;
 const POLL_INTERVAL_MS = 1500;
 
@@ -40,7 +39,8 @@ async function processSession(session: { id: string; created_by: string }) {
     models.raceControlProfile
   );
   const previousEventCount = simulation.events.length;
-  for (let index = 0; index < MAX_TICKS_PER_BATCH && simulation.status !== "completed"; index += 1) {
+  const maxTicksPerBatch = Math.max(1, Math.min(15, Number(claim.speed_multiplier ?? 1)));
+  for (let index = 0; index < maxTicksPerBatch && simulation.status !== "completed"; index += 1) {
     simulation.advanceOneSegment();
   }
 
@@ -61,7 +61,7 @@ async function processSession(session: { id: string; created_by: string }) {
   return Boolean(result?.ok);
 }
 
-console.info("Race Engine test worker started", { workerId, maxTicksPerBatch: MAX_TICKS_PER_BATCH });
+console.info("Race Engine test worker started", { workerId, speedStepsPerBatch: "1x/5x/10x/15x session control" });
 
 while (true) {
   try {
