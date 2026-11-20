@@ -24,9 +24,12 @@ import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from 
 import type { WeatherSimulationModel, WeatherState } from "./weather";
 import { choosePitDecision } from "./pit-strategy";
 import type { PitStrategyModel } from "./pit-strategy";
+import { evaluateSegmentIncident, resolveRaceControl, INCIDENT_TYPES } from "./incidents";
+import type { IncidentModel, RaceControlProfile, RaceControlFlag, IncidentType } from "./incidents";
 
-export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 5;
+export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 6;
 export const WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 4;
+export const PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 5;
 export const LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION = 3;
 
 export type RaceSimulationStatus = "running" | "completed";
@@ -35,7 +38,10 @@ export type RaceEventType =
   | "sector_completed"
   | "lap_completed"
   | "race_completed"
-  | "pit_stop";
+  | "pit_stop"
+  | "incident"
+  | "race_control"
+  | "driver_retired";
 
 export interface SegmentPerformanceContext {
   readonly entrant: RaceEntrantSnapshot;
@@ -46,6 +52,8 @@ export interface SegmentPerformanceContext {
   readonly baseSegmentTimeMs: number;
   readonly tyreState: TyreState | null;
   readonly weatherState?: WeatherState | null;
+  readonly simulationClockMs?: number;
+  readonly activeRaceControlFlags?: readonly ActiveRaceControlFlag[];
 }
 
 export interface SegmentPerformanceModel {
@@ -77,6 +85,12 @@ export interface RaceSimulationConfig {
   readonly pitModelId?: string | null;
   readonly pitModelVersion?: string | null;
   readonly pitModelSnapshot?: JsonValue | null;
+  readonly incidentModelId?: string | null;
+  readonly incidentModelVersion?: string | null;
+  readonly incidentModelSnapshot?: JsonValue | null;
+  readonly raceControlProfileId?: string | null;
+  readonly raceControlProfileVersion?: string | null;
+  readonly raceControlProfileSnapshot?: JsonValue | null;
 }
 
 export interface RaceSimulationEvent {
@@ -90,6 +104,11 @@ export interface RaceSimulationEvent {
   readonly durationMs?: number;
   readonly selectedCompound?: string;
   readonly pitReason?: string;
+  readonly incidentId?: string;
+  readonly incidentType?: IncidentType;
+  readonly maintenanceCostEligible?: boolean;
+  readonly retiresDriver?: boolean;
+  readonly raceControlFlag?: RaceControlFlag;
 }
 
 export interface EntrantSimulationState {
@@ -102,6 +121,7 @@ export interface EntrantSimulationState {
   readonly tyreState?: TyreState;
   readonly pitStopCount?: number;
   readonly lastPitLap?: number | null;
+  readonly retired?: boolean;
 }
 
 export interface RaceClassificationEntry {
@@ -112,6 +132,7 @@ export interface RaceClassificationEntry {
   readonly elapsedMs: number;
   readonly finished: boolean;
   readonly pitStopCount?: number;
+  readonly retired?: boolean;
 }
 
 interface MutableEntrantState {
@@ -124,10 +145,11 @@ interface MutableEntrantState {
   tyreState?: TyreState;
   pitStopCount: number;
   lastPitLap: number | null;
+  retired: boolean;
 }
 
 export interface RaceSimulationCheckpoint {
-  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
+  readonly schemaVersion: typeof SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION | typeof LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION;
   readonly engineVersion: string;
   readonly raceId: string;
   readonly snapshot: RaceStartSnapshot;
@@ -138,6 +160,14 @@ export interface RaceSimulationCheckpoint {
   readonly entrants: readonly EntrantSimulationState[];
   readonly events: readonly RaceSimulationEvent[];
   readonly weatherState?: WeatherState | null;
+  readonly simulationClockMs?: number;
+  readonly activeRaceControlFlags?: readonly ActiveRaceControlFlag[];
+}
+
+export interface ActiveRaceControlFlag {
+  readonly flag: Exclude<RaceControlFlag, "green">;
+  readonly incidentId: string;
+  readonly expiresAtSimulationTimeMs: number;
 }
 
 export interface AdvanceResult {
@@ -222,6 +252,10 @@ export class RaceSimulation {
   private readonly weatherModel?: WeatherSimulationModel;
   private weatherStateValue?: WeatherState;
   private readonly pitModel?: PitStrategyModel;
+  private readonly incidentModel?: IncidentModel;
+  private readonly raceControlProfile?: RaceControlProfile;
+  private simulationClockMsValue = 0;
+  private activeRaceControlFlagsValue: ActiveRaceControlFlag[] = [];
   private readonly mutableEntrants: MutableEntrantState[];
   private readonly mutableEvents: RaceSimulationEvent[] = [];
   private statusValue: RaceSimulationStatus = "running";
@@ -236,6 +270,8 @@ export class RaceSimulation {
       tyreModel?: TyreSimulationModel;
       weatherModel?: WeatherSimulationModel;
       pitModel?: PitStrategyModel;
+      incidentModel?: IncidentModel;
+      raceControlProfile?: RaceControlProfile;
     }
   ) {
     const immutableSnapshot = createImmutableRaceStartSnapshot(snapshot);
@@ -244,6 +280,20 @@ export class RaceSimulation {
     this.tyreModel = options?.tyreModel;
     this.weatherModel = options?.weatherModel;
     this.pitModel = options?.pitModel;
+    this.incidentModel = options?.incidentModel;
+    this.raceControlProfile = options?.raceControlProfile;
+    if (Boolean(this.incidentModel) !== Boolean(this.raceControlProfile)) throw new Error("Incident model and race-control profile must be configured together");
+    if (this.raceControlProfile) {
+      if (!this.raceControlProfile.id.trim() || !this.raceControlProfile.version.trim()) throw new Error("Race-control profile ID and version are required");
+      for (const type of INCIDENT_TYPES) {
+        const flag = this.raceControlProfile.flagByIncident[type];
+        if (!flag) throw new Error(`Race-control profile is missing a flag for ${type}`);
+        if (flag !== "green") {
+          const duration = this.raceControlProfile.durationMsByFlag[flag];
+          if (!Number.isFinite(duration) || duration < 0) throw new Error(`Race-control duration for ${flag} is invalid`);
+        }
+      }
+    }
     if (this.pitModel && !this.tyreModel) throw new Error("Pit strategy requires an active tyre simulation model");
     if (this.pitModel) {
       for (let lap = this.pitModel.profile.pitWindowStartLap; lap <= Math.min(this.pitModel.profile.pitWindowEndLap, immutableSnapshot.circuit.totalLaps); lap += 1) {
@@ -265,7 +315,13 @@ export class RaceSimulation {
       weatherModelSnapshot: this.weatherModel ? cloneJsonValue(this.weatherModel.snapshot) : null,
       pitModelId: this.pitModel?.id ?? null,
       pitModelVersion: this.pitModel?.version ?? null,
-      pitModelSnapshot: this.pitModel ? cloneJsonValue(this.pitModel.snapshot) : null
+      pitModelSnapshot: this.pitModel ? cloneJsonValue(this.pitModel.snapshot) : null,
+      incidentModelId: this.incidentModel?.id ?? null,
+      incidentModelVersion: this.incidentModel?.version ?? null,
+      incidentModelSnapshot: this.incidentModel ? cloneJsonValue(this.incidentModel.snapshot) : null,
+      raceControlProfileId: this.raceControlProfile?.id ?? null,
+      raceControlProfileVersion: this.raceControlProfile?.version ?? null,
+      raceControlProfileSnapshot: this.raceControlProfile ? cloneJsonValue(this.raceControlProfile as unknown as JsonValue) : null
     };
     if (options?.config?.performanceModelId && options.config.performanceModelId !== config.performanceModelId) {
       throw new Error("Configured performance model ID does not match the injected model");
@@ -344,6 +400,20 @@ export class RaceSimulation {
       canonicalJson(config.pitModelSnapshot as JsonValue) !== canonicalJson(this.pitModel.snapshot)
     )) throw new Error("Configured pit model does not match the injected model");
     if (!this.pitModel && !allPitNull) throw new Error("Pit model configuration requires an injected pit model");
+    const incidentFields = [config.incidentModelId ?? null, config.incidentModelVersion ?? null, config.incidentModelSnapshot ?? null,
+      config.raceControlProfileId ?? null, config.raceControlProfileVersion ?? null, config.raceControlProfileSnapshot ?? null];
+    const allIncidentNull = incidentFields.every((value) => value === null);
+    const allIncidentPresent = incidentFields.every((value) => value !== null);
+    if (!allIncidentNull && !allIncidentPresent) throw new Error("Incident/race-control model configuration is invalid");
+    if (this.incidentModel && this.raceControlProfile && (
+      config.incidentModelId !== this.incidentModel.id ||
+      config.incidentModelVersion !== this.incidentModel.version ||
+      canonicalJson(config.incidentModelSnapshot as JsonValue) !== canonicalJson(this.incidentModel.snapshot) ||
+      config.raceControlProfileId !== this.raceControlProfile.id ||
+      config.raceControlProfileVersion !== this.raceControlProfile.version ||
+      canonicalJson(config.raceControlProfileSnapshot as JsonValue) !== canonicalJson(this.raceControlProfile as unknown as JsonValue)
+    )) throw new Error("Configured incident/race-control models do not match the injected models");
+    if (!this.incidentModel && !allIncidentNull) throw new Error("Incident configuration requires injected incident and race-control models");
     this.mutableEntrants = immutableSnapshot.entrants.map((entrant) => {
       const firstSegment = immutableSnapshot.circuit.segments[0];
       const firstEnvironment = this.tyreModel
@@ -367,6 +437,7 @@ export class RaceSimulation {
         finished: false,
         pitStopCount: 0,
         lastPitLap: null,
+        retired: false,
         ...(tyreState ? { tyreState } : {})
       };
     });
@@ -377,10 +448,13 @@ export class RaceSimulation {
     performanceModel: SegmentPerformanceModel = NEUTRAL_PERFORMANCE_MODEL,
     tyreModel?: TyreSimulationModel,
     weatherModel?: WeatherSimulationModel,
-    pitModel?: PitStrategyModel
+    pitModel?: PitStrategyModel,
+    incidentModel?: IncidentModel,
+    raceControlProfile?: RaceControlProfile
   ): RaceSimulation {
     if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
         checkpoint.schemaVersion !== WEATHER_SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
+        checkpoint.schemaVersion !== PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
         checkpoint.schemaVersion !== LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION) {
       throw new Error("Unsupported simulation checkpoint schema version");
     }
@@ -422,7 +496,23 @@ export class RaceSimulation {
       checkpoint.config.pitModelVersion !== pitModel.version ||
       canonicalJson(checkpoint.config.pitModelSnapshot as JsonValue) !== canonicalJson(pitModel.snapshot)
     )) throw new Error("Checkpoint pit model ID, version, or snapshot does not match");
-    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION && pitModel) {
+    const checkpointHasIncidentModel = (checkpoint.config.incidentModelId ?? null) !== null;
+    if (checkpointHasIncidentModel !== Boolean(incidentModel) || checkpointHasIncidentModel !== Boolean(raceControlProfile)) {
+      throw new Error("Checkpoint requires the same incident and race-control models");
+    }
+    if (incidentModel && raceControlProfile && (
+      checkpoint.config.incidentModelId !== incidentModel.id ||
+      checkpoint.config.incidentModelVersion !== incidentModel.version ||
+      canonicalJson(checkpoint.config.incidentModelSnapshot as JsonValue) !== canonicalJson(incidentModel.snapshot) ||
+      checkpoint.config.raceControlProfileId !== raceControlProfile.id ||
+      checkpoint.config.raceControlProfileVersion !== raceControlProfile.version ||
+      canonicalJson(checkpoint.config.raceControlProfileSnapshot as JsonValue) !== canonicalJson(raceControlProfile as unknown as JsonValue)
+    )) throw new Error("Checkpoint incident/race-control model snapshot does not match");
+    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION && incidentModel) {
+      throw new Error("Legacy checkpoints cannot be restored with pit or incident models");
+    }
+    if (checkpoint.schemaVersion !== SIMULATION_CHECKPOINT_SCHEMA_VERSION &&
+        checkpoint.schemaVersion !== PIT_SIMULATION_CHECKPOINT_SCHEMA_VERSION && pitModel) {
       throw new Error("Legacy checkpoints cannot be restored with a pit strategy model");
     }
     if (checkpoint.schemaVersion === LEGACY_SIMULATION_CHECKPOINT_SCHEMA_VERSION && weatherModel) {
@@ -437,6 +527,8 @@ export class RaceSimulation {
       tyreModel,
       weatherModel,
       pitModel,
+      incidentModel,
+      raceControlProfile,
       randomState: checkpoint.randomState
     });
     const maxTicks = simulation.snapshot.circuit.totalLaps * simulation.snapshot.circuit.segments.length;
@@ -467,6 +559,7 @@ export class RaceSimulation {
         !Number.isFinite(state.elapsedMs) ||
         state.elapsedMs < 0 ||
         (state.pitStopCount !== undefined && (!Number.isInteger(state.pitStopCount) || state.pitStopCount < 0)) ||
+        (state.retired !== undefined && typeof state.retired !== "boolean") ||
         (state.lastPitLap !== undefined && state.lastPitLap !== null && (!Number.isInteger(state.lastPitLap) || state.lastPitLap < 1 || state.lastPitLap > state.lapCompleted))
       ) {
         throw new Error(`Checkpoint state for ${state.driverId} is invalid`);
@@ -495,7 +588,7 @@ export class RaceSimulation {
       const segmentCount = simulation.snapshot.circuit.segments.length;
       const completedSegments = state.lapCompleted * segmentCount + state.segmentIndex;
       const expectedSegments = state.finished ? maxTicks : checkpoint.tick;
-      if (completedSegments !== expectedSegments) {
+      if (state.retired ? completedSegments > checkpoint.tick : completedSegments !== expectedSegments) {
         throw new Error(`Checkpoint progress for ${state.driverId} does not match the simulation tick`);
       }
     }
@@ -506,7 +599,8 @@ export class RaceSimulation {
       simulation.mutableEntrants[index] = {
         ...state,
         pitStopCount: state.pitStopCount ?? 0,
-        lastPitLap: state.lastPitLap ?? null
+        lastPitLap: state.lastPitLap ?? null,
+        retired: state.retired ?? false
       };
     }
 
@@ -530,19 +624,32 @@ export class RaceSimulation {
     } else if (checkpoint.weatherState != null) {
       throw new Error("Checkpoint contains unexpected weather state");
     }
+    if (checkpoint.simulationClockMs !== undefined) {
+      if (!Number.isFinite(checkpoint.simulationClockMs) || checkpoint.simulationClockMs < 0) throw new Error("Checkpoint simulation clock is invalid");
+      simulation.simulationClockMsValue = checkpoint.simulationClockMs;
+    }
+    if (checkpoint.activeRaceControlFlags) {
+      for (const active of checkpoint.activeRaceControlFlags) {
+        if (!active.incidentId.trim() || !Number.isFinite(active.expiresAtSimulationTimeMs) ||
+            active.expiresAtSimulationTimeMs < simulation.simulationClockMsValue) {
+          throw new Error("Checkpoint active race-control flag is invalid");
+        }
+      }
+      simulation.activeRaceControlFlagsValue = checkpoint.activeRaceControlFlags.map((item) => ({ ...item }));
+    }
     simulation.mutableEvents.push(...checkpoint.events.map(copyEvent));
     simulation.statusValue = checkpoint.status;
     simulation.tickValue = checkpoint.tick;
 
     if (simulation.statusValue === "completed" && (
-      checkpoint.tick !== maxTicks ||
-      simulation.mutableEntrants.some((entrant) => !entrant.finished)
+      simulation.mutableEntrants.some((entrant) => !entrant.finished && !entrant.retired) ||
+      (simulation.mutableEntrants.every((entrant) => entrant.finished) && checkpoint.tick !== maxTicks)
     )) {
       throw new Error("Completed checkpoint contains an unfinished or incomplete race");
     }
     if (simulation.statusValue === "running" && (
       checkpoint.tick >= maxTicks ||
-      simulation.mutableEntrants.some((entrant) => entrant.finished)
+      simulation.mutableEntrants.every((entrant) => entrant.finished || entrant.retired)
     )) {
       throw new Error("Running checkpoint has invalid race progress");
     }
@@ -559,6 +666,10 @@ export class RaceSimulation {
 
   get weatherState(): WeatherState | null {
     return this.weatherStateValue ? { ...this.weatherStateValue } : null;
+  }
+
+  get activeRaceControlFlags(): readonly ActiveRaceControlFlag[] {
+    return this.activeRaceControlFlagsValue.map((flag) => ({ ...flag }));
   }
 
   get events(): readonly RaceSimulationEvent[] {
@@ -594,7 +705,9 @@ export class RaceSimulation {
         teamId: entrant.teamId,
         lapCompleted: entrant.lapCompleted,
         elapsedMs: entrant.elapsedMs,
-        finished: entrant.finished
+        finished: entrant.finished,
+        retired: entrant.retired,
+        pitStopCount: entrant.pitStopCount
       }));
   }
 
@@ -608,6 +721,7 @@ export class RaceSimulation {
     const stagedEntrants = this.mutableEntrants.map((entrant) => ({ ...entrant }));
     const stagedRandom = SeededRandom.restore(this.random.snapshot());
     const stagedEvents: RaceSimulationEvent[] = [];
+    const stagedRaceControlFlags = this.activeRaceControlFlagsValue.map((flag) => ({ ...flag }));
     const appendEvent = (event: Omit<RaceSimulationEvent, "sequence">) => {
       stagedEvents.push({
         sequence: this.mutableEvents.length + stagedEvents.length + 1,
@@ -615,7 +729,7 @@ export class RaceSimulation {
       });
     };
 
-    const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished);
+    const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished && !entrant.retired);
     const weatherLap = weatherReferenceState ? weatherReferenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
     const weatherSegment = weatherReferenceState
       ? segments[weatherReferenceState.segmentIndex]
@@ -625,7 +739,7 @@ export class RaceSimulation {
       : undefined;
     let globalTickDurationMs = 0;
     for (const state of stagedEntrants) {
-      if (state.finished) continue;
+      if (state.finished || state.retired) continue;
       const entrant = this.snapshot.entrants.find((item) => item.driverId === state.driverId);
       if (!entrant) throw new Error(`Missing immutable entrant snapshot for ${state.driverId}`);
 
@@ -648,6 +762,22 @@ export class RaceSimulation {
         ? 0
         : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
+      let incident: ReturnType<typeof evaluateSegmentIncident> = null;
+      if (this.incidentModel) {
+        const attributes: Record<string, number> = {};
+        Object.entries(entrant.driverAttributes).forEach(([key, value]) => { attributes[`driver.${key}`] = value; });
+        Object.entries(entrant.carTeamAttributes).forEach(([key, value]) => { attributes[`car_team.${key}`] = value; });
+        incident = evaluateSegmentIncident({
+          model: this.incidentModel,
+          raceSeed: this.snapshot.seed,
+          raceId: this.snapshot.raceId,
+          driverId: state.driverId,
+          lapNumber: state.lapCompleted + 1,
+          segmentId: segment.id,
+          distanceMeters: segment.distanceMeters,
+          attributes
+        });
+      }
       globalTickDurationMs = Math.max(globalTickDurationMs, durationMs);
       if (durationMs <= 0) throw new Error(`Segment duration must be positive for ${state.driverId}`);
 
@@ -669,7 +799,39 @@ export class RaceSimulation {
         state.tyreState = advanceTyreState(state.tyreState, tyreInput, this.tyreModel.profile);
       }
 
-      state.elapsedMs += durationMs;
+      state.elapsedMs += durationMs + (incident?.timeLossMs ?? 0);
+      if (incident && this.raceControlProfile) {
+        appendEvent({
+          type: "incident",
+          driverId: state.driverId,
+          lapNumber: state.lapCompleted + 1,
+          segmentId: segment.id,
+          simulationTimeMs: state.elapsedMs,
+          durationMs: incident.timeLossMs,
+          incidentId: incident.id,
+          incidentType: incident.type,
+          maintenanceCostEligible: incident.maintenanceCostEligible,
+          retiresDriver: incident.retiresDriver
+        });
+        const control = resolveRaceControl(incident, this.raceControlProfile);
+        appendEvent({
+          type: "race_control",
+          driverId: state.driverId,
+          lapNumber: state.lapCompleted + 1,
+          segmentId: segment.id,
+          simulationTimeMs: state.elapsedMs,
+          durationMs: control.durationMs,
+          incidentId: incident.id,
+          raceControlFlag: control.flag
+        });
+        if (control.flag !== "green" && control.durationMs > 0) {
+          stagedRaceControlFlags.push({
+            flag: control.flag,
+            incidentId: incident.id,
+            expiresAtSimulationTimeMs: this.simulationClockMsValue + control.durationMs
+          });
+        }
+      }
       appendEvent({
         type: "segment_completed",
         driverId: state.driverId,
@@ -752,6 +914,18 @@ export class RaceSimulation {
       } else {
         state.segmentIndex += 1;
       }
+      if (incident?.retiresDriver && !state.finished) {
+        state.retired = true;
+        appendEvent({
+          type: "driver_retired",
+          driverId: state.driverId,
+          lapNumber: state.lapCompleted + 1,
+          segmentId: segment.id,
+          simulationTimeMs: state.elapsedMs,
+          incidentId: incident.id,
+          incidentType: incident.type
+        });
+      }
     }
 
     // Commit the tick only after every entrant has advanced successfully.
@@ -764,8 +938,12 @@ export class RaceSimulation {
         this.weatherStateValue, weatherInputForTick, globalTickDurationMs / 1000, this.weatherModel.profile
       );
     }
+    this.simulationClockMsValue += globalTickDurationMs;
+    this.activeRaceControlFlagsValue = stagedRaceControlFlags.filter(
+      (flag) => flag.expiresAtSimulationTimeMs > this.simulationClockMsValue
+    );
     this.tickValue += 1;
-    if (this.mutableEntrants.every((entrant) => entrant.finished)) {
+    if (this.mutableEntrants.every((entrant) => entrant.finished || entrant.retired)) {
       this.statusValue = "completed";
     }
 
@@ -808,7 +986,9 @@ export class RaceSimulation {
       tick: this.tickValue,
       entrants: this.entrantStates,
       events: this.events,
-      weatherState: this.weatherStateValue ? { ...this.weatherStateValue } : null
+      weatherState: this.weatherStateValue ? { ...this.weatherStateValue } : null,
+      simulationClockMs: this.simulationClockMsValue,
+      activeRaceControlFlags: this.activeRaceControlFlags
     };
   }
 }

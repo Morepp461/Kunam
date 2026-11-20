@@ -13,6 +13,8 @@ export interface IncidentCalibration {
   readonly baseRatePerKm: number;
   readonly attributeRatePerPoint: Readonly<Record<string, number>>;
   readonly timeLossMs: number;
+  /** Retirement is an explicit calibrated outcome; absent means the incident does not retire the driver. */
+  readonly retiresDriver?: boolean;
 }
 
 export interface IncidentCalibrationProfile {
@@ -33,6 +35,7 @@ export interface RaceIncident {
   readonly segmentId: string;
   readonly timeLossMs: number;
   readonly maintenanceCostEligible: boolean;
+  readonly retiresDriver: boolean;
 }
 
 export interface RaceControlProfile {
@@ -94,6 +97,7 @@ export function validateIncidentCalibrationProfile(profile: IncidentCalibrationP
     }
     if (!finite(calibration.baseRatePerKm) || calibration.baseRatePerKm < 0 || calibration.baseRatePerKm > profile.maximumRatePerKm) errors.push(`${type}.baseRatePerKm is invalid`);
     if (!finite(calibration.timeLossMs) || calibration.timeLossMs < 0) errors.push(`${type}.timeLossMs must be non-negative`);
+    if (calibration.retiresDriver !== undefined && typeof calibration.retiresDriver !== "boolean") errors.push(`${type}.retiresDriver must be boolean when supplied`);
     for (const [attributeId, coefficient] of Object.entries(calibration.attributeRatePerPoint)) {
       if (!attributeId.trim() || !finite(coefficient) || Math.abs(coefficient) > 1_000_000) errors.push(`${type} has an invalid attribute coefficient`);
       if (attributeId === "driver.mistake_rate" && coefficient < 0) errors.push("Higher Mistake Rate must not reduce incident probability");
@@ -164,7 +168,8 @@ export function evaluateSegmentIncident(input: {
     lapNumber,
     segmentId,
     timeLossMs: model.profile.incidents[selected.type].timeLossMs,
-    maintenanceCostEligible: MAINTENANCE_COST_TYPES.has(selected.type)
+    maintenanceCostEligible: MAINTENANCE_COST_TYPES.has(selected.type),
+    retiresDriver: model.profile.incidents[selected.type].retiresDriver ?? false
   });
 }
 
