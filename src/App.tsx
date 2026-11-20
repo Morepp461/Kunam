@@ -373,7 +373,7 @@ function GlobalSearch({isAdmin,panelAccess}:{isAdmin:boolean;panelAccess:PanelAc
   try{const {data,error}=await supabase.functions.invoke("member-directory",{body:{action:"search",query:term}});if(!active)return;if(error){setSearchError(error.message||"Pencarian member, driver, tim, dan konten gagal.");setBusy(false);return;}
    setMembers((data?.members||[]) as PublicMemberProfileData[]);setTeams((data?.teams||[]) as {id:string;name:string;member_count:number}[]);const contentPages=(data?.pages||[]) as {title:string;slug:string;excerpt:string;href:string}[];const merged=[...contentPages,...localResults].filter((item,index,all)=>all.findIndex(x=>x.slug===item.slug)===index);setPages(merged);setBusy(false);
   }catch(error){if(active){setSearchError(error instanceof Error?error.message:"Pencarian gagal. Coba lagi.");setBusy(false)}}
- },180);return()=>{active=false;window.clearTimeout(timer)}},[query,isAdmin]);
+ },100);return()=>{active=false;window.clearTimeout(timer)}},[query,isAdmin]);
  const go=(href:string)=>{navigate(href);setQuery("");setOpen(false);setExpanded(false);setTeams([]);setSearchError("")};
  const collapse=()=>{if(!expanded||closing)return;setClosing(true);setOpen(false);if(closeTimer.current!==null)window.clearTimeout(closeTimer.current);closeTimer.current=window.setTimeout(()=>{setExpanded(false);setClosing(false);setQuery("");setMembers([]);setTeams([]);setPages([]);setSearchError("");closeTimer.current=null},350)};
  const hasResults=members.length>0||teams.length>0||pages.length>0;
