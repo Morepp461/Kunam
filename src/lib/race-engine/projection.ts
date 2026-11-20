@@ -3,7 +3,7 @@ import type { RaceSimulationCheckpoint } from "./simulation";
 export const RACE_TIMING_PROJECTION_SCHEMA_VERSION = 1;
 
 export interface RaceTimingProjectionRow {
-  readonly position: number;
+  readonly position: number | null;
   readonly driverId: string;
   readonly teamId: string;
   readonly lapCompleted: number;
