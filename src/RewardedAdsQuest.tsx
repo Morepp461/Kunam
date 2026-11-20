@@ -32,7 +32,7 @@ export default function RewardedAdsQuest(){
    </article>)}</div>
    <div className="rewarded-ads-note">
     <ShieldCheck size={16}/>
-    <span>{board.ready_for_ads?"Integrasi iklan siap. Reward hanya dihitung dari callback server Google yang valid.":"Menunggu aktivasi Google Ad Manager. Progress dan pembayaran belum dapat dimulai."}</span>
+    <span>{board.ready_for_ads?"Integrasi iklan siap. Reward hanya dihitung dari callback server Google yang valid.":"Iklan tidak dapat dimuat."}</span>
    </div>
    <div className="rewarded-ads-reset"><CalendarClock size={14}/> Reset setiap hari pukul 00.00 WIB <span>·</span><Clock3 size={14}/> {board.date}</div>
   </>}
