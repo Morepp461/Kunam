@@ -27,4 +27,17 @@ assert 'authClient.auth.getUser(jwt)' in admin and 'site_admins' in admin
 assert 'authClient.auth.getUser(jwt)' in economy and 'site_admins' in economy
 assert 'auth.auth.getUser(jwt)' in workflows
 
-print("Edge Function auth boundaries and public profile visibility checks passed.")
+
+config = read("supabase/config.toml")
+race_engine = read("supabase/functions/race-engine-test-service/index.ts")
+
+race_engine_config = config.split("[functions.race-engine-test-service]", 1)[1]
+assert race_engine_config is not None and "verify_jwt = false" in race_engine_config.split("[functions.", 1)[0]
+assert 'if (action === "background_tick")' in race_engine
+assert 'req.headers.get("x-race-worker-token")' in race_engine
+assert 'race_engine_validate_worker_token' in race_engine
+assert 'await requireTestingAdmin(req)' in race_engine
+assert 'auth.getUser(token)' in race_engine
+assert '.from("site_admins")' in race_engine
+
+print("Edge Function auth boundaries, managed worker token, and Admin authorization checks passed.")
