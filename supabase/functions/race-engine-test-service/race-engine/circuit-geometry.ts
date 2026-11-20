@@ -1,0 +1,263 @@
+import type { CircuitSegmentSnapshot } from "./contracts";
+
+export const CIRCUIT_GEOMETRY_SCHEMA_VERSION = 1;
+export const CIRCUIT_SECTOR_COUNT = 3;
+
+export type CircuitCornerType = "straight" | "slow" | "medium" | "fast" | "chicane";
+
+export interface CircuitPathPoint {
+  readonly id: string;
+  /** Normalized map coordinate in the inclusive range 0..1. */
+  readonly x: number;
+  readonly y: number;
+  readonly elevationMeters: number;
+}
+
+export interface CircuitGeometrySegment extends CircuitSegmentSnapshot {
+  readonly cornerType: CircuitCornerType;
+  readonly cornerRadiusMeters: number | null;
+  readonly elevationChangeMeters: number;
+  readonly trackWidthMeters: number;
+}
+
+export interface CircuitGeometryDefinition {
+  readonly schemaVersion: typeof CIRCUIT_GEOMETRY_SCHEMA_VERSION;
+  readonly id: string;
+  readonly revision: string;
+  readonly name: string;
+  readonly countryCode: string;
+  readonly totalLaps: number;
+  readonly targetLapTimeMs: number;
+  readonly trackLengthMeters: number;
+  readonly layout: readonly CircuitPathPoint[];
+  readonly segments: readonly CircuitGeometrySegment[];
+}
+
+export interface CircuitGeometryValidationOptions {
+  readonly distanceTolerancePercent?: number;
+  readonly layoutClosureTolerance?: number;
+}
+
+export interface CircuitGeometryValidationResult {
+  readonly valid: boolean;
+  readonly errors: readonly string[];
+  readonly calculatedTrackLengthMeters: number;
+  readonly sectorDistancesMeters: Readonly<Record<1 | 2 | 3, number>>;
+}
+
+function isFiniteInRange(value: number, min: number, max: number): boolean {
+  return Number.isFinite(value) && value >= min && value <= max;
+}
+
+export function calculateCircuitSegmentDistance(
+  segments: readonly CircuitGeometrySegment[]
+): number {
+  return segments.reduce((total, segment) => total + segment.distanceMeters, 0);
+}
+
+export function calculateCircuitSectorDistances(
+  segments: readonly CircuitGeometrySegment[]
+): Readonly<Record<1 | 2 | 3, number>> {
+  const distances: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+  for (const segment of segments) {
+    if (segment.sectorNumber === 1 || segment.sectorNumber === 2 || segment.sectorNumber === 3) {
+      distances[segment.sectorNumber] += segment.distanceMeters;
+    }
+  }
+  return distances;
+}
+
+export function validateCircuitGeometryDefinition(
+  circuit: CircuitGeometryDefinition,
+  options: CircuitGeometryValidationOptions = {}
+): CircuitGeometryValidationResult {
+  const errors: string[] = [];
+  const distanceTolerancePercent = options.distanceTolerancePercent ?? 1;
+  const closureTolerance = options.layoutClosureTolerance ?? 0.02;
+
+  if (circuit.schemaVersion !== CIRCUIT_GEOMETRY_SCHEMA_VERSION) {
+    errors.push("Unsupported circuit geometry schema version");
+  }
+  if (!circuit.id.trim() || !circuit.revision.trim()) {
+    errors.push("Circuit ID and revision are required");
+  }
+  if (circuit.name.trim().length < 2) errors.push("Circuit name must contain at least two characters");
+  if (!/^[A-Z]{2}$/.test(circuit.countryCode)) errors.push("Circuit countryCode must be a two-letter uppercase code");
+  if (!Number.isInteger(circuit.totalLaps) || circuit.totalLaps < 1) {
+    errors.push("Circuit totalLaps must be a positive integer");
+  }
+  if (!Number.isFinite(circuit.targetLapTimeMs) || circuit.targetLapTimeMs <= 0) {
+    errors.push("Circuit targetLapTimeMs must be positive");
+  }
+  if (!Number.isFinite(circuit.trackLengthMeters) || circuit.trackLengthMeters <= 0) {
+    errors.push("Circuit trackLengthMeters must be positive");
+  }
+  if (!Number.isFinite(distanceTolerancePercent) || distanceTolerancePercent < 0 || distanceTolerancePercent > 10) {
+    errors.push("distanceTolerancePercent must be between 0 and 10");
+  }
+  if (!Number.isFinite(closureTolerance) || closureTolerance <= 0 || closureTolerance > 0.25) {
+    errors.push("layoutClosureTolerance must be greater than 0 and at most 0.25");
+  }
+
+  if (circuit.layout.length < 4) errors.push("Circuit layout must contain at least four path points");
+  const pointIds = new Set<string>();
+  for (const [index, point] of circuit.layout.entries()) {
+    if (!point.id.trim() || pointIds.has(point.id)) {
+      errors.push("Circuit layout point IDs must be present and unique");
+    }
+    pointIds.add(point.id);
+    if (!isFiniteInRange(point.x, 0, 1) || !isFiniteInRange(point.y, 0, 1)) {
+      errors.push(`Layout point ${point.id} coordinates must be normalized between 0 and 1`);
+    }
+    if (!Number.isFinite(point.elevationMeters)) {
+      errors.push(`Layout point ${point.id} elevationMeters must be finite`);
+    }
+    const previous = circuit.layout[index - 1];
+    if (previous && Math.hypot(point.x - previous.x, point.y - previous.y) < 0.000001) {
+      errors.push(`Layout point ${point.id} duplicates the previous point`);
+    }
+  }
+
+  if (circuit.layout.length >= 2) {
+    const first = circuit.layout[0];
+    const last = circuit.layout[circuit.layout.length - 1];
+    if (Math.hypot(first.x - last.x, first.y - last.y) > closureTolerance) {
+      errors.push("Circuit layout must form a closed loop");
+    }
+  }
+
+  if (circuit.segments.length < CIRCUIT_SECTOR_COUNT) {
+    errors.push("Circuit must contain at least three segments");
+  }
+  const segmentIds = new Set<string>();
+  let previousSector = 0;
+  const sectorCounts: Record<1 | 2 | 3, number> = { 1: 0, 2: 0, 3: 0 };
+
+  for (const segment of circuit.segments) {
+    if (!segment.id.trim() || segmentIds.has(segment.id)) {
+      errors.push("Circuit segment IDs must be present and unique");
+    }
+    segmentIds.add(segment.id);
+
+    if (!Number.isInteger(segment.sectorNumber) || segment.sectorNumber < 1 || segment.sectorNumber > CIRCUIT_SECTOR_COUNT) {
+      errors.push(`Segment ${segment.id} sectorNumber must be 1, 2, or 3`);
+    } else {
+      if (segment.sectorNumber < previousSector) {
+        errors.push("Circuit segments must be ordered by sector from 1 through 3");
+      }
+      previousSector = segment.sectorNumber;
+      sectorCounts[segment.sectorNumber as 1 | 2 | 3] += 1;
+    }
+
+    if (!Number.isFinite(segment.distanceMeters) || segment.distanceMeters <= 0) {
+      errors.push(`Segment ${segment.id} distanceMeters must be positive`);
+    }
+    if (!Number.isFinite(segment.gripFactor) || segment.gripFactor <= 0) {
+      errors.push(`Segment ${segment.id} gripFactor must be positive`);
+    }
+    for (const [key, demand] of [
+      ["lowSpeedDemand", segment.lowSpeedDemand],
+      ["highSpeedDemand", segment.highSpeedDemand],
+      ["tractionDemand", segment.tractionDemand]
+    ] as const) {
+      if (!isFiniteInRange(demand, 0, 1)) {
+        errors.push(`Segment ${segment.id} ${key} must be between 0 and 1`);
+      }
+    }
+    for (const [key, value] of [
+      ["ersAvailable", segment.ersAvailable],
+      ["overtakingOpportunity", segment.overtakingOpportunity],
+      ["defendingOpportunity", segment.defendingOpportunity]
+    ] as const) {
+      if (value !== undefined && typeof value !== "boolean") errors.push(`Segment ${segment.id} ${key} must be boolean when supplied`);
+    }
+    if (!["straight", "slow", "medium", "fast", "chicane"].includes(segment.cornerType)) {
+      errors.push(`Segment ${segment.id} has an unsupported cornerType`);
+    }
+    if (segment.cornerType === "straight") {
+      if (segment.cornerRadiusMeters !== null) {
+        errors.push(`Straight segment ${segment.id} must not define a corner radius`);
+      }
+    } else if (
+      segment.cornerRadiusMeters === null ||
+      !Number.isFinite(segment.cornerRadiusMeters) ||
+      segment.cornerRadiusMeters <= 0
+    ) {
+      errors.push(`Corner segment ${segment.id} must define a positive cornerRadiusMeters`);
+    }
+    if (!Number.isFinite(segment.elevationChangeMeters)) {
+      errors.push(`Segment ${segment.id} elevationChangeMeters must be finite`);
+    }
+    if (!Number.isFinite(segment.trackWidthMeters) || segment.trackWidthMeters <= 0) {
+      errors.push(`Segment ${segment.id} trackWidthMeters must be positive`);
+    }
+  }
+
+  for (const sector of [1, 2, 3] as const) {
+    if (sectorCounts[sector] === 0) errors.push(`Circuit is missing sector ${sector}`);
+  }
+
+  const calculatedTrackLengthMeters = calculateCircuitSegmentDistance(circuit.segments);
+  const allowedDifference = circuit.trackLengthMeters * distanceTolerancePercent / 100;
+  if (
+    Number.isFinite(circuit.trackLengthMeters) &&
+    circuit.trackLengthMeters > 0 &&
+    Math.abs(calculatedTrackLengthMeters - circuit.trackLengthMeters) > allowedDifference
+  ) {
+    errors.push("Sum of segment distances does not match trackLengthMeters within the configured tolerance");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors,
+    calculatedTrackLengthMeters,
+    sectorDistancesMeters: calculateCircuitSectorDistances(circuit.segments)
+  };
+}
+
+function cloneCircuit<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => cloneCircuit(item)) as T;
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, child]) => [key, cloneCircuit(child)])
+    ) as T;
+  }
+  return value;
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.values(value as Record<string, unknown>).forEach((child) => deepFreeze(child));
+    Object.freeze(value);
+  }
+  return value;
+}
+
+export function createImmutableCircuitGeometryDefinition(
+  circuit: CircuitGeometryDefinition
+): Readonly<CircuitGeometryDefinition> {
+  const validation = validateCircuitGeometryDefinition(circuit);
+  if (!validation.valid) {
+    throw new Error(`Invalid circuit geometry: ${validation.errors.join("; ")}`);
+  }
+  return deepFreeze(cloneCircuit(circuit));
+}
+
+export function toCircuitSegmentSnapshots(
+  circuit: CircuitGeometryDefinition
+): readonly CircuitSegmentSnapshot[] {
+  const validation = validateCircuitGeometryDefinition(circuit);
+  if (!validation.valid) {
+    throw new Error(`Invalid circuit geometry: ${validation.errors.join("; ")}`);
+  }
+  return circuit.segments.map((segment) => ({
+    id: segment.id,
+    sectorNumber: segment.sectorNumber,
+    distanceMeters: segment.distanceMeters,
+    gripFactor: segment.gripFactor,
+    lowSpeedDemand: segment.lowSpeedDemand,
+    highSpeedDemand: segment.highSpeedDemand,
+    tractionDemand: segment.tractionDemand,
+    drsAvailable: segment.drsAvailable
+  }));
+}
