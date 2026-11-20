@@ -121,7 +121,8 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
     headers: {
       "Content-Type": "application/json",
       "apikey": TEST_API_KEY,
-      "Authorization": `Bearer ${data.session.access_token}`
+      "Authorization": `Bearer ${TEST_API_KEY}`,
+      "x-caleris-production-authorization": `Bearer ${data.session.access_token}`
     },
     body: JSON.stringify({ action, ...payload })
   });
