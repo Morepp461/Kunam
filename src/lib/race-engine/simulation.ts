@@ -943,7 +943,11 @@ export class RaceSimulation {
             if (decision.shouldPit && decision.selectedCompound) {
               const candidate = candidates.find((item) => item.compound === decision.selectedCompound);
               if (!candidate) throw new Error("Pit strategy selected a compound without a calibrated candidate");
-              state.elapsedMs += candidate.pitLaneLossMs;
+              const pitAdjustments = this.performanceModel.calculatePitStrategyAdjustments?.(entrant);
+              const actualPitLaneLossMs = Math.max(
+                0, candidate.pitLaneLossMs + (pitAdjustments?.pitStopTimeAdjustmentMs ?? 0)
+              );
+              state.elapsedMs += actualPitLaneLossMs;
               state.tyreState = replaceTyreSet(
                 candidate.compound,
                 trackWetness,
@@ -959,7 +963,7 @@ export class RaceSimulation {
                 lapNumber: state.lapCompleted,
                 segmentId: segment.id,
                 simulationTimeMs: state.elapsedMs,
-                durationMs: candidate.pitLaneLossMs,
+                durationMs: actualPitLaneLossMs,
                 selectedCompound: candidate.compound,
                 pitReason: decision.reason
               });
