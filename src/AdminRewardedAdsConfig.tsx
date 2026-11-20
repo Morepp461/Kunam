@@ -2,7 +2,7 @@ import {useCallback,useEffect,useState} from "react";
 import {Save,ShieldCheck,SlidersHorizontal} from "lucide-react";
 import {supabase} from "./lib/supabase";
 
-type Config={is_enabled:boolean;timezone:string;daily_ad_limit:number;milestones:{ads:number;reward:number}[];gam_network_code:string|null;gam_ad_unit_path:string|null};
+type Config={is_enabled:boolean;timezone:string;daily_ad_limit:number;milestones:{ads:number;reward:number}[];gam_network_code:string|null;gam_ad_unit_path:string|null;server_verification_ready:boolean};
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 export default function AdminRewardedAdsConfig(){
  const [config,setConfig]=useState<Config|null>(null);
@@ -35,7 +35,7 @@ export default function AdminRewardedAdsConfig(){
    <div className="rewarded-admin-milestones">{[1,3,5].map((ads,i)=><label key={ads}><span><strong>{ads} iklan valid</strong><small>Reward milestone</small></span><div><b>€</b><input type="number" min="0.01" step="0.01" value={rewards[i]} onChange={e=>setRewards(v=>v.map((x,j)=>j===i?e.target.value:x))}/></div><em>{money(Number(rewards[i]||0))}</em></label>)}</div>
    <div className="rewarded-admin-fields"><label>GAM Network Code<input value={network} onChange={e=>setNetwork(e.target.value)} placeholder="Diisi setelah akun Ad Manager disetujui"/></label><label>Ad Unit Path<input value={adUnit} onChange={e=>setAdUnit(e.target.value)} placeholder="/network_code/ad_unit"/></label></div>
    <label className="rewarded-admin-toggle"><input type="checkbox" checked={enabled} onChange={e=>setEnabled(e.target.checked)}/> Aktifkan Rewarded Ads Quest</label>
-   <div className="rewarded-admin-status"><ShieldCheck size={16}/><span>Default aman: nonaktif. Aktivasi ditolak database jika Network Code atau Ad Unit Path belum tersedia. Batas harian 5 iklan, reset 00.00 WIB.</span></div>
+   <div className="rewarded-admin-status"><ShieldCheck size={16}/><span>Default aman: nonaktif. Aktivasi ditolak database sampai server-side verification Google selesai dikonfigurasi dan diuji. Network Code dan Ad Unit Path juga wajib tersedia. Batas 5 iklan/hari, reset 00.00 WIB.</span></div>
    <button className="admin-quest-save" disabled={saving} onClick={()=>void save()}><Save size={15}/>{saving?"Menyimpan...":"Simpan konfigurasi iklan"}</button>
   </>}
   {notice&&<div className="license-notice" role="status">{notice}</div>}
