@@ -129,7 +129,7 @@ describe("Audited race-control policy", () => {
 
   it("rejects sequence gaps and duplicate command events", () => {
     const initial = createInitialRaceControlState("race-1", classification);
-    const deployed = deployRaceControlFlag(initial, context(1), "yellow");
+    const deployed = deployRaceControlFlag(initial, context(1), "yellow", 5000);
     expect(() => clearRaceControlFlag(deployed, context(3))).toThrow(/sequence/i);
   });
 });
