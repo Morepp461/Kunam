@@ -44,6 +44,7 @@ create policy "FIA and Admin insert circuit revisions"
   to authenticated
   with check (public.is_caleris_fia_or_admin());
 
+revoke all on table public.caleris_circuit_revisions from public, anon;
 grant select, insert on public.caleris_circuit_revisions to authenticated;
 revoke update, delete on public.caleris_circuit_revisions from authenticated;
 
@@ -93,7 +94,7 @@ $$;
 revoke all on function public.save_caleris_circuit_revision(uuid,jsonb) from public, anon;
 grant execute on function public.save_caleris_circuit_revision(uuid,jsonb) to authenticated;
 
-create or replace view public.caleris_circuit_pool with (security_invoker = true) as
+create or replace view public.caleris_circuit_pool as
 select
   c.id,
   c.name,
