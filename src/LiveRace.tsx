@@ -136,6 +136,11 @@ export default function LiveRace() {
   const [brakeBalanceFrontPercent, setBrakeBalanceFrontPercent] = useState(50);
   const [frontTyrePressurePsi, setFrontTyrePressurePsi] = useState(25);
   const [rearTyrePressurePsi, setRearTyrePressurePsi] = useState(25);
+  const [hqDivision, setHqDivision] = useState<"premio" | "zwei">("premio");
+  const [hqEngineeringLevel, setHqEngineeringLevel] = useState(0);
+  const [hqRdLevel, setHqRdLevel] = useState(0);
+  const [hqSimulatorLevel, setHqSimulatorLevel] = useState(0);
+  const [hqPitCrewLevel, setHqPitCrewLevel] = useState(0);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -267,7 +272,9 @@ export default function LiveRace() {
     try {
       const result = await raceApi("create", {
         driverCount, teamCount, totalLaps, seed: Number(seed),
-        carSetup: { aeroSetting, suspensionSetting, brakeBalanceFrontPercent, frontTyrePressurePsi, rearTyrePressurePsi }
+        carSetup: { aeroSetting, suspensionSetting, brakeBalanceFrontPercent, frontTyrePressurePsi, rearTyrePressurePsi },
+        division: hqDivision,
+        hqFacilityLevels: { engineering_department: hqEngineeringLevel, rd_center: hqRdLevel, simulator_facility: hqSimulatorLevel, pit_crew_training_center: hqPitCrewLevel }
       });
       await refreshSessions(result.session.id);
       await loadDetail(result.session.id);
@@ -467,9 +474,27 @@ export default function LiveRace() {
         <label>Rear tyre pressure <small>15–35 PSI · test profile</small>
           <input type="number" min={15} max={35} step={0.1} value={rearTyrePressurePsi} onChange={(event) => setRearTyrePressurePsi(Number(event.target.value))} />
         </label>
+        <label>HQ division
+          <select value={hqDivision} onChange={(event) => { const next = event.target.value as "premio" | "zwei"; setHqDivision(next); if (next === "zwei") { setHqEngineeringLevel((value) => Math.min(6, value)); setHqRdLevel((value) => Math.min(6, value)); setHqSimulatorLevel((value) => Math.min(6, value)); setHqPitCrewLevel((value) => Math.min(6, value)); } }}>
+            <option value="premio">Premio · max level 8</option>
+            <option value="zwei">Zwei · max level 6</option>
+          </select>
+        </label>
+        <label>Engineering Department <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
+          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqEngineeringLevel} onChange={(event) => setHqEngineeringLevel(Number(event.target.value))} />
+        </label>
+        <label>R&amp;D Center <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
+          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqRdLevel} onChange={(event) => setHqRdLevel(Number(event.target.value))} />
+        </label>
+        <label>Simulator Facility <small>HQ effect · level 0–{hqDivision === "premio" ? 8 : 6}</small>
+          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqSimulatorLevel} onChange={(event) => setHqSimulatorLevel(Number(event.target.value))} />
+        </label>
+        <label>Pit Crew Training Center <small>Currently no race effect configured</small>
+          <input type="number" min={0} max={hqDivision === "premio" ? 8 : 6} value={hqPitCrewLevel} onChange={(event) => setHqPitCrewLevel(Number(event.target.value))} />
+        </label>
       </div>
       <div className="race-engine-form-footer">
-        <span>Up to 25 AI drivers · 10 teams · setup values use synthetic test calibration only</span>
+        <span>Up to 25 AI drivers · 10 teams · setup and HQ levels use Testing configuration only</span>
         <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !seed.trim()}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>
