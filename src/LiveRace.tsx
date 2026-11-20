@@ -5,6 +5,7 @@ import {
   Trophy, Waves, Wrench
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { createRaceEngineTestAuthHeaders } from "./lib/race-engine/api-auth";
 import "./live-race.css";
 
 const TEST_API_URL = "https://vxwvhyyvoipjwucbrvlu.supabase.co/functions/v1/race-engine-test-service";
@@ -44,6 +45,18 @@ type RaceSession = {
 };
 
 type RaceCommand = { id: string; command_type: string; result: Record<string, unknown>; created_at: string };
+type RaceTimingProjection = {
+  schemaVersion: number;
+  raceId: string;
+  tick: number;
+  simulationTimeMs: number;
+  timingRows: Array<{ driverId: string; segmentId: string | null; segmentIndex: number | null; segmentDistanceCompletedMeters: number }>;
+  segmentTelemetry: Array<{
+    sequence: number; driverId: string; racePosition: number | null; lapNumber: number;
+    sectorNumber: number | null; segmentId: string; simulationTimeMs: number;
+    segmentDurationMs: number; distanceMeters: number; averageSpeedKph: number; trackPositionMeters: number;
+  }>;
+};
 
 type RaceEvent = {
   sequence: number;
@@ -113,8 +126,7 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "apikey": TEST_API_KEY,
-      "Authorization": `Bearer ${data.session.access_token}`
+      ...createRaceEngineTestAuthHeaders(TEST_API_KEY, data.session.access_token)
     },
     body: JSON.stringify({ action, ...payload })
   });
@@ -126,7 +138,7 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
 export default function LiveRace() {
   const [sessions, setSessions] = useState<RaceSession[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [detail, setDetail] = useState<{ session: RaceSession; events: RaceEvent[]; commands: RaceCommand[] } | null>(null);
+  const [detail, setDetail] = useState<{ session: RaceSession; projection: RaceTimingProjection | null; events: RaceEvent[]; commands: RaceCommand[] } | null>(null);
   const [driverCount, setDriverCount] = useState(20);
   const [teamCount, setTeamCount] = useState(10);
   const [totalLaps, setTotalLaps] = useState(5);
@@ -188,7 +200,7 @@ export default function LiveRace() {
     if (!id) return;
     try {
       const result = await raceApi("detail", { sessionId: id });
-      setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
+      setDetail({ session: result.session as RaceSession, projection: (result.projection ?? null) as RaceTimingProjection | null, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
       const control = await raceApi("control_state", { sessionId: id });
       setControlState(control.controlState as RaceControlState);
       setResolvedClassification(Array.isArray(control.resolvedClassification) ? control.resolvedClassification : []);
@@ -568,7 +580,7 @@ export default function LiveRace() {
           <div className="live-race-subheading"><h3><Trophy size={15}/> Classification</h3><span>{classification.length ? "FINAL RESULT" : "LIVE ORDER"}</span></div>
           <div className="live-race-table-wrap">
             <table className="live-race-timing-table">
-              <thead><tr><th>POS</th><th>DRIVER</th><th>TEAM</th><th>LAP</th><th>TIME</th><th>PITS</th><th>STATUS</th></tr></thead>
+              <thead><tr><th>POS</th><th>DRIVER</th><th>TEAM</th><th>LAP</th><th>SEGMENT</th><th>TIME</th><th>PITS</th><th>STATUS</th></tr></thead>
               <tbody>
                 {(classification.length ? classification : (checkpoint?.entrants ?? []).map((entry: any, index: number) => ({
                   position: index + 1, driverId: entry.driverId, teamId: entry.teamId,
@@ -577,6 +589,7 @@ export default function LiveRace() {
                 }))).map((entry: any) => <tr key={entry.driverId}>
                   <td><strong className="driver-position">{entry.position === null ? "DSQ" : String(entry.position).padStart(2,"0")}</strong></td>
                   <td>{entry.driverId}</td><td>{entry.teamId}</td><td>{entry.lapCompleted}</td>
+                  <td>{detail?.projection?.timingRows.find((row) => row.driverId === entry.driverId)?.segmentId ?? (entry.finished || entry.retired ? "—" : "—")}</td>
                   <td className="lap-time">{formatTime(entry.elapsedMs)}</td><td>{entry.pitStopCount ?? 0}</td>
                   <td><span className={"race-engine-status status-" + (entry.status === "disqualified" || entry.status === "race_banned" || entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.status === "disqualified" ? "DSQ" : entry.status === "race_banned" ? "RACE BAN" : entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}{entry.penaltyTimeMs > 0 ? ` +${formatTime(entry.penaltyTimeMs)}` : ""}{entry.pendingGridPenaltyPositions > 0 ? ` · GRID +${entry.pendingGridPenaltyPositions}` : ""}</span></td>
                 </tr>)}
@@ -593,6 +606,23 @@ export default function LiveRace() {
               <span>{entry.tyreState.wearPercent.toFixed(1)}% wear</span><span>{entry.pitStopCount ?? 0} pit</span>
             </div>)}
             {!tyreStates.length && <p className="race-engine-empty">Tyre state akan muncul setelah checkpoint dimuat.</p>}
+          </div>
+        </section>
+
+        <section className="race-engine-result-section">
+          <div className="live-race-subheading"><h3><Activity size={15}/> Segment telemetry</h3><span>DERIVED FROM SIMULATION</span></div>
+          <div className="live-race-table-wrap">
+            <table className="live-race-timing-table">
+              <thead><tr><th>DRIVER</th><th>LAP</th><th>SEGMENT</th><th>AVG SPEED</th><th>SIM TIME</th></tr></thead>
+              <tbody>
+                {(detail?.projection?.segmentTelemetry ?? []).slice(-10).reverse().map((point) => <tr key={point.sequence}>
+                  <td>{point.driverId}</td><td>{point.lapNumber}</td><td>{point.segmentId}</td>
+                  <td className="lap-time">{point.averageSpeedKph.toFixed(1)} km/h</td>
+                  <td className="lap-time">{formatTime(point.simulationTimeMs)}</td>
+                </tr>)}
+              </tbody>
+            </table>
+            {!detail?.projection?.segmentTelemetry?.length && <p className="race-engine-empty">Telemetry segmen akan muncul setelah simulation tick tersimpan.</p>}
           </div>
         </section>
       </div>

@@ -18,6 +18,9 @@ import {
   validateRaceControlAuditTrail
 } from "./race-engine/race-control.ts";
 import { resolveTeamHqRaceEffects } from "./race-engine/hq.ts";
+import { buildRaceTimingProjection } from "./race-engine/projection.ts";
+import type { RaceTimingProjectionClassificationEntry } from "./race-engine/projection.ts";
+import { summarizeRaceEngineBatch } from "./race-engine/runtime-metrics.ts";
 import type { TeamHqDivision, TeamHqFacilityConfigInput } from "./race-engine/hq.ts";
 import type {
   RaceControlAuditEvent,
@@ -47,7 +50,7 @@ const service = createClient(TEST_URL, TEST_SERVICE_KEY, {
 function responseHeaders(origin: string | null): Headers {
   const headers = new Headers({
     "Content-Type": "application/json",
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-caleris-production-authorization",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin"
   });
@@ -60,7 +63,8 @@ function json(data: unknown, status = 200, origin: string | null = null): Respon
 }
 
 async function requireProductionAdmin(req: Request) {
-  const authorization = req.headers.get("Authorization") ?? "";
+  // Supabase gateway Authorization is a Testing-project JWT; the production user token is validated separately here.
+  const authorization = req.headers.get("x-caleris-production-authorization") ?? "";
   const token = authorization.replace(/^Bearer\s+/i, "").trim();
   if (!token) throw new Error("Sesi admin diperlukan.");
 
@@ -94,6 +98,28 @@ function restoreSimulation(checkpoint: RaceSimulationCheckpoint) {
   );
 }
 
+async function persistTimingProjection(
+  sessionId: string,
+  simulation: RaceSimulation,
+  classification: readonly RaceTimingProjectionClassificationEntry[] = simulation.classification
+) {
+  const checkpoint = simulation.createCheckpoint();
+  const projection = buildRaceTimingProjection(checkpoint, classification, new Date().toISOString());
+  const { error } = await service.from("race_engine_test_projections").upsert({
+    session_id: sessionId,
+    schema_version: projection.schemaVersion,
+    engine_version: projection.engineVersion,
+    tick: projection.tick,
+    status: projection.status,
+    simulation_time_ms: projection.simulationTimeMs,
+    projection,
+    generated_at: projection.generatedAt,
+    updated_at: new Date().toISOString()
+  }, { onConflict: "session_id" });
+  if (error) throw error;
+  return projection;
+}
+
 function asRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("Payload request tidak valid.");
@@ -104,13 +130,15 @@ function asRecord(value: unknown): Record<string, unknown> {
 async function processBackgroundBatch() {
   const { data: sessions, error: listError } = await service
     .from("race_engine_test_sessions")
-    .select("id,created_by,speed_multiplier")
+     .select("id,created_by,speed_multiplier,created_at,updated_at")
     .in("status", ["queued", "running"])
+    // Rotate work by last update so the first three long races cannot starve later sessions.
+    .order("updated_at", { ascending: true })
     .order("created_at", { ascending: true })
     .limit(3);
   if (listError) throw listError;
 
-  const processed: Array<Record<string, unknown>> = [];
+  const processed: Array<{ status: string; [key: string]: unknown }> = [];
   for (const session of sessions ?? []) {
     const { data: controlRows, error: controlError } = await service
       .from("race_engine_test_control_events")
@@ -123,6 +151,13 @@ async function processBackgroundBatch() {
       event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
     );
     if (lastSuspension?.action === "race_suspended") {
+      // Suspended sessions still occupy the active queue; rotate their scheduling timestamp to avoid starvation.
+      const { error: rotateError } = await service
+        .from("race_engine_test_sessions")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", session.id)
+        .in("status", ["queued", "running"]);
+      if (rotateError) throw rotateError;
       processed.push({ sessionId: session.id, status: "suspended_by_red_flag" });
       continue;
     }
@@ -135,6 +170,13 @@ async function processBackgroundBatch() {
     });
     if (claimError) throw claimError;
     if (!claim) {
+      // A valid lease owned by another invocation must not pin this row at the head of the queue.
+      const { error: rotateError } = await service
+        .from("race_engine_test_sessions")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", session.id)
+        .in("status", ["queued", "running"]);
+      if (rotateError) throw rotateError;
       processed.push({ sessionId: session.id, status: "busy" });
       continue;
     }
@@ -190,6 +232,13 @@ async function processBackgroundBatch() {
         p_actor_id: session.created_by
       });
       if (commitError) throw commitError;
+      if (committed?.ok === true) {
+        await persistTimingProjection(
+          session.id,
+          simulation,
+          resolvedClassification ?? simulation.classification
+        );
+      }
       processed.push({
         sessionId: session.id,
         status: simulation.status,
@@ -207,7 +256,20 @@ async function processBackgroundBatch() {
     }
   }
 
-  return { processed, checkedAt: new Date().toISOString() };
+  const checkedAt = new Date().toISOString();
+  const [{ count: activeQueueDepth, error: queueCountError }] = await Promise.all([
+    service.from("race_engine_test_sessions")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["queued", "running"])
+  ]);
+  if (queueCountError) throw queueCountError;
+  const metrics = summarizeRaceEngineBatch(
+    processed,
+    activeQueueDepth ?? 0,
+    (sessions ?? []).map((session) => session.created_at),
+    checkedAt
+  );
+  return { processed, metrics, checkedAt };
 }
 
 
@@ -439,6 +501,7 @@ Deno.serve(async (req: Request) => {
         .from("race_engine_test_checkpoints")
         .insert({ session_id: id, tick: 0, engine_version: RACE_ENGINE_VERSION, checkpoint });
       if (checkpointError) throw checkpointError;
+      await persistTimingProjection(id, simulation);
       return json({ session: data, syntheticOnly: true, productionCalibration: false }, 201, origin);
     }
 
@@ -580,6 +643,21 @@ Deno.serve(async (req: Request) => {
         .order("sequence", { ascending: false })
         .limit(150);
       if (eventError) throw eventError;
+      const { data: projectionRow, error: projectionError } = await service
+        .from("race_engine_test_projections")
+        .select("projection")
+        .eq("session_id", sessionId)
+        .maybeSingle();
+      if (projectionError) throw projectionError;
+      const projectionIsStale = !projectionRow?.projection ||
+        Number((projectionRow.projection as Record<string, unknown>).tick) !== Number(session.tick);
+      const projection = projectionIsStale
+        ? await persistTimingProjection(
+            sessionId,
+            restoreSimulation(session.checkpoint as RaceSimulationCheckpoint),
+            (session.classification ?? undefined) as RaceTimingProjectionClassificationEntry[] | undefined
+          )
+        : projectionRow.projection;
       const { data: commands, error: commandError } = await service
         .from("race_engine_test_commands")
         .select("id,command_type,result,created_at")
@@ -587,7 +665,7 @@ Deno.serve(async (req: Request) => {
         .order("created_at", { ascending: false })
         .limit(20);
       if (commandError) throw commandError;
-      return json({ session, events: events ?? [], commands: commands ?? [] }, 200, origin);
+      return json({ session, projection, events: events ?? [], commands: commands ?? [] }, 200, origin);
     }
 
     if (action === "replay") {
@@ -703,6 +781,9 @@ Deno.serve(async (req: Request) => {
       });
       if (commitError) throw commitError;
       if (committed?.conflict) return json({ error: "Checkpoint berubah karena worker lain.", conflict: true }, 409, origin);
+      const timingProjection = committed?.ok === true
+        ? await persistTimingProjection(sessionId, simulation, classification ?? simulation.classification)
+        : null;
       return json({
         result: committed,
         sessionId,
@@ -711,6 +792,7 @@ Deno.serve(async (req: Request) => {
         status,
         eventsAdded,
         classification,
+        projection: timingProjection,
         checkpointSchema: nextCheckpoint.schemaVersion
       }, 200, origin);
     }
