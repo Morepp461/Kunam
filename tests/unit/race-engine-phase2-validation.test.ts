@@ -73,7 +73,7 @@ describe("Phase 2 deterministic Monte Carlo validation", () => {
         evaluateSegmentIncident({
           model, raceSeed: seed + 1, raceId: "reliability-sensitivity",
           driverId: "driver-1", lapNumber: 1, segmentId: "segment-1",
-          distanceMeters: 1000, attributes: { "car_team.reliability": reliability }
+          distanceMeters: 1000, attributes: { "car_team.reliability": reliability, "driver.mistake_rate": 50 }
         })
       ).filter((incident) => incident?.type === "mechanical_failure").length;
     expect(count(100)).toBeLessThan(count(50));
@@ -94,11 +94,22 @@ describe("Phase 2 deterministic Monte Carlo validation", () => {
       const baseline = createSyntheticRaceFixture({ seed, driverCount: 2, teamCount: 1, totalLaps: 1 });
       const improved = {
         ...baseline,
-        entrants: baseline.entrants.map((entrant, index) => index === 0
-          ? { ...entrant, driverAttributes: { ...entrant.driverAttributes, race_pace: 100 } }
-          : entrant)
+        entrants: baseline.entrants.map((entrant, index) => ({
+          ...entrant,
+          driverAttributes: {
+            ...entrant.driverAttributes,
+            race_pace: index === 0 ? 100 : 50
+          }
+        }))
       };
-      const baselineRace = new RaceSimulation(baseline, { performanceModel: model, config: { noiseAmplitudeMs: 5 } });
+      const baselineFixed = {
+        ...baseline,
+        entrants: baseline.entrants.map((entrant) => ({
+          ...entrant,
+          driverAttributes: { ...entrant.driverAttributes, race_pace: 50 }
+        }))
+      };
+      const baselineRace = new RaceSimulation(baselineFixed, { performanceModel: model, config: { noiseAmplitudeMs: 5 } });
       const improvedRace = new RaceSimulation(improved, { performanceModel: model, config: { noiseAmplitudeMs: 5 } });
       baselineRace.runToCompletion();
       improvedRace.runToCompletion();
