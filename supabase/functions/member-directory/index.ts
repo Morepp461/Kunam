@@ -1,10 +1,14 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://calerismasters.com",
+  "https://www.calerismasters.com",
+  "https://calerismastersnewgen-mu.vercel.app",
+]);
 const allowedOrigin = (origin: string) =>
-  origin === "http://localhost:5173" ||
-  origin === "https://calerismastersnewgen-mu.vercel.app" ||
-  /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+  allowedOrigins.has(origin) || /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
 const cors = (origin: string) => ({
   "Access-Control-Allow-Origin": allowedOrigin(origin) ? origin : "https://calerismastersnewgen-mu.vercel.app",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
