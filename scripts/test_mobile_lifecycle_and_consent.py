@@ -7,8 +7,9 @@ STYLES_CSS = (ROOT / "src" / "styles.css").read_text(encoding="utf-8")
 MOTION = (ROOT / "cinematic-motion.js").read_text(encoding="utf-8")
 
 # Privacy consent must not be a browser-restorable native checkbox.
-consent_start = APP.index('className={"privacy-consent"')
-consent_end = APP.index("</button>", consent_start)
+consent_role_index = APP.index('role="checkbox"')
+consent_start = APP.rfind("<button", 0, consent_role_index)
+consent_end = APP.index("</button>", consent_role_index)
 consent_markup = APP[consent_start:consent_end]
 assert 'role="checkbox"' in consent_markup
 assert "aria-checked={privacyAccepted}" in consent_markup
