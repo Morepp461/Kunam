@@ -95,6 +95,25 @@ describe("Audited race-control policy", () => {
       .toThrow(/only admin/i);
   });
 
+  it("enforces exact 5s/10s penalties and explicit grid-position penalties", () => {
+    const initial = createInitialRaceControlState("race-1", classification);
+    expect(() => issueRacePenalty(initial, context(1, "fia", "driver-1"), {
+      driverId: "driver-1", type: "time_5s", durationMs: 4000
+    })).toThrow(/5000 milliseconds/i);
+    expect(() => issueRacePenalty(initial, context(1, "fia", "driver-1"), {
+      driverId: "driver-1", type: "grid_penalty", gridPositions: 0
+    })).toThrow(/between 1 and 20 positions/i);
+    const issued = issueRacePenalty(initial, context(1, "fia", "driver-1"), {
+      driverId: "driver-1", type: "grid_penalty", gridPositions: 3
+    });
+    expect(issued.penalties[0].gridPositions).toBe(3);
+    expect(issued.penalties[0].durationMs).toBeNull();
+    const stopGo = issueRacePenalty(initial, context(1, "fia", "driver-1"), {
+      driverId: "driver-1", type: "stop_go", durationMs: 30000
+    });
+    expect(stopGo.penalties[0].durationMs).toBe(30000);
+  });
+
   it("requires Admin ratification and records reversals as superseding audit events", () => {
     const initial = createInitialRaceControlState("race-1", classification);
     const issued = issueRacePenalty(initial, context(1, "fia", "driver-1"), {
