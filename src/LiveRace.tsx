@@ -546,7 +546,7 @@ export default function LiveRace() {
       </details>
       <div className="race-engine-form-footer">
         <span>Up to 25 AI drivers · 10 teams · setup and HQ levels use Testing configuration only</span>
-        <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !/^\\d+$/.test(seed) || !Number.isSafeInteger(Number(seed)) || Number(seed) > 0xffffffff}>
+        <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !/^\d+$/.test(seed) || !Number.isSafeInteger(Number(seed)) || Number(seed) > 0xffffffff}>
           {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
         </button>
       </div>
