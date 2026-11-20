@@ -49,6 +49,11 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const [points, setPoints] = useState<CircuitPathPoint[]>(() => value?.layout.map((point) => ({...point})) ?? []);
   const [segments, setSegments] = useState<SegmentForm[]>(() => value?.segments.map((segment) => ({
     ...segment,
+    sectorNumber: segment.sectorNumber as 1|2|3,
+    drsAvailable: segment.drsAvailable ?? false,
+    ersAvailable: segment.ersAvailable ?? true,
+    overtakingOpportunity: segment.overtakingOpportunity ?? false,
+    defendingOpportunity: segment.defendingOpportunity ?? false,
     distanceMeters: String(segment.distanceMeters),
     trackWidthMeters: String(segment.trackWidthMeters),
     gripFactor: String(segment.gripFactor),
