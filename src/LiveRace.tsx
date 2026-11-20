@@ -1,59 +1,392 @@
-import {useState} from "react";
-import {Activity,AlertTriangle,ArrowUpRight,CalendarClock,ChevronRight,Clock3,Flag,Gauge,Map,Radio,RadioTower,ShieldCheck,Signal,Zap} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Activity, AlertTriangle, CheckCircle2, ChevronRight, Clock3, Flag,
+  Gauge, LoaderCircle, Play, RefreshCw, RotateCcw, ShieldCheck, Timer,
+  Trophy, Waves, Wrench
+} from "lucide-react";
+import { supabase } from "./lib/supabase";
 import "./live-race.css";
 
-type Driver={position:number;name:string;team:string;number:string;gap:string;lastLap:string;tyre:"S"|"M"|"H"|"I"|"W";pits:number;status:"RUNNING"|"PIT"|"OUT"};
-type Race={id:string;division:string;round:string;circuit:string;lap:number;total:number;elapsed:string;drivers:Driver[]};
-const RACES:Race[]=[
- {id:"premio",division:"CALERIS PREMIO",round:"ROUND 07",circuit:"Suzuka International Racing Course",lap:18,total:53,elapsed:"00:31:42",drivers:[
-  {position:1,name:"Driver 01",team:"Vreeo Racing",number:"07",gap:"LEADER",lastLap:"1:31.284",tyre:"M",pits:1,status:"RUNNING"},
-  {position:2,name:"Driver 02",team:"Caleris GP",number:"12",gap:"+2.481",lastLap:"1:31.602",tyre:"M",pits:1,status:"RUNNING"},
-  {position:3,name:"Driver 03",team:"Apex Motorsport",number:"21",gap:"+5.903",lastLap:"1:32.014",tyre:"H",pits:0,status:"RUNNING"},
-  {position:4,name:"Driver 04",team:"Vreeo Racing",number:"18",gap:"+8.117",lastLap:"1:32.330",tyre:"H",pits:1,status:"RUNNING"},
-  {position:5,name:"Driver 05",team:"Caleris GP",number:"33",gap:"+12.806",lastLap:"1:32.108",tyre:"S",pits:2,status:"PIT"}
- ]},
- {id:"zwei",division:"CALERIS ZWEI",round:"ROUND 07",circuit:"Suzuka International Racing Course",lap:12,total:40,elapsed:"00:22:16",drivers:[
-  {position:1,name:"Driver 06",team:"Northstar Racing",number:"04",gap:"LEADER",lastLap:"1:34.820",tyre:"M",pits:1,status:"RUNNING"},
-  {position:2,name:"Driver 07",team:"Orion Motorsport",number:"16",gap:"+1.775",lastLap:"1:35.012",tyre:"M",pits:1,status:"RUNNING"},
-  {position:3,name:"Driver 08",team:"Northstar Racing",number:"28",gap:"+4.116",lastLap:"1:35.221",tyre:"H",pits:0,status:"RUNNING"},
-  {position:4,name:"Driver 09",team:"Vertex GP",number:"41",gap:"+7.690",lastLap:"1:35.488",tyre:"H",pits:1,status:"RUNNING"}
- ]}
-];
-const SPEEDS=[1,5,10,15] as const;
-const VIEWS=[{id:"broadcast",label:"Broadcast",icon:Radio},{id:"timing",label:"Timing",icon:Activity},{id:"circuit",label:"Circuit",icon:Map},{id:"telemetry",label:"Telemetry",icon:Gauge},{id:"race-control",label:"Race Control",icon:Flag}] as const;
-type View=typeof VIEWS[number]["id"];
+const TEST_API_URL = "https://vxwvhyyvoipjwucbrvlu.supabase.co/functions/v1/race-engine-test-service";
+const TEST_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4d3ZoeXl2b2lwand1Y2Jydmx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NDU0MjksImV4cCI6MjExMDEyMTQyOX0.IPZFARdM_KeB3PyGh8nBkyVXMUg7JAD7Oje3piy6ZkI";
 
-export default function LiveRace(){
- const [raceId,setRaceId]=useState(RACES[0].id);
- const [speed,setSpeed]=useState<(typeof SPEEDS)[number]>(1);
- const [view,setView]=useState<View>("broadcast");
- const race=RACES.find(item=>item.id===raceId)||RACES[0];
- return <div className="workspace live-race-workspace">
-  <header className="page-heading live-race-heading"><div><span className="eyebrow">CALERIS RACE CONTROL · DEVELOPMENT</span><h1 className="page-title">LIVE RACE</h1><p className="page-description">Race monitoring workspace untuk pengembangan Race Engine.</p></div><span className="live-race-admin-tag"><ShieldCheck size={14}/> ADMIN ONLY</span></header>
-  <div className="live-race-preview-notice"><AlertTriangle size={17}/><div><strong>ENGINE PREVIEW · BELUM TERHUBUNG</strong><p>Timing, telemetry, sesi, dan angka di halaman ini adalah data demo untuk menguji tampilan. Belum ada simulasi race sungguhan atau perintah yang dikirim ke worker.</p></div></div>
-  <section className="live-race-status-grid">
-   <article><span><RadioTower size={15}/> ENGINE STATUS</span><strong className="status-offline">NOT CONNECTED</strong><small>Worker VPS belum diaktifkan</small></article>
-   <article><span><Activity size={15}/> DEMO SESSIONS</span><strong>02</strong><small>Contoh dua race bersamaan</small></article>
-   <article><span><Signal size={15}/> DATA STREAM</span><strong>PREVIEW</strong><small>Belum menerima telemetry</small></article>
-   <article><span><CalendarClock size={15}/> BUILD STAGE</span><strong>UI FOUNDATION</strong><small>Engine dan API menyusul</small></article>
-  </section>
-  <section className="live-race-session-section">
-   <div className="live-race-section-heading"><div><span className="eyebrow">SESSION MONITOR</span><h2>Race Sessions</h2></div><span className="live-race-demo-label">DEMO DATA</span></div>
-   <div className="live-race-session-list">{RACES.map(item=><button key={item.id} className={"live-race-session"+(raceId===item.id?" selected":"")} onClick={()=>setRaceId(item.id)} aria-pressed={raceId===item.id}><span className="live-race-session-icon"><Flag size={17}/></span><span className="live-race-session-copy"><strong>{item.division}</strong><small>{item.round} · {item.circuit}</small></span><span className="live-race-session-progress">LAP {item.lap}/{item.total}</span><ChevronRight size={16}/></button>)}</div>
-  </section>
-  <section className="live-race-main-panel">
-   <div className="live-race-main-head"><div><span className="eyebrow">{race.division} · {race.round}</span><h2>{race.circuit}</h2><small>DEMO SESSION · NOT A REAL RACE</small></div><span className="live-race-running"><i/> SIMULATED</span></div>
-   <div className="live-race-controls"><div className="live-race-clock"><Clock3 size={16}/><span>RACE CLOCK</span><strong>{race.elapsed}</strong><small>Lap {race.lap} of {race.total}</small></div><div className="live-race-speed-control"><span>LIVE SPEED PREVIEW</span><div>{SPEEDS.map(value=><button key={value} className={speed===value?"active":""} onClick={()=>setSpeed(value)} aria-pressed={speed===value}>{value}×</button>)}</div><small>Kontrol lokal UI, belum mengubah kecepatan engine</small></div></div>
-   <nav className="live-race-view-tabs" aria-label="Race display mode">{VIEWS.map(item=>{const Icon=item.icon;return <button key={item.id} className={view===item.id?"active":""} onClick={()=>setView(item.id)} aria-pressed={view===item.id}><Icon size={15}/>{item.label}</button>})}</nav>
-   {view==="broadcast"&&<div className="live-race-broadcast-view"><div className="live-race-hero-stats"><div><span>LEADER</span><strong>{race.drivers[0].name}</strong><small>{race.drivers[0].team} · #{race.drivers[0].number}</small></div><div><span>GAP TO P2</span><strong>{race.drivers[1]?.gap||"—"}</strong><small>Current interval</small></div><div><span>SESSION</span><strong>DEMO</strong><small>Lap {race.lap}/{race.total}</small></div></div><TimingTable drivers={race.drivers}/></div>}
-   {view==="timing"&&<div className="live-race-content-view"><div className="live-race-subheading"><h3>Live Timing Tower</h3><span>DEMO CLASSIFICATION</span></div><TimingTable drivers={race.drivers} detailed/></div>}
-   {view==="circuit"&&<div className="live-race-content-view"><div className="live-race-subheading"><h3>Circuit Overview</h3><span>SCHEMATIC · NOT TO SCALE</span></div><div className="live-race-circuit-placeholder"><div className="live-race-track-art"><svg viewBox="0 0 620 260" role="img" aria-label="Ilustrasi lintasan sirkuit demo"><path d="M90 185 C55 155 65 70 135 55 C185 42 205 92 260 90 C320 88 325 28 390 38 C475 50 465 112 530 120 C590 128 575 195 520 205 C455 218 425 160 365 172 C305 185 300 228 230 220 C165 214 135 220 90 185Z" fill="none" stroke="currentColor" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round"/><path d="M90 185 C55 155 65 70 135 55 C185 42 205 92 260 90 C320 88 325 28 390 38 C475 50 465 112 530 120 C590 128 575 195 520 205 C455 218 425 160 365 172 C305 185 300 228 230 220 C165 214 135 220 90 185Z" fill="none" stroke="#f3c75b" strokeWidth="2" strokeDasharray="7 8" strokeLinecap="round"/><path d="M84 174 L98 194" stroke="#f3c75b" strokeWidth="4"/><circle cx="84" cy="174" r="7" fill="#f3c75b"/></svg><span>START / FINISH</span></div><p>Layout sirkuit asli akan dimuat dari Circuit Management setelah integrasi engine selesai. Ilustrasi ini hanya placeholder visual.</p></div></div>}
-   {view==="telemetry"&&<div className="live-race-content-view"><div className="live-race-subheading"><h3>Telemetry Preview</h3><span>{race.drivers[0].name} · LAP {race.lap}</span></div><div className="live-race-telemetry-grid"><article><span>SPEED</span><strong>287 <small>km/h</small></strong><svg viewBox="0 0 240 60" preserveAspectRatio="none"><path d="M0 48 L22 40 L43 43 L64 19 L84 25 L106 10 L128 20 L150 8 L174 26 L194 15 L216 28 L240 12" fill="none" stroke="#d7b85d" strokeWidth="2.5"/></svg></article><article><span>THROTTLE</span><strong>96 <small>%</small></strong><svg viewBox="0 0 240 60" preserveAspectRatio="none"><path d="M0 45 L22 44 L43 20 L64 18 L84 18 L106 16 L128 16 L150 40 L174 42 L194 14 L216 13 L240 13" fill="none" stroke="#6dbb92" strokeWidth="2.5"/></svg></article><article><span>ERS DEPLOYMENT</span><strong>72 <small>%</small></strong><svg viewBox="0 0 240 60" preserveAspectRatio="none"><path d="M0 12 L22 18 L43 15 L64 25 L84 20 L106 31 L128 26 L150 35 L174 28 L194 42 L216 38 L240 48" fill="none" stroke="#80aee8" strokeWidth="2.5"/></svg></article></div><p className="live-race-muted-note">Grafik dan angka telemetry merupakan contoh tampilan, bukan hasil pengukuran kendaraan.</p></div>}
-   {view==="race-control"&&<div className="live-race-content-view"><div className="live-race-subheading"><h3>Race Control Timeline</h3><span>DEMO EVENTS</span></div><div className="live-race-event-list"><article><span className="event-lap">LAP 18</span><span className="event-marker green"/><div><strong>GREEN FLAG</strong><small>Track clear · Racing conditions</small></div><time>00:31:42</time></article><article><span className="event-lap">LAP 15</span><span className="event-marker gold"/><div><strong>PIT STOP</strong><small>Driver 05 · Soft tyre fitted</small></div><time>00:26:11</time></article><article><span className="event-lap">LAP 09</span><span className="event-marker blue"/><div><strong>FASTEST LAP</strong><small>Driver 02 · 1:30.991</small></div><time>00:15:48</time></article></div></div>}
-  </section>
-  <footer className="live-race-footer-note"><Zap size={15}/><span>UI ini disiapkan untuk menerima race session, timing, telemetry, event, dan replay dari Race Engine melalui API. Tidak ada tombol untuk memulai race secara manual.</span><a href="/rules">Rules <ArrowUpRight size={13}/></a></footer>
- </div>;
+type RaceSession = {
+  id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  seed: number;
+  driver_count: number;
+  team_count: number;
+  total_laps: number;
+  engine_version: string;
+  tick: number;
+  total_ticks: number;
+  created_at: string;
+  updated_at?: string;
+  completed_at?: string | null;
+  checkpoint?: any;
+  classification?: Array<{
+    position: number;
+    driverId: string;
+    teamId: string;
+    lapCompleted: number;
+    elapsedMs: number;
+    finished: boolean;
+    retired?: boolean;
+    pitStopCount?: number;
+  }> | null;
+  last_error?: string | null;
+};
+
+type RaceEvent = {
+  sequence: number;
+  event_type: string;
+  driver_id: string | null;
+  lap_number: number;
+  simulation_time_ms: number;
+  payload: Record<string, unknown>;
+};
+
+function formatTime(ms: number): string {
+  if (!Number.isFinite(ms)) return "—";
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  const millis = Math.floor(ms % 1000);
+  return `${minutes}:${String(seconds).padStart(2, "0")}.${String(millis).padStart(3, "0")}`;
 }
-function TimingTable({drivers,detailed=false}:{drivers:Driver[];detailed?:boolean}){
- return <div className="live-race-table-wrap"><table className="live-race-timing-table"><thead><tr><th>POS</th><th>DRIVER</th><th>TEAM</th><th>GAP</th><th>LAST LAP</th><th>TYRE</th>{detailed&&<><th>PITS</th><th>STATUS</th></>}</tr></thead><tbody>{drivers.map(driver=><tr key={driver.number}><td><strong className="driver-position">{String(driver.position).padStart(2,"0")}</strong></td><td><strong>{driver.name}</strong><small>#{driver.number}</small></td><td>{driver.team}</td><td className={driver.position===1?"gap-leader":""}>{driver.gap}</td><td className="lap-time">{driver.lastLap}</td><td><span className={"live-race-tyre tyre-"+driver.tyre.toLowerCase()}>{driver.tyre}</span></td>{detailed&&<><td>{driver.pits}</td><td><span className={"driver-status status-"+driver.status.toLowerCase()}>{driver.status}</span></td></>}</tr>)}</tbody></table></div>;
+
+function formatDate(value?: string): string {
+  if (!value) return "—";
+  return new Date(value).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
+}
+
+function labelEvent(type: string): string {
+  return type.replaceAll("_", " ").toUpperCase();
+}
+
+async function raceApi(action: string, payload: Record<string, unknown> = {}) {
+  if (!supabase) throw new Error("Supabase production belum terkonfigurasi.");
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session?.access_token) throw new Error("Sesi login tidak ditemukan. Login ulang sebagai Admin.");
+  const response = await fetch(TEST_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": TEST_API_KEY,
+      "Authorization": `Bearer ${data.session.access_token}`
+    },
+    body: JSON.stringify({ action, ...payload })
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || `Race Engine API gagal (${response.status}).`);
+  return result;
+}
+
+export default function LiveRace() {
+  const [sessions, setSessions] = useState<RaceSession[]>([]);
+  const [selectedId, setSelectedId] = useState("");
+  const [detail, setDetail] = useState<{ session: RaceSession; events: RaceEvent[] } | null>(null);
+  const [driverCount, setDriverCount] = useState(20);
+  const [teamCount, setTeamCount] = useState(10);
+  const [totalLaps, setTotalLaps] = useState(5);
+  const [seed, setSeed] = useState("20261120");
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  const refreshSessions = useCallback(async (preferId?: string) => {
+    try {
+      const result = await raceApi("list");
+      const next = (result.sessions ?? []) as RaceSession[];
+      setSessions(next);
+      const nextId = preferId || selectedId || next[0]?.id || "";
+      if (nextId && next.some((item) => item.id === nextId)) setSelectedId(nextId);
+      else if (!next.length) {
+        setSelectedId("");
+        setDetail(null);
+      }
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal memuat sesi Race Engine.");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedId]);
+
+  const loadDetail = useCallback(async (id: string) => {
+    if (!id) return;
+    try {
+      const result = await raceApi("detail", { sessionId: id });
+      setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[] });
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal memuat detail sesi.");
+    }
+  }, []);
+
+  useEffect(() => { void refreshSessions(); }, [refreshSessions]);
+  useEffect(() => { if (selectedId) void loadDetail(selectedId); }, [selectedId, loadDetail]);
+
+  const active = detail?.session?.id === selectedId ? detail.session : sessions.find((item) => item.id === selectedId) ?? null;
+  const progress = active ? Math.min(100, Math.round((active.tick / Math.max(1, active.total_ticks)) * 100)) : 0;
+  const checkpoint = detail?.session?.id === selectedId ? detail.session.checkpoint : null;
+  const entrants = Array.isArray(checkpoint?.entrants) ? checkpoint.entrants : [];
+  const tyreStates = entrants.filter((entry: any) => entry.tyreState);
+  const weather = checkpoint?.weatherState;
+  const classification = active?.classification ?? [];
+  const recentEvents = useMemo(() => [...(detail?.events ?? [])].slice(-35).reverse(), [detail?.events]);
+
+  async function createSession() {
+    setBusy("create");
+    setError("");
+    setNotice("");
+    try {
+      const result = await raceApi("create", {
+        driverCount, teamCount, totalLaps, seed: Number(seed)
+      });
+      await refreshSessions(result.session.id);
+      await loadDetail(result.session.id);
+      setNotice("Sesi simulasi berhasil dibuat di database testing. Belum ada data produksi yang disentuh.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Gagal membuat sesi.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function advanceSession(steps = 5) {
+    if (!selectedId) return null;
+    const result = await raceApi("advance", { sessionId: selectedId, steps });
+    await loadDetail(selectedId);
+    await refreshSessions(selectedId);
+    return result;
+  }
+
+  async function advanceOnce() {
+    setBusy("advance");
+    setError("");
+    setNotice("");
+    try {
+      const result = await advanceSession(5);
+      setNotice(`Worker memproses ${result?.result?.events_added ?? 0} event baru. Tick ${result?.tick}/${result?.totalTicks}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Worker gagal memproses sesi.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function runToCompletion() {
+    if (!active || active.status === "completed") return;
+    setBusy("run");
+    setError("");
+    setNotice("");
+    try {
+      let latest: any = null;
+      let attempts = 0;
+      while (attempts < 20) {
+        latest = await raceApi("advance", { sessionId: selectedId, steps: 10 });
+        attempts += 1;
+        setNotice(`Worker berjalan: tick ${latest.tick}/${latest.totalTicks}.`);
+        await loadDetail(selectedId);
+        if (latest.status === "completed") break;
+      }
+      await refreshSessions(selectedId);
+      await loadDetail(selectedId);
+      if (latest?.status === "completed") setNotice("Simulasi selesai. Klasifikasi final dan event sudah tersimpan di Supabase testing.");
+      else setNotice("Batas batch tercapai. Sesi tetap tersimpan dan bisa dilanjutkan dari checkpoint.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Worker gagal menyelesaikan simulasi.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function verifyRecovery() {
+    if (!selectedId) return;
+    setBusy("recover");
+    setError("");
+    setNotice("");
+    try {
+      const result = await raceApi("recover", { sessionId: selectedId });
+      setNotice(`Checkpoint valid. Restore engine v${active?.engine_version}: tick ${result.tick}, ${result.eventCount} event, status ${result.status}.`);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Recovery checkpoint gagal.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  return <div className="workspace live-race-workspace">
+    <header className="page-heading live-race-heading">
+      <div>
+        <span className="eyebrow">CALERIS RACE CONTROL · PHASE 3</span>
+        <h1 className="page-title">RACE ENGINE LAB</h1>
+        <p className="page-description">Jalankan simulasi deterministik, simpan checkpoint, dan uji pemulihan sesi dari web.</p>
+      </div>
+      <span className="live-race-admin-tag"><ShieldCheck size={14}/> ADMIN ONLY</span>
+    </header>
+
+    <div className="live-race-preview-notice">
+      <AlertTriangle size={17}/>
+      <div>
+        <strong>TEST ENVIRONMENT · SYNTHETIC DATA ONLY</strong>
+        <p>Seluruh sesi, checkpoint, dan event disimpan di Supabase caleris-masters-testing. Profil cuaca, ban, strategi, performa, dan insiden di halaman ini hanya koefisien sintetis untuk pengujian, bukan kalibrasi produksi. Tidak ada saldo, hadiah, atau settlement ekonomi yang dijalankan.</p>
+      </div>
+    </div>
+
+    <section className="race-engine-capability-grid">
+      <article><Activity/><strong>24 ATTRIBUTES</strong><small>Driver + Car/Team snapshot</small></article>
+      <article><Waves/><strong>WEATHER + TYRES</strong><small>Track wetness and tyre degradation</small></article>
+      <article><Flag/><strong>RACE CONTROL</strong><small>Incidents, flags and time loss</small></article>
+      <article><Timer/><strong>CHECKPOINT v6</strong><small>Persistent state and recovery</small></article>
+    </section>
+
+    <section className="race-engine-create-panel">
+      <div className="live-race-section-heading">
+        <div><span className="eyebrow">NEW TEST SESSION</span><h2>Simulation Setup</h2></div>
+        <span className="live-race-demo-label">TEST ONLY</span>
+      </div>
+      <div className="race-engine-form-grid">
+        <label>Drivers
+          <select value={driverCount} onChange={(event) => {
+            const value = Number(event.target.value);
+            setDriverCount(value);
+            if (teamCount > value) setTeamCount(value);
+          }}>
+            {[2,4,6,10,12,16,20].map((value) => <option key={value} value={value}>{value} drivers</option>)}
+          </select>
+        </label>
+        <label>Teams
+          <select value={teamCount} onChange={(event) => setTeamCount(Number(event.target.value))}>
+            {Array.from({ length: Math.min(10, driverCount) }, (_, index) => index + 1).map((value) => <option key={value} value={value}>{value} teams</option>)}
+          </select>
+        </label>
+        <label>Race distance
+          <select value={totalLaps} onChange={(event) => setTotalLaps(Number(event.target.value))}>
+            {[1,2,3,5,8,10].map((value) => <option key={value} value={value}>{value} laps</option>)}
+          </select>
+        </label>
+        <label>Deterministic seed
+          <input inputMode="numeric" value={seed} onChange={(event) => setSeed(event.target.value)} />
+        </label>
+      </div>
+      <div className="race-engine-form-footer">
+        <span>Up to 20 AI drivers · 10 teams · 10 laps · 9 circuit segments per lap</span>
+        <button className="race-engine-primary-button" onClick={createSession} disabled={Boolean(busy) || !seed.trim()}>
+          {busy === "create" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Create test race
+        </button>
+      </div>
+    </section>
+
+    {error && <div className="race-engine-feedback error"><AlertTriangle size={15}/>{error}</div>}
+    {notice && <div className="race-engine-feedback success"><CheckCircle2 size={15}/>{notice}</div>}
+
+    <section className="live-race-session-section">
+      <div className="live-race-section-heading">
+        <div><span className="eyebrow">PERSISTED SESSIONS</span><h2>Race Sessions</h2></div>
+        <button className="race-engine-icon-button" onClick={() => void refreshSessions(selectedId)} disabled={Boolean(busy)} aria-label="Refresh sessions"><RefreshCw size={15}/></button>
+      </div>
+      {loading ? <div className="race-engine-empty"><LoaderCircle className="spin"/> Loading sessions...</div> :
+        sessions.length === 0 ? <div className="race-engine-empty">Belum ada sesi uji. Buat simulasi pertama di atas.</div> :
+        <div className="race-engine-session-list">
+          {sessions.map((session) => <button key={session.id} className={"race-engine-session-card" + (selectedId === session.id ? " selected" : "")} onClick={() => setSelectedId(session.id)}>
+            <span className="race-engine-session-icon"><Flag size={16}/></span>
+            <span className="race-engine-session-copy">
+              <strong>{session.driver_count} DRIVERS · {session.team_count} TEAMS</strong>
+              <small>{session.total_laps} laps · seed {session.seed} · {formatDate(session.created_at)}</small>
+            </span>
+            <span className={"race-engine-status status-" + session.status}>{session.status.toUpperCase()}</span>
+            <span className="race-engine-session-progress">{session.tick}/{session.total_ticks}</span>
+            <ChevronRight size={15}/>
+          </button>)}
+        </div>
+      }
+    </section>
+
+    {active && <section className="live-race-main-panel race-engine-session-panel">
+      <div className="live-race-main-head">
+        <div>
+          <span className="eyebrow">SESSION {active.id.slice(0, 8).toUpperCase()} · ENGINE {active.engine_version}</span>
+          <h2>Synthetic Grand Prix Circuit</h2>
+          <small>{active.driver_count} DRIVERS · {active.team_count} TEAMS · SEED {active.seed}</small>
+        </div>
+        <span className={"race-engine-status status-" + active.status}>{active.status.toUpperCase()}</span>
+      </div>
+      <div className="race-engine-progress-wrap">
+        <div className="race-engine-progress-label"><span>SIMULATION PROGRESS</span><strong>{progress}% · TICK {active.tick}/{active.total_ticks}</strong></div>
+        <div className="race-engine-progress-track"><span style={{ width: progress + "%" }}/></div>
+      </div>
+      <div className="race-engine-actions">
+        <button className="race-engine-primary-button" onClick={advanceOnce} disabled={Boolean(busy) || active.status === "completed"}>
+          {busy === "advance" ? <LoaderCircle className="spin" size={15}/> : <Play size={15}/>} Advance 5 segments
+        </button>
+        <button className="race-engine-secondary-button" onClick={runToCompletion} disabled={Boolean(busy) || active.status === "completed"}>
+          {busy === "run" ? <LoaderCircle className="spin" size={15}/> : <Gauge size={15}/>} Run to completion
+        </button>
+        <button className="race-engine-secondary-button" onClick={verifyRecovery} disabled={Boolean(busy)}>
+          {busy === "recover" ? <LoaderCircle className="spin" size={15}/> : <RotateCcw size={15}/>} Verify recovery
+        </button>
+      </div>
+
+      <div className="race-engine-live-metrics">
+        <article><span><Clock3 size={13}/> SIMULATION CLOCK</span><strong>{formatTime(checkpoint?.simulationClockMs ?? 0)}</strong></article>
+        <article><span><Waves size={13}/> TRACK WETNESS</span><strong>{weather ? `${(weather.trackWetness * 100).toFixed(1)}%` : "—"}</strong></article>
+        <article><span><Gauge size={13}/> TRACK GRIP</span><strong>{weather ? `${weather.gripPercent.toFixed(1)}%` : "—"}</strong></article>
+        <article><span><Wrench size={13}/> TYRE SETS</span><strong>{tyreStates.length}/{active.driver_count}</strong></article>
+      </div>
+
+      <div className="race-engine-results-grid">
+        <section className="race-engine-result-section">
+          <div className="live-race-subheading"><h3><Trophy size={15}/> Classification</h3><span>{classification.length ? "FINAL RESULT" : "LIVE ORDER"}</span></div>
+          <div className="live-race-table-wrap">
+            <table className="live-race-timing-table">
+              <thead><tr><th>POS</th><th>DRIVER</th><th>TEAM</th><th>LAP</th><th>TIME</th><th>PITS</th><th>STATUS</th></tr></thead>
+              <tbody>
+                {(classification.length ? classification : (checkpoint?.entrants ?? []).map((entry: any, index: number) => ({
+                  position: index + 1, driverId: entry.driverId, teamId: entry.teamId,
+                  lapCompleted: entry.lapCompleted, elapsedMs: entry.elapsedMs,
+                  finished: entry.finished, retired: entry.retired, pitStopCount: entry.pitStopCount
+                }))).map((entry: any) => <tr key={entry.driverId}>
+                  <td><strong className="driver-position">{String(entry.position).padStart(2,"0")}</strong></td>
+                  <td>{entry.driverId}</td><td>{entry.teamId}</td><td>{entry.lapCompleted}</td>
+                  <td className="lap-time">{formatTime(entry.elapsedMs)}</td><td>{entry.pitStopCount ?? 0}</td>
+                  <td><span className={"race-engine-status status-" + (entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}</span></td>
+                </tr>)}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="race-engine-result-section">
+          <div className="live-race-subheading"><h3><Wrench size={15}/> Tyre condition</h3><span>PER DRIVER</span></div>
+          <div className="race-engine-tyre-list">
+            {tyreStates.map((entry: any) => <div key={entry.driverId}>
+              <strong>{entry.driverId}</strong><span className={"live-race-tyre tyre-" + (entry.tyreState.compound === "full_wet" ? "w" : entry.tyreState.compound === "intermediate" ? "i" : entry.tyreState.compound[0])}>{entry.tyreState.compound.toUpperCase()}</span>
+              <span>{entry.tyreState.wearPercent.toFixed(1)}% wear</span><span>{entry.pitStopCount ?? 0} pit</span>
+            </div>)}
+            {!tyreStates.length && <p className="race-engine-empty">Tyre state akan muncul setelah checkpoint dimuat.</p>}
+          </div>
+        </section>
+      </div>
+
+      <section className="race-engine-event-section">
+        <div className="live-race-subheading"><h3><Flag size={15}/> Race Event Log</h3><span>{detail?.events.length ?? 0} PERSISTED EVENTS</span></div>
+        <div className="race-engine-event-list">
+          {recentEvents.map((event) => <article key={event.sequence}>
+            <span className="event-lap">LAP {event.lap_number}</span>
+            <span className={"event-marker " + (event.event_type === "incident" ? "gold" : event.event_type === "race_control" ? "blue" : "green")}/>
+            <div><strong>{labelEvent(event.event_type)}</strong><small>{event.driver_id ?? "Race control"} · {event.payload.segmentId ?? "—"}{event.payload.raceControlFlag ? ` · ${String(event.payload.raceControlFlag).toUpperCase()}` : ""}</small></div>
+            <time>{formatTime(event.simulation_time_ms)}</time>
+          </article>)}
+          {!recentEvents.length && <p className="race-engine-empty">Belum ada event. Jalankan beberapa segmen untuk menghasilkan data.</p>}
+        </div>
+      </section>
+    </section>}
+
+    <footer className="live-race-footer-note">
+      <ShieldCheck size={15}/>
+      <span>Admin-only test service · production Supabase tidak menyimpan sesi uji · ekonomi dan settlement tidak terhubung · checkpoint disimpan setiap batch dan dipulihkan melalui RaceSimulation.restore().</span>
+    </footer>
+  </div>;
 }
