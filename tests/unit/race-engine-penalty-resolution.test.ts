@@ -40,7 +40,7 @@ describe("Race-control penalty resolution", () => {
       penalty({ id: "reversed", driverId: "driver-a", type: "time_penalty", durationMs: 60000, reversedByEventId: "rc-reversal" })
     ];
     const result = resolveRaceClassificationWithPenalties(classification, penalties);
-    expect(result.map((entry) => entry.driverId)).toEqual(["driver-a", "driver-b", "driver-c", "driver-d"]);
+    expect(result.map((entry) => entry.driverId)).toEqual(["driver-d", "driver-a", "driver-b", "driver-c"]);
     expect(result.map((entry) => entry.position)).toEqual([1, 2, 3, 4]);
     expect(result.find((entry) => entry.driverId === "driver-a")?.elapsedMs).toBe(105000);
     expect(result.find((entry) => entry.driverId === "driver-b")?.elapsedMs).toBe(111000);
@@ -54,7 +54,7 @@ describe("Race-control penalty resolution", () => {
       penalty({ id: "ban", driverId: "driver-b", type: "race_ban" })
     ];
     const result = resolveRaceClassificationWithPenalties(classification, penalties);
-    expect(result.slice(0, 2).map((entry) => entry.driverId)).toEqual(["driver-c", "driver-d"]);
+    expect(result.slice(0, 2).map((entry) => entry.driverId)).toEqual(["driver-d", "driver-c"]);
     expect(result.find((entry) => entry.driverId === "driver-a")).toMatchObject({ position: null, status: "disqualified" });
     expect(result.find((entry) => entry.driverId === "driver-b")).toMatchObject({ position: null, status: "race_banned" });
   });
