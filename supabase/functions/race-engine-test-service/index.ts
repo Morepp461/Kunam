@@ -19,6 +19,7 @@ import {
 } from "./race-engine/race-control.ts";
 import { resolveTeamHqRaceEffects } from "./race-engine/hq.ts";
 import { buildRaceTimingProjection } from "./race-engine/projection.ts";
+import type { RaceTimingProjectionClassificationEntry } from "./race-engine/projection.ts";
 import type { TeamHqDivision, TeamHqFacilityConfigInput } from "./race-engine/hq.ts";
 import type {
   RaceControlAuditEvent,
@@ -98,7 +99,7 @@ function restoreSimulation(checkpoint: RaceSimulationCheckpoint) {
 async function persistTimingProjection(
   sessionId: string,
   simulation: RaceSimulation,
-  classification = simulation.classification
+  classification: readonly RaceTimingProjectionClassificationEntry[] = simulation.classification
 ) {
   const checkpoint = simulation.createCheckpoint();
   const projection = buildRaceTimingProjection(checkpoint, classification, new Date().toISOString());
