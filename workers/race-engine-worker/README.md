@@ -6,7 +6,7 @@ This is the persistent worker process for the isolated Race Engine test service.
 
 - Deno 2.x
 - Supabase JS pinned to 2.57.4
-- Bounded batch: 10 segment ticks per lease
+- Bounded batch: 1, 5, 10, or 15 segment ticks per lease, controlled by the audited session speed setting
 - Lease: 60 seconds; expired leases can be reclaimed after a worker restart
 - Checkpoints and events are committed through atomic database RPCs
 - Multiple processes can run concurrently; row leases prevent two workers from advancing the same session
@@ -28,7 +28,7 @@ Never put the service-role key in Vercel client environment variables or browser
 deno run --allow-env --allow-net workers/race-engine-worker/main.ts
 ```
 
-The Admin web page can also advance a test session in bounded batches. Both paths use the same lease and checkpoint protocol, so manual test actions and a background worker cannot safely advance the same session at once.
+The Admin web page can also advance a test session in bounded batches and change its speed to 1x, 5x, 10x, or 15x. Speed changes are server-authorized and written to the control-command audit log. Both paths use the same lease and checkpoint protocol, so manual test actions and a background worker cannot safely advance the same session at once.
 
 ## Deployment status
 
