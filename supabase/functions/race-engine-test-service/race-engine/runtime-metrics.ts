@@ -9,7 +9,7 @@ export interface RaceEngineBatchMetrics {
   readonly busyCount: number;
   readonly retryPendingCount: number;
   readonly suspendedCount: number;
-  readonly oldestActiveAgeMs: number | null;
+  readonly oldestSelectedSessionAgeMs: number | null;
 }
 
 export function summarizeRaceEngineBatch(
@@ -41,6 +41,6 @@ export function summarizeRaceEngineBatch(
     busyCount,
     retryPendingCount,
     suspendedCount,
-    oldestActiveAgeMs: ages.length ? Math.max(...ages) : null
+    oldestSelectedSessionAgeMs: ages.length ? Math.max(...ages) : null
   });
 }
