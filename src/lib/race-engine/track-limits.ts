@@ -53,7 +53,8 @@ export interface TrackLimitValidationResult {
 }
 
 function validPoint(point: TrackLimitPoint): boolean {
-  return Number.isFinite(point.x) && Number.isFinite(point.y) &&
+  return Boolean(point) && typeof point === "object" &&
+    Number.isFinite(point.x) && Number.isFinite(point.y) &&
     point.x >= 0 && point.x <= 1 && point.y >= 0 && point.y <= 1;
 }
 
@@ -100,13 +101,21 @@ export function validateTrackLimitGeometry(geometry: TrackLimitGeometry): TrackL
   }
   for (let index = 0; index < geometry.boundary.length; index += 1) {
     const point = geometry.boundary[index];
+    const next = geometry.boundary[(index + 1) % geometry.boundary.length];
     if (!validPoint(point)) errors.push(`Track-limit boundary point ${index} must be normalized and finite`);
-    if (samePoint(point, geometry.boundary[(index + 1) % geometry.boundary.length])) {
+    if (validPoint(point) && validPoint(next) && samePoint(point, next)) {
       errors.push("Track-limit boundary must not contain adjacent duplicate points or repeat its first point at the end");
     }
   }
+  if (geometry.boundary.every(validPoint)) {
+    const areaTwice = geometry.boundary.reduce((area, point, index) => {
+      const next = geometry.boundary[(index + 1) % geometry.boundary.length];
+      return area + point.x * next.y - next.x * point.y;
+    }, 0);
+    if (Math.abs(areaTwice) < 1e-10) errors.push("Track-limit boundary must enclose a non-zero area");
+  }
   const count = geometry.boundary.length;
-  for (let first = 0; first < count; first += 1) {
+  if (geometry.boundary.every(validPoint)) for (let first = 0; first < count; first += 1) {
     const firstNext = (first + 1) % count;
     for (let second = first + 1; second < count; second += 1) {
       const secondNext = (second + 1) % count;
