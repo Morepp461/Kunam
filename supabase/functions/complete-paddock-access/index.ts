@@ -2,10 +2,17 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const requestOrigin = (req: Request) => req.headers.get("Origin") ?? "";
-const isAllowedOrigin = (origin: string) => origin === "http://localhost:5173" || origin === "https://calerismastersnewgen-mu.vercel.app" || /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+const allowedOrigins = new Set([
+  "http://localhost:5173",
+  "https://calerismasters.com",
+  "https://www.calerismasters.com",
+  "https://calerismastersnewgen-mu.vercel.app",
+]);
+const isAllowedOrigin = (origin: string) =>
+  allowedOrigins.has(origin) || /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
 const corsHeadersFor = (origin: string) => ({
-  "Access-Control-Allow-Origin": isAllowedOrigin(origin) ? origin : "https://calerismastersnewgen-mu.vercel.app",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  ...(isAllowedOrigin(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
   "Vary": "Origin",
