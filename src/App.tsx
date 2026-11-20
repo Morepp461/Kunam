@@ -36,9 +36,11 @@ import ShopPage from "./ShopPage";
 import AdminTestPersonas from "./AdminTestPersonas";
 import AdminUsers from "./AdminUsers";
 import FIAEventControlCenter from "./FIAEventControlCenter";
+import AdminSeasonCalendar from "./AdminSeasonCalendar";
+import RaceControl from "./RaceControl";
 import LocationSelectors from "./LocationSelectors";
 import TeamDriverContracts from "./TeamDriverContracts";
-import {CircuitPool} from "./CircuitPool";
+import {CircuitPool,CircuitPoolInput} from "./CircuitPool";
 import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 
 import JobSearch from "./JobSearch";
@@ -154,7 +156,8 @@ function Application(){
   <Route path="/admin/quest-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminQuestEngine/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/pricing" element={session&&!needsPaddockAccess&&isAdmin?<AdminPricingCenter/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations" element={session&&!needsPaddockAccess&&isAdmin?<AdminOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-   <Route path="/admin/live-race" element={session&&!needsPaddockAccess&&isAdmin?<LiveRace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+   <Route path="/admin/race-engine-lab" element={session&&!needsPaddockAccess&&isAdmin?<LiveRace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/live-race" element={<Navigate to="/admin/race-engine-lab" replace/>}/>
   <Route path="/admin/brand-ecosystem" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystemAdmin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/sponsorship" element={session&&!needsPaddockAccess&&isAdmin?<BrandEcosystem session={session} mode="admin"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/daily-checkin" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -162,9 +165,9 @@ function Application(){
   <Route path="/team-panel/quest" element={session&&!needsPaddockAccess&&(panelAccess.member_role==="Owner"||panelAccess.member_role==="Principal")?<QuestPage session={session} scope="team_owner"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/license-engine" element={isAdmin?<Navigate to="/admin/license-engine" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/event-control" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<FIAEventControlCenter session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/season-calendar" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<AdminSeasonCalendar/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/punishment-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/fia-panel/race-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/fia-panel/race-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<RaceControl/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/driver-contracts" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamDriverContracts session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/budget-guard" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Owner"?<CalerisIntelligence session={session} scope="budget"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/contract-renewals" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Owner")?<CalerisIntelligence session={session} scope="renewals"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -182,7 +185,7 @@ function Application(){
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
   <Route path="/main-event/circuit-pool" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<CircuitPool/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-   <Route path="/fia-panel/circuit-pool-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Navigate to="/fia-panel/event-control" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+   <Route path="/fia-panel/circuit-pool-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<CircuitPoolInput/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/job-search" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<JobSearch/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/take-over" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<TeamTakeoverMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/transfer-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<DriverTransferMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
