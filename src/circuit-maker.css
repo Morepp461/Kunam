@@ -13,3 +13,8 @@
 .circuit-maker-spec-group{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)}
 .circuit-maker-spec-group .circuit-maker-section-title button,.circuit-maker-spec-group .circuit-maker-fields>button{padding:6px 8px;border:1px solid rgba(214,184,95,.3);border-radius:5px;background:rgba(214,184,95,.08);color:#e5d29c;font-size:8px}
 .circuit-maker-spec-group .circuit-maker-fields{margin-top:8px}
+
+.circuit-maker-track-boundary{fill:rgba(212,177,91,.10);stroke:#d4b15b;stroke-width:2;stroke-dasharray:6 4;vector-effect:non-scaling-stroke}
+.circuit-maker-track-boundary-line{fill:none;stroke:#d4b15b;stroke-width:2;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+.circuit-maker-canvas-panel svg .boundary-point{fill:#d4b15b;stroke:#171717;stroke-width:1.5}
+.circuit-maker-canvas-actions button.active{border-color:rgba(212,177,91,.65);background:rgba(212,177,91,.12);color:#f1d99a}

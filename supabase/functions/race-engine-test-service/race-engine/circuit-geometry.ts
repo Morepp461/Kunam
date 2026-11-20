@@ -1,4 +1,6 @@
 import type { CircuitSegmentSnapshot } from "./contracts.ts";
+import { validateTrackLimitGeometry } from "./track-limits.ts";
+import type { TrackLimitGeometry } from "./track-limits.ts";
 
 export const CIRCUIT_GEOMETRY_SCHEMA_VERSION = 1;
 export const CIRCUIT_SECTOR_COUNT = 3;
@@ -35,6 +37,10 @@ export interface CircuitGeometrySegment extends CircuitSegmentSnapshot {
   readonly cornerRadiusMeters: number | null;
   readonly elevationChangeMeters: number;
   readonly trackWidthMeters: number;
+  /** Measured banking angle in degrees; omitted when the source does not provide it. */
+  readonly bankingDegrees?: number;
+  /** Measured longitudinal gradient in percent; omitted when unavailable. */
+  readonly gradientPercent?: number;
 }
 
 export interface CircuitDrsZone {
@@ -57,7 +63,7 @@ export interface CircuitGeometrySpecifications {
   };
   readonly drsZones: readonly CircuitDrsZone[];
   readonly trackLimits: {
-    readonly method: "segment_width" | "unverified";
+    readonly method: "segment_width" | "polygon" | "unverified";
     readonly sourceNote: string;
   };
 }
@@ -76,6 +82,7 @@ export interface CircuitGeometryDefinition {
   readonly sourceProvenance?: CircuitSourceProvenance;
   readonly layout: readonly CircuitPathPoint[];
   readonly segments: readonly CircuitGeometrySegment[];
+  readonly trackLimitGeometry?: TrackLimitGeometry;
   readonly specifications?: CircuitGeometrySpecifications;
 }
 
@@ -101,6 +108,9 @@ export function validateCircuitReleaseReadiness(
   } else if (circuit.kind === "synthetic") {
     errors.push("Synthetic circuits are test-only and cannot be used for official races");
   } else if (circuit.kind === "real") {
+    if (!circuit.trackLimitGeometry || circuit.specifications?.trackLimits.method !== "polygon") {
+      errors.push("Real circuits require a measured track-limit boundary polygon and polygon method");
+    }
     const source = circuit.sourceProvenance;
     if (!source) {
       errors.push("Real circuits require source provenance");
@@ -278,6 +288,8 @@ export function validateCircuitGeometryDefinition(
     if (!Number.isFinite(segment.elevationChangeMeters)) {
       errors.push(`Segment ${segment.id} elevationChangeMeters must be finite`);
     }
+    if (segment.bankingDegrees !== undefined && !Number.isFinite(segment.bankingDegrees)) errors.push(`Segment ${segment.id} bankingDegrees must be finite when supplied`);
+    if (segment.gradientPercent !== undefined && !Number.isFinite(segment.gradientPercent)) errors.push(`Segment ${segment.id} gradientPercent must be finite when supplied`);
     if (!Number.isFinite(segment.trackWidthMeters) || segment.trackWidthMeters <= 0) {
       errors.push(`Segment ${segment.id} trackWidthMeters must be positive`);
     }
@@ -292,8 +304,10 @@ export function validateCircuitGeometryDefinition(
     if (!["clockwise", "counterclockwise", "unknown"].includes(spec.direction)) errors.push("Circuit direction is invalid");
     if (!["asphalt", "concrete", "mixed", "unknown"].includes(spec.surface)) errors.push("Circuit surface is invalid");
     if (!["measured", "unavailable"].includes(spec.elevationDataStatus)) errors.push("Circuit elevation data status is invalid");
-    if (!["segment_width", "unverified"].includes(spec.trackLimits.method)) errors.push("Circuit track-limit method is invalid");
+    if (!["segment_width", "polygon", "unverified"].includes(spec.trackLimits.method)) errors.push("Circuit track-limit method is invalid");
     if (typeof spec.trackLimits.sourceNote !== "string") errors.push("Circuit track-limit source note must be text");
+    if (spec.trackLimits.method === "polygon" && !circuit.trackLimitGeometry) errors.push("Polygon track limits require a measured boundary polygon");
+    if (spec.trackLimits.method !== "polygon" && circuit.trackLimitGeometry) errors.push("Track-limit polygon requires the polygon track-limit method");
     if (spec.pitLane.enabled) {
       for (const [key, value] of [
         ["lengthMeters", spec.pitLane.lengthMeters],
@@ -326,6 +340,14 @@ export function validateCircuitGeometryDefinition(
            zone.detectionDistanceMeters >= circuit.trackLengthMeters)) {
         errors.push("DRS detection distance must be within the measured circuit length");
       }
+    }
+  }
+
+  if (circuit.trackLimitGeometry) {
+    const boundaryValidation = validateTrackLimitGeometry(circuit.trackLimitGeometry);
+    errors.push(...boundaryValidation.errors.map((error) => `Track limits: ${error}`));
+    if (circuit.trackLimitGeometry.circuitId !== circuit.id || circuit.trackLimitGeometry.circuitRevision !== circuit.revision) {
+      errors.push("Track-limit boundary circuit identity/revision must match the geometry snapshot");
     }
   }
 

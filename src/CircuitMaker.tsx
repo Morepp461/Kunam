@@ -3,6 +3,7 @@ import type { MouseEvent } from "react";
 import { buildCircuitMakerDefinition } from "./lib/race-engine/circuit-maker";
 import type { CircuitMakerSegmentInput } from "./lib/race-engine/circuit-maker";
 import type { CircuitGeometryDefinition, CircuitPathPoint, CircuitCornerType, CircuitGeometrySpecifications } from "./lib/race-engine/circuit-geometry";
+import type { TrackLimitPoint } from "./lib/race-engine/track-limits";
 import "./circuit-maker.css";
 
 type Props = {
@@ -13,7 +14,7 @@ type Props = {
   value: CircuitGeometryDefinition | null;
   onChange: (value: CircuitGeometryDefinition | null) => void;
 };
-type SegmentForm = Omit<CircuitMakerSegmentInput, "distanceMeters" | "trackWidthMeters" | "gripFactor" | "lowSpeedDemand" | "highSpeedDemand" | "tractionDemand" | "brakingDemand" | "cornerRadiusMeters" | "elevationChangeMeters"> & {
+type SegmentForm = Omit<CircuitMakerSegmentInput, "distanceMeters" | "trackWidthMeters" | "gripFactor" | "lowSpeedDemand" | "highSpeedDemand" | "tractionDemand" | "brakingDemand" | "cornerRadiusMeters" | "elevationChangeMeters" | "bankingDegrees" | "gradientPercent"> & {
   distanceMeters: string;
   trackWidthMeters: string;
   gripFactor: string;
@@ -23,6 +24,8 @@ type SegmentForm = Omit<CircuitMakerSegmentInput, "distanceMeters" | "trackWidth
   brakingDemand: string;
   cornerRadiusMeters: string;
   elevationChangeMeters: string;
+  bankingDegrees: string;
+  gradientPercent: string;
 };
 const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
   id: `sector-${sector}-segment-1`,
@@ -40,13 +43,17 @@ const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
   ersAvailable: true,
   overtakingOpportunity: false,
   defendingOpportunity: false,
-  elevationChangeMeters: "0"
+  elevationChangeMeters: "0",
+  bankingDegrees: "",
+  gradientPercent: ""
 }));
-const toPoints = (points: readonly CircuitPathPoint[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
+const toPoints = (points: readonly { readonly x: number; readonly y: number }[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
 const numberValue = (value: string) => value.trim() === "" ? Number.NaN : Number(value);
 
 export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, value, onChange }: Props) {
   const [points, setPoints] = useState<CircuitPathPoint[]>(() => value?.layout.map((point) => ({...point})) ?? []);
+  const [trackLimitBoundary, setTrackLimitBoundary] = useState<TrackLimitPoint[]>(() => value?.trackLimitGeometry?.boundary.map((point) => ({...point})) ?? []);
+  const [drawingMode, setDrawingMode] = useState<"centerline" | "track_limit">("centerline");
   const [segments, setSegments] = useState<SegmentForm[]>(() => value?.segments.map((segment) => ({
     ...segment,
     sectorNumber: segment.sectorNumber as 1|2|3,
@@ -62,7 +69,9 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     tractionDemand: String(segment.tractionDemand),
     brakingDemand: String(segment.brakingDemand ?? 0),
     cornerRadiusMeters: segment.cornerRadiusMeters === null ? "" : String(segment.cornerRadiusMeters),
-    elevationChangeMeters: String(segment.elevationChangeMeters)
+    elevationChangeMeters: String(segment.elevationChangeMeters),
+    bankingDegrees: segment.bankingDegrees === undefined ? "" : String(segment.bankingDegrees),
+    gradientPercent: segment.gradientPercent === undefined ? "" : String(segment.gradientPercent)
   })) ?? initialSegments);
   const [targetLapTime, setTargetLapTime] = useState(value ? String(value.targetLapTimeMs) : "");
   const [kind, setKind] = useState<"fictional"|"real">(value?.kind === "real" ? "real" : "fictional");
@@ -78,6 +87,8 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     highSpeedDemand: numberValue(segment.highSpeedDemand),
     tractionDemand: numberValue(segment.tractionDemand),
     brakingDemand: numberValue(segment.brakingDemand),
+    bankingDegrees: segment.bankingDegrees.trim() === "" ? undefined : numberValue(segment.bankingDegrees),
+    gradientPercent: segment.gradientPercent.trim() === "" ? undefined : numberValue(segment.gradientPercent),
     cornerRadiusMeters: segment.cornerType === "straight" ? null : numberValue(segment.cornerRadiusMeters),
     elevationChangeMeters: numberValue(segment.elevationChangeMeters)
   })), [segments]);
@@ -92,13 +103,18 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     layout: points,
     segments: inputSegments,
     specifications,
-    kind
-  }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, value?.revision]);
+    kind,
+    trackLimitBoundary
+  }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, trackLimitBoundary, value?.revision]);
 
   const addPoint = (event: MouseEvent<SVGSVGElement>) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
     const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    if (drawingMode === "track_limit") {
+      setTrackLimitBoundary((current) => [...current, { x, y }]);
+      return;
+    }
     setPoints((current) => {
       const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y
         ? current.slice(0, -1) : current;
@@ -111,10 +127,17 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     if (Math.hypot(first.x-last.x, first.y-last.y) < 0.000001) return current;
     return [...current, { ...first, id: `point-${current.length+1}` }];
   });
-  const undo = () => setPoints((current) => {
-    const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y ? current.slice(0,-1) : current;
-    return open.slice(0,-1);
-  });
+  const undo = () => {
+    if (drawingMode === "track_limit") {
+      setTrackLimitBoundary((current) => current.slice(0, -1));
+      return;
+    }
+    setPoints((current) => {
+      const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y ? current.slice(0,-1) : current;
+      return open.slice(0,-1);
+    });
+  };
+  const clearActiveDrawing = () => drawingMode === "track_limit" ? setTrackLimitBoundary([]) : setPoints([]);
   const updateSegment = (id: string, key: keyof SegmentForm, next: string|boolean) => setSegments((current) => current.map((segment) => segment.id === id ? ({...segment, [key]: next}) : segment));
   const addSegment = () => setSegments((current) => [...current, {
     ...initialSegments[activeSector-1],
@@ -140,7 +163,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
 <label>Direction<select value={specifications.direction} onChange={e=>setSpecifications(s=>({...s,direction:e.target.value as CircuitGeometrySpecifications["direction"]}))}><option value="unknown">Unknown</option><option value="clockwise">Clockwise</option><option value="counterclockwise">Counter-clockwise</option></select></label>
 <label>Surface<select value={specifications.surface} onChange={e=>setSpecifications(s=>({...s,surface:e.target.value as CircuitGeometrySpecifications["surface"]}))}><option value="unknown">Unknown</option><option value="asphalt">Asphalt</option><option value="concrete">Concrete</option><option value="mixed">Mixed</option></select></label>
 <label>Elevation data<select value={specifications.elevationDataStatus} onChange={e=>setSpecifications(s=>({...s,elevationDataStatus:e.target.value as CircuitGeometrySpecifications["elevationDataStatus"]}))}><option value="unavailable">Unavailable</option><option value="measured">Measured</option></select></label>
-<label>Track limits<select value={specifications.trackLimits.method} onChange={e=>setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,method:e.target.value as CircuitGeometrySpecifications["trackLimits"]["method"]}}))}><option value="unverified">Unverified</option><option value="segment_width">Segment width</option></select></label>
+<label>Track limits<select value={specifications.trackLimits.method} onChange={e=>setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,method:e.target.value as CircuitGeometrySpecifications["trackLimits"]["method"]}}))}><option value="unverified">Unverified</option><option value="segment_width">Segment width</option><option value="polygon">Measured polygon</option></select></label>
 </div>
 <label className="circuit-maker-note">Track-limit source note<input value={specifications.trackLimits.sourceNote} onChange={e=>setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,sourceNote:e.target.value}}))}/></label>
 <label className="circuit-maker-toggle"><input type="checkbox" checked={specifications.pitLane.enabled} onChange={e=>setSpecifications(s=>({...s,pitLane:{...s.pitLane,enabled:e.target.checked}}))}/> Pit lane enabled</label>
@@ -149,16 +172,27 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
 </details>
     <div className="circuit-maker-layout">
       <div className="circuit-maker-canvas-panel">
-        <div className="circuit-maker-canvas-head"><strong>TRACK CANVAS</strong><span>{points.length} points</span></div>
+        <div className="circuit-maker-canvas-head"><strong>TRACK CANVAS</strong><span>Centerline {points.length} · Boundary {trackLimitBoundary.length}</span></div>
         <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker drawing canvas" onClick={addPoint}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
           <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
+          {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
+          {trackLimitBoundary.length > 0 && trackLimitBoundary.length < 3 && <polyline points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary-line"/>}
           {points.length > 1 && <polyline points={toPoints(points)} className="circuit-maker-line"/>}
+          {trackLimitBoundary.map((point,index) => <circle key={"boundary-"+index} cx={point.x*500} cy={point.y*320} r={3} className="boundary-point"/>)}
           {points.map((point,index) => <circle key={point.id} cx={point.x*500} cy={point.y*320} r={index===0?6:4} className={index===0?"start":"point"}/>)}
           {points.length > 0 && <text x={points[0].x*500+10} y={points[0].y*320-10} className="circuit-maker-start-label">START / FINISH</text>}
         </svg>
-        <div className="circuit-maker-canvas-actions"><button type="button" onClick={undo} disabled={!points.length}>Undo point</button><button type="button" onClick={closeLoop} disabled={points.length<4}>Close loop</button><button type="button" onClick={() => setPoints([])} disabled={!points.length}>Clear layout</button></div>
-        <small>Tap/click canvas untuk menambah titik centerline. Tutup lintasan dengan Close loop. Semua titik masih dapat diubah dengan Undo.</small>
+        <div className="circuit-maker-canvas-actions">
+          <button type="button" className={drawingMode==="centerline"?"active":""} onClick={()=>setDrawingMode("centerline")}>Draw centerline</button>
+          <button type="button" className={drawingMode==="track_limit"?"active":""} onClick={()=>{setDrawingMode("track_limit");setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,method:"polygon"}}));}}>Draw track boundary</button>
+        </div>
+        <div className="circuit-maker-canvas-actions">
+          <button type="button" onClick={undo} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Undo active point</button>
+          <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
+          <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
+        </div>
+        <small>{drawingMode==="centerline"?"Tap canvas to draw the centerline, then close its loop.":"Tap canvas to draw the measured track-limit boundary polygon. Polygon closure is implicit; add at least three points."}</small>
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>
@@ -176,6 +210,8 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
             <label>Traction demand<input type="number" min="0" max="1" step="0.01" value={segment.tractionDemand} onChange={(e)=>updateSegment(segment.id,"tractionDemand",e.target.value)}/></label>
             <label>Braking demand<input type="number" min="0" max="1" step="0.01" value={segment.brakingDemand} onChange={(e)=>updateSegment(segment.id,"brakingDemand",e.target.value)}/></label>
             <label>Elevation change (m)<input type="number" step="0.1" value={segment.elevationChangeMeters} onChange={(e)=>updateSegment(segment.id,"elevationChangeMeters",e.target.value)}/></label>
+            <label>Banking (degrees)<input type="number" step="0.1" value={segment.bankingDegrees} onChange={(e)=>updateSegment(segment.id,"bankingDegrees",e.target.value)}/></label>
+            <label>Gradient (%)<input type="number" step="0.1" value={segment.gradientPercent} onChange={(e)=>updateSegment(segment.id,"gradientPercent",e.target.value)}/></label>
           </div>
           <div className="circuit-maker-checks">
             {([["drsAvailable","DRS zone"],["ersAvailable","ERS available"],["overtakingOpportunity","Overtake opportunity"],["defendingOpportunity","Defend opportunity"]] as const).map(([key,label])=><label key={key}><input type="checkbox" checked={segment[key]} onChange={(e)=>updateSegment(segment.id,key,e.target.checked)}/>{label}</label>)}

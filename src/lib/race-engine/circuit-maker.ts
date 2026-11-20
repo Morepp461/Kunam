@@ -9,6 +9,7 @@ import type {
   CircuitPathPoint,
   CircuitGeometrySpecifications
 } from "./circuit-geometry";
+import type { TrackLimitPoint } from "./track-limits";
 
 export interface CircuitMakerSegmentInput {
   id: string;
@@ -27,6 +28,8 @@ export interface CircuitMakerSegmentInput {
   overtakingOpportunity: boolean;
   defendingOpportunity: boolean;
   elevationChangeMeters: number;
+  bankingDegrees?: number;
+  gradientPercent?: number;
 }
 
 export interface CircuitMakerInput {
@@ -40,6 +43,7 @@ export interface CircuitMakerInput {
   segments: readonly CircuitMakerSegmentInput[];
   kind: "fictional" | "real";
   specifications?: CircuitGeometrySpecifications;
+  trackLimitBoundary?: readonly TrackLimitPoint[];
 }
 
 export interface CircuitMakerBuildResult {
@@ -64,7 +68,9 @@ export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMa
     cornerType: segment.cornerType,
     cornerRadiusMeters: segment.cornerRadiusMeters,
     elevationChangeMeters: segment.elevationChangeMeters,
-    trackWidthMeters: segment.trackWidthMeters
+    trackWidthMeters: segment.trackWidthMeters,
+    ...(segment.bankingDegrees === undefined ? {} : { bankingDegrees: segment.bankingDegrees }),
+    ...(segment.gradientPercent === undefined ? {} : { gradientPercent: segment.gradientPercent })
   }));
   const definition: CircuitGeometryDefinition = {
     schemaVersion: CIRCUIT_GEOMETRY_SCHEMA_VERSION,
@@ -78,6 +84,13 @@ export function buildCircuitMakerDefinition(input: CircuitMakerInput): CircuitMa
     kind: input.kind,
     layout: input.layout.map((point) => ({ ...point })),
     segments,
+    ...(input.trackLimitBoundary?.length ? { trackLimitGeometry: {
+      schemaVersion: 1,
+      circuitId: input.id,
+      circuitRevision: input.revision,
+      coordinateSystem: "normalized_0_1",
+      boundary: input.trackLimitBoundary.map(({ x, y }) => ({ x, y }))
+    } } : {}),
     ...(input.specifications ? { specifications: input.specifications } : {})
   };
   const validation = validateCircuitGeometryDefinition(definition);
