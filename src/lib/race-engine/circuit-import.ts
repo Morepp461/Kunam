@@ -112,6 +112,7 @@ export async function importCircuitGeoJsonDraft(
   }
 
   const line = extractLineString(parsed);
+  if (!Array.isArray(line.coordinates) || line.coordinates.length < 4) throw new Error("Circuit LineString requires at least four coordinates");
   if (line.coordinates.length > 50_000) throw new Error("Circuit centerline is limited to 50,000 coordinates");
   const coordinates = line.coordinates.map((coordinate, index) => {
     if (!Array.isArray(coordinate) || coordinate.length < 2) {
