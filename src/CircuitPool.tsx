@@ -127,7 +127,7 @@ export function CircuitPoolInput(){
  },[draftReady,saving,form,editingId,layoutFile,layoutPreview,geoJsonText,geoJsonFileName,geoJsonMeta,geoJsonDraft]);
 
  const set=(key:keyof CircuitForm,value:string)=>setForm(v=>({...v,[key]:value}));
- const setGeoMeta=(key:keyof CircuitGeoJsonSourceMetadata,value:string)=>setGeoJsonMeta(current=>({...current,[key]:value}));
+ const setGeoMeta=(key:keyof CircuitGeoJsonSourceMetadata,value:string)=>{setGeoJsonMeta(current=>({...current,[key]:value}));if(geoJsonText)setGeoJsonDraft(null)};
  const previewGeoJson=async()=>{
   if(!geoJsonText){setGeoJsonError("Pilih file GeoJSON terlebih dahulu.");return}
   setSaving(true);setGeoJsonError("");
@@ -157,11 +157,11 @@ export function CircuitPoolInput(){
  <label className="s5-field"><span>File GeoJSON (opsional)</span><input type="file" accept=".geojson,.json,application/geo+json,application/json" onChange={async event=>{const file=event.target.files?.[0];if(!file)return;if(file.size>10*1024*1024){setGeoJsonError("Ukuran GeoJSON maksimal 10 MB.");return}try{const text=await file.text();setGeoJsonText(text);setGeoJsonFileName(file.name);setGeoJsonDraft(null);setGeoJsonError("")}catch{setGeoJsonError("File GeoJSON tidak dapat dibaca.")}}}/></label>
  {geoJsonFileName&&<p className="economy-form-hint">File dipilih: {geoJsonFileName}</p>}
  <div className="circuit-input-grid">
-  <label className="s5-field"><span>Data provider *</span><input value={geoJsonMeta.provider} onChange={event=>setGeoMeta("provider",event.target.value)} placeholder="Nama provider data"/></label>
-  <label className="s5-field"><span>Source URL (HTTPS) *</span><input type="url" value={geoJsonMeta.sourceUrl} onChange={event=>setGeoMeta("sourceUrl",event.target.value)} placeholder="https://..."/></label>
-  <label className="s5-field"><span>License ID *</span><input value={geoJsonMeta.licenseId} onChange={event=>setGeoMeta("licenseId",event.target.value)} placeholder="ID lisensi data"/></label>
-  <label className="s5-field"><span>Attribution *</span><input value={geoJsonMeta.attribution} onChange={event=>setGeoMeta("attribution",event.target.value)} placeholder="Atribusi sumber"/></label>
-  <label className="s5-field"><span>Source revision *</span><input value={geoJsonMeta.sourceRevision} onChange={event=>setGeoMeta("sourceRevision",event.target.value)} placeholder="Versi / revision sumber"/></label>
+  <label className="s5-field"><span>Data provider *</span><input value={geoJsonMeta.provider} disabled={!geoJsonText} onChange={event=>setGeoMeta("provider",event.target.value)} placeholder="Nama provider data"/></label>
+  <label className="s5-field"><span>Source URL (HTTPS) *</span><input type="url" value={geoJsonMeta.sourceUrl} disabled={!geoJsonText} onChange={event=>setGeoMeta("sourceUrl",event.target.value)} placeholder="https://..."/></label>
+  <label className="s5-field"><span>License ID *</span><input value={geoJsonMeta.licenseId} disabled={!geoJsonText} onChange={event=>setGeoMeta("licenseId",event.target.value)} placeholder="ID lisensi data"/></label>
+  <label className="s5-field"><span>Attribution *</span><input value={geoJsonMeta.attribution} disabled={!geoJsonText} onChange={event=>setGeoMeta("attribution",event.target.value)} placeholder="Atribusi sumber"/></label>
+  <label className="s5-field"><span>Source revision *</span><input value={geoJsonMeta.sourceRevision} disabled={!geoJsonText} onChange={event=>setGeoMeta("sourceRevision",event.target.value)} placeholder="Versi / revision sumber"/></label>
  </div>
  <button type="button" className="economy-secondary-button" disabled={saving||!geoJsonText} onClick={()=>void previewGeoJson()}>{saving?"Memproses...":"Preview GeoJSON"}</button>
  {geoJsonError&&<p className="license-notice" role="alert">{geoJsonError}</p>}
