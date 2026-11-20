@@ -63,3 +63,12 @@ These are coefficient contracts, not production presets. The repository still ne
 an approved calibration dataset and benchmark evidence before a production profile
 can be selected. An absent segment capability flag or absent model coefficient must
 not silently create a gameplay effect.
+
+
+## Immutable car setup integration
+
+The race-start entrant snapshot now optionally carries a versioned car setup containing aero setting, suspension setting, front brake-balance percentage, and front/rear tyre pressures. The values are immutable for the race and are persisted with the checkpoint input snapshot.
+
+A calibration profile may define explicit per-setting bounds, baselines, and influence coefficients. The engine rejects a setup if its calibration is absent, incomplete, or out of range. Configured setup influences feed the segment pace, low/high-speed, traction, braking-demand, and tyre-degradation channels. Circuit segments may carry an optional normalized braking-demand value; legacy circuits remain compatible and default to no braking-specific setup effect.
+
+No physical ranges or coefficients are embedded as production defaults. Test coverage uses synthetic calibration values only. A reviewed production calibration profile and setup validation against approved team/car constraints remain release gates.
