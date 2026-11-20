@@ -42,6 +42,8 @@ jobs:
       - run: python3 -B scripts/validate.py
       - name: Paddock Access CORS regression checks
         run: python3 -B scripts/test_paddock_access_cors.py
+      - name: Mobile lifecycle and consent regression checks
+        run: python3 -B scripts/test_mobile_lifecycle_and_consent.py
       - name: Economy transaction regression checks
         run: python3 -B scripts/test_economy_regressions.py
       - name: Economy wallet lifecycle checks
