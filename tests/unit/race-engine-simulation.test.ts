@@ -195,17 +195,17 @@ describe("Race simulation kernel", () => {
       id: "race-control-base", version: "1.0.0",
       flagByIncident: {
         spin: "green", off_track: "green", collision: "green",
-        crash: "green", mechanical_failure: "green", engine_failure: "red_flag"
+        crash: "green", mechanical_failure: "green", engine_failure: "safety_car"
       },
       durationMsByFlag: {
         yellow: 1000, double_yellow: 2000, virtual_safety_car: 3000,
-        safety_car: 4000, red_flag: 100_000
+        safety_car: 100_000, red_flag: 100_000
       }
     };
     const slowedControl: RaceControlProfile = {
       ...baseControl,
       id: "race-control-slowed",
-      paceTimeMultiplierByFlag: { red_flag: 1.5 }
+      paceTimeMultiplierByFlag: { safety_car: 1.5 }
     };
     const baseline = new RaceSimulation(snapshot, { incidentModel, raceControlProfile: baseControl });
     const slowed = new RaceSimulation(snapshot, { incidentModel, raceControlProfile: slowedControl });
@@ -219,6 +219,53 @@ describe("Race simulation kernel", () => {
     const baselineDelta = baseline.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0) - baselineBefore;
     const slowedDelta = slowed.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0) - slowedBefore;
     expect(slowedDelta).toBeGreaterThan(baselineDelta);
+  });
+
+
+  it("pauses the simulation clock for a red flag and resumes deterministically from a checkpoint", () => {
+    const snapshot = createSyntheticRaceFixture({ seed: 222, driverCount: 4, teamCount: 2, totalLaps: 2 });
+    const incidentProfile: IncidentCalibrationProfile = {
+      schemaVersion: 1, id: "red-flag-pause-test", version: "1.0.0",
+      baselineAttributeValue: 50, maximumRatePerKm: 100,
+      incidents: {
+        spin: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        off_track: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        collision: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        crash: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        mechanical_failure: { baseRatePerKm: 0, attributeRatePerPoint: {}, timeLossMs: 0 },
+        engine_failure: { baseRatePerKm: 100, attributeRatePerPoint: {}, timeLossMs: 0 }
+      }
+    };
+    const raceControlProfile: RaceControlProfile = {
+      id: "red-flag-control", version: "1.0.0",
+      flagByIncident: {
+        spin: "green", off_track: "green", collision: "green",
+        crash: "green", mechanical_failure: "green", engine_failure: "red_flag"
+      },
+      durationMsByFlag: {
+        yellow: 1000, double_yellow: 2000, virtual_safety_car: 3000,
+        safety_car: 4000, red_flag: 100_000
+      }
+    };
+    const incidentModel = createIncidentModel(incidentProfile);
+    const simulation = new RaceSimulation(snapshot, { incidentModel, raceControlProfile });
+    simulation.advanceOneSegment();
+    const checkpoint = simulation.createCheckpoint();
+    const clockBeforePause = checkpoint.simulationClockMs ?? 0;
+    const elapsedBeforePause = simulation.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0);
+    const restored = RaceSimulation.restore(
+      checkpoint, undefined, undefined, undefined, undefined, incidentModel, raceControlProfile
+    );
+    simulation.advanceOneSegment();
+    restored.advanceOneSegment();
+    expect((simulation.createCheckpoint().simulationClockMs ?? 0) - clockBeforePause).toBeGreaterThan(100_000);
+    expect(simulation.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0) - elapsedBeforePause)
+      .toBeGreaterThan(100_000);
+    expect(simulation.events.filter((event) => event.type === "race_control" && event.raceControlFlag === "green"))
+      .toHaveLength(4);
+    expect(restored.events).toEqual(simulation.events);
+    expect(restored.entrantStates).toEqual(simulation.entrantStates);
+    expect(restored.activeRaceControlFlags).toEqual(simulation.activeRaceControlFlags);
   });
 
   it("does not mutate the input snapshot and keeps stable tie ordering", () => {
