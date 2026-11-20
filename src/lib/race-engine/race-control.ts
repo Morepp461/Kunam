@@ -59,6 +59,7 @@ export interface RaceControlAuditEvent {
   readonly driverId?: string;
   readonly penaltyType?: RacePenaltyType;
   readonly penaltyDurationMs?: number;
+  readonly penaltyGridPositions?: number;
   readonly reason: string;
   readonly evidence: readonly RaceControlEvidence[];
   readonly supersedesEventId?: string;
@@ -71,6 +72,7 @@ export interface RaceControlPenalty {
   readonly driverId: string;
   readonly type: RacePenaltyType;
   readonly durationMs: number | null;
+  readonly gridPositions: number | null;
   readonly reason: string;
   readonly evidence: readonly RaceControlEvidence[];
   readonly issuedBy: string;
@@ -105,7 +107,7 @@ export interface RaceControlValidation {
   readonly errors: readonly string[];
 }
 
-const TIMED_PENALTIES = new Set<RacePenaltyType>(["time_5s", "time_10s", "time_penalty"]);
+const TIMED_PENALTIES = new Set<RacePenaltyType>(["time_5s", "time_10s", "time_penalty", "drive_through", "stop_go"]);
 
 function validTimestamp(value: string): boolean {
   return Number.isFinite(Date.parse(value));
@@ -238,7 +240,7 @@ export function authorizeRaceRestart(
 export function issueRacePenalty(
   state: RaceControlState,
   context: RaceControlCommandContext,
-  input: { readonly driverId: string; readonly type: RacePenaltyType; readonly durationMs?: number }
+  input: { readonly driverId: string; readonly type: RacePenaltyType; readonly durationMs?: number; readonly gridPositions?: number }
 ): RaceControlState {
   const errors = [...validateContext(context), ...validateEvidence(context.evidence, true)];
   if (context.raceId !== state.raceId) errors.push("Race ID does not match the active session");
@@ -247,8 +249,13 @@ export function issueRacePenalty(
   if (context.actorRole !== "fia" && context.actorRole !== "admin") errors.push("Only FIA or Admin may issue a penalty");
   if (context.evidence.some((item) => item.driverId && item.driverId !== input.driverId)) errors.push("Penalty evidence references a different driver");
   if (TIMED_PENALTIES.has(input.type)) {
-    if (!Number.isInteger(input.durationMs) || (input.durationMs ?? 0) <= 0) errors.push("A positive integer duration is required for time penalties");
-  } else if (input.durationMs !== undefined) errors.push("Only time penalties may specify a duration");
+    if (!Number.isInteger(input.durationMs) || (input.durationMs ?? 0) <= 0) errors.push("A positive integer duration is required for time, drive-through, and stop-go penalties");
+    if (input.type === "time_5s" && input.durationMs !== 5000) errors.push("A 5-second penalty must equal 5000 milliseconds");
+    if (input.type === "time_10s" && input.durationMs !== 10000) errors.push("A 10-second penalty must equal 10000 milliseconds");
+  } else if (input.durationMs !== undefined) errors.push("This penalty type does not accept a time duration");
+  if (input.type === "grid_penalty") {
+    if (!Number.isInteger(input.gridPositions) || (input.gridPositions ?? 0) < 1 || (input.gridPositions ?? 0) > 20) errors.push("Grid penalty must be between 1 and 20 positions");
+  } else if (input.gridPositions !== undefined) errors.push("Only grid penalties may specify grid positions");
   if (errors.length) throw new Error(errors.join("; "));
   const penalty: RaceControlPenalty = Object.freeze({
     id: `penalty-${context.sequence}`,
@@ -256,6 +263,7 @@ export function issueRacePenalty(
     driverId: input.driverId,
     type: input.type,
     durationMs: input.durationMs ?? null,
+    gridPositions: input.gridPositions ?? null,
     reason: context.reason,
     evidence: Object.freeze(context.evidence.map((item) => Object.freeze({ ...item }))),
     issuedBy: context.actorId,
@@ -268,7 +276,8 @@ export function issueRacePenalty(
     action: "penalty_issued",
     driverId: input.driverId,
     penaltyType: input.type,
-    ...(input.durationMs !== undefined ? { penaltyDurationMs: input.durationMs } : {})
+    ...(input.durationMs !== undefined ? { penaltyDurationMs: input.durationMs } : {}),
+    ...(input.gridPositions !== undefined ? { penaltyGridPositions: input.gridPositions } : {})
   });
   const next = appendEvent(state, event);
   return Object.freeze({ ...next, penalties: Object.freeze([...state.penalties, penalty]) });
