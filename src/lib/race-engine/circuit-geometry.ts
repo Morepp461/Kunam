@@ -297,11 +297,15 @@ export function validateCircuitGeometryDefinition(
     if (spec.pitLane.enabled) {
       for (const [key, value] of [
         ["lengthMeters", spec.pitLane.lengthMeters],
-        ["speedLimitKph", spec.pitLane.speedLimitKph],
-        ["entryDistanceMeters", spec.pitLane.entryDistanceMeters],
-        ["exitDistanceMeters", spec.pitLane.exitDistanceMeters]
+        ["speedLimitKph", spec.pitLane.speedLimitKph]
       ] as const) {
         if (value === null || !Number.isFinite(value) || value <= 0) errors.push("Pit lane " + key + " must be a positive measured value");
+      }
+      if (spec.pitLane.entryDistanceMeters === null || !Number.isFinite(spec.pitLane.entryDistanceMeters) || spec.pitLane.entryDistanceMeters < 0) {
+        errors.push("Pit lane entry distance must be measured and non-negative");
+      }
+      if (spec.pitLane.exitDistanceMeters === null || !Number.isFinite(spec.pitLane.exitDistanceMeters) || spec.pitLane.exitDistanceMeters <= 0) {
+        errors.push("Pit lane exit distance must be a positive measured value");
       }
       if (spec.pitLane.entryDistanceMeters !== null && spec.pitLane.exitDistanceMeters !== null &&
           spec.pitLane.entryDistanceMeters >= spec.pitLane.exitDistanceMeters) {
