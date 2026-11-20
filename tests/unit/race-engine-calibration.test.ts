@@ -207,7 +207,7 @@ describe("Race physics calibration profiles", () => {
     const profile = createProfile();
     const attributes = {
       ...profile.attributes,
-      "car_team.strategy_quality": { strategy_quality_per_point: -3 },
+      "car_team.strategy_quality": { strategy_quality_per_point: -0.03 },
       "car_team.pit_stop_efficiency": { pit_stop_time_ms_per_point: -5 }
     };
     const model = createCalibratedPerformanceModel({ ...profile, attributes });
