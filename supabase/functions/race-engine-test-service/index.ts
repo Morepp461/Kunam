@@ -156,7 +156,7 @@ Deno.serve(async (req: Request) => {
     const body = asRecord(await req.json());
     const action = body.action;
 
-    if (action === "background_tick") {
+    if (action === "background_tick" || action === "background_seed_test") {
       const token = req.headers.get("x-race-worker-token") ?? "";
       if (token.length < 32) return json({ error: "Worker authentication failed." }, 401, origin);
       const { data: authorized, error: authError } = await service.rpc("race_engine_validate_worker_token", {
