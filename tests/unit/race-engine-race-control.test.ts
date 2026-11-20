@@ -117,7 +117,7 @@ describe("Audited race-control policy", () => {
   it("requires Admin ratification and records reversals as superseding audit events", () => {
     const initial = createInitialRaceControlState("race-1", classification);
     const issued = issueRacePenalty(initial, context(1, "fia", "driver-1"), {
-      driverId: "driver-1", type: "drive_through"
+      driverId: "driver-1", type: "drive_through", durationMs: 30000
     });
     const ratified = ratifyRacePenalty(issued, context(2, "admin"), issued.penalties[0].id);
     expect(ratified.penalties[0].ratifiedByAdminId).toBe("admin-1");
