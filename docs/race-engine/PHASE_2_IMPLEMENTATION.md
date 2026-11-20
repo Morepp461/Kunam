@@ -15,17 +15,25 @@ No production coefficient set is introduced. The caller must provide every physi
 
 ## Integration status
 
-These are domain model foundations, not a production-ready race lifecycle integration. The existing RaceSimulation currently advances segment timing and tyre state, but does not yet own global weather timing, pit execution/tyre replacement, incident event ordering, race-control neutralization, or the corresponding checkpoint state. Integrating those systems requires a coordinated simulation/checkpoint schema change and deterministic recovery tests. This branch deliberately does not pretend that standalone model tests prove full race integration.
+The active `RaceSimulation` lifecycle now owns the following Phase 2 systems:
+- shared weather clock, water/grip evolution, tyre-environment coupling, and weather checkpoint recovery (checkpoint schema v4);
+- calibrated pit decisions, pit-lane time loss, compound replacement, stop count/history, and pit-model checkpoint identity (schema v5);
+- deterministic incidents, time loss, configurable retirements, maintenance eligibility facts, race-control flags, timed flag expiry, red-flag suspension/resume, and recovery of active flags/clock (schema v6);
+- calibrated active performance effects for DRS, ERS, tyre wear, wet grip, deterministic consistency, overtaking, defending, and HQ effects;
+- race-control pace multipliers supplied by the selected race-control profile;
+- legacy checkpoint restore compatibility for schemas v3, v4, and v5 where the corresponding injected models are supplied.
 
-## Acceptance gates still required before Phase 2 can be marked complete
+The simulation emits facts only. It does not write wallet, maintenance, prize, or economy ledger transactions. The host game's Economy Engine remains the sole settlement owner.
 
-1. Integrate weather state into simulation timing and tyre environment, including dynamic transitions and recovery.
-2. Integrate pit decision and pit execution, including pit lane time, compound replacement, and stop history.
-3. Integrate incidents into event ordering, time loss/retirement state, and race-control flags.
-4. Add DRS/ERS, overtaking/defending, reliability, HQ, and calibrated attribute effects to the active performance model.
-5. Run full 20-driver/10-team and multi-race Monte Carlo/sensitivity validation using reviewed calibration profiles.
-6. Validate checkpoint recovery across every new state and verify no duplicate events or economy settlement facts.
-7. Only then approve Phase 2 completion and begin service integration.
+## Validation gates and remaining release decisions
+
+1. Full-grid Monte Carlo validation runs 1,000 seeds at 20 drivers/10 teams. A separate interleaved-session test verifies that two races remain isolated and replay-equivalent.
+2. Weather, pit, incident, red-flag suspension, active-flag expiry, and checkpoint recovery each have deterministic tests.
+3. Calibration profiles remain caller-supplied and versioned. Synthetic test coefficients are not production presets. A reviewed calibration dataset and approval of production coefficients are still required before enabling a real season.
+4. Penalty adjudication and restart rules remain to be implemented from an approved ruleset; no penalty or restart behavior is invented.
+5. The engine still needs a benchmarked worker/service integration, persistence, telemetry, and multi-worker load/recovery tests in Phase 3.
+
+No database migration is required by the current in-memory simulation lifecycle changes. Persistent race storage remains in Phase 3 after the existing Testing/Production migration ledger drift is reconciled.
 
 No database migration is required by these standalone domain modules. Persistent race storage remains in Phase 3 after the existing Testing/Production migration ledger drift is reconciled.
 

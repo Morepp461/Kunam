@@ -24,7 +24,7 @@ import { advanceWeatherState, createInitialWeatherState, getWeatherInput } from 
 import type { WeatherSimulationModel, WeatherState } from "./weather";
 import { choosePitDecision } from "./pit-strategy";
 import type { PitStrategyModel } from "./pit-strategy";
-import { evaluateSegmentIncident, resolveRaceControl, INCIDENT_TYPES } from "./incidents";
+import { evaluateSegmentIncident, resolveRaceControl, validateRaceControlProfile } from "./incidents";
 import type { IncidentModel, RaceControlProfile, RaceControlFlag, IncidentType } from "./incidents";
 
 export const SIMULATION_CHECKPOINT_SCHEMA_VERSION = 6;
@@ -287,15 +287,8 @@ export class RaceSimulation {
     this.raceControlProfile = options?.raceControlProfile;
     if (Boolean(this.incidentModel) !== Boolean(this.raceControlProfile)) throw new Error("Incident model and race-control profile must be configured together");
     if (this.raceControlProfile) {
-      if (!this.raceControlProfile.id.trim() || !this.raceControlProfile.version.trim()) throw new Error("Race-control profile ID and version are required");
-      for (const type of INCIDENT_TYPES) {
-        const flag = this.raceControlProfile.flagByIncident[type];
-        if (!flag) throw new Error(`Race-control profile is missing a flag for ${type}`);
-        if (flag !== "green") {
-          const duration = this.raceControlProfile.durationMsByFlag[flag];
-          if (!Number.isFinite(duration) || duration < 0) throw new Error(`Race-control duration for ${flag} is invalid`);
-        }
-      }
+      const validation = validateRaceControlProfile(this.raceControlProfile);
+      if (!validation.valid) throw new Error(`Invalid race-control profile: ${validation.errors.join("; ")}`);
     }
     if (this.pitModel && !this.tyreModel) throw new Error("Pit strategy requires an active tyre simulation model");
     if (this.pitModel) {
@@ -724,7 +717,9 @@ export class RaceSimulation {
     const stagedEntrants = this.mutableEntrants.map((entrant) => ({ ...entrant }));
     const stagedRandom = SeededRandom.restore(this.random.snapshot());
     const stagedEvents: RaceSimulationEvent[] = [];
-    const stagedRaceControlFlags = this.activeRaceControlFlagsValue.map((flag) => ({ ...flag }));
+    let stagedRaceControlFlags = this.activeRaceControlFlagsValue.map((flag) => ({ ...flag }));
+    let stagedSimulationClockMs = this.simulationClockMsValue;
+    let stagedWeatherState = this.weatherStateValue;
     const appendEvent = (event: Omit<RaceSimulationEvent, "sequence">) => {
       stagedEvents.push({
         sequence: this.mutableEvents.length + stagedEvents.length + 1,
@@ -732,6 +727,44 @@ export class RaceSimulation {
       });
     };
 
+    const activeRedFlags = stagedRaceControlFlags.filter((flag) => flag.flag === "red_flag");
+    if (activeRedFlags.length > 0) {
+      const resumeAtSimulationTimeMs = Math.max(...activeRedFlags.map((flag) => flag.expiresAtSimulationTimeMs));
+      const suspensionDurationMs = Math.max(0, resumeAtSimulationTimeMs - stagedSimulationClockMs);
+      for (const state of stagedEntrants) {
+        if (!state.finished && !state.retired) state.elapsedMs += suspensionDurationMs;
+      }
+      if (this.weatherModel && stagedWeatherState && suspensionDurationMs > 0) {
+        const weatherDriver = stagedEntrants.find((entrant) => !entrant.finished && !entrant.retired);
+        if (weatherDriver) {
+          const weatherLap = weatherDriver.lapCompleted + 1;
+          const weatherSegment = segments[weatherDriver.segmentIndex];
+          const weatherInput = getWeatherInput(this.weatherModel, weatherLap, weatherSegment.id);
+          stagedWeatherState = advanceWeatherState(
+            stagedWeatherState, weatherInput, suspensionDurationMs / 1000, this.weatherModel.profile
+          );
+        }
+      }
+      const expiredFlags = stagedRaceControlFlags.filter(
+        (flag) => flag.expiresAtSimulationTimeMs <= resumeAtSimulationTimeMs
+      );
+      for (const flag of expiredFlags) {
+        appendEvent({
+          type: "race_control",
+          lapNumber: stagedEntrants.find((entrant) => !entrant.finished && !entrant.retired)?.lapCompleted ?? 0,
+          simulationTimeMs: resumeAtSimulationTimeMs,
+          durationMs: suspensionDurationMs,
+          incidentId: flag.incidentId,
+          raceControlFlag: "green"
+        });
+      }
+      stagedRaceControlFlags = stagedRaceControlFlags.filter(
+        (flag) => flag.expiresAtSimulationTimeMs > resumeAtSimulationTimeMs
+      );
+      stagedSimulationClockMs = resumeAtSimulationTimeMs;
+    }
+    const activeFlagsForTick = stagedRaceControlFlags.map((flag) => ({ ...flag }));
+    const activeFlagCountAtTickStart = stagedRaceControlFlags.length;
     const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished && !entrant.retired);
     const weatherLap = weatherReferenceState ? weatherReferenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
     const weatherSegment = weatherReferenceState
@@ -774,14 +807,19 @@ export class RaceSimulation {
         segment,
         baseSegmentTimeMs,
         tyreState: state.tyreState ?? null,
-        weatherState: this.weatherStateValue ?? null,
+        weatherState: stagedWeatherState ?? null,
         battleContext,
         consistencySample: this.config.noiseAmplitudeMs > 0 ? noiseMs / this.config.noiseAmplitudeMs : 0
       });
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
       }
-      const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
+      const raceControlTimeMultiplier = activeFlagsForTick.reduce((maximum, active) => {
+        const multiplier = this.raceControlProfile?.paceTimeMultiplierByFlag?.[active.flag] ?? 1;
+        return Math.max(maximum, multiplier);
+      }, 1);
+      const raceControlAdjustmentMs = baseSegmentTimeMs * (raceControlTimeMultiplier - 1);
+      const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs + raceControlAdjustmentMs);
       let incident: ReturnType<typeof evaluateSegmentIncident> = null;
       if (this.incidentModel) {
         const attributes: Record<string, number> = {};
@@ -808,8 +846,8 @@ export class RaceSimulation {
           segment.id
         );
         const tyreInput = createTyreSegmentInput(
-          this.weatherStateValue
-            ? { ...environment, trackWetness: this.weatherStateValue.trackWetness, surfaceTempC: this.weatherStateValue.surfaceTempC }
+          stagedWeatherState
+            ? { ...environment, trackWetness: stagedWeatherState.trackWetness, surfaceTempC: stagedWeatherState.surfaceTempC }
             : environment,
           segment.distanceMeters,
           entrant.driverAttributes.tyre_management,
@@ -848,7 +886,7 @@ export class RaceSimulation {
           stagedRaceControlFlags.push({
             flag: control.flag,
             incidentId: incident.id,
-            expiresAtSimulationTimeMs: this.simulationClockMsValue + control.durationMs
+            expiresAtSimulationTimeMs: stagedSimulationClockMs + globalTickDurationMs + control.durationMs
           });
         }
       }
@@ -948,20 +986,45 @@ export class RaceSimulation {
       }
     }
 
-    // Commit the tick only after every entrant has advanced successfully.
+    for (let index = activeFlagCountAtTickStart; index < stagedRaceControlFlags.length; index += 1) {
+      const flag = stagedRaceControlFlags[index];
+      const durationMs = this.raceControlProfile?.durationMsByFlag[flag.flag] ?? 0;
+      stagedRaceControlFlags[index] = {
+        ...flag,
+        expiresAtSimulationTimeMs: stagedSimulationClockMs + globalTickDurationMs + durationMs
+      };
+    }
+
+    const nextSimulationClockMs = stagedSimulationClockMs + globalTickDurationMs;
+    const expiredAtTickEnd = stagedRaceControlFlags.filter(
+      (flag) => flag.expiresAtSimulationTimeMs <= nextSimulationClockMs
+    );
+    for (const flag of expiredAtTickEnd) {
+      appendEvent({
+        type: "race_control",
+        lapNumber: stagedEntrants.find((entrant) => !entrant.finished && !entrant.retired)?.lapCompleted ?? 0,
+        simulationTimeMs: nextSimulationClockMs,
+        incidentId: flag.incidentId,
+        raceControlFlag: "green"
+      });
+    }
+    stagedRaceControlFlags = stagedRaceControlFlags.filter(
+      (flag) => flag.expiresAtSimulationTimeMs > nextSimulationClockMs
+    );
+    if (this.weatherModel && stagedWeatherState) {
+      if (!weatherInputForTick) throw new Error("Weather input for the current simulation tick is missing");
+      stagedWeatherState = advanceWeatherState(
+        stagedWeatherState, weatherInputForTick, globalTickDurationMs / 1000, this.weatherModel.profile
+      );
+    }
+
+    // Commit the tick only after every entrant and shared lifecycle state advanced successfully.
     this.mutableEntrants.splice(0, this.mutableEntrants.length, ...stagedEntrants);
     this.mutableEvents.push(...stagedEvents);
     this.random = stagedRandom;
-    if (this.weatherModel && this.weatherStateValue) {
-      if (!weatherInputForTick) throw new Error("Weather input for the current simulation tick is missing");
-      this.weatherStateValue = advanceWeatherState(
-        this.weatherStateValue, weatherInputForTick, globalTickDurationMs / 1000, this.weatherModel.profile
-      );
-    }
-    this.simulationClockMsValue += globalTickDurationMs;
-    this.activeRaceControlFlagsValue = stagedRaceControlFlags.filter(
-      (flag) => flag.expiresAtSimulationTimeMs > this.simulationClockMsValue
-    );
+    this.weatherStateValue = stagedWeatherState;
+    this.simulationClockMsValue = nextSimulationClockMs;
+    this.activeRaceControlFlagsValue = stagedRaceControlFlags;
     this.tickValue += 1;
     if (this.mutableEntrants.every((entrant) => entrant.finished || entrant.retired)) {
       this.statusValue = "completed";

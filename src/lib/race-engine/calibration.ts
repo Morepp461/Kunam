@@ -134,6 +134,13 @@ export function validatePhysicsCalibrationProfile(
     ) {
       errors.push("Mistake Rate must not reduce mistake probability when its rating increases");
     }
+    if (
+      definition.id === "car_team.reliability" &&
+      typeof weights.mechanical_failure_probability_per_point === "number" &&
+      weights.mechanical_failure_probability_per_point > 0
+    ) {
+      errors.push("Higher Reliability must not increase mechanical failure probability");
+    }
   }
 
   for (const id of Object.keys(attributeWeights)) {
