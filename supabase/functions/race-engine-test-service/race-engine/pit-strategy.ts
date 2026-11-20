@@ -1,6 +1,6 @@
-import type { JsonValue } from "./contracts";
-import { TYRE_COMPOUNDS } from "./tyres";
-import type { TyreCompound } from "./tyres";
+import type { JsonValue } from "./contracts.ts";
+import { TYRE_COMPOUNDS } from "./tyres.ts";
+import type { TyreCompound } from "./tyres.ts";
 
 export const PIT_STRATEGY_SCHEMA_VERSION = 1;
 
