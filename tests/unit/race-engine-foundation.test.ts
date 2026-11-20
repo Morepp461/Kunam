@@ -7,6 +7,7 @@ import {
   validateAttributeValues
 } from "../../src/lib/race-engine/attributes";
 import {
+  createImmutableRaceStartSnapshot,
   RACE_ENGINE_VERSION,
   validateRaceStartSnapshot
 } from "../../src/lib/race-engine/contracts";
@@ -106,8 +107,18 @@ describe("SeededRandom", () => {
 });
 
 describe("Race start snapshot validation", () => {
-  it("accepts a versioned, complete, immutable-input snapshot shape", () => {
+  it("accepts a versioned, complete race-start snapshot", () => {
     expect(validateRaceStartSnapshot(validSnapshot()).valid).toBe(true);
+  });
+
+  it("creates a deep-frozen snapshot without retaining mutable input references", () => {
+    const input = validSnapshot();
+    const frozen = createImmutableRaceStartSnapshot(input);
+    expect(frozen).not.toBe(input);
+    expect(Object.isFrozen(frozen)).toBe(true);
+    expect(Object.isFrozen(frozen.circuit)).toBe(true);
+    expect(Object.isFrozen(frozen.circuit.segments)).toBe(true);
+    expect(Object.isFrozen(frozen.entrants[0].driverAttributes)).toBe(true);
   });
 
   it("rejects duplicate drivers and unsupported schema versions", () => {
