@@ -11,7 +11,7 @@ const input: PitDecisionInput = {
   currentLap: 8, totalLaps: 30, currentWearPercent: 70, currentCompound: "soft",
   currentStopCount: 0, lastStopLap: null, trackWetness: 0.1,
   candidates: [
-    { compound: "medium", pitLaneLossMs: 20_000, expectedLapTimeDeltaMs: 50, expectedDegradationMsPerLap: 30, riskPenaltyMs: 0, compatibleWetnessMin: 0, compatibleWetnessMax: 0.3 },
+    { compound: "medium", pitLaneLossMs: 20_000, expectedLapTimeDeltaMs: 120, expectedDegradationMsPerLap: 60, riskPenaltyMs: 0, compatibleWetnessMin: 0, compatibleWetnessMax: 0.3 },
     { compound: "hard", pitLaneLossMs: 20_000, expectedLapTimeDeltaMs: 80, expectedDegradationMsPerLap: 10, riskPenaltyMs: 0, compatibleWetnessMin: 0, compatibleWetnessMax: 0.3 },
     { compound: "intermediate", pitLaneLossMs: 20_000, expectedLapTimeDeltaMs: 100, expectedDegradationMsPerLap: 5, riskPenaltyMs: 0, compatibleWetnessMin: 0.3, compatibleWetnessMax: 1 }
   ]
