@@ -4,6 +4,8 @@ import {
 } from "./attributes";
 import type { JsonValue, RaceEntrantSnapshot } from "./contracts";
 import type { SegmentPerformanceContext, SegmentPerformanceModel } from "./simulation";
+import { CAR_SETUP_KEYS, validateCarSetupSnapshot } from "./setup";
+import type { CarSetupCalibration, CarSetupKey } from "./setup";
 
 export const PHYSICS_CALIBRATION_SCHEMA_VERSION = 2;
 
@@ -146,6 +148,33 @@ export function validatePhysicsCalibrationProfile(
   for (const id of Object.keys(attributeWeights)) {
     if (!expectedIds.has(id)) errors.push(`Unknown calibration attribute ID: ${id}`);
   }
+  if (profile.carSetup) {
+    const setup = profile.carSetup;
+    if (setup.schemaVersion !== 1) errors.push("Unsupported car setup calibration schema version");
+    for (const key of CAR_SETUP_KEYS) {
+      const range = setup.ranges?.[key];
+      if (!range) {
+        errors.push(`Car setup calibration is missing range for ${key}`);
+      } else {
+        if (!Number.isFinite(range.minimum) || !Number.isFinite(range.maximum) || range.minimum >= range.maximum) {
+          errors.push(`Car setup range for ${key} must have finite minimum below maximum`);
+        }
+        if (!Number.isFinite(range.baseline) || range.baseline < range.minimum || range.baseline > range.maximum) {
+          errors.push(`Car setup baseline for ${key} must be inside its configured range`);
+        }
+      }
+      const weights = setup.influences?.[key];
+      if (!weights) errors.push(`Car setup calibration is missing influence map for ${key}`);
+      else validateWeightMap(`carSetup.influences.${key}`, weights, true, errors);
+    }
+    for (const key of Object.keys(setup.ranges ?? {})) {
+      if (!(CAR_SETUP_KEYS as readonly string[]).includes(key)) errors.push(`Unknown car setup range: ${key}`);
+    }
+    for (const key of Object.keys(setup.influences ?? {})) {
+      if (!(CAR_SETUP_KEYS as readonly string[]).includes(key)) errors.push(`Unknown car setup influence: ${key}`);
+    }
+  }
+
   for (const [key, weights] of Object.entries(hqWeights)) {
     if (!key.trim()) {
       errors.push("HQ effect keys must not be empty");
@@ -173,6 +202,19 @@ function evaluateAttributeInfluencesUnchecked(
     const weights = profile.attributes[definition.id];
     for (const [channel, coefficient] of Object.entries(weights) as [AttributeInfluenceChannel, number][]) {
       totals[channel] += delta * coefficient;
+    }
+  }
+
+  if (entrant.carSetup) {
+    if (!profile.carSetup) throw new Error("Car setup snapshot requires a calibrated carSetup profile");
+    const validation = validateCarSetupSnapshot(entrant.carSetup, profile.carSetup);
+    if (!validation.valid) throw new Error(`Invalid car setup for ${entrant.driverId}: ${validation.errors.join("; ")}`);
+    for (const key of CAR_SETUP_KEYS as readonly CarSetupKey[]) {
+      const delta = entrant.carSetup[key] - profile.carSetup.ranges[key].baseline;
+      const weights = profile.carSetup.influences[key];
+      for (const [channel, coefficient] of Object.entries(weights) as [AttributeInfluenceChannel, number][]) {
+        totals[channel] += delta * coefficient;
+      }
     }
   }
 
@@ -222,7 +264,7 @@ function calculateSegmentPaceAdjustmentUnchecked(
     totals.segment_pace_ms_per_point +
     totals.low_speed_pace_ms_per_point * segment.lowSpeedDemand +
     totals.high_speed_pace_ms_per_point * segment.highSpeedDemand +
-    totals.traction_pace_ms_per_point * segment.tractionDemand +
+    totals.traction_pace_ms_per_point * segment.tractionDemand +\n    totals.braking_pace_ms_per_point * (segment.brakingDemand ?? 0) +
     (segment.drsAvailable ? totals.drs_pace_ms_per_point : 0) +
     (segment.ersAvailable ? totals.ers_efficiency_per_point : 0) +
     tyreWearAdjustment + wetGripAdjustment + attackAdjustment + defenseAdjustment + consistencyAdjustment
