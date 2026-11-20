@@ -99,7 +99,7 @@ describe("Race Engine team HQ effect snapshots", () => {
     };
     const models = createRaceEngineTestModels(snapshot);
     const simulation = new RaceSimulation(snapshot, models);
-    expect(simulation.createCheckpoint().snapshot.entrants[0].hqFacilitySnapshot).toEqual(result.snapshot);
+    expect(simulation.createCheckpoint().snapshot.entrants[0].hqFacilitySnapshot).toEqual(resolvedForRace.snapshot);
 
     const baseProfile = models.performanceModel.snapshot as unknown as RacePhysicsCalibrationProfile;
     const uncalibrated = createCalibratedPerformanceModel({ ...baseProfile, hqEffects: {} });
