@@ -15,7 +15,8 @@ assert "select option" in CONTROLS
 assert ".page-heading .page-description" in CONTROLS
 
 # Job Search license filtering is optional and restricted to the official tiers.
-assert 'const licenseOptions=["Bronze","Silver","Gold","Super License"]' in JOB_SEARCH
+assert 'setLicenseOptions((b.data||[]).filter(row=>row.license_label!=="A").map(row=>row.license_label))' in JOB_SEARCH
+assert 'supabase.from("caleris_driver_salary_bands").select("license_label,sort_order").order("sort_order")' in JOB_SEARCH
 assert 'value={license} onChange={e=>setLicense(e.target.value)}' in JOB_SEARCH
 assert '<option value="">Semua lisensi</option>' in JOB_SEARCH
 assert 'Minimal lisensi <span className="market-filter-hint">Opsional' in JOB_SEARCH
