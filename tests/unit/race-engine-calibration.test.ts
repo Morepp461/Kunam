@@ -26,6 +26,7 @@ function createProfile(): RacePhysicsCalibrationProfile {
     id: "calibration-test",
     version: "1.0.0",
     baselineAttributeValue: 50,
+    battleDetectionGapMs: 5000,
     attributes,
     hqEffects: {
       race_pace_bonus: { segment_pace_ms_per_point: -2 },
@@ -118,7 +119,10 @@ describe("Race physics calibration profiles", () => {
         lowSpeedDemand: 0.5,
         highSpeedDemand: 0,
         tractionDemand: 0,
-        drsAvailable: true
+        drsAvailable: true,
+        ersAvailable: true,
+        overtakingOpportunity: true,
+        defendingOpportunity: true
       },
       baseSegmentTimeMs: 14400,
       tyreState: null
@@ -126,6 +130,62 @@ describe("Race physics calibration profiles", () => {
 
     expect(model.calculateAdjustmentMs(context)).toBe(-15);
     expect(Object.isFrozen(model.snapshot)).toBe(true);
+  });
+
+
+  it("applies calibrated ERS, tyre wear, wet grip, overtaking, and defending effects only in eligible contexts", () => {
+    const fixture = createSyntheticRaceFixture({ driverCount: 2, teamCount: 1, totalLaps: 1 });
+    const profile = createProfile();
+    const weights = { ...profile.attributes };
+    weights["car_team.ers_efficiency"] = { ers_efficiency_per_point: -2 };
+    weights["car_team.car_tyre_wear"] = { tyre_degradation_per_point: 0.5 };
+    weights["car_team.mechanical_grip"] = { wet_grip_per_point: -4 };
+    weights["driver.overtake_skill"] = { overtake_advantage_per_point: -3 };
+    weights["driver.defensive_strength"] = { defense_advantage_per_point: 5 };
+    const calibrated = { ...profile, attributes: weights };
+    const model = createCalibratedPerformanceModel(calibrated);
+    const entrant = {
+      ...fixture.entrants[0],
+      driverAttributes: {
+        ...fixture.entrants[0].driverAttributes,
+        overtake_skill: 60,
+        defensive_strength: 60
+      },
+      carTeamAttributes: {
+        ...fixture.entrants[0].carTeamAttributes,
+        ers_efficiency: 60,
+        car_tyre_wear: 60,
+        mechanical_grip: 60
+      }
+    };
+    const totals = evaluateAttributeInfluences(entrant, calibrated);
+    const segment = {
+      ...fixture.circuit.segments[2],
+      drsAvailable: false,
+      ersAvailable: true,
+      overtakingOpportunity: true,
+      defendingOpportunity: true
+    };
+    const baseContext = {
+      entrant, lapNumber: 1, segmentIndex: 2, segmentDistanceMeters: segment.distanceMeters,
+      segment, baseSegmentTimeMs: 10000, tyreState: { compound: "soft" as const, wearPercent: 10,
+        distanceDrivenMeters: 1000, surfaceTempC: 90, carcassTempC: 90, gripPercent: 90 },
+      weatherState: { trackWaterDepthMm: 1, trackWetness: 0.5, gripPercent: 80, airTempC: 25,
+        surfaceTempC: 25, relativeHumidityPercent: 70, rainfallMmPerHour: 0, windSpeedMps: 0,
+        windDirectionDeg: 0, visibilityMeters: 10000 }
+    };
+    const withoutBattle = model.calculateAdjustmentMs({
+      ...baseContext,
+      segment: { ...segment, ersAvailable: false, overtakingOpportunity: false, defendingOpportunity: false }
+    });
+    const withBattle = model.calculateAdjustmentMs({
+      ...baseContext,
+      battleContext: { attackingGapMs: 100, defendingGapMs: 150 }
+    });
+    expect(withBattle - withoutBattle).toBeCloseTo(
+      totals.ers_efficiency_per_point - totals.overtake_advantage_per_point +
+      totals.defense_advantage_per_point, 8
+    );
   });
 
   it("persists the full calibration profile in checkpoints and requires the same profile to resume", () => {

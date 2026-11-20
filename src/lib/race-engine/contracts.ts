@@ -23,6 +23,9 @@ export interface CircuitSegmentSnapshot {
   readonly highSpeedDemand: number;
   readonly tractionDemand: number;
   readonly drsAvailable: boolean;
+  readonly ersAvailable?: boolean;
+  readonly overtakingOpportunity?: boolean;
+  readonly defendingOpportunity?: boolean;
 }
 
 export interface RaceEntrantSnapshot {

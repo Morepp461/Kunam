@@ -52,6 +52,8 @@ export interface SegmentPerformanceContext {
   readonly baseSegmentTimeMs: number;
   readonly tyreState: TyreState | null;
   readonly weatherState?: WeatherState | null;
+  readonly battleContext?: { readonly attackingGapMs?: number; readonly defendingGapMs?: number };
+  readonly consistencySample?: number;
   readonly simulationClockMs?: number;
   readonly activeRaceControlFlags?: readonly ActiveRaceControlFlag[];
 }
@@ -61,6 +63,7 @@ export interface SegmentPerformanceModel {
   readonly id: string;
   readonly version: string;
   readonly snapshot: JsonValue;
+  readonly battleDetectionGapMs?: number;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
 }
 
@@ -745,6 +748,24 @@ export class RaceSimulation {
 
       const segment = segments[state.segmentIndex];
       const baseSegmentTimeMs = this.snapshot.circuit.targetLapTimeMs * segment.distanceMeters / totalDistance;
+      const orderedEntrants = [...this.mutableEntrants]
+        .filter((item) => !item.finished && !item.retired)
+        .sort((a, b) => a.elapsedMs - b.elapsedMs || a.driverId.localeCompare(b.driverId));
+      const orderIndex = orderedEntrants.findIndex((item) => item.driverId === state.driverId);
+      const ahead = orderIndex > 0 ? orderedEntrants[orderIndex - 1] : undefined;
+      const behind = orderIndex >= 0 && orderIndex < orderedEntrants.length - 1 ? orderedEntrants[orderIndex + 1] : undefined;
+      const attackingGapMs = ahead ? state.elapsedMs - ahead.elapsedMs : undefined;
+      const defendingGapMs = behind ? behind.elapsedMs - state.elapsedMs : undefined;
+      const battleGapThreshold = this.performanceModel.battleDetectionGapMs ?? 0;
+      const battleContext = {
+        ...(attackingGapMs !== undefined && attackingGapMs <= battleGapThreshold && segment.overtakingOpportunity === true
+          ? { attackingGapMs } : {}),
+        ...(defendingGapMs !== undefined && defendingGapMs <= battleGapThreshold && segment.defendingOpportunity === true
+          ? { defendingGapMs } : {})
+      };
+      const noiseMs = this.config.noiseAmplitudeMs === 0
+        ? 0
+        : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const adjustmentMs = this.performanceModel.calculateAdjustmentMs({
         entrant,
         lapNumber: state.lapCompleted + 1,
@@ -753,14 +774,13 @@ export class RaceSimulation {
         segment,
         baseSegmentTimeMs,
         tyreState: state.tyreState ?? null,
-        weatherState: this.weatherStateValue ?? null
+        weatherState: this.weatherStateValue ?? null,
+        battleContext,
+        consistencySample: this.config.noiseAmplitudeMs > 0 ? noiseMs / this.config.noiseAmplitudeMs : 0
       });
       if (!Number.isFinite(adjustmentMs)) {
         throw new Error(`Performance model returned a non-finite adjustment for ${state.driverId}`);
       }
-      const noiseMs = this.config.noiseAmplitudeMs === 0
-        ? 0
-        : stagedRandom.nextInt(this.config.noiseAmplitudeMs * 2 + 1) - this.config.noiseAmplitudeMs;
       const durationMs = Math.round(baseSegmentTimeMs + adjustmentMs + noiseMs);
       let incident: ReturnType<typeof evaluateSegmentIncident> = null;
       if (this.incidentModel) {
