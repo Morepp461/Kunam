@@ -16,7 +16,13 @@ import type { RaceStartSnapshot } from "./contracts.ts";
  * These values are copied from the repository's validation fixtures or deliberately
  * constructed for non-production demonstration. They are NOT production calibration.
  */
-export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
+export type TestWeatherScenario = "dry" | "wet" | "transition";
+
+export function createRaceEngineTestModels(
+  snapshot: RaceStartSnapshot,
+  options: { readonly weatherScenario?: TestWeatherScenario } = {}
+) {
+  const weatherScenario = options.weatherScenario ?? "transition";
   // Synthetic-only sensitivity map. Coefficients are test fixtures, not production physics calibration.
   const attributes: Record<string, Record<string, number>> = {
     "driver.race_pace": { segment_pace_ms_per_point: -0.001 },
@@ -133,7 +139,8 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
   });
   for (let lap = 1; lap <= snapshot.circuit.totalLaps; lap += 1) {
     for (const segment of snapshot.circuit.segments) {
-      const wet = lap > Math.max(1, Math.ceil(snapshot.circuit.totalLaps / 2));
+      const wet = weatherScenario === "wet" ||
+        (weatherScenario === "transition" && lap > Math.max(1, Math.ceil(snapshot.circuit.totalLaps / 2)));
       weatherInputs[`${lap}:${segment.id}`] = {
         airTempC: wet ? 22 : 28,
         surfaceTempC: wet ? 20 : 34,
