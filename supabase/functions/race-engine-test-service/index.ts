@@ -50,7 +50,7 @@ const service = createClient(TEST_URL, TEST_SERVICE_KEY, {
 function responseHeaders(origin: string | null): Headers {
   const headers = new Headers({
     "Content-Type": "application/json",
-    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+    "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info, x-caleris-production-authorization",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Vary": "Origin"
   });
@@ -63,7 +63,8 @@ function json(data: unknown, status = 200, origin: string | null = null): Respon
 }
 
 async function requireProductionAdmin(req: Request) {
-  const authorization = req.headers.get("Authorization") ?? "";
+  // Supabase gateway Authorization is a Testing-project JWT; the production user token is validated separately here.
+  const authorization = req.headers.get("x-caleris-production-authorization") ?? "";
   const token = authorization.replace(/^Bearer\s+/i, "").trim();
   if (!token) throw new Error("Sesi admin diperlukan.");
 
