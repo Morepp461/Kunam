@@ -8,7 +8,10 @@ import { createStage5QueryPlan } from "./lib/stage5QueryPlan";
 import { broadcastNewsroomArticle } from "./lib/newsroomBroadcast";
 import DriverExhibition from "./DriverExhibition";
 import FiaDataExport from "./FiaDataExport";
+import { findCircuitForRound, getScheduleRoundsForPeriod } from "./lib/schedulePresentation";
 import "./driver-exhibition.css";
+import "./circuit-pool.css";
+import "./schedule-circuit.css";
 
 type Props = { session: Session; fallback: ReactNode; isAdmin?: boolean };
 type Row = Record<string, any>;
@@ -25,6 +28,14 @@ const ageOf = (dob?: string | null) => {
   return age + " tahun";
 };
 const labelDivision = (v?: string | null) => v ? v.toLowerCase().includes("premio") ? "Premio" : v.toLowerCase().includes("zwei") ? "Zwei" : v : "Belum ditetapkan";
+const formatRaceDate = (value?: string | null) => value ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", day: "2-digit", month: "short", year: "numeric" }).format(new Date(value)) : "Tanggal belum diatur";
+const formatRaceTime = (value?: string | null) => value ? new Intl.DateTimeFormat("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(value)) + " WIB" : "Jam belum diatur";
+const formatCircuitRecord = (ms?: number | null) => {
+  if (!ms) return "Belum ada record";
+  const minutes = Math.floor(ms / 60000), seconds = Math.floor((ms % 60000) / 1000), millis = ms % 1000;
+  return minutes + ":" + String(seconds).padStart(2, "0") + "," + String(millis).padStart(3, "0");
+};
+const circuitCountryName = (code?: string | null) => code && /^[A-Z]{2}$/.test(code) ? new Intl.DisplayNames(["id"], { type: "region" }).of(code) || code : "Negara belum diatur";
 const Card = ({ title, eyebrow, children, onClick }: { title: string; eyebrow?: string; children: ReactNode; onClick?: () => void }) => <section className="s5-card" onClick={onClick} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onClick ? e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } } : undefined}><div className="s5-card-head"><div>{eyebrow && <span>{eyebrow}</span>}<h2>{title}</h2></div></div>{children}</section>;
 const Empty = ({ children = "Belum ada data yang dipublikasikan." }: { children?: ReactNode }) => <div className="s5-empty">{children}</div>;
 const Table = ({ headers, rows, empty = "Belum ada data." }: { headers: string[]; rows: ReactNode[][]; empty?: string }) => <div className="s5-table-wrap"><table className="s5-table"><thead><tr>{headers.map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{rows.length ? rows.map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>) : <tr><td colSpan={headers.length}><Empty>{empty}</Empty></td></tr>}</tbody></table></div>;
@@ -53,11 +64,23 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
   const [attributeModalOpen, setAttributeModalOpen] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<Row | null>(null);
   const [teamDetailClosing, setTeamDetailClosing] = useState(false);
+  const [selectedSchedule, setSelectedSchedule] = useState<{ round: Row; circuit: Row | null } | null>(null);
   const closeSelectedTeam = () => {
     if (!selectedTeam || teamDetailClosing) return;
     setTeamDetailClosing(true);
     window.setTimeout(() => { setSelectedTeam(null); setTeamDetailClosing(false); }, 260);
   };
+  useEffect(() => {
+    if (!selectedSchedule) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setSelectedSchedule(null); };
+    window.addEventListener("keydown", close);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", close);
+    };
+  }, [selectedSchedule]);
   const set = (key: string, value: any) => setForm((v: Row) => ({ ...v, [key]: value }));
 
   const queryPlan = useMemo(() => createStage5QueryPlan(group, tab, detail, isAdmin), [group, tab, detail, isAdmin]);
@@ -79,14 +102,14 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ,
       achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ,
       finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ,
-      fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ
+      fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ, circuitsQ
     ] = await Promise.all([
       needsOwnIdentity ? supabase.from("profiles").select(isDriverCharacterPage ? "user_id,member_id,avatar_url,avatar_path,date_of_birth,nationality,hometown" : "member_id").eq("user_id", session.user.id).maybeSingle() : Promise.resolve(EMPTY_SINGLE),
       needsSeasonData ? supabase.from("license_seasons").select("id,title,season_key,starts_on,ends_on,status").order("starts_on", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
       needsTeamData ? supabase.from("caleris_team_directory").select("id,name,division_key,main_color,secondary_color").order("name") : Promise.resolve(EMPTY_ROWS),
       needsMemberDirectory ? supabase.from("caleris_member_directory").select(needsDirectoryAvatars ? "id,character_name,role,license,team_id,avatar_path,avatar_url,nationality,hometown" : "id,character_name,role,license,team_id").order("character_name") : Promise.resolve(EMPTY_ROWS),
       needsDivisionData ? supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,status") : Promise.resolve(EMPTY_ROWS),
-      needsRoundData ? supabase.from("license_rounds").select("id,season_division_id,round_number,title,circuit_name,circuit_country_code,status,processed_at").order("round_number") : Promise.resolve(EMPTY_ROWS),
+      needsRoundData ? supabase.from("license_rounds").select("id,season_division_id,round_number,title,circuit_name,circuit_country_code,race_starts_at,race_duration_minutes,status,processed_at").order("round_number") : Promise.resolve(EMPTY_ROWS),
       needsRoundPoints ? supabase.from("license_round_standings").select("id,round_id,member_id,points_total,driver_name_snapshot,team_id_snapshot,team_name_snapshot") : Promise.resolve(EMPTY_ROWS),
       needsFinalStandings ? supabase.from("license_final_standings").select("id,season_division_id,member_id,final_points,final_position,driver_name_snapshot,team_id_snapshot,team_name_snapshot") : Promise.resolve(EMPTY_ROWS),
       needsRegistrationData ? supabase.from("license_season_members").select("id,season_id,season_division_id,member_id,is_hiatus,preserved_license") : Promise.resolve(EMPTY_ROWS),
@@ -109,14 +132,15 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       isDriverCharacterPage ? supabase.from("caleris_fan_populations").select("member_id,population").eq("entity_kind", "driver") : Promise.resolve(EMPTY_ROWS),
       needsDriverReputation ? supabase.from("caleris_driver_reputation").select("member_id,score,band") : Promise.resolve(EMPTY_ROWS),
       needsSponsorshipData ? supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,target_team_id,season_id,contract_amount,annual_contract_amount,duration_seasons,status,started_at,ended_at,renewal_status").eq("target_kind", "team").eq("status", "active").order("started_at", { ascending: false }) : Promise.resolve(EMPTY_ROWS),
-      needsSponsorshipData ? supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name") : Promise.resolve(EMPTY_ROWS)
+      needsSponsorshipData ? supabase.from("caleris_sponsors").select("id,name,logo_url,industry").order("name") : Promise.resolve(EMPTY_ROWS),
+       isCompetitionSchedulePage ? supabase.from("caleris_circuit_pool").select("*").order("name") : Promise.resolve(EMPTY_ROWS)
     ]);
     const errors = [
       p, seasonsQ, teamsQ, membersQ, divisionsQ, roundsQ, roundPointsQ, finalQ,
       registrationsQ, raceResultsQ, resultEntriesQ, teamProfilesQ, attributesQ,
       achievementsQ, enginesQ, announcementsQ, regulationsQ, advertsQ, appealsQ,
       finesQ, contractsQ, walletsQ, transactionsQ, periodsQ, periodMappingsQ,
-      fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ
+      fanPopulationsQ, driverReputationQ, sponsorshipContractsQ, sponsorsQ, circuitsQ
     ].map(x => x.error).filter(Boolean);
     if (errors.length && errors[0]) setNotice(errors[0].message);
     let ownProfile = (p.data || null) as Row | null;
@@ -505,7 +529,41 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
       {(!detail||engineDetail)&&<Card title="Engine Ranking" eyebrow="SHARED POWER UNIT POINTS"><Table headers={["POS","ENGINE","TEAMS USING IT","POINTS"]} rows={engineRankingRows} empty="Engine belum dipetakan untuk season ini. Admin perlu mengisi engine per tim."/></Card>}
       {(!detail||statsDetail)&&<Card title="Competition Statistics" eyebrow="SEASON TOTALS"><div className="s5-grid s5-grid-4">{statTiles.map(([k,v,Icon])=><div className="s5-stat" key={k}><Icon/><span>{k}</span><strong>{v}</strong></div>)}</div><p className="s5-footnote">Finish dan DNF hanya menghitung klasifikasi yang dicatat FIA. Data yang belum dimasukkan tidak diperkirakan.</p></Card>}
       {(!detail||comparisonDetail)&&<Card title="Comparison" eyebrow="DRIVER / TEAM COMPARISON"><div className="s5-form s5-compare-controls"><Field label="Entity type"><select value={comparisonKind} onChange={e=>{setComparisonKind(e.target.value);setCompareA("");setCompareB("");}}><option value="driver">Driver</option><option value="team">Team</option></select></Field><Field label="First entity"><select value={compareA} onChange={e=>setCompareA(e.target.value)}><option value="">Select</option>{(comparisonKind==="driver"?driverRows:teamRows).map((x: Row)=><option key={x.id} value={x.id}>{x.character_name||x.name}</option>)}</select></Field><Field label="Second entity"><select value={compareB} onChange={e=>setCompareB(e.target.value)}><option value="">Select</option>{(comparisonKind==="driver"?driverRows:teamRows).map((x: Row)=><option key={x.id} value={x.id}>{x.character_name||x.name}</option>)}</select></Field></div>{compareA&&compareB&&compareA!==compareB&&<div className="s5-grid s5-grid-2">{[compareA,compareB].map(id=>{const x=(comparisonKind==="driver"?driverRows:teamRows).find((v: Row)=>v.id===id);return <div className="s5-stat" key={id}><span>{comparisonKind==="driver"?"DRIVER":"TEAM"}</span><strong>{x?.character_name||x?.name}</strong><p>{x?.points||0} points · {x?.wins||0} wins · {x?.poles||0} poles</p></div>})}</div>}</Card>}
-      {scheduleDetail&&<Card title="Season Schedule" eyebrow="DIVISION CALENDAR"><Table headers={["Period","Dates","Circuit / Rounds"]} rows={(data.periods||[]).map((p: Row)=>[p.title,dateLabel(p.starts_on)+" – "+dateLabel(p.ends_on),<div className="s5-schedule-round-list">{(data.rounds||[]).filter((r: Row)=>r.status!=="cancelled"&&periodRoundIds(p.id,data).includes(r.id)&&(!divisionFilter||String((data.divisions||[]).find((d: Row)=>d.id===r.season_division_id)?.division_key||"").toLowerCase().includes(divisionFilter))).map((r: Row)=><span className="s5-schedule-round" key={r.id}><b>{countryFlag(r.circuit_country_code)}</b><span>{r.circuit_name||r.title}</span><small>R{r.round_number}</small></span>)}</div>])}/></Card>}
+      {scheduleDetail&&<Card title="Season Schedule" eyebrow="DIVISION CALENDAR">
+        <div className="schedule-circuit-periods">
+          {(data.periods||[]).map((period: Row)=>{
+            const visibleDivisions=(data.activeDivisions||[]).filter((division: Row)=>!divisionFilter||String(division.division_key||"").toLowerCase()===divisionFilter);
+            const divisionIds=new Set<string>(visibleDivisions.map((division: Row)=>division.id));
+            const periodRounds=getScheduleRoundsForPeriod((data.rounds||[]) as any[],(data.periodMappings||[]) as any[],period.id,divisionIds);
+            return <section className="schedule-circuit-period" key={period.id}>
+              <header className="schedule-circuit-period-head">
+                <div><strong>{period.title}</strong><small>{dateLabel(period.starts_on)} – {dateLabel(period.ends_on)}</small></div>
+                <span>{periodRounds.length} RACE ROUND{periodRounds.length===1?"":"S"}</span>
+              </header>
+              {periodRounds.length?<div className="schedule-circuit-grid">
+                {periodRounds.map((round: Row)=>{
+                  const circuit=findCircuitForRound((data.circuits||[]) as any[],round as any);
+                  const division=visibleDivisions.find((item: Row)=>item.id===round.season_division_id);
+                  return <button type="button" className="circuit-reveal-card schedule-circuit-card" key={round.id} onClick={()=>setSelectedSchedule({round,circuit})} aria-label={`Buka preview ${round.title||"Round "+round.round_number}`}>
+                    <span className="circuit-card-art">
+                      {circuit?.image_url?<img src={circuit.image_url} alt={`Layout ${circuit.name}`} loading="lazy"/>:<span className="circuit-card-no-image">{circuit?"LAYOUT UNAVAILABLE":"CIRCUIT TBA"}</span>}
+                      <span className="circuit-card-sheen" aria-hidden="true"/><span className="circuit-card-edge" aria-hidden="true"/>
+                    </span>
+                    <span className="circuit-card-caption">
+                      <span className="circuit-card-country"><span className="circuit-card-flag" aria-hidden="true">{countryFlag(circuit?.country_code||round.circuit_country_code)}</span><span>{circuit?circuitCountryName(circuit.country_code):"Circuit belum dipilih"}</span></span>
+                      <span className="circuit-card-name">{circuit?.name||round.circuit_name||round.title||"Circuit TBA"}</span>
+                      <span className="schedule-circuit-round"><strong>ROUND {String(round.round_number).padStart(2,"0")}</strong><span>{formatRaceDate(round.race_starts_at)} · {formatRaceTime(round.race_starts_at)}</span></span>
+                      <span className="schedule-circuit-round"><strong>{labelDivision(division?.division_key).toUpperCase()}</strong><span>{Number(round.race_duration_minutes||90)} menit · {String(round.status||"scheduled").replaceAll("_"," ").toUpperCase()}</span></span>
+                    </span>
+                    <span className="circuit-card-open" aria-hidden="true">VIEW RACE <span>↗</span></span>
+                  </button>;
+                })}
+              </div>:<Empty>Belum ada race round yang terhubung ke periode ini.</Empty>}
+            </section>;
+          })}
+        </div>
+      </Card>}
+      {scheduleDetail&&selectedSchedule&&<ScheduleCircuitModal selected={selectedSchedule} divisions={data.divisions||[]} onClose={()=>setSelectedSchedule(null)}/>}
       {driverListDetail&&<Card title="Driver Directory" eyebrow="OFFICIAL DRIVER REGISTER"><Table headers={["Driver","Licence","Team","Division","Points"]} rows={driverRows.map((d: Row)=>[d.character_name||"Driver",d.license||"—",d.team?.name||"Independent",labelDivision(d.team?.division_key),d.points.toLocaleString("id-ID")])}/></Card>}
       {teamListDetail&&<Card title="Team Directory" eyebrow="OFFICIAL TEAM REGISTER"><div className="team-graphic-card-grid">{teamRows.map((t: Row,index: number)=>{const main=/^#[0-9A-Fa-f]{6}$/.test(String(t.profile?.main_color||t.main_color||""))?(t.profile?.main_color||t.main_color):"#7A263A";const secondary=/^#[0-9A-Fa-f]{6}$/.test(String(t.profile?.secondary_color||t.secondary_color||""))?(t.profile?.secondary_color||t.secondary_color):"#C6A33A";const logo=t.profile?.logo_url||"";const nation=t.profile?.country_of_origin||"Nation not set";const hometown=t.profile?.base_location||"Base not set";return <button type="button" className="team-graphic-card" key={t.id} style={{"--team-card-index":index,"--team-card-main":main,"--team-card-secondary":secondary} as any} onClick={() => { setTeamDetailClosing(false); setSelectedTeam(t); }} aria-label={`View ${t.name} team details`}><div className="team-graphic-card-top" style={{background:`linear-gradient(118deg, ${main} 0%, ${secondary} 100%)`}}><div className="team-graphic-card-shade"/><span className="team-graphic-card-index">{String(index+1).padStart(2,"0")} / {String(teamRows.length).padStart(2,"0")}</span><span className="team-graphic-card-orbit" aria-hidden="true"/><span className="team-graphic-card-accent" aria-hidden="true"/><span className="team-race-weekend-label">CONSTRUCTOR <i/> CHAMPIONSHIP</span><span className="team-start-lights" aria-hidden="true"><i/><i/><i/><i/><i/></span><span className="team-livery-stripe" aria-hidden="true"/><h3>{t.name}</h3>{logo?<img className="team-graphic-card-logo" src={logo} alt={t.name+" logo"} loading="lazy" referrerPolicy="no-referrer"/>:<div className="team-graphic-card-logo team-graphic-card-logo-fallback"><CarFront size={42}/></div>}</div><div className="team-graphic-card-base"><div className="team-pit-board-label">TEAM GARAGE <i/> OFFICIAL ENTRY</div><div className="team-graphic-card-identity"><span className="team-graphic-card-color-mark" aria-hidden="true"/><span className="team-graphic-card-meta"><span className="team-graphic-card-division">{labelDivision(t.division_key)}</span><span>{nation} · {hometown}</span></span></div><div className="team-graphic-card-drivers">{t.drivers.length?t.drivers.map((d: Row)=><span key={d.id}>{d.character_name}</span>):<span>No registered drivers</span>}</div><div className="team-graphic-card-stats"><span><small>POINTS</small><strong>{Number(t.points||0).toLocaleString("id-ID")}</strong></span><span><small>WINS</small><strong>{Number(t.wins||0)}</strong></span></div></div></button>})}</div>{selectedTeam&&<div className={`driver-card-detail-backdrop team-detail-motion${teamDetailClosing?" is-closing":""}`} role="presentation" onClick={closeSelectedTeam}><section className="driver-card-detail team-detail-motion-panel" role="dialog" aria-modal="true" aria-labelledby="team-detail-title" onClick={e=>e.stopPropagation()}><button type="button" className="driver-card-detail-close" onClick={closeSelectedTeam} aria-label="Close team details">×</button><div className="driver-card-detail-banner" style={{background:`linear-gradient(118deg, ${selectedTeam.profile?.main_color||selectedTeam.main_color||"#7A263A"}, ${selectedTeam.profile?.secondary_color||selectedTeam.secondary_color||"#C6A33A"})`}}>{selectedTeam.profile?.logo_url&&<img src={selectedTeam.profile.logo_url} alt={selectedTeam.name+" logo"}/>}<div><span>OFFICIAL TEAM PROFILE</span><h2 id="team-detail-title">{selectedTeam.name}</h2><p>{labelDivision(selectedTeam.division_key)} · {selectedTeam.profile?.country_of_origin||"Nation not set"}</p></div></div><div className="driver-card-detail-body"><div className="driver-card-detail-stats">{[["POINTS",selectedTeam.points],["WINS",selectedTeam.wins],["POLES",selectedTeam.poles],["PODIUMS",selectedTeam.podiums],["FASTEST LAPS",selectedTeam.fastestLaps],["COMPLETED RACES",selectedTeam.finishes],["DNF",selectedTeam.dnf]].map(([label,value])=><div key={String(label)}><span>{label}</span><strong>{Number(value||0).toLocaleString("id-ID")}</strong></div>)}</div><p className="driver-card-detail-scope">{selectedTeam.profile?.base_location||"Base not set"} · Founded {selectedTeam.profile?.founded_year||"—"}</p><div className="team-detail-roster"><h3>DRIVER LINE-UP</h3>{selectedTeam.drivers?.length?selectedTeam.drivers.map((d:Row)=><div key={d.id}><span>{d.character_name}</span><strong>{Number(d.points||0).toLocaleString("id-ID")} PTS</strong></div>):<p>No registered drivers</p>}</div><p className="driver-card-detail-empty">{selectedTeam.profile?.history||selectedTeam.profile?.description||"Team history has not been published."}</p></div></section></div>}</Card>}
       {resultsDetail&&<Card title="Race Results" eyebrow="OFFICIAL WINNERS & POLES"><Table headers={["Round","Winner","Pole","Published"]} rows={(data.raceResults||[]).filter((r: Row)=>scopedRoundIds.includes(r.round_id)).map((r: Row)=>{const rd=(data.rounds||[]).find((x: Row)=>x.id===r.round_id);return [rd?.title||"Round",memberOf(r.winner_member_id)?.character_name||"—",memberOf(r.pole_member_id)?.character_name||"—",dateLabel(r.published_at)]})}/></Card>}
@@ -559,7 +617,26 @@ function countryFlag(countryCode?: string | null) {
   return String.fromCodePoint(...countryCode.split("").map((letter) => 127397 + letter.charCodeAt(0)));
 }
 
-function periodRoundIds(periodId: string, data: Row) {
-  const map = data.periodMappings || [];
-  return map.filter((x: Row) => x.period_id === periodId).map((x: Row) => x.round_id);
+
+function ScheduleCircuitModal({selected,divisions,onClose}:{selected:{round:Row;circuit:Row|null};divisions:Row[];onClose:()=>void}) {
+  const {round,circuit}=selected;
+  const division=divisions.find((item:Row)=>item.id===round.season_division_id);
+  return <div className="circuit-modal-backdrop circuit-reveal-backdrop" role="presentation" onClick={onClose}>
+    <section className="circuit-modal circuit-reveal-dialog" role="dialog" aria-modal="true" aria-labelledby="schedule-circuit-title" onClick={event=>event.stopPropagation()}>
+      <div className="circuit-modal-head"><div><span className="section-eyebrow">{circuit?countryFlag(circuit.country_code)+" "+circuitCountryName(circuit.country_code)+" · CIRCUIT PROFILE":"RACE WEEKEND · CIRCUIT ASSIGNMENT PENDING"}</span><h2 id="schedule-circuit-title">{circuit?.name||round.circuit_name||round.title||"Circuit TBA"}</h2></div><button type="button" aria-label="Tutup preview race" onClick={onClose}><span aria-hidden="true">×</span></button></div>
+      <div className="schedule-circuit-meta">
+        <div><small>Round</small><strong>{round.title||"Round "+String(round.round_number).padStart(2,"0")}</strong></div>
+        <div><small>Tanggal</small><strong>{formatRaceDate(round.race_starts_at)}</strong></div>
+        <div><small>Jam start</small><strong>{formatRaceTime(round.race_starts_at)}</strong></div>
+        <div><small>Divisi</small><strong>{labelDivision(division?.division_key)}</strong></div>
+        <div><small>Durasi</small><strong>{Number(round.race_duration_minutes||90)} menit</strong></div>
+        <div><small>Status</small><strong>{String(round.status||"scheduled").replaceAll("_"," ")}</strong></div>
+      </div>
+      {circuit?.image_url?<div className="circuit-reveal-hero"><img className="circuit-layout-image" src={circuit.image_url} alt={`Layout ${circuit.name}`} loading="eager"/><span className="circuit-reveal-scan" aria-hidden="true"/><span className="circuit-reveal-corner" aria-hidden="true"/></div>:<div className="schedule-circuit-unassigned">{circuit?"Layout circuit belum tersedia.":"Round ini belum memiliki circuit yang ditautkan ke Circuit Pool. Data jadwal lama tidak diubah otomatis agar tidak salah memasangkan layout."}</div>}
+      {circuit&&<><div className="circuit-detail-grid">
+        {[["Total lap",circuit.total_laps],["Lap record time",formatCircuitRecord(circuit.lap_record_ms)],["Record holder",circuit.lap_record_driver_name||"Belum diketahui"],["AVG track temp",circuit.avg_track_temp_c+" °C"],["DRS zone",circuit.drs_zones],["Straight",circuit.straights],["Low speed corner",circuit.low_speed_corners],["High speed corner",circuit.high_speed_corners],["Grip level",circuit.grip_level+"/100"]].map(([label,value])=><div key={String(label)}><small>{label}</small><strong>{value}</strong></div>)}
+      </div><p className="circuit-record-note">Detail circuit dan layout diambil langsung dari Circuit Pool. Jadwal race menggunakan waktu lokal GMT+7.</p></>}
+      <span className="circuit-reveal-scan" aria-hidden="true"/>
+    </section>
+  </div>;
 }

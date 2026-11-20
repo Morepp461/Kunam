@@ -1,0 +1,20 @@
+.schedule-circuit-periods{display:grid;gap:22px}
+.schedule-circuit-period{display:grid;gap:12px}
+.schedule-circuit-period-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-bottom:10px;border-bottom:1px solid rgba(214,184,95,.2)}
+.schedule-circuit-period-head>div{display:grid;gap:4px}
+.schedule-circuit-period-head strong{font-size:clamp(15px,1.4vw,19px);color:#f3eee3}
+.schedule-circuit-period-head small{font-size:11px;color:#b5aa91}
+.schedule-circuit-period-head>span{font-size:10px;letter-spacing:.12em;color:#d8bd7e;text-transform:uppercase}
+.schedule-circuit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.schedule-circuit-card{width:100%;min-width:0}
+.schedule-circuit-card .circuit-card-art{aspect-ratio:16/9}
+.schedule-circuit-card .circuit-card-caption{min-height:unset;gap:8px}
+.schedule-circuit-round{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.09);font-size:10px;color:#c9c0ae}
+.schedule-circuit-round strong{color:#e1c77f;font-size:10px;letter-spacing:.12em}
+.schedule-circuit-round span{text-align:right}
+.schedule-circuit-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.schedule-circuit-meta>div{display:grid;gap:5px;padding:11px;border:1px solid rgba(214,184,95,.2);border-radius:8px;background:rgba(214,184,95,.045)}
+.schedule-circuit-meta small{font-size:9px;letter-spacing:.1em;color:#b9aa86;text-transform:uppercase}
+.schedule-circuit-meta strong{font-size:12px;color:#f4efe4;overflow-wrap:anywhere}
+.schedule-circuit-unassigned{padding:14px;border:1px solid rgba(214,184,95,.22);border-radius:9px;background:rgba(214,184,95,.045);color:#c8bea9;font-size:12px;line-height:1.6}
+@media(max-width:620px){.schedule-circuit-grid{grid-template-columns:1fr}.schedule-circuit-period-head{align-items:flex-start;flex-direction:column}.schedule-circuit-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.schedule-circuit-card .circuit-card-caption{padding:12px}.schedule-circuit-card .circuit-card-name{font-size:16px}}
