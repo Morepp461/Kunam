@@ -26,7 +26,12 @@ type RaceSession = {
   completed_at?: string | null;
   checkpoint?: any;
   classification?: Array<{
-    position: number;
+    position: number | null;
+    originalPosition?: number;
+    status?: "classified" | "retired" | "disqualified" | "race_banned";
+    penaltyTimeMs?: number;
+    pendingGridPenaltyPositions?: number;
+    appliedPenaltyIds?: string[];
     driverId: string;
     teamId: string;
     lapCompleted: number;
@@ -134,6 +139,7 @@ export default function LiveRace() {
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replayLoading, setReplayLoading] = useState(false);
   const [controlState, setControlState] = useState<RaceControlState | null>(null);
+  const [resolvedClassification, setResolvedClassification] = useState<any[]>([]);
   const [controlFlag, setControlFlag] = useState<Exclude<RaceControlFlag, "green">>("yellow");
   const [controlDurationMs, setControlDurationMs] = useState("30000");
   const [controlReason, setControlReason] = useState("");
@@ -172,6 +178,7 @@ export default function LiveRace() {
       setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
       const control = await raceApi("control_state", { sessionId: id });
       setControlState(control.controlState as RaceControlState);
+      setResolvedClassification(Array.isArray(control.resolvedClassification) ? control.resolvedClassification : []);
       setError("");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Gagal memuat detail sesi.");
@@ -239,7 +246,7 @@ export default function LiveRace() {
   const entrants = Array.isArray(checkpoint?.entrants) ? checkpoint.entrants : [];
   const tyreStates = entrants.filter((entry: any) => entry.tyreState);
   const weather = checkpoint?.weatherState;
-  const classification = active?.classification ?? [];
+  const classification = resolvedClassification.length ? resolvedClassification : active?.classification ?? [];
   const recentEvents = useMemo(() => [...(detail?.events ?? [])].reverse().slice(-35).reverse(), [detail?.events]);
   const recentCommands = useMemo(() => [...(detail?.commands ?? [])].slice(0, 12), [detail?.commands]);
   const replayEvent = replayEvents[replayIndex] ?? null;
@@ -517,10 +524,10 @@ export default function LiveRace() {
                   lapCompleted: entry.lapCompleted, elapsedMs: entry.elapsedMs,
                   finished: entry.finished, retired: entry.retired, pitStopCount: entry.pitStopCount
                 }))).map((entry: any) => <tr key={entry.driverId}>
-                  <td><strong className="driver-position">{String(entry.position).padStart(2,"0")}</strong></td>
+                  <td><strong className="driver-position">{entry.position === null ? "DSQ" : String(entry.position).padStart(2,"0")}</strong></td>
                   <td>{entry.driverId}</td><td>{entry.teamId}</td><td>{entry.lapCompleted}</td>
                   <td className="lap-time">{formatTime(entry.elapsedMs)}</td><td>{entry.pitStopCount ?? 0}</td>
-                  <td><span className={"race-engine-status status-" + (entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}</span></td>
+                  <td><span className={"race-engine-status status-" + (entry.status === "disqualified" || entry.status === "race_banned" || entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.status === "disqualified" ? "DSQ" : entry.status === "race_banned" ? "RACE BAN" : entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}{entry.penaltyTimeMs > 0 ? ` +${formatTime(entry.penaltyTimeMs)}` : ""}{entry.pendingGridPenaltyPositions > 0 ? ` · GRID +${entry.pendingGridPenaltyPositions}` : ""}</span></td>
                 </tr>)}
               </tbody>
             </table>
