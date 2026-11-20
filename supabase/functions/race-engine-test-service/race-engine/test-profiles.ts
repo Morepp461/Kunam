@@ -1,15 +1,15 @@
-import { RACE_ATTRIBUTE_DEFINITIONS } from "./attributes.ts";
-import { createCalibratedPerformanceModel } from "./calibration.ts";
-import type { RacePhysicsCalibrationProfile } from "./calibration.ts";
-import type { CarSetupCalibration } from "./setup.ts";
-import { createIncidentModel } from "./incidents.ts";
-import type { IncidentCalibrationProfile, IncidentType, RaceControlProfile } from "./incidents.ts";
-import { createPitStrategyModel } from "./pit-strategy.ts";
-import { createTyreSimulationModel, TYRE_COMPOUNDS } from "./tyres.ts";
-import type { TyreDegradationProfile, TyreSegmentEnvironment } from "./tyres.ts";
-import { createWeatherSimulationModel } from "./weather.ts";
-import type { WeatherEvolutionProfile, WeatherInput } from "./weather.ts";
-import type { RaceStartSnapshot } from "./contracts.ts";
+import { RACE_ATTRIBUTE_DEFINITIONS } from "./attributes";
+import { createCalibratedPerformanceModel } from "./calibration";
+import type { RacePhysicsCalibrationProfile } from "./calibration";
+import type { CarSetupCalibration } from "./setup";
+import { createIncidentModel } from "./incidents";
+import type { IncidentCalibrationProfile, IncidentType, RaceControlProfile } from "./incidents";
+import { createPitStrategyModel } from "./pit-strategy";
+import { createTyreSimulationModel, TYRE_COMPOUNDS } from "./tyres";
+import type { TyreDegradationProfile, TyreSegmentEnvironment } from "./tyres";
+import { createWeatherSimulationModel } from "./weather";
+import type { WeatherEvolutionProfile, WeatherInput } from "./weather";
+import type { RaceStartSnapshot } from "./contracts";
 
 /**
  * Synthetic-only profiles for the Admin Race Engine Lab.
@@ -17,24 +17,39 @@ import type { RaceStartSnapshot } from "./contracts.ts";
  * constructed for non-production demonstration. They are NOT production calibration.
  */
 export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
-  const attributes: Record<string, Record<string, number>> = Object.fromEntries(
-    RACE_ATTRIBUTE_DEFINITIONS.map((definition) => [
-      definition.id,
-      { segment_pace_ms_per_point: -0.001 }
-    ])
-  );
-  attributes["driver.mistake_rate"] = { mistake_probability_per_point: 0.0001 };
-  attributes["driver.aggression"] = {
-    overtake_advantage_per_point: 0.001,
-    defense_advantage_per_point: 0.001
+  // Synthetic-only sensitivity map. Coefficients are test fixtures, not production physics calibration.
+  const attributes: Record<string, Record<string, number>> = {
+    "driver.race_pace": { segment_pace_ms_per_point: -0.001 },
+    "driver.qualifying_pace": { segment_pace_ms_per_point: -0.001 },
+    "driver.experience": { consistency_variance_ms_per_point: -0.02 },
+    "driver.aggression": {
+      overtake_advantage_per_point: 0.001,
+      defense_advantage_per_point: 0.001
+    },
+    "driver.defensive_strength": { defense_advantage_per_point: -0.002 },
+    "driver.overtake_skill": { overtake_advantage_per_point: 0.002 },
+    "driver.mistake_rate": { mistake_probability_per_point: 0.0001 },
+    "driver.tyre_management": { tyre_degradation_per_point: -0.01 },
+    "car_team.race_pace": { segment_pace_ms_per_point: -0.001 },
+    "car_team.qualifying_pace": { segment_pace_ms_per_point: -0.001 },
+    "car_team.engine_power": { high_speed_pace_ms_per_point: -0.002 },
+    "car_team.aero_power": { high_speed_pace_ms_per_point: -0.002 },
+    "car_team.low_speed_corners": { low_speed_pace_ms_per_point: -0.002 },
+    "car_team.high_speed_corners": { high_speed_pace_ms_per_point: -0.002 },
+    "car_team.traction": { traction_pace_ms_per_point: -0.002 },
+    "car_team.mechanical_grip": { wet_grip_per_point: -0.001 },
+    "car_team.team_tyre_management": { tyre_degradation_per_point: -0.005 },
+    "car_team.strategy_quality": { strategy_quality_per_point: -0.03 },
+    "car_team.team_morale": { morale_consistency_per_point: -0.01 },
+    "car_team.reliability": { mechanical_failure_probability_per_point: -0.00002 },
+    "car_team.car_tyre_wear": { tyre_degradation_per_point: 0.001 },
+    "car_team.pit_stop_efficiency": { pit_stop_time_ms_per_point: -25 },
+    "car_team.drs_efficiency": { drs_pace_ms_per_point: -0.002 },
+    "car_team.ers_efficiency": { ers_efficiency_per_point: -0.001 }
   };
-  attributes["driver.overtake_skill"] = { overtake_advantage_per_point: 0.002 };
-  attributes["driver.defensive_strength"] = { defense_advantage_per_point: 0.002 };
-  attributes["car_team.ers_efficiency"] = { ers_efficiency_per_point: -0.001 };
-  attributes["car_team.car_tyre_wear"] = { tyre_degradation_per_point: 0.001 };
-  attributes["car_team.mechanical_grip"] = { wet_grip_per_point: -0.001 };
-  attributes["car_team.strategy_quality"] = { strategy_quality_per_point: -0.03 };
-  attributes["car_team.pit_stop_efficiency"] = { pit_stop_time_ms_per_point: -25 };
+  if (Object.keys(attributes).length !== RACE_ATTRIBUTE_DEFINITIONS.length) {
+    throw new Error("Synthetic calibration must define an explicit influence map for all 24 attributes");
+  }
   const carSetupCalibration: CarSetupCalibration = {
     schemaVersion: 1,
     ranges: {
