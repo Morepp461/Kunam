@@ -61,6 +61,7 @@ export interface SegmentPerformanceModel {
   readonly id: string;
   readonly version: string;
   readonly snapshot: JsonValue;
+  readonly battleDetectionGapMs?: number;
   calculateAdjustmentMs(context: SegmentPerformanceContext): number;
 }
 
@@ -754,7 +755,7 @@ export class RaceSimulation {
       const attackingGapMs = ahead ? state.elapsedMs - ahead.elapsedMs : undefined;
       const defendingGapMs = behind ? behind.elapsedMs - state.elapsedMs : undefined;
       const battleContext = {
-        ...(attackingGapMs !== undefined && attackingGapMs <= (this.performanceModel.snapshot as { battleDetectionGapMs?: number }).battleDetectionGapMs! && segment.overtakingOpportunity
+        ...(attackingGapMs !== undefined && attackingGapMs <= this.performanceModel.battleDetectionGapMs ?? 0 && segment.overtakingOpportunity
           ? { attackingGapMs } : {}),
         ...(defendingGapMs !== undefined && defendingGapMs <= (this.performanceModel.snapshot as { battleDetectionGapMs?: number }).battleDetectionGapMs! && segment.defendingOpportunity
           ? { defendingGapMs } : {})
