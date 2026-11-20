@@ -82,9 +82,9 @@ describe("Race replay and archive retention policy", () => {
   });
 
   it("rejects invalid timestamps and off-season dates before race completion", () => {
-    expect(() => resolveRaceRetention(input({ now: "invalid" })).toThrow(/timestamps must be valid/i);
+    expect(() => resolveRaceRetention(input({ now: "invalid" }))).toThrow(/timestamps must be valid/i);
     expect(() => resolveRaceRetention(input({
       offSeasonEndsAt: "2026-11-19T00:00:00.000Z"
-    })).toThrow(/cannot precede race completion/i);
+    }))).toThrow(/cannot precede race completion/i);
   });
 });
