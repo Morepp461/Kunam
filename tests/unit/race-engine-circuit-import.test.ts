@@ -87,6 +87,19 @@ describe("Circuit GeoJSON import drafts", () => {
     }), metadata)).rejects.toThrow("exactly one LineString");
   });
 
+  it("rejects credential-bearing source URLs and oversized centerlines", async () => {
+    await expect(importCircuitGeoJsonDraft(closedTrack, {
+      ...metadata,
+      sourceUrl: "https://data.example.test/track.geojson?api_key=private"
+    })).rejects.toThrow("private access tokens");
+
+    const oversized = JSON.stringify({
+      type: "LineString",
+      coordinates: Array.from({ length: 50_001 }, (_, index) => [103.8 + index * 0.000001, 1.3 + (index % 2) * 0.000001])
+    });
+    await expect(importCircuitGeoJsonDraft(oversized, metadata)).rejects.toThrow("50,000 coordinates");
+  });
+
   it("rejects malformed metadata, JSON, and out-of-range coordinates", async () => {
     await expect(importCircuitGeoJsonDraft(closedTrack, { ...metadata, sourceUrl: "http://data.example.test/track.geojson" }))
       .rejects.toThrow("HTTPS");
