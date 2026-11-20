@@ -525,6 +525,20 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "advance") {
+      const { data: controlRows, error: controlError } = await service
+        .from("race_engine_test_control_events")
+        .select("payload")
+        .eq("session_id", sessionId)
+        .order("sequence", { ascending: true });
+      if (controlError) throw controlError;
+      const controlEvents = (controlRows ?? []).map((row) => row.payload as RaceControlAuditEvent);
+      const lastSuspension = [...controlEvents].reverse().find((event) =>
+        event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
+      );
+      if (lastSuspension?.action === "race_suspended") {
+        return json({ error: "Race ditangguhkan oleh red flag. FIA/Admin harus mengesahkan restart terlebih dahulu.", suspended: true }, 409, origin);
+      }
+
       const workerId = crypto.randomUUID();
       const { data: claimed, error: claimError } = await service.rpc("race_engine_claim_test_session", {
         p_session_id: sessionId,
@@ -536,6 +550,21 @@ Deno.serve(async (req: Request) => {
 
       const checkpoint = claimed.checkpoint as RaceSimulationCheckpoint;
       const simulation = restoreSimulation(checkpoint);
+      const latestFlag = [...controlEvents].reverse().find((event) => event.flag !== undefined);
+      simulation.clearExternalRaceControlFlags();
+      if (
+        latestFlag?.flag &&
+        latestFlag.flag !== "green" &&
+        latestFlag.flag !== "red_flag" &&
+        Number.isFinite(latestFlag.flagExpiresAtSimulationTimeMs) &&
+        Number(latestFlag.flagExpiresAtSimulationTimeMs) > simulation.simulationClockMs
+      ) {
+        simulation.applyExternalRaceControlFlag(
+          latestFlag.flag as Exclude<RaceControlFlag, "green" | "red_flag">,
+          latestFlag.id,
+          Number(latestFlag.flagExpiresAtSimulationTimeMs)
+        );
+      }
       const expectedTick = Number(claimed.tick);
       const steps = Number(claimed.speed_multiplier ?? 1);
       const previousEventCount = simulation.events.length;
