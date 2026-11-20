@@ -54,7 +54,7 @@ function subcategory(group:string,item:NavItem){
   if(["/admin-workflow","/admin"].includes(item.to))return "Admin Workspace";
   if(["/admin/economy-engine","/admin/adjustments","/admin/data-adjustments","/admin/quest-engine","/admin/pricing","/admin/prizepool","/admin/license-engine"].includes(item.to))return "Economy & Licensing";
   if(["/admin/brand-ecosystem","/admin/sponsorship"].includes(item.to))return "Brand & Sponsorship";
-  if(item.to==="/admin/developer-api")return "Developer Tools";
+  if(["/admin/developer-api","/admin/race-engine-lab"].includes(item.to))return "Developer Tools";
   return "Platform & Members";
  }
  return "Account";
