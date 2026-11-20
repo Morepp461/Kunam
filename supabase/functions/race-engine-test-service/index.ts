@@ -187,6 +187,28 @@ Deno.serve(async (req: Request) => {
       return json({ session, events: events ?? [], commands: commands ?? [] }, 200, origin);
     }
 
+    if (action === "replay") {
+      const offset = Math.max(0, Math.floor(Number(body.offset ?? 0)));
+      const limit = Math.min(500, Math.max(1, Math.floor(Number(body.limit ?? 250))));
+      if (!Number.isSafeInteger(offset)) throw new Error("Replay offset tidak valid.");
+      const { data: session, error: sessionError } = await service
+        .from("race_engine_test_sessions")
+        .select("id")
+        .eq("id", sessionId)
+        .eq("created_by", user.id)
+        .maybeSingle();
+      if (sessionError) throw sessionError;
+      if (!session) return json({ error: "Sesi tidak ditemukan." }, 404, origin);
+      const { data: events, error: replayError } = await service
+        .from("race_engine_test_events")
+        .select("sequence,event_type,driver_id,lap_number,simulation_time_ms,payload")
+        .eq("session_id", sessionId)
+        .order("sequence", { ascending: true })
+        .range(offset, offset + limit - 1);
+      if (replayError) throw replayError;
+      return json({ events: events ?? [], offset, limit }, 200, origin);
+    }
+
     if (action === "set_speed") {
       const speedMultiplier = Number(body.speedMultiplier);
       if (![1, 5, 10, 15].includes(speedMultiplier)) throw new Error("Kecepatan hanya mendukung 1x, 5x, 10x, atau 15x.");
