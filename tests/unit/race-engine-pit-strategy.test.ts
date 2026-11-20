@@ -34,7 +34,7 @@ describe("Pit strategy selector", () => {
   });
 
   it("does not select a tyre outside the supplied wetness compatibility range", () => {
-    const decision = choosePitDecision(createPitStrategyModel(profile), { ...input, trackWetness: 0.8 });
+    const decision = choosePitDecision(createPitStrategyModel(profile), { ...input, trackWetness: 0.8, candidates: input.candidates.map((candidate) => ({ ...candidate, compatibleWetnessMax: 0.3 })) });
     expect(decision.reason).toBe("no_valid_candidate");
     expect(decision.selectedCompound).toBeNull();
   });
