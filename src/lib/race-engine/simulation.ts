@@ -157,6 +157,7 @@ interface MutableEntrantState {
   pitStopCount: number;
   lastPitLap: number | null;
   retired: boolean;
+  startingGridPosition: number;
 }
 
 export interface RaceSimulationCheckpoint {
