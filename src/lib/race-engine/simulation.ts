@@ -631,7 +631,7 @@ export class RaceSimulation {
     if (checkpoint.activeRaceControlFlags) {
       for (const active of checkpoint.activeRaceControlFlags) {
         if (!active.incidentId.trim() || !Number.isFinite(active.expiresAtSimulationTimeMs) ||
-            active.expiresAtSimulationTimeMs < simulation.simulationClockMsValue || active.flag === "green") {
+            active.expiresAtSimulationTimeMs < simulation.simulationClockMsValue) {
           throw new Error("Checkpoint active race-control flag is invalid");
         }
       }
