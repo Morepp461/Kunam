@@ -694,7 +694,7 @@ export default function LiveRace() {
             <div className="live-race-subheading"><h3><MapPin size={15}/> Circuit position map</h3><span>APPROX. SEGMENT POSITION</span></div>
             {detail?.projection?.circuitLayout?.length ? <svg viewBox="0 0 1000 1000" role="img" aria-label="Approximate driver positions on the circuit layout" style={{ width: "100%", maxHeight: 340 }}>
               <polyline points={detail.projection.circuitLayout.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" ")} fill="none" stroke="currentColor" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" opacity="0.45"/>
-              {detail.projection.timingRows.map((row, index, rows) => {
+              {detail.projection.timingRows.map((row, _index, rows) => {
                 const peers=rows.filter((item)=>Math.hypot(item.trackPosition.x-row.trackPosition.x,item.trackPosition.y-row.trackPosition.y)<0.012);
                 const slot=peers.findIndex((item)=>item.driverId===row.driverId);
                 const angle=(Math.PI*2*slot)/Math.max(1,peers.length);
