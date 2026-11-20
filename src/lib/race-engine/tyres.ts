@@ -1,3 +1,5 @@
+import type { JsonValue } from "./contracts";
+
 export const TYRE_MODEL_SCHEMA_VERSION = 1;
 
 export const TYRE_COMPOUNDS = [
@@ -292,4 +294,120 @@ export function replaceTyreSet(
   profile: TyreDegradationProfile
 ): TyreState {
   return createInitialTyreState(compound, trackWetness, surfaceTempC, carcassTempC, profile);
+}
+
+export interface TyreSegmentEnvironment {
+  readonly surfaceTempC: number;
+  readonly carcassTempC: number;
+  readonly trackWetness: number;
+  readonly surfaceAbrasion: number;
+  readonly loadFactor: number;
+}
+
+export interface TyreSimulationModel {
+  readonly id: string;
+  readonly version: string;
+  readonly snapshot: JsonValue;
+  readonly profile: TyreDegradationProfile;
+  readonly startingCompounds: Readonly<Record<string, TyreCompound>>;
+  /** Keys may be segment IDs or lapNumber:segmentId for changing conditions. */
+  readonly environmentByLapSegment: Readonly<Record<string, TyreSegmentEnvironment>>;
+}
+
+function assertTyreEnvironment(
+  environment: TyreSegmentEnvironment,
+  label: string
+): void {
+  if (!isFiniteNumber(environment.surfaceTempC) || !isFiniteNumber(environment.carcassTempC)) {
+    throw new RangeError(`${label} temperatures must be finite`);
+  }
+  for (const [key, value] of [
+    ["trackWetness", environment.trackWetness],
+    ["surfaceAbrasion", environment.surfaceAbrasion],
+    ["loadFactor", environment.loadFactor]
+  ] as const) {
+    if (!isFiniteNumber(value) || value < 0 || value > 1) {
+      throw new RangeError(`${label} ${key} must be between 0 and 1`);
+    }
+  }
+}
+
+function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.values(value as Record<string, unknown>).forEach((child) => deepFreeze(child));
+    Object.freeze(value);
+  }
+  return value;
+}
+
+export function createTyreSimulationModel(
+  profile: TyreDegradationProfile,
+  startingCompounds: Readonly<Record<string, TyreCompound>>,
+  environmentByLapSegment: Readonly<Record<string, TyreSegmentEnvironment>>
+): TyreSimulationModel {
+  assertTyreProfile(profile);
+  const driverIds = Object.keys(startingCompounds);
+  if (driverIds.length === 0 || driverIds.some((id) => !id.trim())) {
+    throw new Error("Tyre simulation model requires starting compounds for named drivers");
+  }
+  for (const [driverId, compound] of Object.entries(startingCompounds)) {
+    if (!(TYRE_COMPOUNDS as readonly string[]).includes(compound)) {
+      throw new Error(`Unsupported starting tyre compound for ${driverId}`);
+    }
+  }
+  const environmentKeys = Object.keys(environmentByLapSegment);
+  if (environmentKeys.length === 0 || environmentKeys.some((key) => !key.trim())) {
+    throw new Error("Tyre simulation model requires segment environment inputs");
+  }
+  for (const [key, environment] of Object.entries(environmentByLapSegment)) {
+    assertTyreEnvironment(environment, `environmentByLapSegment.${key}`);
+  }
+
+  const snapshot = deepFreeze(JSON.parse(JSON.stringify({
+    profile,
+    startingCompounds,
+    environmentByLapSegment
+  })) as JsonValue);
+  const frozenProfile = deepFreeze(JSON.parse(JSON.stringify(profile)) as TyreDegradationProfile);
+  const frozenStartingCompounds = deepFreeze({ ...startingCompounds });
+  const frozenEnvironment = deepFreeze(JSON.parse(JSON.stringify(environmentByLapSegment)) as Record<string, TyreSegmentEnvironment>);
+
+  return Object.freeze({
+    id: `tyre.${profile.id}`,
+    version: profile.version,
+    snapshot,
+    profile: frozenProfile,
+    startingCompounds: frozenStartingCompounds,
+    environmentByLapSegment: frozenEnvironment
+  });
+}
+
+export function getTyreSegmentEnvironment(
+  model: TyreSimulationModel,
+  lapNumber: number,
+  segmentId: string
+): TyreSegmentEnvironment {
+  const environment =
+    model.environmentByLapSegment[`${lapNumber}:${segmentId}`] ??
+    model.environmentByLapSegment[segmentId];
+  if (!environment) {
+    throw new Error(`Missing tyre environment for lap ${lapNumber}, segment ${segmentId}`);
+  }
+  return environment;
+}
+
+export function createTyreSegmentInput(
+  environment: TyreSegmentEnvironment,
+  segmentDistanceMeters: number,
+  driverTyreManagement: number,
+  teamTyreManagement: number,
+  carTyreWear: number
+): TyreSegmentInput {
+  return {
+    segmentDistanceMeters,
+    ...environment,
+    driverTyreManagement,
+    teamTyreManagement,
+    carTyreWear
+  };
 }
