@@ -664,6 +664,36 @@ export class RaceSimulation {
     return this.tickValue;
   }
 
+  get simulationClockMs(): number {
+    return this.simulationClockMsValue;
+  }
+
+  /** Adds a persisted FIA/Admin control flag to the deterministic simulation timeline. */
+  applyExternalRaceControlFlag(
+    flag: Exclude<RaceControlFlag, "green" | "red_flag">,
+    commandId: string,
+    expiresAtSimulationTimeMs: number
+  ): void {
+    if (!commandId.trim()) throw new Error("External race-control command ID is required");
+    if (!Number.isFinite(expiresAtSimulationTimeMs) || expiresAtSimulationTimeMs <= this.simulationClockMsValue) {
+      throw new RangeError("External race-control flag expiry must be after the current simulation clock");
+    }
+    const incidentId = `manual:${commandId}`;
+    this.clearExternalRaceControlFlags();
+    this.activeRaceControlFlagsValue.push({
+      flag,
+      incidentId,
+      expiresAtSimulationTimeMs
+    });
+  }
+
+  /** Removes only externally commanded flags; incident-generated flags remain intact. */
+  clearExternalRaceControlFlags(): void {
+    this.activeRaceControlFlagsValue = this.activeRaceControlFlagsValue.filter(
+      (flag) => !flag.incidentId.startsWith("manual:")
+    );
+  }
+
   get weatherState(): WeatherState | null {
     return this.weatherStateValue ? { ...this.weatherStateValue } : null;
   }
