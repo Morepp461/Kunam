@@ -77,6 +77,72 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+async function processBackgroundBatch() {
+  const { data: sessions, error: listError } = await service
+    .from("race_engine_test_sessions")
+    .select("id,created_by")
+    .in("status", ["queued", "running"])
+    .order("created_at", { ascending: true })
+    .limit(3);
+  if (listError) throw listError;
+
+  const processed: Array<Record<string, unknown>> = [];
+  for (const session of sessions ?? []) {
+    const workerId = crypto.randomUUID();
+    const { data: claim, error: claimError } = await service.rpc("race_engine_claim_test_session", {
+      p_session_id: session.id,
+      p_worker_id: workerId,
+      p_lease_seconds: 60
+    });
+    if (claimError) throw claimError;
+    if (!claim) {
+      processed.push({ sessionId: session.id, status: "busy" });
+      continue;
+    }
+
+    try {
+      const checkpoint = claim.checkpoint as RaceSimulationCheckpoint;
+      const simulation = restoreSimulation(checkpoint);
+      const previousEventCount = simulation.events.length;
+      const maxSteps = Math.max(1, Math.min(15, Number(claim.speed_multiplier ?? 1)));
+      for (let index = 0; index < maxSteps && simulation.status !== "completed"; index += 1) {
+        simulation.advanceOneSegment();
+      }
+
+      const nextCheckpoint = simulation.createCheckpoint();
+      const eventsAdded = simulation.events.slice(previousEventCount);
+      const { data: committed, error: commitError } = await service.rpc("race_engine_commit_test_step", {
+        p_session_id: session.id,
+        p_worker_id: workerId,
+        p_expected_tick: Number(claim.tick),
+        p_checkpoint: nextCheckpoint,
+        p_events: eventsAdded,
+        p_classification: simulation.status === "completed" ? simulation.classification : null,
+        p_status: simulation.status,
+        p_command_id: crypto.randomUUID(),
+        p_actor_id: session.created_by
+      });
+      if (commitError) throw commitError;
+      processed.push({
+        sessionId: session.id,
+        status: simulation.status,
+        tick: simulation.tick,
+        eventsAdded: eventsAdded.length,
+        committed
+      });
+    } catch (error) {
+      // The lease expires naturally. A later invocation resumes from the last committed checkpoint.
+      processed.push({
+        sessionId: session.id,
+        status: "retry_pending",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  }
+
+  return { processed, checkedAt: new Date().toISOString() };
+}
+
 Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
   if (req.method === "OPTIONS") {
@@ -87,9 +153,21 @@ Deno.serve(async (req: Request) => {
   if (origin && !ALLOWED_ORIGINS.has(origin)) return json({ error: "Origin tidak diizinkan" }, 403, origin);
 
   try {
-    const { user } = await requireProductionAdmin(req);
     const body = asRecord(await req.json());
     const action = body.action;
+
+    if (action === "background_tick") {
+      const token = req.headers.get("x-race-worker-token") ?? "";
+      if (token.length < 32) return json({ error: "Worker authentication failed." }, 401, origin);
+      const { data: authorized, error: authError } = await service.rpc("race_engine_validate_worker_token", {
+        p_token: token
+      });
+      if (authError) throw authError;
+      if (authorized !== true) return json({ error: "Worker authentication failed." }, 401, origin);
+      return json({ ok: true, ...(await processBackgroundBatch()) }, 200, origin);
+    }
+
+    const { user } = await requireProductionAdmin(req);
 
     if (action === "list") {
       const { data, error } = await service
