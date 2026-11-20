@@ -164,6 +164,13 @@ export function validateCircuitGeometryDefinition(
         errors.push(`Segment ${segment.id} ${key} must be between 0 and 1`);
       }
     }
+    for (const [key, value] of [
+      ["ersAvailable", segment.ersAvailable],
+      ["overtakingOpportunity", segment.overtakingOpportunity],
+      ["defendingOpportunity", segment.defendingOpportunity]
+    ] as const) {
+      if (value !== undefined && typeof value !== "boolean") errors.push(`Segment ${segment.id} ${key} must be boolean when supplied`);
+    }
     if (!["straight", "slow", "medium", "fast", "chicane"].includes(segment.cornerType)) {
       errors.push(`Segment ${segment.id} has an unsupported cornerType`);
     }
