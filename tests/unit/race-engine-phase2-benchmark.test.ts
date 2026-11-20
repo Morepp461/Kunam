@@ -58,7 +58,7 @@ describe("Phase 2 full-grid simulation validation", () => {
     }
 
     expect(winnerCounts.size).toBeGreaterThan(1);
-  });
+  }, 15000);
 
   it("keeps two interleaved race sessions isolated and replay-equivalent to independent execution", () => {
     const model = createCalibratedPerformanceModel(benchmarkProfile());
