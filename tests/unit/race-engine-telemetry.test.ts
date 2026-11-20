@@ -43,7 +43,7 @@ describe("Race telemetry contract", () => {
       ...sample(),
       driverId: " ",
       recordedAt: "not-a-date",
-      speedKph: 601,
+      speedKph: -1,
       throttlePercent: -1,
       tyre: { ...sample().tyre, wearPercent: 101 },
       ersDeploymentPercent: Number.NaN,
