@@ -186,3 +186,26 @@ body.light .market-license-filter{color:#494337}
 body.light .market-license-options>label{background:#f7f2e6;color:#494337;border-color:rgba(143,108,30,.3)}
 body.light .market-license-options>label.is-selected{background:linear-gradient(135deg,#f3e4b5,#e8d39a);color:#493713;border-color:#a78332}
 @media(max-width:620px){.market-license-options{gap:5px}.market-license-options>label{min-height:37px;padding:0 9px;font-size:11px}}
+
+
+/* CALERIS custom option sheet: replaces the operating-system grey select popup. */
+.caleris-select-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,3,5,.76);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:calerisSelectFade .14s ease-out}
+.caleris-select-sheet{display:flex;flex-direction:column;width:min(520px,100%);max-height:min(82svh,720px);overflow:hidden;border:1px solid rgba(224,75,94,.65);border-radius:18px;background:linear-gradient(145deg,rgba(91,20,34,.99),rgba(35,8,16,.99) 58%,rgba(17,7,12,.99));box-shadow:0 28px 90px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,210,216,.17),0 0 0 1px rgba(180,37,58,.12);color:#f8ecec}
+.caleris-select-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid rgba(255,190,198,.2);background:linear-gradient(110deg,rgba(173,36,58,.38),rgba(63,13,25,.22))}
+.caleris-select-heading strong{font:600 19px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff4f4}
+.caleris-select-heading small{display:block;margin-top:3px;color:rgba(255,225,228,.68);font-size:10px;letter-spacing:.12em}
+.caleris-select-heading button{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid rgba(255,205,211,.24);border-radius:50%;background:rgba(10,4,8,.32);color:#ffe4e7}
+.caleris-select-search{display:flex;align-items:center;gap:9px;margin:12px 14px 4px;padding:0 12px;border:1px solid rgba(255,190,198,.22);border-radius:9px;background:rgba(12,4,8,.48);color:#f2c4ca}
+.caleris-select-search input{width:100%;min-width:0;height:42px;border:0;outline:0;background:transparent;color:#fff1f2;font:inherit;font-size:13px}
+.caleris-select-search input::placeholder{color:rgba(255,224,228,.52)}
+.caleris-select-options{overflow:auto;overscroll-behavior:contain;padding:8px}
+.caleris-select-option{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:54px;padding:12px 14px;border:1px solid transparent;border-bottom-color:rgba(255,190,198,.12);border-radius:8px;background:transparent;color:#f7e9eb;text-align:left;font:500 14px Inter,Arial,sans-serif;transition:background .16s,border-color .16s,color .16s}
+.caleris-select-option:hover,.caleris-select-option:focus-visible{outline:0;border-color:rgba(255,149,164,.34);background:linear-gradient(100deg,rgba(175,37,60,.42),rgba(105,19,39,.24))}
+.caleris-select-option.is-selected{border-color:rgba(255,178,188,.42);background:linear-gradient(100deg,rgba(196,48,71,.48),rgba(108,20,39,.42));color:#fff}
+.caleris-select-option>svg{flex:none;color:#f2c86b}
+.caleris-select-option:disabled{opacity:.42;cursor:not-allowed}
+.caleris-select-group{padding:11px 14px 5px;color:#e8aab2;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.2em;text-transform:uppercase}
+.caleris-select-empty{padding:20px 14px;color:rgba(255,225,228,.66);font-size:12px;text-align:center}
+@keyframes calerisSelectFade{from{opacity:0}to{opacity:1}}
+@media(max-width:620px){.caleris-select-backdrop{align-items:flex-end;padding:0;background:rgba(1,2,4,.78)}.caleris-select-sheet{width:100%;max-height:min(78svh,720px);border-radius:22px 22px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -18px 65px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,210,216,.17)}.caleris-select-heading{padding:18px 20px}.caleris-select-option{min-height:58px;padding:14px 16px;font-size:15px}}
+@media(prefers-reduced-motion:reduce){.caleris-select-backdrop{animation:none}.caleris-select-option{transition:none}}
