@@ -159,12 +159,14 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   });
   const undo = () => {
     if (drawingMode === "track_limit") {
-      setTrackLimitBoundary((current) => current.slice(0, -1));
+      const start=boundaryStrokeStarts.current.pop();
+      setTrackLimitBoundary(current=>current.slice(0,start===undefined?Math.max(0,current.length-1):start));
       return;
     }
-    setPoints((current) => {
-      const open = current.length > 1 && current[0].x === current[current.length-1].x && current[0].y === current[current.length-1].y ? current.slice(0,-1) : current;
-      return open.slice(0,-1);
+    const start=centerlineStrokeStarts.current.pop();
+    setPoints(current=>{
+      const open=current.length>1&&current[0].x===current[current.length-1].x&&current[0].y===current[current.length-1].y?current.slice(0,-1):current;
+      return open.slice(0,start===undefined?Math.max(0,open.length-1):start);
     });
   };
   const clearActiveDrawing = () => drawingMode === "track_limit" ? setTrackLimitBoundary([]) : setPoints([]);
