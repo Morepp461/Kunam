@@ -288,6 +288,7 @@ export function createCalibratedPerformanceModel(
     version: profile.version,
     snapshot: snapshot as unknown as JsonValue,
     battleDetectionGapMs: snapshot.battleDetectionGapMs,
+    validateEntrant: (entrant: RaceEntrantSnapshot) => { evaluateAttributeInfluencesUnchecked(entrant, snapshot); },
     calculateAdjustmentMs: (context: SegmentPerformanceContext) =>
       calculateSegmentPaceAdjustmentUnchecked(context, snapshot),
     calculatePitStrategyAdjustments: (entrant: RaceEntrantSnapshot) => {
