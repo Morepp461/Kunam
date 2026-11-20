@@ -106,7 +106,6 @@ export interface RaceControlValidation {
 }
 
 const TIMED_PENALTIES = new Set<RacePenaltyType>(["time_5s", "time_10s", "time_penalty"]);
-const ADMIN_ONLY_ACTIONS = new Set<RaceControlAction>(["penalty_ratified", "penalty_reversed"]);
 
 function validTimestamp(value: string): boolean {
   return Number.isFinite(Date.parse(value));
@@ -161,7 +160,7 @@ function validateContext(context: RaceControlCommandContext): string[] {
 
 function createAuditEvent(
   context: RaceControlCommandContext,
-  input: Omit<RaceControlAuditEvent, keyof RaceControlCommandContext | "raceId" | "sequence" | "actorId" | "actorRole" | "occurredAt" | "simulationTimeMs" | "reason" | "evidence" | "id">
+  input: Omit<RaceControlAuditEvent, keyof RaceControlCommandContext | "raceId" | "sequence" | "actorId" | "actorRole" | "occurredAt" | "simulationTimeMs" | "reason" | "evidence" | "id" | "requiresAdminRatification">
     & { readonly id: string }
 ): RaceControlAuditEvent {
   return Object.freeze({
