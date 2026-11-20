@@ -149,6 +149,13 @@ async function processBackgroundBatch() {
       event.action === "race_suspended" || event.action === "restart_authorized" || event.action === "race_resumed"
     );
     if (lastSuspension?.action === "race_suspended") {
+      // Suspended sessions still occupy the active queue; rotate their scheduling timestamp to avoid starvation.
+      const { error: rotateError } = await service
+        .from("race_engine_test_sessions")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", session.id)
+        .in("status", ["queued", "running"]);
+      if (rotateError) throw rotateError;
       processed.push({ sessionId: session.id, status: "suspended_by_red_flag" });
       continue;
     }
