@@ -238,6 +238,7 @@ export function createCalibratedPerformanceModel(
     id: `calibration.${profile.id}`,
     version: profile.version,
     snapshot: snapshot as unknown as JsonValue,
+    battleDetectionGapMs: snapshot.battleDetectionGapMs,
     calculateAdjustmentMs: (context: SegmentPerformanceContext) =>
       calculateSegmentPaceAdjustmentUnchecked(context, snapshot)
   });
