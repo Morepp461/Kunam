@@ -44,6 +44,13 @@ type RaceSession = {
 };
 
 type RaceCommand = { id: string; command_type: string; result: Record<string, unknown>; created_at: string };
+type RaceTimingProjection = {
+  schemaVersion: number;
+  raceId: string;
+  tick: number;
+  simulationTimeMs: number;
+  timingRows: Array<{ driverId: string; segmentId: string | null; segmentIndex: number | null; segmentDistanceCompletedMeters: number }>;
+};
 
 type RaceEvent = {
   sequence: number;
@@ -126,7 +133,7 @@ async function raceApi(action: string, payload: Record<string, unknown> = {}) {
 export default function LiveRace() {
   const [sessions, setSessions] = useState<RaceSession[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [detail, setDetail] = useState<{ session: RaceSession; events: RaceEvent[]; commands: RaceCommand[] } | null>(null);
+  const [detail, setDetail] = useState<{ session: RaceSession; projection: RaceTimingProjection | null; events: RaceEvent[]; commands: RaceCommand[] } | null>(null);
   const [driverCount, setDriverCount] = useState(20);
   const [teamCount, setTeamCount] = useState(10);
   const [totalLaps, setTotalLaps] = useState(5);
@@ -188,7 +195,7 @@ export default function LiveRace() {
     if (!id) return;
     try {
       const result = await raceApi("detail", { sessionId: id });
-      setDetail({ session: result.session as RaceSession, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
+      setDetail({ session: result.session as RaceSession, projection: (result.projection ?? null) as RaceTimingProjection | null, events: (result.events ?? []) as RaceEvent[], commands: (result.commands ?? []) as RaceCommand[] });
       const control = await raceApi("control_state", { sessionId: id });
       setControlState(control.controlState as RaceControlState);
       setResolvedClassification(Array.isArray(control.resolvedClassification) ? control.resolvedClassification : []);
@@ -568,7 +575,7 @@ export default function LiveRace() {
           <div className="live-race-subheading"><h3><Trophy size={15}/> Classification</h3><span>{classification.length ? "FINAL RESULT" : "LIVE ORDER"}</span></div>
           <div className="live-race-table-wrap">
             <table className="live-race-timing-table">
-              <thead><tr><th>POS</th><th>DRIVER</th><th>TEAM</th><th>LAP</th><th>TIME</th><th>PITS</th><th>STATUS</th></tr></thead>
+              <thead><tr><th>POS</th><th>DRIVER</th><th>TEAM</th><th>LAP</th><th>SEGMENT</th><th>TIME</th><th>PITS</th><th>STATUS</th></tr></thead>
               <tbody>
                 {(classification.length ? classification : (checkpoint?.entrants ?? []).map((entry: any, index: number) => ({
                   position: index + 1, driverId: entry.driverId, teamId: entry.teamId,
@@ -577,6 +584,7 @@ export default function LiveRace() {
                 }))).map((entry: any) => <tr key={entry.driverId}>
                   <td><strong className="driver-position">{entry.position === null ? "DSQ" : String(entry.position).padStart(2,"0")}</strong></td>
                   <td>{entry.driverId}</td><td>{entry.teamId}</td><td>{entry.lapCompleted}</td>
+                  <td>{detail?.projection?.timingRows.find((row) => row.driverId === entry.driverId)?.segmentId ?? (entry.finished || entry.retired ? "—" : "—")}</td>
                   <td className="lap-time">{formatTime(entry.elapsedMs)}</td><td>{entry.pitStopCount ?? 0}</td>
                   <td><span className={"race-engine-status status-" + (entry.status === "disqualified" || entry.status === "race_banned" || entry.retired ? "failed" : entry.finished ? "completed" : "running")}>{entry.status === "disqualified" ? "DSQ" : entry.status === "race_banned" ? "RACE BAN" : entry.retired ? "RETIRED" : entry.finished ? "FINISHED" : "RUNNING"}{entry.penaltyTimeMs > 0 ? ` +${formatTime(entry.penaltyTimeMs)}` : ""}{entry.pendingGridPenaltyPositions > 0 ? ` · GRID +${entry.pendingGridPenaltyPositions}` : ""}</span></td>
                 </tr>)}
