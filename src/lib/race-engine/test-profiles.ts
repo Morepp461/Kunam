@@ -56,7 +56,7 @@ export function createRaceEngineTestModels(snapshot: RaceStartSnapshot) {
     schemaVersion: 2,
     attributeSchemaVersion: 1,
     id: "race-engine-lab-synthetic",
-    version: "1.0.0-test",
+    version: "1.1.0-test",
     baselineAttributeValue: 50,
     battleDetectionGapMs: 2500,
     attributes,
