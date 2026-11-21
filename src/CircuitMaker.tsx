@@ -53,6 +53,13 @@ const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
 }));
 const toPoints = (points: readonly { readonly x: number; readonly y: number }[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
 const numberValue = (value: string) => value.trim() === "" ? Number.NaN : Number(value);
+type CircuitTemplate = { id: string; label: string; points: Array<{x:number;y:number}> };
+const circuitTemplates: CircuitTemplate[] = [
+  { id: "club", label: "Club Circuit", points: [{x:.18,y:.72},{x:.16,y:.46},{x:.27,y:.24},{x:.48,y:.18},{x:.7,y:.25},{x:.82,y:.43},{x:.78,y:.68},{x:.58,y:.8},{x:.35,y:.8}] },
+  { id: "street", label: "Street Circuit", points: [{x:.12,y:.2},{x:.72,y:.18},{x:.83,y:.3},{x:.8,y:.68},{x:.68,y:.78},{x:.35,y:.76},{x:.2,y:.64},{x:.2,y:.4},{x:.12,y:.2}] },
+  { id: "grand-prix", label: "Grand Prix", points: [{x:.12,y:.72},{x:.2,y:.3},{x:.42,y:.18},{x:.58,y:.26},{x:.72,y:.16},{x:.86,y:.38},{x:.78,y:.62},{x:.62,y:.76},{x:.38,y:.72},{x:.24,y:.84}] }
+];
+
 const smoothPath = (input: readonly {x:number;y:number}[]) => {
   if (input.length < 2) return "";
   const closed = input.length > 2 && Math.hypot(input[0].x-input[input.length-1].x,input[0].y-input[input.length-1].y) < 0.000001;
@@ -97,6 +104,9 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const [drawingMode, setDrawingMode] = useState<"centerline" | "track_limit">("centerline");
   const [toolMode, setToolMode] = useState<"freehand" | "corners">("corners");
   const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceImageOpacity, setReferenceImageOpacity] = useState(0.55);
+  const [referenceImageName, setReferenceImageName] = useState("");
   const [segments, setSegments] = useState<SegmentForm[]>(() => value?.segments.map((segment) => ({
     ...segment,
     sectorNumber: segment.sectorNumber as 1|2|3,
@@ -199,6 +209,37 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     trackLimitBoundary
   }), [circuitId, name, countryCode, totalLaps, targetLapTime, points, inputSegments, specifications, kind, sourceProvenance, trackLimitBoundary, value?.revision, value?.sourceProvenance]);
 
+  const loadReferenceImage = (file: File | undefined) => {
+    if (!file) return;
+    if (!["image/png","image/jpeg","image/webp"].includes(file.type) || file.size > 8 * 1024 * 1024) {
+      window.alert("Gunakan PNG, JPG, atau WEBP maksimal 8 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setReferenceImage(reader.result);
+        setReferenceImageName(file.name);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+  const applyTemplate = (template: CircuitTemplate) => {
+    setKind("fictional");
+    setPoints(template.points.map((point,index)=>({id:template.id+"-"+index,x:point.x,y:point.y})));
+    setDrawingMode("centerline");
+    setToolMode("corners");
+    centerlineStrokeStarts.current=[];
+    setSelectedPointIndex(null);
+  };
+  const analysis = useMemo(() => {
+    const distances = segments.map(segment=>numberValue(segment.distanceMeters));
+    const widths = segments.map(segment=>numberValue(segment.trackWidthMeters));
+    const missingDistance = distances.filter(value=>!Number.isFinite(value)||value<=0).length;
+    const missingWidth = widths.filter(value=>!Number.isFinite(value)||value<=0).length;
+    const closed = points.length>2 && Math.hypot(points[0].x-points[points.length-1].x,points[0].y-points[points.length-1].y)<0.000001;
+    return { missingDistance, missingWidth, closed, drsCount:specifications.drsZones.length, sectorCount:new Set(segments.map(segment=>segment.sectorNumber)).size };
+  },[segments,points,specifications.drsZones.length]);
   const loadImportedCenterline = () => {
     if (!importedGeoJsonDraft) return;
     setPoints(circuitLayoutFromGeoJsonDraft(importedGeoJsonDraft));
@@ -269,6 +310,11 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
     <div className="circuit-maker-layout">
       <div className="circuit-maker-canvas-panel">
         <div className="circuit-maker-canvas-head"><strong>TRACK DESIGN CANVAS</strong><span>{points.length} control points · {trackLimitBoundary.length} boundary points</span></div>
+        <div className="circuit-maker-reference-tools">
+          <label className="circuit-maker-upload-reference">ADD MAP / SATELLITE IMAGE<input type="file" accept="image/png,image/jpeg,image/webp" onChange={event=>loadReferenceImage(event.target.files?.[0])}/></label>
+          {referenceImage && <div className="circuit-maker-reference-opacity"><span>{referenceImageName}</span><input aria-label="Reference image opacity" type="range" min="0.1" max="1" step="0.05" value={referenceImageOpacity} onChange={event=>setReferenceImageOpacity(Number(event.target.value))}/><button type="button" onClick={()=>{setReferenceImage(null);setReferenceImageName("")}}>Remove image</button></div>}
+          <div className="circuit-maker-templates"><span>STARTER LAYOUTS</span>{circuitTemplates.map(template=><button type="button" key={template.id} onClick={()=>applyTemplate(template)}>{template.label}</button>)}</div>
+        </div>
         <div className="circuit-maker-workspace">
           <nav className="circuit-maker-tool-rail" aria-label="Circuit drawing tools">
             <button type="button" className={toolMode==="corners"&&drawingMode==="centerline"?"active":""} onClick={()=>{setDrawingMode("centerline");setToolMode("corners")}} title="Place and move corner points">POINTS</button>
@@ -278,6 +324,7 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker design canvas. Place points or draw a smooth track path." onPointerDown={startStroke} onPointerMove={moveStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
           <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
+          {referenceImage && <image href={referenceImage} x="0" y="0" width="500" height="320" preserveAspectRatio="xMidYMid meet" opacity={referenceImageOpacity} pointerEvents="none"/>}
           {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
           {trackLimitBoundary.length > 0 && trackLimitBoundary.length < 3 && <polyline points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary-line"/>}
           {points.length > 1 && <path d={smoothPath(points)} className="circuit-maker-line"/>}
@@ -291,7 +338,19 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
           <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
         </div>
-        <small className="circuit-maker-canvas-hint">{drawingMode==="track_limit"?"Draw the measured track-limit polygon.":"POINTS: tap to place corners, drag a point to refine the line. DRAW: press and drag for a freehand line. The spline keeps corners smooth."}</small>
+        <small className="circuit-maker-canvas-hint">{drawingMode==="track_limit"?"Draw the measured track-limit polygon.":"POINTS: tap to place corners, drag a point to refine the line. DRAW: press and drag for a freehand line. The spline keeps corners smooth."} Reference image is a tracing aid only; it is not stored as verified circuit source geometry.</small>
+        <div className="circuit-maker-analysis">
+          <div className="circuit-maker-section-title"><strong>LAYOUT ANALYSIS</strong><span>Live draft diagnostics</span></div>
+          <div className="circuit-maker-analysis-grid">
+            <span>Control points<b>{points.length}</b></span>
+            <span>Path status<b>{analysis.closed?"Closed loop":"Open path"}</b></span>
+            <span>Segments<b>{segments.length}</b></span>
+            <span>DRS zones<b>{analysis.drsCount}</b></span>
+            <span>Missing distance<b>{analysis.missingDistance}</b></span>
+            <span>Missing width<b>{analysis.missingWidth}</b></span>
+          </div>
+          <p>{built.errors.length ? built.errors.length+" geometry validation issue(s) need attention." : "Current geometry builder reports no blocking validation errors."}</p>
+        </div>
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>

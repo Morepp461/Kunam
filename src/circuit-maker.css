@@ -73,3 +73,26 @@
  .circuit-maker-tool-rail button{font-size:7px}
  .circuit-maker-workspace svg{min-height:240px}
 }
+
+/* Reference tracing and geometry diagnostics */
+.circuit-maker-reference-tools{display:flex;flex-direction:column;gap:8px;margin:0 0 10px;padding:9px;border:1px solid rgba(255,255,255,.09);border-radius:7px;background:rgba(255,255,255,.025)}
+.circuit-maker-upload-reference{display:flex;align-items:center;justify-content:center;min-height:34px;padding:7px 10px;border:1px dashed rgba(215,184,93,.48);border-radius:5px;color:#e7d29b;font-size:9px;font-weight:800;letter-spacing:.07em;cursor:pointer}
+.circuit-maker-upload-reference input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.circuit-maker-reference-opacity{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,.65fr) auto;align-items:center;gap:8px;color:#bfc0c1;font-size:9px}
+.circuit-maker-reference-opacity span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.circuit-maker-reference-opacity button,.circuit-maker-templates button{padding:6px 8px;border:1px solid rgba(215,184,93,.25);border-radius:5px;background:rgba(215,184,93,.07);color:#e7d29b;font-size:8px}
+.circuit-maker-templates{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.circuit-maker-templates>span{margin-right:4px;color:#9da1a7;font-size:8px;font-weight:800;letter-spacing:.08em}
+.circuit-maker-analysis{margin-top:12px;padding:10px;border:1px solid rgba(255,255,255,.1);border-radius:7px;background:rgba(255,255,255,.025)}
+.circuit-maker-analysis-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.circuit-maker-analysis-grid span{padding:7px;border-radius:5px;background:rgba(255,255,255,.035);color:#aeb1b4;font-size:8px}
+.circuit-maker-analysis-grid b{display:block;margin-top:4px;color:#f1ead7;font-size:11px}
+.circuit-maker-analysis p{margin:8px 0 0;color:#c5c1b5;font-size:9px;line-height:1.5}
+.circuit-maker-workspace svg image{pointer-events:none}
+@media(max-width:480px){
+ .circuit-maker-reference-opacity{grid-template-columns:minmax(0,1fr) 90px}
+ .circuit-maker-reference-opacity button{grid-column:1/-1}
+ .circuit-maker-analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.circuit-maker.is-fullscreen .circuit-maker-workspace{min-height:0}
+.circuit-maker.is-fullscreen .circuit-maker-reference-tools{flex-shrink:0}
