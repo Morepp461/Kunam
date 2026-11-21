@@ -287,7 +287,6 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           </svg>
         </div>
         <div className="circuit-maker-canvas-actions">
-        <div className="circuit-maker-canvas-actions">
           <button type="button" onClick={undo} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Undo</button>
           <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
           <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
