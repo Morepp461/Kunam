@@ -103,7 +103,10 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const [trackLimitBoundary, setTrackLimitBoundary] = useState<TrackLimitPoint[]>(() => value?.trackLimitGeometry?.boundary.map((point) => ({...point})) ?? []);
   const [drawingMode, setDrawingMode] = useState<"centerline" | "track_limit">("centerline");
   const [toolMode, setToolMode] = useState<"freehand" | "corners">("corners");
-  const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);\n  const [referenceImage, setReferenceImage] = useState<string | null>(null);\n  const [referenceImageOpacity, setReferenceImageOpacity] = useState(0.55);\n  const [referenceImageName, setReferenceImageName] = useState("");
+  const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
+  const [referenceImage, setReferenceImage] = useState<string | null>(null);
+  const [referenceImageOpacity, setReferenceImageOpacity] = useState(0.55);
+  const [referenceImageName, setReferenceImageName] = useState("");
   const [segments, setSegments] = useState<SegmentForm[]>(() => value?.segments.map((segment) => ({
     ...segment,
     sectorNumber: segment.sectorNumber as 1|2|3,
@@ -320,7 +323,8 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
           </nav>
           <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker design canvas. Place points or draw a smooth track path." onPointerDown={startStroke} onPointerMove={moveStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
-          <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>\n          {referenceImage && <image href={referenceImage} x="0" y="0" width="500" height="320" preserveAspectRatio="xMidYMid meet" opacity={referenceImageOpacity} pointerEvents="none"/>}
+          <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
+          {referenceImage && <image href={referenceImage} x="0" y="0" width="500" height="320" preserveAspectRatio="xMidYMid meet" opacity={referenceImageOpacity} pointerEvents="none"/>}
           {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
           {trackLimitBoundary.length > 0 && trackLimitBoundary.length < 3 && <polyline points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary-line"/>}
           {points.length > 1 && <path d={smoothPath(points)} className="circuit-maker-line"/>}
