@@ -53,6 +53,27 @@ const initialSegments: SegmentForm[] = [1,2,3].map((sector) => ({
 }));
 const toPoints = (points: readonly { readonly x: number; readonly y: number }[]) => points.map((point) => `${point.x*500},${point.y*320}`).join(" ");
 const numberValue = (value: string) => value.trim() === "" ? Number.NaN : Number(value);
+const smoothPath = (input: readonly {x:number;y:number}[]) => {
+  if (input.length < 2) return "";
+  const closed = input.length > 2 && Math.hypot(input[0].x-input[input.length-1].x,input[0].y-input[input.length-1].y) < 0.000001;
+  const points = closed ? input.slice(0,-1) : input;
+  if (points.length < 2) return "";
+  const get = (index:number) => points[(index + points.length) % points.length];
+  let d = `M ${points[0].x*500} ${points[0].y*320}`;
+  const count = closed ? points.length : points.length-1;
+  for (let i=0;i<count;i++) {
+    const p0 = closed || i>0 ? get(i-1) : points[i];
+    const p1 = get(i);
+    const p2 = get(i+1);
+    const p3 = closed || i+2<points.length ? get(i+2) : p2;
+    const c1x = (p1.x + (p2.x-p0.x)/6)*500;
+    const c1y = (p1.y + (p2.y-p0.y)/6)*320;
+    const c2x = (p2.x - (p3.x-p1.x)/6)*500;
+    const c2y = (p2.y - (p3.y-p1.y)/6)*320;
+    d += ` C ${c1x} ${c1y}, ${c2x} ${c2y}, ${p2.x*500} ${p2.y*320}`;
+  }
+  return closed ? d+` Z` : d;
+};
 const smoothStroke = (input: readonly {x:number;y:number}[]) => {
   if(input.length<3)return input.map((point,index)=>({id:"point-"+(index+1),...point}));
   const output:CircuitPathPoint[]=[];
@@ -74,6 +95,8 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   const [points, setPoints] = useState<CircuitPathPoint[]>(() => value?.layout.map((point) => ({...point})) ?? []);
   const [trackLimitBoundary, setTrackLimitBoundary] = useState<TrackLimitPoint[]>(() => value?.trackLimitGeometry?.boundary.map((point) => ({...point})) ?? []);
   const [drawingMode, setDrawingMode] = useState<"centerline" | "track_limit">("centerline");
+  const [toolMode, setToolMode] = useState<"freehand" | "corners">("corners");
+  const [selectedPointIndex, setSelectedPointIndex] = useState<number | null>(null);
   const [segments, setSegments] = useState<SegmentForm[]>(() => value?.segments.map((segment) => ({
     ...segment,
     sectorNumber: segment.sectorNumber as 1|2|3,
@@ -105,9 +128,45 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
   useEffect(()=>{const sync=()=>setFullScreen(Boolean(document.fullscreenElement&&makerRef.current?.contains(document.fullscreenElement)));document.addEventListener("fullscreenchange",sync);return()=>document.removeEventListener("fullscreenchange",sync)},[]);
   const toggleFullScreen=async()=>{try{if(document.fullscreenElement){await document.exitFullscreen();return}await makerRef.current?.requestFullscreen();try{await (screen.orientation as any).lock?.("landscape")}catch{}}catch{}};
   const getPointerPoint=(event:ReactPointerEvent<SVGSVGElement>)=>{const rect=event.currentTarget.getBoundingClientRect();return{x:Math.max(0,Math.min(1,(event.clientX-rect.left)/rect.width)),y:Math.max(0,Math.min(1,(event.clientY-rect.top)/rect.height))}};
-  const startStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);strokeRef.current=[getPointerPoint(event)];setDrawing(true)};
-  const moveStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{if(!drawing)return;const point=getPointerPoint(event),last=strokeRef.current[strokeRef.current.length-1];if(!last||Math.hypot(point.x-last.x,point.y-last.y)>.003)strokeRef.current.push(point)};
-  const finishStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{if(!drawing)return;event.preventDefault();setDrawing(false);const stroke=strokeRef.current;strokeRef.current=[];if(stroke.length<2)return;const smooth=smoothStroke(stroke);if(drawingMode==="track_limit")setTrackLimitBoundary(current=>{boundaryStrokeStarts.current.push(current.length);return [...current,...smooth.map(({x,y})=>({x,y}))]});else setPoints(current=>{centerlineStrokeStarts.current.push(current.length);const strokeId=crypto.randomUUID();return [...current,...smooth.map((point,index)=>({...point,id:strokeId+"-"+index}))]})};
+  const startStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (drawingMode==="centerline" && toolMode==="corners") {
+      const target = (event.target as SVGElement).closest("[data-point-index]") as SVGElement | null;
+      if (target) {
+        setSelectedPointIndex(Number(target.getAttribute("data-point-index")));
+      } else {
+        const point=getPointerPoint(event);
+        setPoints(current=>[...current,{id:"corner-"+crypto.randomUUID(),...point}]);
+        centerlineStrokeStarts.current.push(points.length);
+      }
+      return;
+    }
+    strokeRef.current=[getPointerPoint(event)];
+    setDrawing(true);
+  };
+  const moveStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{
+    if (selectedPointIndex!==null) {
+      const point=getPointerPoint(event);
+      setPoints(current=>current.map((item,index)=>index===selectedPointIndex?{...item,...point}:item));
+      return;
+    }
+    if(!drawing)return;
+    const point=getPointerPoint(event),last=strokeRef.current[strokeRef.current.length-1];
+    if(!last||Math.hypot(point.x-last.x,point.y-last.y)>.003)strokeRef.current.push(point);
+  };
+  const finishStroke=(event:ReactPointerEvent<SVGSVGElement>)=>{
+    event.preventDefault();
+    if(selectedPointIndex!==null){setSelectedPointIndex(null);return;}
+    if(!drawing)return;
+    setDrawing(false);
+    const stroke=strokeRef.current;
+    strokeRef.current=[];
+    if(stroke.length<2)return;
+    const smooth=smoothStroke(stroke);
+    if(drawingMode==="track_limit")setTrackLimitBoundary(current=>{boundaryStrokeStarts.current.push(current.length);return [...current,...smooth.map(({x,y})=>({x,y}))]});
+    else setPoints(current=>{centerlineStrokeStarts.current.push(current.length);const strokeId=crypto.randomUUID();return [...current,...smooth.map((point,index)=>({...point,id:strokeId+"-"+index}))]});
+  };
   const [specifications, setSpecifications] = useState<CircuitGeometrySpecifications>(() => value?.specifications ?? { direction: "unknown", surface: "unknown", elevationDataStatus: "unavailable", pitLane: { enabled: false, lengthMeters: null, speedLimitKph: null, entryDistanceMeters: null, exitDistanceMeters: null }, drsZones: [], trackLimits: { method: "unverified", sourceNote: "" } });
 
   const inputSegments = useMemo<CircuitMakerSegmentInput[]>(() => segments.map((segment) => ({
@@ -209,27 +268,31 @@ export default function CircuitMaker({ circuitId, name, countryCode, totalLaps, 
 </details>
     <div className="circuit-maker-layout">
       <div className="circuit-maker-canvas-panel">
-        <div className="circuit-maker-canvas-head"><strong>TRACK CANVAS</strong><span>Centerline {points.length} · Boundary {trackLimitBoundary.length}</span></div>
-        <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker freehand drawing canvas" onPointerDown={startStroke} onPointerMove={moveStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke}>
+        <div className="circuit-maker-canvas-head"><strong>TRACK DESIGN CANVAS</strong><span>{points.length} control points · {trackLimitBoundary.length} boundary points</span></div>
+        <div className="circuit-maker-workspace">
+          <nav className="circuit-maker-tool-rail" aria-label="Circuit drawing tools">
+            <button type="button" className={toolMode==="corners"&&drawingMode==="centerline"?"active":""} onClick={()=>{setDrawingMode("centerline");setToolMode("corners")}} title="Place and move corner points">POINTS</button>
+            <button type="button" className={toolMode==="freehand"&&drawingMode==="centerline"?"active":""} onClick={()=>{setDrawingMode("centerline");setToolMode("freehand")}} title="Draw a freehand centerline">DRAW</button>
+            <button type="button" className={drawingMode==="track_limit"?"active":""} onClick={()=>{setDrawingMode("track_limit");setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,method:"polygon"}}))}} title="Draw measured track limits">LIMITS</button>
+          </nav>
+          <svg viewBox="0 0 500 320" role="img" aria-label="Circuit Maker design canvas. Place points or draw a smooth track path." onPointerDown={startStroke} onPointerMove={moveStroke} onPointerUp={finishStroke} onPointerCancel={finishStroke}>
           <defs><pattern id="circuit-maker-grid" width="25" height="25" patternUnits="userSpaceOnUse"><path d="M 25 0 L 0 0 0 25" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="1"/></pattern></defs>
           <rect width="500" height="320" fill="url(#circuit-maker-grid)"/>
           {trackLimitBoundary.length > 2 && <polygon points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary"/>}
           {trackLimitBoundary.length > 0 && trackLimitBoundary.length < 3 && <polyline points={toPoints(trackLimitBoundary)} className="circuit-maker-track-boundary-line"/>}
-          {points.length > 1 && <polyline points={toPoints(points)} className="circuit-maker-line"/>}
+          {points.length > 1 && <path d={smoothPath(points)} className="circuit-maker-line"/>}
           {trackLimitBoundary.map((point,index) => <circle key={"boundary-"+index} cx={point.x*500} cy={point.y*320} r={3} className="boundary-point"/>)}
-          {points.map((point,index) => <circle key={point.id} cx={point.x*500} cy={point.y*320} r={index===0?6:4} className={index===0?"start":"point"}/>)}
+          {points.map((point,index) => <circle key={point.id} data-point-index={index} cx={point.x*500} cy={point.y*320} r={index===0?6:5} className={(index===0?"start ":"point ")+(selectedPointIndex===index?"selected":"")} />)}
           {points.length > 0 && <text x={points[0].x*500+10} y={points[0].y*320-10} className="circuit-maker-start-label">START / FINISH</text>}
-        </svg>
-        <div className="circuit-maker-canvas-actions">
-          <button type="button" className={drawingMode==="centerline"?"active":""} onClick={()=>setDrawingMode("centerline")}>Draw centerline</button>
-          <button type="button" className={drawingMode==="track_limit"?"active":""} onClick={()=>{setDrawingMode("track_limit");setSpecifications(s=>({...s,trackLimits:{...s.trackLimits,method:"polygon"}}));}}>Draw track boundary</button>
+          </svg>
         </div>
         <div className="circuit-maker-canvas-actions">
-          <button type="button" onClick={undo} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Undo active point</button>
+        <div className="circuit-maker-canvas-actions">
+          <button type="button" onClick={undo} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Undo</button>
           <button type="button" onClick={closeLoop} disabled={drawingMode!=="centerline"||points.length<4}>Close centerline</button>
           <button type="button" onClick={clearActiveDrawing} disabled={drawingMode==="centerline"?!points.length:!trackLimitBoundary.length}>Clear active drawing</button>
         </div>
-        <small>{drawingMode==="centerline"?"Tahan dan geser untuk menggambar centerline dengan kurva halus.":"Tahan dan geser untuk menggambar batas lintasan. Polygon closure is implicit; add at least three points."}</small>
+        <small className="circuit-maker-canvas-hint">{drawingMode==="track_limit"?"Draw the measured track-limit polygon.":"POINTS: tap to place corners, drag a point to refine the line. DRAW: press and drag for a freehand line. The spline keeps corners smooth."}</small>
       </div>
       <div className="circuit-maker-spec-panel">
         <div className="circuit-maker-section-title"><strong>SPECIFICATION EDITOR</strong><span>Sector 1–3</span></div>
