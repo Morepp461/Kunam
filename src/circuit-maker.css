@@ -37,3 +37,39 @@
 .circuit-maker.is-fullscreen .circuit-maker-canvas-panel svg{max-height:calc(100dvh - 220px);min-height:300px;aspect-ratio:16/9}
 .circuit-maker.is-fullscreen .circuit-maker-spec-panel{max-height:calc(100dvh - 150px);overflow:auto}
 @media(max-width:760px){.circuit-maker.is-fullscreen .circuit-maker-layout{grid-template-columns:1fr}.circuit-maker.is-fullscreen .circuit-maker-canvas-panel svg{max-height:48dvh;min-height:220px}.circuit-maker.is-fullscreen .circuit-maker-spec-panel{max-height:none}}
+
+/* Circuit Designer workspace v2 */
+.circuit-maker-canvas-panel{display:flex;flex-direction:column;min-height:0}
+.circuit-maker-workspace{display:grid;grid-template-columns:46px minmax(0,1fr);gap:8px;min-height:340px}
+.circuit-maker-tool-rail{display:flex;flex-direction:column;gap:6px;padding:5px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:#090b0e}
+.circuit-maker-tool-rail button{min-height:38px;padding:5px 3px;border:1px solid transparent;border-radius:5px;background:transparent;color:#9da1a7;font-size:8px;font-weight:900;letter-spacing:.06em}
+.circuit-maker-tool-rail button.active{border-color:rgba(215,184,93,.48);background:rgba(215,184,93,.15);color:#f0d895}
+.circuit-maker-workspace svg{width:100%;height:100%;min-height:340px;aspect-ratio:16/10;object-fit:contain;background:#080a0c;touch-action:none;cursor:crosshair}
+.circuit-maker-line{stroke:#d7b85d;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px rgba(215,184,93,.2))}
+.circuit-maker-workspace svg circle.point{cursor:grab;stroke:#161616;stroke-width:2}
+.circuit-maker-workspace svg circle.point.selected{fill:#fff;stroke:#d7b85d;stroke-width:3;cursor:grabbing}
+.circuit-maker-workspace svg circle.start{stroke:#111;stroke-width:2}
+.circuit-maker-canvas-hint{display:block;margin-top:8px;color:#aeb1b4;font-size:10px;line-height:1.55}
+.circuit-maker-canvas-actions{align-items:center}
+.circuit-maker.is-fullscreen{display:flex;flex-direction:column;gap:10px}
+.circuit-maker.is-fullscreen .circuit-maker-heading{flex-shrink:0}
+.circuit-maker.is-fullscreen .circuit-maker-toolbar{max-width:520px;margin:0}
+.circuit-maker.is-fullscreen .circuit-maker-layout{flex:1;min-height:0;grid-template-columns:minmax(0,1.45fr) minmax(320px,.75fr)}
+.circuit-maker.is-fullscreen .circuit-maker-canvas-panel{min-height:0}
+.circuit-maker.is-fullscreen .circuit-maker-workspace{flex:1;min-height:0;grid-template-columns:52px minmax(0,1fr)}
+.circuit-maker.is-fullscreen .circuit-maker-workspace svg{height:100%;min-height:0;max-height:none;aspect-ratio:auto}
+.circuit-maker.is-fullscreen .circuit-maker-spec-panel{max-height:calc(100dvh - 180px);overflow:auto}
+@media(max-width:760px){
+ .circuit-maker-workspace{min-height:280px}
+ .circuit-maker-workspace svg{min-height:280px}
+ .circuit-maker.is-fullscreen{padding:10px}
+ .circuit-maker.is-fullscreen .circuit-maker-layout{grid-template-columns:minmax(0,1fr);overflow:auto}
+ .circuit-maker.is-fullscreen .circuit-maker-workspace{min-height:42dvh}
+ .circuit-maker.is-fullscreen .circuit-maker-workspace svg{min-height:42dvh}
+ .circuit-maker.is-fullscreen .circuit-maker-spec-panel{max-height:none}
+}
+@media(max-width:480px){
+ .circuit-maker-workspace{grid-template-columns:40px minmax(0,1fr);gap:5px}
+ .circuit-maker-tool-rail button{font-size:7px}
+ .circuit-maker-workspace svg{min-height:240px}
+}
