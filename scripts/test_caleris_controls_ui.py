@@ -5,6 +5,9 @@ APP = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 CONTROLS = (ROOT / "src" / "caleris-controls.css").read_text(encoding="utf-8")
 JOB_SEARCH = (ROOT / "src" / "JobSearch.tsx").read_text(encoding="utf-8")
 NAV = (ROOT / "src" / "MainLayout.tsx").read_text(encoding="utf-8")
+MAIN_LAYOUT = NAV
+NOTIFICATIONS = (ROOT / "src" / "NotificationsCenter.tsx").read_text(encoding="utf-8")
+STYLES = (ROOT / "src" / "styles.css").read_text(encoding="utf-8")
 CHECKIN = (ROOT / "src" / "MemberRaceCheckIn.tsx").read_text(encoding="utf-8")
 
 # Global CALERIS select treatment must load after the page-level styles.
@@ -78,3 +81,14 @@ assert 'from("caleris_announcements")' in EDGE
 assert 'from("caleris_sponsorship_story_events")' in EDGE
 assert 'PAGES & CONTENT' in APP
 print("CALERIS custom dropdown, account hub, global search, content indexing and red page-card regression checks passed.")
+
+# Header notification, role-aware Quest links, card-contained comet, and mobile motion regressions.
+assert 'NotificationsCenter memberId={memberId} memberRole={panelAccess.member_role}' in MAIN_LAYOUT
+assert 'Tandai sudah dibaca' in NOTIFICATIONS
+assert 'Hapus semua notifikasi' in NOTIFICATIONS
+assert '"/driver-panel/quest"' in NOTIFICATIONS and '"/team-panel/quest"' in NOTIFICATIONS
+assert 'path="/quests"' in APP
+assert 'panelAccess.member_role==="Principal"' in MAIN_LAYOUT
+assert '.scene-image{display:block!important;animation:cinematicCamera' in STYLES
+assert ':where(.workspace-card,.panel-feature-card,.stat-card,.quest-card' in CONTROLS
+assert 'position:absolute;inset:0' in CONTROLS[CONTROLS.find('Gold comet outline'):]

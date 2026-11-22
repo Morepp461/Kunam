@@ -1,29 +1,77 @@
-import {useCallback,useEffect,useState} from "react";
-import {Bell,CheckCheck,ExternalLink} from "lucide-react";
+import {useCallback,useEffect,useRef,useState} from "react";
+import {Bell,CheckCheck,ExternalLink,Trash2,X} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
 
 type Notification={id:string;category:string;title:string;body:string;href:string|null;created_at:string;read_at:string|null};
-const when=(value:string)=>new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short"}).format(new Date(value));
-export default function NotificationsCenter({memberId}:{memberId:string|null}){
- const [items,setItems]=useState<Notification[]>([]),[loading,setLoading]=useState(true),[error,setError]=useState("");
+type MemberRole="Driver"|"Owner"|"Principal"|string|null;
+const when=(value:string)=>{const date=new Date(value);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short"}).format(date)};
+function destination(item:Notification,role:MemberRole){
+ const href=item.href?.trim()||"/dashboard";
+ if(["/quests","/quest","quests","quest","/driver-panel/quest","/team-panel/quest"].includes(href)){
+  if(role==="Driver")return "/driver-panel/quest";
+  if(role==="Owner"||role==="Principal")return "/team-panel/quest";
+  return "/dashboard";
+ }
+ return href.startsWith("/")?href:"/dashboard";
+}
+export default function NotificationsCenter({memberId,memberRole}:{memberId:string|null;memberRole:MemberRole}){
+ const [items,setItems]=useState<Notification[]>([]),[unread,setUnread]=useState(0),[loading,setLoading]=useState(true),[error,setError]=useState(""),[open,setOpen]=useState(false),[busy,setBusy]=useState(false);
+ const root=useRef<HTMLDivElement>(null);
  const load=useCallback(async()=>{
-  if(!supabase||!memberId){setItems([]);setLoading(false);return}
-  const {data,error:requestError}=await supabase.from("caleris_notifications").select("id,category,title,body,href,created_at,read_at").eq("member_id",memberId).order("created_at",{ascending:false}).limit(8);
-  if(requestError)setError(requestError.message);else{setItems((data||[]) as Notification[]);setError("")}
+  if(!supabase||!memberId){setItems([]);setUnread(0);setLoading(false);return}
+  const [list,count]=await Promise.all([
+   supabase.from("caleris_notifications").select("id,category,title,body,href,created_at,read_at").eq("member_id",memberId).order("created_at",{ascending:false}).limit(50),
+   supabase.from("caleris_notifications").select("id",{count:"exact",head:true}).eq("member_id",memberId).is("read_at",null)
+  ]);
+  if(list.error)setError(list.error.message);else{setItems((list.data||[]) as Notification[]);setError("")}
+  if(count.error)setError(count.error.message);else setUnread(count.count||0);
   setLoading(false);
  },[memberId]);
- useEffect(()=>{void load();if(!supabase||!memberId)return;const channel=supabase.channel("caleris-notifications-"+memberId).on("postgres_changes",{event:"INSERT",schema:"public",table:"caleris_notifications",filter:"member_id=eq."+memberId},()=>void load()).subscribe();return()=>{void supabase?.removeChannel(channel)}},[load,memberId]);
- const markRead=async(id:string)=>{if(!supabase||!memberId)return;const {error:requestError}=await supabase.from("caleris_notifications").update({read_at:new Date().toISOString()}).eq("id",id).eq("member_id",memberId);if(requestError)setError(requestError.message);else setItems(current=>current.map(item=>item.id===id?{...item,read_at:new Date().toISOString()}:item))};
- const markAll=async()=>{if(!supabase||!memberId)return;const {error:requestError}=await supabase.from("caleris_notifications").update({read_at:new Date().toISOString()}).eq("member_id",memberId).is("read_at",null);if(requestError)setError(requestError.message);else setItems(current=>current.map(item=>({...item,read_at:item.read_at||new Date().toISOString()})))};
- const unread=items.filter(item=>!item.read_at).length;
+ useEffect(()=>{setLoading(true);void load();if(!supabase||!memberId)return;const channel=supabase.channel("caleris-notifications-header-"+memberId).on("postgres_changes",{event:"*",schema:"public",table:"caleris_notifications",filter:"member_id=eq."+memberId},()=>void load()).subscribe();return()=>{void supabase?.removeChannel(channel)}},[load,memberId]);
+ useEffect(()=>{
+  if(!open)return;
+  const outside=(event:PointerEvent)=>{if(root.current&&!root.current.contains(event.target as Node))setOpen(false)};
+  const escape=(event:KeyboardEvent)=>{if(event.key==="Escape")setOpen(false)};
+  document.addEventListener("pointerdown",outside);document.addEventListener("keydown",escape);
+  return()=>{document.removeEventListener("pointerdown",outside);document.removeEventListener("keydown",escape)};
+ },[open]);
+ const markRead=async(id:string)=>{
+  if(!supabase||!memberId)return;
+  const now=new Date().toISOString();
+  const {error:requestError}=await supabase.from("caleris_notifications").update({read_at:now}).eq("id",id).eq("member_id",memberId).is("read_at",null);
+  if(requestError){setError(requestError.message);return}
+  setItems(current=>current.map(item=>item.id===id?{...item,read_at:now}:item));setUnread(value=>Math.max(0,value-1));
+ };
+ const markAll=async()=>{
+  if(!supabase||!memberId||busy||unread===0)return;
+  setBusy(true);const now=new Date().toISOString();
+  const {error:requestError}=await supabase.from("caleris_notifications").update({read_at:now}).eq("member_id",memberId).is("read_at",null);
+  if(requestError)setError(requestError.message);else{setItems(current=>current.map(item=>({...item,read_at:item.read_at||now})));setUnread(0);setError("")}
+  setBusy(false);
+ };
+ const deleteAll=async()=>{
+  if(!supabase||!memberId||busy||!items.length)return;
+  if(!window.confirm("Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan."))return;
+  setBusy(true);const {error:requestError}=await supabase.from("caleris_notifications").delete().eq("member_id",memberId);
+  if(requestError)setError(requestError.message);else{setItems([]);setUnread(0);setError("")}
+  setBusy(false);
+ };
  if(!memberId)return null;
- return <section className="workspace-card notifications-center">
-  <div className="notifications-center-head"><div><span className="section-eyebrow">CHARACTER INBOX</span><h2><Bell size={17}/> Notifikasi {unread>0&&<span>{unread}</span>}</h2></div>{unread>0&&<button type="button" onClick={()=>void markAll()}><CheckCheck size={14}/> Tandai semua dibaca</button>}</div>
-  {loading?<p className="notifications-empty">Memuat notifikasi...</p>:!items.length?<p className="notifications-empty">Belum ada notifikasi baru.</p>:<div className="notifications-list">{items.map(item=><article className={item.read_at?"is-read":"is-unread"} key={item.id}>
-   <div className="notifications-copy"><span>{item.category.replaceAll("_"," ").toUpperCase()} · {when(item.created_at)}</span><strong>{item.title}</strong><p>{item.body}</p><Link to={item.href||"/dashboard"}>{item.href?"Buka detail":"Lihat dashboard"} <ExternalLink size={12}/></Link></div>
-   {!item.read_at&&<button type="button" aria-label="Tandai notifikasi dibaca" onClick={()=>void markRead(item.id)}><CheckCheck size={15}/></button>}
-  </article>)}</div>}
-  {error&&<p className="notifications-error">{error}</p>}
- </section>;
+ return <div className="header-notifications" ref={root}>
+  <button className="header-notifications-trigger" type="button" aria-label={unread?unread+" notifikasi belum dibaca":"Notifikasi"} aria-haspopup="dialog" aria-expanded={open} onClick={()=>setOpen(value=>!value)}>
+   <Bell size={19}/>{unread>0&&<span className="header-notifications-count">{unread>99?"99+":unread}</span>}
+  </button>
+  {open&&<section className="header-notifications-popover" role="dialog" aria-label="Notifikasi CALERIS MASTERS">
+   <header className="header-notifications-heading"><div><strong>Notifikasi</strong><span>{unread} belum dibaca · {items.length} terbaru</span></div><button type="button" aria-label="Tutup notifikasi" onClick={()=>setOpen(false)}><X size={17}/></button></header>
+   <div className="header-notifications-actions"><button type="button" onClick={()=>void markAll()} disabled={busy||unread===0}><CheckCheck size={14}/> Tandai sudah dibaca</button><button type="button" onClick={()=>void deleteAll()} disabled={busy||items.length===0}><Trash2 size={14}/> Hapus semua notifikasi</button></div>
+   {error&&<p className="header-notifications-error">{error}</p>}
+   <div className="header-notifications-list">
+    {loading?<p className="header-notifications-empty">Memuat notifikasi...</p>:!items.length?<p className="header-notifications-empty">Belum ada notifikasi.</p>:items.map(item=><article className={"header-notification-item"+(item.read_at?" is-read":" is-unread")} key={item.id}>
+     <Link to={destination(item,memberRole)} onClick={()=>{if(!item.read_at)void markRead(item.id);setOpen(false)}}><span className="header-notification-meta">{item.category.replaceAll("_"," ").toUpperCase()} · {when(item.created_at)}</span><strong>{item.title}</strong>{item.body&&<p>{item.body}</p>}<span className="header-notification-link">Buka detail <ExternalLink size={12}/></span></Link>
+     {!item.read_at&&<button type="button" aria-label="Tandai sudah dibaca" title="Tandai sudah dibaca" onClick={()=>void markRead(item.id)}><CheckCheck size={15}/></button>}
+    </article>)}
+   </div>
+  </section>}
+ </div>;
 }
