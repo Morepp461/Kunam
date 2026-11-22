@@ -5,6 +5,9 @@ APP = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 CONTROLS = (ROOT / "src" / "caleris-controls.css").read_text(encoding="utf-8")
 JOB_SEARCH = (ROOT / "src" / "JobSearch.tsx").read_text(encoding="utf-8")
 NAV = (ROOT / "src" / "MainLayout.tsx").read_text(encoding="utf-8")
+MAIN_LAYOUT = NAV
+NOTIFICATIONS = (ROOT / "src" / "NotificationsCenter.tsx").read_text(encoding="utf-8")
+STYLES = (ROOT / "src" / "styles.css").read_text(encoding="utf-8")
 CHECKIN = (ROOT / "src" / "MemberRaceCheckIn.tsx").read_text(encoding="utf-8")
 
 # Global CALERIS select treatment must load after the page-level styles.
