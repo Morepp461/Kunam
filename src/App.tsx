@@ -386,7 +386,7 @@ function CalerisSelectOverlay(){
  if(!activeSelect)return null;
  const options=Array.from(activeSelect.options).map(option=>({value:option.value,label:option.label||option.textContent||"",disabled:option.disabled,group:option.parentElement instanceof HTMLOptGroupElement?option.parentElement.label:""}));
  const filtered=options.filter(option=>(option.label+" "+option.group).toLocaleLowerCase("id-ID").includes(filter.trim().toLocaleLowerCase("id-ID")));
- const title=activeSelect.labels?.[0]?.textContent?.trim()||activeSelect.getAttribute("aria-label")||"Pilih opsi";
+ const label=activeSelect.labels?.[0];let labelText="";if(label){for(const node of Array.from(label.childNodes)){if(node===activeSelect)break;labelText+=node.textContent||"";}}const title=labelText.replace(/\\s+/g," ").trim()||activeSelect.getAttribute("aria-label")||"Pilih opsi";
  const choose=(value:string)=>{
   if(!activeSelect||activeSelect.disabled)return;
   activeSelect.value=value;
