@@ -553,3 +553,30 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
 @keyframes shopUpcomingBlink{0%,100%{opacity:.45}50%{opacity:1}}
 @keyframes shopUpcomingOrbit{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.shop-upcoming-icon,.shop-upcoming-title,.shop-upcoming-status i,.shop-upcoming-orbit{animation:none!important}}
+
+
+/* Header notification inbox: one compact bell, one anchored scrollable panel. */
+.header-notifications{position:relative;display:flex;align-items:center;flex:none}
+.header-notifications-trigger{position:relative;display:grid;place-items:center;width:40px;height:40px;border:1px solid rgba(198,163,58,.38);border-radius:50%;background:rgba(8,10,13,.68);color:#f0d477}
+.header-notifications-trigger:hover,.header-notifications-trigger[aria-expanded="true"]{border-color:#e4c56d;background:rgba(198,163,58,.14)}
+.header-notifications-count{position:absolute;top:-5px;right:-7px;display:grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border:2px solid #111216;border-radius:99px;background:#b52c42;color:#fff;font:800 9px Inter,Arial,sans-serif;line-height:1}
+.header-notifications-popover{position:absolute;top:calc(100% + 12px);right:0;z-index:100;width:min(390px,calc(100vw - 28px));max-height:min(76dvh,620px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(198,163,58,.48);border-radius:12px;background:linear-gradient(145deg,rgba(27,22,17,.99),rgba(10,12,15,.99));color:#f2eee4;box-shadow:0 24px 70px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,229,164,.12);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
+.header-notifications-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px 12px;border-bottom:1px solid rgba(198,163,58,.2)}
+.header-notifications-heading>div{display:flex;flex-direction:column;gap:4px}.header-notifications-heading strong{font:700 17px 'Barlow Condensed',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#f1d77e}.header-notifications-heading span{font-size:10px;color:#b9b2a2}
+.header-notifications-heading>button{display:grid;place-items:center;width:30px;height:30px;border:1px solid rgba(198,163,58,.24);border-radius:50%;background:transparent;color:#d8cfb9}
+.header-notifications-actions{display:flex;gap:7px;padding:10px 12px;border-bottom:1px solid rgba(198,163,58,.16)}
+.header-notifications-actions button{display:flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:0 9px;border:1px solid rgba(198,163,58,.28);border-radius:6px;background:rgba(198,163,58,.07);color:#e5d08a;font-size:10px}
+.header-notifications-actions button:disabled{opacity:.38;cursor:not-allowed}
+.header-notifications-list{min-height:0;overflow:auto;overscroll-behavior:contain;padding:5px 11px 10px;-webkit-overflow-scrolling:touch}
+.header-notification-item{display:flex;align-items:flex-start;gap:8px;padding:12px 7px;border-bottom:1px solid rgba(255,255,255,.075)}
+.header-notification-item>a{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px;color:inherit;text-decoration:none}
+.header-notification-item>a>strong{font-size:12px;color:#f2e7c9}.header-notification-item>a>p{margin:0;color:#c7c1b5;font-size:11px;line-height:1.55}
+.header-notification-meta{color:#b5a477;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.1em}
+.header-notification-link{display:inline-flex;align-items:center;gap:5px;color:#e1c36a;font-size:10px}
+.header-notification-item>button{display:grid;place-items:center;flex:none;width:30px;height:30px;border:1px solid rgba(198,163,58,.2);border-radius:50%;background:rgba(198,163,58,.06);color:#e3c66c}
+.header-notification-item.is-read{opacity:.66}.header-notification-item.is-unread{background:linear-gradient(90deg,rgba(198,163,58,.075),transparent 75%)}
+.header-notifications-empty,.header-notifications-error{padding:20px 12px;margin:0;color:#c5bdac;font-size:11px;text-align:center}
+.header-notifications-error{color:#ffaaa0}
+@media(max-width:560px){.header-notifications-trigger{width:36px;height:36px}.header-notifications-popover{right:-5px;width:min(370px,calc(100vw - 24px));max-height:min(72dvh,580px)}.header-notifications-actions button{flex:1;padding:0 5px;font-size:9px}}
+body.light .header-notifications-popover{background:linear-gradient(145deg,rgba(250,247,239,.99),rgba(232,225,210,.99));color:#302c23;border-color:rgba(143,108,30,.42)}
+body.light .header-notification-item>a>strong{color:#40351d}
