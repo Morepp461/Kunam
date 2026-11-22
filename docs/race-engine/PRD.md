@@ -488,8 +488,8 @@ Acceptance requires Android browser QA on representative low/mid-range devices, 
 - Phase 25 adds the first Three.js 3D replay viewer in PR #279: procedural original single-seater models (maximum 10), 3D/2D switch, broadcast/trackside/overview camera presets, WebGL capability and context-loss handling, responsive resize, capped pixel ratio, and scene resource cleanup.
 - The viewer reads the existing replay projection only. It does not call the race API, write to Supabase, or alter simulation/results. The 2D map remains the fallback.
 - The current circuit rendering is a schematic centerline; it does not assert measured track width, elevation, banking, pit lane, kerbs, or barriers. Vehicle positions remain segment-level and are not continuous GPS.
-- Generic vehicle paint colors are visual identifiers only. Licensed external GLB/GLTF assets and team-specific livery remain future work.
-- PR #279 must pass full CI and Android QA before merge/release. This status must be updated after QA; do not mark the feature production-ready solely because the code compiles.
+- Generic vehicle paint colors remain visual identifiers in the replay viewer. Phase 26 adds the team-scoped UV Livery Editor and procedural preview; production GLB/GLTF UV asset mapping and immutable race-start livery snapshots remain future work.
+- PR #279 was merged after CI passed and the production deployment reached READY. Manual Android QA remains outstanding; do not mark the renderer fully device-validated solely because the code compiles.
 
 ## 19. Team UV Livery Editor and Vehicle Presentation
 
