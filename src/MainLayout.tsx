@@ -5,6 +5,7 @@ import type {Session} from "@supabase/supabase-js";
 import {Activity,ShoppingBag,BookOpen,Palette,ChevronDown,Flag,LogOut,Moon,Settings,Sun,UserCircle,Users,X,Menu,Trophy,Medal,ArrowLeftRight,Megaphone,Briefcase,Handshake,Map,UserRound,Gauge,BadgeDollarSign,ListChecks,History,Dumbbell,CalendarCheck,Wallet,Scale,Building2,Wrench,FileSignature,UserPlus,ScanSearch,ClipboardPenLine,Network,Cog,BookMarked,RadioTower,FlagTriangleRight,Gavel,ShieldAlert,MapPinned,Send,Globe,FileText,CalendarDays,SlidersHorizontal,ClipboardList,Coins,Shield,Search,PanelLeftClose,PanelLeftOpen} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import {panelGroups} from "./PanelPages";
+import NotificationsCenter from "./NotificationsCenter";
 
 type Toast=(kind:"success"|"error"|"warning"|"info",title:string,message?:string)=>void;
 type PanelAccess={is_admin:boolean;member_role:string|null;main_event:boolean;driver_panel:boolean;team_panel:boolean;fia_panel:boolean};
@@ -69,7 +70,7 @@ function groupQuickAccess(groups:NavCategory[]):NavItem[]{
  return (main?.items||[]).filter(item=>["/dashboard","/shop","/rules"].includes(item.to));
 }
 
-export default function MainLayout({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,panelAccess,globalSearch,toast,loading}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:LayoutProfile|null;isAdmin:boolean;isPrimaryOwner:boolean;panelAccess:PanelAccess;globalSearch:ReactNode;toast:Toast;loading:(value:boolean)=>void}){
+export default function MainLayout({children,theme,setTheme,session,profile,isAdmin,isPrimaryOwner,panelAccess,globalSearch,toast,loading}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:LayoutProfile|null;memberId:string|null;isAdmin:boolean;isPrimaryOwner:boolean;panelAccess:PanelAccess;globalSearch:ReactNode;toast:Toast;loading:(value:boolean)=>void}){
  const [menuOpen,setMenuOpen]=useState(false),[navOpen,setNavOpen]=useState(false),[collapsed,setCollapsed]=useState(false),[search,setSearch]=useState("");
  const [expanded,setExpanded]=useState<string|null>(null);
  const navigate=useNavigate();const location=useLocation();
@@ -108,7 +109,7 @@ export default function MainLayout({children,theme,setTheme,session,profile,isAd
   <header className="site-header">
    {session&&<button type="button" className="nav-toggle mobile-nav-toggle" aria-label="Buka navigasi" aria-expanded={navOpen} onClick={()=>setNavOpen(v=>!v)}><Menu size={21}/></button>}
    <Link className="brand" to={session?"/dashboard":"/"} aria-label="Caleris Masters"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"/></Link>
-   <div className="header-tools">{session?<>{globalSearch}</>:location.pathname==="/" ? <div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div>:null}</div>
+   <div className="header-tools">{session?<>{globalSearch}<NotificationsCenter memberId={memberId} memberRole={panelAccess.member_role}/>:location.pathname==="/" ? <div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div>:null}</div>
   </header>
   {session&&<div className="app-navigation-shell">{renderSidebar(false)}<main className="page-content">{children}</main></div>}
   {!session&&<main className="page-content">{children}</main>}
