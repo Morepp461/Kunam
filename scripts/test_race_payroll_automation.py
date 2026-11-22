@@ -40,7 +40,8 @@ assert "'caleris-race-lifecycle'" in migration
 assert "'caleris-payroll-pending-retry'" in migration
 
 assert "caleris_notifications" in notifications and "postgres_changes" in notifications
-assert "NotificationsCenter memberId=" in read("src/DashboardModule.tsx")
+assert "NotificationsCenter memberId=" in read("src/MainLayout.tsx")
+assert "NotificationsCenter memberId=" not in read("src/DashboardModule.tsx")
 for fragment in ["notify_quest_assignment", "notify_driver_development", "notify_contract_offer", "notify_driver_move_status", "notify_payroll_paid", "notify_race_result", "idempotency_key"]:
     assert fragment in notification_migration, f"Notification trigger missing: {fragment}"
 for fragment in ["SYSTEM HEALTH & FINANCIAL RECONCILIATION", "wallet_mismatches", "cron_failures_24h"]:
