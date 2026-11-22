@@ -489,4 +489,4 @@ Acceptance requires Android browser QA on representative low/mid-range devices, 
 - The viewer reads the existing replay projection only. It does not call the race API, write to Supabase, or alter simulation/results. The 2D map remains the fallback.
 - The current circuit rendering is a schematic centerline; it does not assert measured track width, elevation, banking, pit lane, kerbs, or barriers. Vehicle positions remain segment-level and are not continuous GPS.
 - Generic vehicle paint colors are visual identifiers only. Licensed external GLB/GLTF assets and team-specific livery remain future work.
-- PR #279 must pass full CI and Android QA before merge/release. This status must be updated after QA; do not mark the feature production-ready solely because the code compiles.
+- PR #279 has been merged after full CI passed, and the production deployment is READY. Manual QA on representative Android devices remains outstanding before calling the 3D viewer fully production-validated; do not equate CI success with real-device performance approval.
