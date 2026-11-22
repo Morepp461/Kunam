@@ -34,10 +34,10 @@ assert 'window.addEventListener("pageshow",onPageShow)' in application
 assert 'window.addEventListener("pagehide",onPageHide)' in application
 assert "location.reload" not in application
 
-# Keep mobile's visual identity but disable layered animation/blur effects to reduce GPU pressure.
+# Keep cinematic background movement active on mobile while retaining lightweight header surfaces.
 mobile_rules = STYLES_CSS[STYLES_CSS.index("/* Mobile background mode:"):]
-assert ".scene-image{animation:none;transform:none}" in mobile_rules
-assert ".scene-light,.scene-reflection,.scene-depth,.scene-flare,.dust-canvas{display:none!important}" in mobile_rules
+assert ".scene-image{display:block!important;animation:cinematicCamera" in mobile_rules
+assert ".scene-light,.scene-reflection,.scene-flare,.dust-canvas,.scene-depth{display:block!important}" in mobile_rules
 assert "backdrop-filter:none" in mobile_rules
 
 # Resume the cinematic canvas correctly after a BFCache/page restore.
