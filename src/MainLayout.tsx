@@ -109,7 +109,7 @@ export default function MainLayout({children,theme,setTheme,session,profile,memb
   <header className="site-header">
    {session&&<button type="button" className="nav-toggle mobile-nav-toggle" aria-label="Buka navigasi" aria-expanded={navOpen} onClick={()=>setNavOpen(v=>!v)}><Menu size={21}/></button>}
    <Link className="brand" to={session?"/dashboard":"/"} aria-label="Caleris Masters"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="Logo Caleris Masters"/></Link>
-   <div className="header-tools">{session?<>{globalSearch}<NotificationsCenter memberId={memberId} memberRole={panelAccess.member_role}/>:location.pathname==="/" ? <div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div>:null}</div>
+   <div className="header-tools">{session?<>{globalSearch}<NotificationsCenter memberId={memberId} memberRole={panelAccess.member_role}/></>:location.pathname==="/" ? <div className="theme-switch"><button aria-label="Mode terang" aria-pressed={theme==="light"} onClick={()=>setTheme("light")}><Sun size={16}/></button><button aria-label="Mode gelap" aria-pressed={theme==="dark"} onClick={()=>setTheme("dark")}><Moon size={16}/></button></div>:null}</div>
   </header>
   {session&&<div className="app-navigation-shell">{renderSidebar(false)}<main className="page-content">{children}</main></div>}
   {!session&&<main className="page-content">{children}</main>}
