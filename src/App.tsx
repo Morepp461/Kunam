@@ -87,7 +87,7 @@ function GlobalUI({children}:{children:ReactNode}){
  const toast=useCallback((kind:Kind,title:string,message?:string)=>{const id=Date.now()+Math.random();setItems(v=>[...v,{id,kind,title,message}].slice(-4));window.setTimeout(()=>setItems(v=>v.filter(x=>x.id!==id)),4500);},[]);
  useEffect(()=>{const mark=(e:Event)=>{const el=(e.target as HTMLElement|null)?.closest("button,a,[role=button]") as HTMLElement|null;if(!el||el.matches(":disabled,[aria-disabled=true]"))return;const r=el.getBoundingClientRect(),p=e as PointerEvent,x=e instanceof PointerEvent?p.clientX:r.left+r.width/2,y=e instanceof PointerEvent?p.clientY:r.top+r.height/2;const t=document.createElement("i");t.className="tire-trace";t.style.left=x+"px";t.style.top=y+"px";document.body.append(t);window.setTimeout(()=>t.remove(),850);};document.addEventListener("pointerdown",mark,{passive:true});return()=>document.removeEventListener("pointerdown",mark);},[]);
  const value=useMemo(()=>({toast,loading:setBusy}),[toast]);
- return <UI.Provider value={value}>{busy&&<div className="global-progress"><span/></div>}{children}<div className="toast-stack" aria-live="polite">{items.map(n=><div className={"toast toast-"+n.kind} key={n.id}><span className="toast-icon">{n.kind==="success"?<Check/>:n.kind==="error"?<X/>:<Flag/>}</span><span className="toast-copy"><strong>{n.title}</strong>{n.message&&<small>{n.message}</small>}</span><button className="toast-close" aria-label="Tutup" onClick={()=>setItems(v=>v.filter(x=>x.id!==n.id))}><X size={15}/></button></div>)}</div></UI.Provider>;
+ return <UI.Provider value={value}>{busy&&<div className="global-progress comet-transition" aria-hidden="true"><span/><i/></div>}{children}<div className="toast-stack" aria-live="polite">{items.map(n=><div className={"toast toast-"+n.kind} key={n.id}><span className="toast-icon">{n.kind==="success"?<Check/>:n.kind==="error"?<X/>:<Flag/>}</span><span className="toast-copy"><strong>{n.title}</strong>{n.message&&<small>{n.message}</small>}</span><button className="toast-close" aria-label="Tutup" onClick={()=>setItems(v=>v.filter(x=>x.id!==n.id))}><X size={15}/></button></div>)}</div></UI.Provider>;
 }
 export default function App(){return <GlobalUI><Application/></GlobalUI>}
 function Application(){
@@ -351,16 +351,50 @@ function PublicMemberProfile({session}:{session:Session|null}){
 function CalerisSelectOverlay(){
  const [activeSelect,setActiveSelect]=useState<HTMLSelectElement|null>(null),[filter,setFilter]=useState("");
  useEffect(()=>{
-  const openSelect=(event:Event)=>{const target=event.target;if(!(target instanceof Element))return;const select=target.closest("select") as HTMLSelectElement|null;if(!select||select.disabled||select.multiple||select.dataset.nativePopup==="true")return;event.preventDefault();event.stopPropagation();select.focus({preventScroll:true});setFilter("");setActiveSelect(select)};
-  const keyboard=(event:KeyboardEvent)=>{const target=event.target;if(!(target instanceof HTMLSelectElement)||target.disabled||target.multiple||target.dataset.nativePopup==="true")return;if(["Enter"," ","ArrowDown"].includes(event.key)){event.preventDefault();event.stopPropagation();setFilter("");setActiveSelect(target)}else if(event.key==="Escape"&&activeSelect){event.preventDefault();setActiveSelect(null)}};
-  const suppressNativeClick=(event:Event)=>{const target=event.target;if(target instanceof Element&&target.closest("select")){event.preventDefault();event.stopPropagation()}};document.addEventListener("pointerdown",openSelect,true);document.addEventListener("click",suppressNativeClick,true);document.addEventListener("keydown",keyboard,true);return()=>{document.removeEventListener("pointerdown",openSelect,true);document.removeEventListener("click",suppressNativeClick,true);document.removeEventListener("keydown",keyboard,true)};
+  // Open only after a completed click. pointerdown fires at the start of a touch,
+  // so it incorrectly treats an intended scroll as a request to open the sheet.
+  const openSelect=(event:MouseEvent)=>{
+   const target=event.target;
+   if(!(target instanceof Element))return;
+   const select=target.closest("select") as HTMLSelectElement|null;
+   if(!select||select.disabled||select.multiple||select.dataset.nativePopup==="true")return;
+   event.preventDefault();event.stopPropagation();
+   select.focus({preventScroll:true});setFilter("");setActiveSelect(select);
+  };
+  const keyboard=(event:KeyboardEvent)=>{
+   const target=event.target;
+   if(!(target instanceof HTMLSelectElement)||target.disabled||target.multiple||target.dataset.nativePopup==="true")return;
+   if(["Enter"," ","ArrowDown"].includes(event.key)){
+    event.preventDefault();event.stopPropagation();setFilter("");setActiveSelect(target);
+   }else if(event.key==="Escape"&&activeSelect){
+    event.preventDefault();setActiveSelect(null);
+   }
+  };
+  document.addEventListener("click",openSelect,true);
+  document.addEventListener("keydown",keyboard,true);
+  return()=>{
+   document.removeEventListener("click",openSelect,true);
+   document.removeEventListener("keydown",keyboard,true);
+  };
+ },[activeSelect]);
+ useEffect(()=>{
+  if(!activeSelect)return;
+  const previousOverflow=document.body.style.overflow;
+  document.body.style.overflow="hidden";
+  return()=>{document.body.style.overflow=previousOverflow};
  },[activeSelect]);
  if(!activeSelect)return null;
  const options=Array.from(activeSelect.options).map(option=>({value:option.value,label:option.label||option.textContent||"",disabled:option.disabled,group:option.parentElement instanceof HTMLOptGroupElement?option.parentElement.label:""}));
  const filtered=options.filter(option=>(option.label+" "+option.group).toLocaleLowerCase("id-ID").includes(filter.trim().toLocaleLowerCase("id-ID")));
  const title=activeSelect.labels?.[0]?.textContent?.trim()||activeSelect.getAttribute("aria-label")||"Pilih opsi";
- const choose=(value:string)=>{if(!activeSelect||activeSelect.disabled)return;activeSelect.value=value;activeSelect.dispatchEvent(new Event("input",{bubbles:true}));activeSelect.dispatchEvent(new Event("change",{bubbles:true}));activeSelect.focus({preventScroll:true});setActiveSelect(null);setFilter("")};
- return createPortal(<div className="caleris-select-backdrop" role="presentation" onPointerDown={event=>{if(event.target===event.currentTarget)setActiveSelect(null)}}><section className="caleris-select-sheet" role="dialog" aria-modal="true" aria-label={title}><header className="caleris-select-heading"><div><strong>{title}</strong><small>CALERIS MASTERS · SELECT OPTION</small></div><button type="button" aria-label="Tutup pilihan" onClick={()=>setActiveSelect(null)}><X size={18}/></button></header>{options.length>7&&<label className="caleris-select-search"><Search size={16}/><input autoFocus value={filter} onChange={event=>setFilter(event.target.value)} placeholder="Cari pilihan..."/></label>}<div className="caleris-select-options">{filtered.length?filtered.map((option,index)=><Fragment key={option.value+"-"+index}>{option.group&&(index===0||filtered[index-1]?.group!==option.group)&&<div className="caleris-select-group">{option.group}</div>}<button type="button" className={"caleris-select-option"+(activeSelect.value===option.value?" is-selected":"")} disabled={option.disabled} onClick={()=>choose(option.value)}><span>{option.label}</span>{activeSelect.value===option.value&&<Check size={18}/>}</button></Fragment>):<p className="caleris-select-empty">Pilihan tidak ditemukan.</p>}</div></section></div>,document.body);
+ const choose=(value:string)=>{
+  if(!activeSelect||activeSelect.disabled)return;
+  activeSelect.value=value;
+  activeSelect.dispatchEvent(new Event("input",{bubbles:true}));
+  activeSelect.dispatchEvent(new Event("change",{bubbles:true}));
+  activeSelect.focus({preventScroll:true});setActiveSelect(null);setFilter("");
+ };
+ return createPortal(<div className="caleris-select-backdrop" role="presentation" onPointerDown={event=>{if(event.target===event.currentTarget)setActiveSelect(null)}}><section className="caleris-select-sheet comet-skeleton" role="dialog" aria-modal="true" aria-label={title}><header className="caleris-select-heading"><div><strong>{title}</strong><small>CALERIS MASTERS · SELECT OPTION</small></div><button type="button" aria-label="Tutup pilihan" onClick={()=>setActiveSelect(null)}><X size={18}/></button></header>{options.length>7&&<label className="caleris-select-search"><Search size={16}/><input value={filter} onChange={event=>setFilter(event.target.value)} placeholder="Cari pilihan..."/></label>}<div className="caleris-select-options" role="listbox">{filtered.length?filtered.map((option,index)=><Fragment key={option.value+"-"+index}>{option.group&&(index===0||filtered[index-1]?.group!==option.group)&&<div className="caleris-select-group">{option.group}</div>}<button type="button" role="option" aria-selected={activeSelect.value===option.value} className={"caleris-select-option"+(activeSelect.value===option.value?" is-selected":"")} disabled={option.disabled} onClick={()=>choose(option.value)}><span>{option.label}</span>{activeSelect.value===option.value&&<Check size={18}/>}</button></Fragment>):<p className="caleris-select-empty">Pilihan tidak ditemukan.</p>}</div></section></div>,document.body);
 }
 
 function GlobalSearch({isAdmin,panelAccess}:{isAdmin:boolean;panelAccess:PanelAccess}){
