@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { createRaceEngineTestAuthHeaders } from "./lib/race-engine/api-auth";
+import { buildRaceReplayProjection } from "./lib/race-engine/replay";
 import "./live-race.css";
 
 const TEST_API_URL = "https://vxwvhyyvoipjwucbrvlu.supabase.co/functions/v1/race-engine-test-service";
@@ -347,6 +348,14 @@ export default function LiveRace() {
   const recentEvents = useMemo(() => [...(detail?.events ?? [])].reverse().slice(-35).reverse(), [detail?.events]);
   const recentCommands = useMemo(() => [...(detail?.commands ?? [])].slice(0, 12), [detail?.commands]);
   const replayEvent = replayEvents[replayIndex] ?? null;
+  const replayProjection = useMemo(() => {
+    if (!checkpoint?.snapshot || replayEvents.length === 0) return null;
+    try {
+      return buildRaceReplayProjection(checkpoint.snapshot, replayEvents, replayIndex);
+    } catch {
+      return null;
+    }
+  }, [checkpoint?.snapshot, replayEvents, replayIndex]);
 
   async function createSession() {
     setBusy("create");
@@ -860,6 +869,38 @@ export default function LiveRace() {
             <strong>{replayEvent ? labelEvent(replayEvent.event_type) : replayLoading ? "LOADING REPLAY..." : "NO REPLAY EVENTS"}</strong>
             <small>{replayEvent ? `LAP ${replayEvent.lap_number} · ${replayEvent.driver_id ?? "Race control"} · ${formatTime(replayEvent.simulation_time_ms)}` : "Replay menggunakan event timeline yang sudah tersimpan di Supabase."}</small>
             {replayEvent && <p>{String(replayEvent.payload.segmentId ?? "Race event")}{replayEvent.payload.raceControlFlag ? ` · ${String(replayEvent.payload.raceControlFlag).toUpperCase()}` : ""}</p>}
+          </div>
+          <div className="race-engine-replay-map">
+            <div className="race-engine-replay-map-head">
+              <strong>TRACK POSITION REPLAY</strong>
+              <span>SEGMENT-LEVEL · SEQUENCE {replayProjection?.sequence ?? "—"}</span>
+            </div>
+            {replayProjection && replayProjection.points.length > 0 ? <>
+              <div className="race-engine-replay-map-canvas">
+                <svg viewBox="0 0 1000 1000" role="img" aria-label="Replay circuit map with driver positions">
+                  <polyline
+                    points={replayProjection.layout.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" ")}
+                    fill="none"
+                    stroke="rgba(215,184,93,.72)"
+                    strokeWidth="22"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  {replayProjection.points.map((point) => <g key={point.driverId} transform={`translate(${point.x * 1000} ${point.y * 1000})`}>
+                    <circle r="27" fill="#171a20" stroke="#e2c56d" strokeWidth="7"/>
+                    <text textAnchor="middle" dominantBaseline="central" fill="#fff" fontSize="24" fontWeight="800">{point.position}</text>
+                    <title>{point.driverName} · {point.teamName} · Lap {point.lapNumber} · {point.segmentId}</title>
+                  </g>)}
+                </svg>
+              </div>
+              <ol className="race-engine-replay-order">
+                {replayProjection.points.slice(0, 10).map((point) => <li key={point.driverId}>
+                  <b>P{point.position}</b>
+                  <span><strong>{point.driverName}</strong><small>{point.teamName} · LAP {point.lapNumber} · {point.segmentId}</small></span>
+                </li>)}
+              </ol>
+            </> : <p className="race-engine-empty">Marker posisi akan muncul setelah event segment pertama pada replay yang dipilih.</p>}
+            <small className="race-engine-replay-disclaimer">Posisi direkonstruksi dari event segmen tersimpan. Ini bukan GPS atau telemetry kontinu.</small>
           </div>
           <div className="race-engine-replay-controls">
             <button className="race-engine-secondary-button" onClick={() => setReplayPlaying((value) => !value)} disabled={replayLoading || replayEvents.length === 0}>
