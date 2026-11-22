@@ -26,11 +26,11 @@
 
 ### 3D Driver Exhibition
 
-### Race Engine 3D Visualization · Planned
+### Race Engine 3D Visualization
 
-- The Race Engine has an approved roadmap for an optional Three.js 3D race/replay viewer. This is **planned work**, not a currently shipped 3D race feature.
+- The Three.js 3D Race Replay viewer is implemented in the current feature branch (PR #279, pending CI/merge). It is a replay presentation feature, not yet a complete live 3D broadcast.
 - The viewer will reuse the existing Three.js dependency, Circuit Maker geometry, Circuit Pool revisions, and authoritative Race Engine replay/timing projections. It will remain presentation-only; simulation and official results stay authoritative outside the renderer.
-- First target: one validated circuit and up to 10 procedural original single-seater cars, with broadcast/chase, trackside, and overview cameras. Android-first adaptive rendering and a 2D fallback are mandatory.
+- The first replay vertical slice renders one immutable circuit centerline and up to 10 procedural original single-seater cars, with broadcast, trackside, and overview cameras. The existing 2D map remains available as fallback.
 - External vehicle models are optional. Licensed .glb/.gltf assets can be added later with recorded provenance and license; team colors and livery will be data-driven. No unlicensed official F1/team models or logos will be bundled.
 - Current replay data is segment-level. Vehicle movement must not be presented as continuous GPS, and unsupported speed/throttle/brake/gear telemetry must not be fabricated.
 - Delivery gates and asset/performance rules are maintained in [Race Engine PRD](docs/race-engine/PRD.md#18-3d-race-visualization-and-asset-pipeline).

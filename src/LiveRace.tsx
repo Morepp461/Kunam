@@ -7,7 +7,6 @@ import {
 import { supabase } from "./lib/supabase";
 import { createRaceEngineTestAuthHeaders } from "./lib/race-engine/api-auth";
 import { buildRaceReplayProjection } from "./lib/race-engine/replay";
-import RaceReplay3D from "./RaceReplay3D";
 import "./live-race.css";
 
 const TEST_API_URL = "https://vxwvhyyvoipjwucbrvlu.supabase.co/functions/v1/race-engine-test-service";
@@ -222,7 +221,6 @@ export default function LiveRace() {
   const [replaySpeed, setReplaySpeed] = useState(1);
   const [replayPlaying, setReplayPlaying] = useState(false);
   const [replayLoading, setReplayLoading] = useState(false);
-  const [replayViewMode, setReplayViewMode] = useState<"3d" | "2d">("3d");
   const [controlState, setControlState] = useState<RaceControlState | null>(null);
   const [resolvedClassification, setResolvedClassification] = useState<any[]>([]);
   const [startingGrid, setStartingGrid] = useState<Array<{ driverId: string; gridPosition: number }>>([]);
@@ -875,16 +873,10 @@ export default function LiveRace() {
           <div className="race-engine-replay-map">
             <div className="race-engine-replay-map-head">
               <strong>TRACK POSITION REPLAY</strong>
-              <div className="race-engine-replay-view-switch" role="group" aria-label="Replay rendering mode">
-                <button type="button" className={replayViewMode === "3d" ? "active" : ""} onClick={() => setReplayViewMode("3d")}>3D VIEW</button>
-                <button type="button" className={replayViewMode === "2d" ? "active" : ""} onClick={() => setReplayViewMode("2d")}>2D MAP</button>
-                <span>SEGMENT-LEVEL · SEQUENCE {replayProjection?.sequence ?? "—"}</span>
-              </div>
+              <span>SEGMENT-LEVEL · SEQUENCE {replayProjection?.sequence ?? "—"}</span>
             </div>
             {replayProjection && replayProjection.points.length > 0 ? <>
-              {replayViewMode === "3d" ? (
-                <RaceReplay3D projection={replayProjection} />
-              ) : <div className="race-engine-replay-map-canvas">
+              <div className="race-engine-replay-map-canvas">
                 <svg viewBox="0 0 1000 1000" role="img" aria-label="Replay circuit map with driver positions">
                   <polyline
                     points={replayProjection.layout.map((point) => `${point.x * 1000},${point.y * 1000}`).join(" ")}
@@ -900,7 +892,7 @@ export default function LiveRace() {
                     <title>{point.driverName} · {point.teamName} · Lap {point.lapNumber} · {point.segmentId}</title>
                   </g>)}
                 </svg>
-              </div>}
+              </div>
               <ol className="race-engine-replay-order">
                 {replayProjection.points.slice(0, 10).map((point) => <li key={point.driverId}>
                   <b>P{point.position}</b>

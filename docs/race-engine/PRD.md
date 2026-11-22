@@ -482,3 +482,11 @@ Provide an optional real-time 3D presentation for LIVE RACE and replay, driven e
 5. **Broadcast polish:** camera presets, trackside cuts, overlays, incidents, pit events, weather visuals, and optional scenery, each backed by supported data.
 
 Acceptance requires Android browser QA on representative low/mid-range devices, WebGL fallback tests, context-loss/recovery tests, no memory growth after repeated mount/unmount, no render-loop database/network calls, replay determinism unchanged, 2D fallback parity for critical information, and all existing CI/regression suites passing. No database migration is required for the renderer foundation; any future persisted sampling/asset metadata schema must be additive, tested in Supabase Testing first, and reconciled with Production only through reviewed migrations.
+
+### 18.8 Implementation status — 2026-11-22
+
+- Phase 25 adds the first Three.js 3D replay viewer in PR #279: procedural original single-seater models (maximum 10), 3D/2D switch, broadcast/trackside/overview camera presets, WebGL capability and context-loss handling, responsive resize, capped pixel ratio, and scene resource cleanup.
+- The viewer reads the existing replay projection only. It does not call the race API, write to Supabase, or alter simulation/results. The 2D map remains the fallback.
+- The current circuit rendering is a schematic centerline; it does not assert measured track width, elevation, banking, pit lane, kerbs, or barriers. Vehicle positions remain segment-level and are not continuous GPS.
+- Generic vehicle paint colors are visual identifiers only. Licensed external GLB/GLTF assets and team-specific livery remain future work.
+- PR #279 must pass full CI and Android QA before merge/release. This status must be updated after QA; do not mark the feature production-ready solely because the code compiles.
