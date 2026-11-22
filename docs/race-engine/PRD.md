@@ -490,3 +490,24 @@ Acceptance requires Android browser QA on representative low/mid-range devices, 
 - The current circuit rendering is a schematic centerline; it does not assert measured track width, elevation, banking, pit lane, kerbs, or barriers. Vehicle positions remain segment-level and are not continuous GPS.
 - Generic vehicle paint colors are visual identifiers only. Licensed external GLB/GLTF assets and team-specific livery remain future work.
 - PR #279 must pass full CI and Android QA before merge/release. This status must be updated after QA; do not mark the feature production-ready solely because the code compiles.
+
+## 19. Team UV Livery Editor and Vehicle Presentation
+
+### Confirmed product requirements
+- Team Owners and Principals can maintain a team-specific visual livery independently from car performance attributes.
+- The editor uses a versioned UV texture-atlas contract. Template V1 defines distinct regions for nose/monocoque, left and right sidepods, engine cover, front wing, rear wing, and halo/details.
+- Editable design fields: main, secondary, and accent colors; body pattern (split, stripe, solid, carbon); car number; team wordmark; three sponsor decal labels; and one uploaded team/sponsor logo.
+- Supported logo formats are PNG, JPEG, and WebP, with a 100 KB upload limit. The persisted JSON document is bounded by the database constraint.
+- Designs are saved per team in `caleris_team_liveries`, can be exported/imported as versioned JSON, and are protected by RLS. Owner/Principal and verified site administrators can write; authenticated members can read their own team's design.
+
+### Rendering and physics boundary
+- The current UI includes a procedural Three.js preview and a generated CALERIS UV atlas. It is a functional design editor prototype, not a claim that the repository already contains a production UV-unwrapped vehicle model.
+- A production livery requires an original or appropriately licensed vehicle asset with a documented UV layout matching the atlas contract. The editor must reject or clearly mark incompatible UV revisions rather than silently applying the wrong mapping.
+- Livery data is visual-only. It must never affect Race Engine inputs, attributes, physics, timing, classification, tyre behavior, or economy settlement.
+- Current Race Engine replay is reconstructed from persisted segment-completion events. It does not contain continuous steering, suspension travel, wheel angular velocity, throttle, or brake telemetry. Those motions must not be fabricated in the renderer.
+- Before race viewer integration, race-start snapshots must freeze the selected team's livery revision and asset/UV version. Historical replay must continue using that immutable snapshot after the team changes its current livery.
+
+### Delivery status — Phase 26
+- Team UV Livery Editor, team-scoped persistence, RLS, import/export, and procedural preview are implemented in the feature branch.
+- Production vehicle UV asset integration and immutable race-start livery snapshot wiring remain explicit follow-up gates; they are not represented as delivered functionality.
+- Database migration must be applied to Testing first, then Production after validation and merge. No existing race snapshot or save-data field is rewritten.

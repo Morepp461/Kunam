@@ -50,6 +50,7 @@ import AdminRegisteredMembers from "./AdminRegisteredMembers";
 import DeveloperAPI from "./DeveloperAPI";
 import TeamDriverApplications from "./TeamDriverApplications";
 import LiveRace from "./LiveRace";
+import TeamLivery from "./TeamLivery";
 
 import CashLoanCentre from "./CashLoanCentre";
 import "./license-engine.css";
@@ -174,6 +175,7 @@ function Application(){
   <Route path="/team-panel/roadmap-suggestions" element={session&&!needsPaddockAccess&&panelAccess.member_role==="Owner"?<CalerisIntelligence session={session} scope="roadmap"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/contract-renewals" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Driver")?<CalerisIntelligence session={session} scope="renewals"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations-intelligence" element={session&&!needsPaddockAccess&&isAdmin?<CalerisIntelligence session={session} scope="operations"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/team-panel/custom-livery" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Owner"||panelAccess.member_role==="Principal")?<TeamLivery isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<DevelopmentTokens session={session} asset="TDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/team-panel/sponsorship" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<SponsorshipCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/driver-panel/development" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.driver_panel)?<DevelopmentTokens session={session} asset="DDP"/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
