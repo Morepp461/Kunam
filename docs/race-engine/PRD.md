@@ -428,3 +428,57 @@ The 50-item decision round is recorded as confirmed. The detailed requirements a
 - Official activation: only after all release gates and explicit owner test/approval.
 
 The Aggression/Mistake Rate clarification is recorded separately in section 2 above: both attributes remain in the 24-attribute baseline and represent different behaviours.
+
+## 18. 3D race visualization and asset pipeline
+
+**Status:** Approved product direction; implementation is staged and must not be represented as shipped until its acceptance gates pass.
+
+### 18.1 Product objective
+
+Provide an optional real-time 3D presentation for LIVE RACE and replay, driven exclusively by authoritative Race Engine snapshots/events. The 3D viewer is a presentation client: it must never alter simulation state, race timing, classification, penalties, strategy, or persisted results. The existing 2D timing/map/replay experience remains available as a reliable fallback.
+
+### 18.2 Rendering and compatibility
+
+- Reuse the repository's installed Three.js dependency and existing React/TypeScript stack. Do not add another rendering framework or duplicate Three.js in the dependency graph without a documented benchmark and approval.
+- Build the renderer as an isolated, lazy-loaded presentation module. Keep simulation, Supabase access, and race authority outside the render loop.
+- Target Android/mobile browsers first, with adaptive render quality, bounded device-pixel ratio, capped frame rate where appropriate, visibility-aware pause/resume, explicit WebGL capability detection, context-loss recovery, and deterministic resource disposal.
+- Provide a 2D fallback when WebGL is unavailable, disabled, or unstable. A rendering failure must never stop or corrupt a race.
+- Initial benchmark scope: one circuit and up to 10 cars. Higher grids, scenery density, shadows, reflections, and effects are separate performance gates, not assumptions.
+
+### 18.3 Circuit geometry contract
+
+- Generate the 3D track from the selected immutable circuit revision and its validated centerline/segment geometry, not from a screenshot or an invented outline.
+- Track width, elevation, banking, pit lane, kerbs, barriers, and other physical dimensions may only be rendered when their source values exist and pass the circuit's provenance/fidelity rules. Unknown measurements remain unknown; do not silently substitute plausible-looking engineering values.
+- Preserve circuit revision identity so historical replays use the exact geometry revision captured for that race.
+- Circuit Maker remains the source of authored fictional-circuit geometry; Circuit Pool remains the source of selected circuit records and approved layout revisions.
+
+### 18.4 Vehicle assets and livery
+
+- First prototype may use a procedural, original single-seater placeholder assembled from low-cost Three.js geometry. This avoids blocking engineering on third-party vehicle files and provides a stable visual contract.
+- Production vehicle models may use .glb/.gltf assets with documented provenance, license, attribution, source URL, revision, and content hash. No scraped, leaked, or unlicensed championship/team car models or official logos/liveries may be bundled.
+- Keep the vehicle model independent from team identity. Apply team colors, number, and permitted livery graphics through data-driven materials/decal layers; never bake team-specific identity into a shared base mesh.
+- Establish a model budget before accepting external assets: mobile-tested triangle/texture budgets, compressed textures where supported, bounded material count, sensible LODs, and no unbounded animation clips. Exact numeric budgets are to be set from representative Android profiling, not guessed in advance.
+- Asset loading must be lazy, cancellable, cache-aware, and safe when a model fails. A missing model falls back to the procedural vehicle without affecting race state.
+
+### 18.5 Motion and telemetry truthfulness
+
+- Vehicle position and ordering must be reconstructed from versioned authoritative timing/replay projections and persisted race events. Render interpolation may smooth between known committed samples, but it must not invent race progress or change official timing.
+- Current segment-completion replay supports segment-level positions only. Until the engine persists a validated intra-segment position/sampling contract, the viewer must label motion as segment-level/interpolated and must not claim continuous GPS accuracy.
+- Speed, throttle, braking, gear, steering, suspension, wheel slip, tyre deformation, and collision effects may only be shown as measured or modelled telemetry when the engine explicitly supplies validated fields. Otherwise omit them or label them clearly as visual-only effects; never present fabricated telemetry as race data.
+- Replay seek, pause, and playback speed remain viewer-local and cannot mutate authoritative race state.
+
+### 18.6 Camera and presentation modes
+
+- Initial camera set: broadcast/chase, trackside, and overview. Camera selection is viewer-local.
+- 3D replay must remain synchronized with the same immutable race snapshot, event sequence, and replay cursor as the 2D timeline.
+- Leaderboard, flags, incidents, pit events, and race-control state remain sourced from existing race projections/events. Visual overlays must not become a second source of truth.
+
+### 18.7 Delivery phases and acceptance
+
+1. **Foundation:** renderer boundary, WebGL fallback, mobile performance instrumentation, procedural vehicle, and validated circuit mesh preview. No production race integration yet.
+2. **Replay vertical slice:** render one immutable circuit revision and up to 10 procedural vehicles from the existing segment-level replay projection. Verify cursor seeking, classification ordering, resize/orientation, and renderer teardown.
+3. **Live presentation:** connect the same read-only renderer to committed live timing projections; prove that rendering is isolated from simulation worker lifecycle and race state.
+4. **Asset pipeline:** accept licensed GLB/GLTF models, team-color/livery data, caching, LOD and texture optimization after device profiling.
+5. **Broadcast polish:** camera presets, trackside cuts, overlays, incidents, pit events, weather visuals, and optional scenery, each backed by supported data.
+
+Acceptance requires Android browser QA on representative low/mid-range devices, WebGL fallback tests, context-loss/recovery tests, no memory growth after repeated mount/unmount, no render-loop database/network calls, replay determinism unchanged, 2D fallback parity for critical information, and all existing CI/regression suites passing. No database migration is required for the renderer foundation; any future persisted sampling/asset metadata schema must be additive, tested in Supabase Testing first, and reconciled with Production only through reviewed migrations.
