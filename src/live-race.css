@@ -97,3 +97,5 @@
 .race-engine-replay-order li small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#9da2aa;font-size:7px}
 .race-engine-replay-disclaimer{grid-column:1/-1;line-height:1.5}
 @media(max-width:640px){.race-engine-replay-map{grid-template-columns:1fr}.race-engine-replay-map-head{align-items:flex-start;flex-direction:column}.race-engine-replay-map-canvas{min-height:190px}.race-engine-replay-order{max-height:190px}}
+
+.race-engine-replay-view-switch{display:flex;align-items:center;gap:5px;flex-wrap:wrap}.race-engine-replay-view-switch button{padding:6px 8px;border:1px solid rgba(198,163,58,.24);border-radius:5px;background:transparent;color:#aeb1b4;font-size:8px;font-weight:800}.race-engine-replay-view-switch button.active{border-color:#c6a33a;background:rgba(198,163,58,.12);color:#e2c56d}.race-engine-replay-view-switch span{margin-left:5px;color:#aeb1b4;font-size:8px;font-weight:700;letter-spacing:.06em}@media(max-width:620px){.race-engine-replay-map-head{align-items:flex-start;flex-direction:column;gap:9px}.race-engine-replay-view-switch span{width:100%;margin:2px 0 0}}
