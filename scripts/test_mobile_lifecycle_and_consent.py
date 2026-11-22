@@ -36,7 +36,10 @@ assert "location.reload" not in application
 
 # Keep cinematic background movement active on mobile while retaining lightweight header surfaces.
 mobile_rules = STYLES_CSS[STYLES_CSS.index("/* Mobile background mode:"):]
-assert ".scene-image{display:block!important;animation:cinematicCamera" in mobile_rules
+assert ".scene-image{display:block!important;object-fit:cover!important;object-position:50% 50%!important;animation:cinematicCamera" in mobile_rules
+assert "@keyframes cinematicCamera" in STYLES_CSS
+assert "translate3d(3.2%,0,0)" in STYLES_CSS
+assert "translate3d(-3.2%,0,0)" in STYLES_CSS
 assert ".scene-light,.scene-reflection,.scene-flare,.dust-canvas,.scene-depth{display:block!important}" in mobile_rules
 assert "backdrop-filter:none" in mobile_rules
 

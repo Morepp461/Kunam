@@ -619,7 +619,7 @@ body.app-backgrounded .scene-flare{animation-play-state:paused!important}
 body.app-backgrounded .scene-depth{backdrop-filter:none;-webkit-backdrop-filter:none}
 @media(max-width:900px){
  .scene:before{filter:blur(25px) brightness(.36) saturate(.72);transform:scale(1.08)}
- .scene-image{display:block!important;animation:cinematicCamera 18s cubic-bezier(.42,0,.58,1) infinite!important;transform:scale(1.08) translate3d(3.2%,0,0)!important}
+ .scene-image{display:block!important;object-fit:cover!important;object-position:50% 50%!important;animation:cinematicCamera 18s cubic-bezier(.42,0,.58,1) infinite!important}
  .scene-light,.scene-reflection,.scene-flare,.dust-canvas,.scene-depth{display:block!important}
  .site-header,.site-footer,.paddock-access-shell{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
@@ -635,8 +635,8 @@ body.app-backgrounded .scene-depth{backdrop-filter:none;-webkit-backdrop-filter:
   object-position:50% 50%!important;
 }
 @keyframes cinematicCamera{
-  0%,100%{transform:scale(1.08) translate3d(0,0,0)}
-  50%{transform:scale(1.17) translate3d(0,0,0)}
+  0%,100%{transform:scale(1.08) translate3d(3.2%,0,0)}
+  50%{transform:scale(1.17) translate3d(-3.2%,0,0)}
 }
 @media(max-width:900px){
   .scene-image{
