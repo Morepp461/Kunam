@@ -190,16 +190,16 @@ body.light .market-license-options>label.is-selected{background:linear-gradient(
 
 /* CALERIS custom option sheet: replaces the operating-system grey select popup. */
 .caleris-select-backdrop{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(2,3,5,.76);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:calerisSelectFade .14s ease-out}
-.caleris-select-sheet{display:flex;flex-direction:column;width:min(520px,100%);max-height:min(82svh,720px);overflow:hidden;border:1px solid rgba(224,75,94,.65);border-radius:18px;background:linear-gradient(145deg,rgba(91,20,34,.99),rgba(35,8,16,.99) 58%,rgba(17,7,12,.99));box-shadow:0 28px 90px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,210,216,.17),0 0 0 1px rgba(180,37,58,.12);color:#f8ecec}
-.caleris-select-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid rgba(255,190,198,.2);background:linear-gradient(110deg,rgba(173,36,58,.38),rgba(63,13,25,.22))}
+.caleris-select-sheet{position:relative;isolation:isolate;display:flex;flex-direction:column;width:min(520px,100%);max-height:min(82svh,720px);min-height:0;overflow:hidden;border:1px solid rgba(224,75,94,.65);border-radius:18px;background:linear-gradient(145deg,rgba(91,20,34,.99),rgba(35,8,16,.99) 58%,rgba(17,7,12,.99));box-shadow:0 28px 90px rgba(0,0,0,.68),inset 0 1px 0 rgba(255,210,216,.17),0 0 0 1px rgba(180,37,58,.12);color:#f8ecec}
+.caleris-select-heading{position:relative;z-index:1;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid rgba(255,190,198,.2);background:linear-gradient(110deg,rgba(173,36,58,.38),rgba(63,13,25,.22))}
 .caleris-select-heading strong{font:600 19px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff4f4}
 .caleris-select-heading small{display:block;margin-top:3px;color:rgba(255,225,228,.68);font-size:10px;letter-spacing:.12em}
 .caleris-select-heading button{display:grid;place-items:center;flex:none;width:34px;height:34px;border:1px solid rgba(255,205,211,.24);border-radius:50%;background:rgba(10,4,8,.32);color:#ffe4e7}
-.caleris-select-search{display:flex;align-items:center;gap:9px;margin:12px 14px 4px;padding:0 12px;border:1px solid rgba(255,190,198,.22);border-radius:9px;background:rgba(12,4,8,.48);color:#f2c4ca}
+.caleris-select-search{position:relative;z-index:1;flex:0 0 auto;display:flex;align-items:center;gap:9px;margin:12px 14px 4px;padding:0 12px;border:1px solid rgba(255,190,198,.22);border-radius:9px;background:rgba(12,4,8,.48);color:#f2c4ca}
 .caleris-select-search input{width:100%;min-width:0;height:42px;border:0;outline:0;background:transparent;color:#fff1f2;font:inherit;font-size:13px}
 .caleris-select-search input::placeholder{color:rgba(255,224,228,.52)}
-.caleris-select-options{overflow:auto;overscroll-behavior:contain;padding:8px}
-.caleris-select-option{display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:54px;padding:12px 14px;border:1px solid transparent;border-bottom-color:rgba(255,190,198,.12);border-radius:8px;background:transparent;color:#f7e9eb;text-align:left;font:500 14px Inter,Arial,sans-serif;transition:background .16s,border-color .16s,color .16s}
+.caleris-select-options{position:relative;z-index:1;flex:1 1 auto;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;padding:8px 8px max(8px,env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.caleris-select-option{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;width:100%;min-height:54px;padding:12px 14px;border:1px solid transparent;border-bottom-color:rgba(255,190,198,.12);border-radius:8px;background:transparent;color:#f7e9eb;text-align:left;font:500 14px Inter,Arial,sans-serif;transition:background .16s,border-color .16s,color .16s}
 .caleris-select-option:hover,.caleris-select-option:focus-visible{outline:0;border-color:rgba(255,149,164,.34);background:linear-gradient(100deg,rgba(175,37,60,.42),rgba(105,19,39,.24))}
 .caleris-select-option.is-selected{border-color:rgba(255,178,188,.42);background:linear-gradient(100deg,rgba(196,48,71,.48),rgba(108,20,39,.42));color:#fff}
 .caleris-select-option>svg{flex:none;color:#f2c86b}
@@ -232,3 +232,44 @@ body.light .market-license-options>label.is-selected{background:linear-gradient(
  .site-header .global-search.is-expanded input{font-size:11px}
 }
 @media(max-width:370px){.site-header .global-search.is-expanded{flex-basis:min(320px,calc(100vw - 145px));width:min(320px,calc(100vw - 145px));min-width:min(130px,calc(100vw - 145px))}}
+
+
+/* Shared gold comet-outline skeleton motion. The comet traces the complete
+   perimeter, then leaves a restrained gold wash inside the component. */
+@keyframes calerisCometOrbit{to{transform:rotate(1turn)}}
+@keyframes calerisCometFill{0%,100%{background-color:rgba(214,184,95,.015)}50%{background-color:rgba(214,184,95,.075)}}
+.comet-skeleton{position:relative;isolation:isolate}
+.comet-skeleton::before{
+ content:"";position:absolute;inset:0;z-index:4;padding:1.5px;border-radius:inherit;
+ background:conic-gradient(from 0deg,transparent 0 76%,rgba(214,184,95,.08) 82%,rgba(255,232,158,.98) 87%,#d6b85e 91%,transparent 97%);
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+ -webkit-mask-composite:xor;mask-composite:exclude;
+ animation:calerisCometOrbit 2.25s linear infinite;pointer-events:none
+}
+.comet-skeleton::after{content:"";position:absolute;inset:1px;z-index:0;border-radius:inherit;background:rgba(214,184,95,.02);animation:calerisCometFill 2.25s ease-in-out infinite;pointer-events:none}
+.comet-skeleton>*{position:relative;z-index:1}
+.workspace-card[aria-busy="true"],.workspace-card.is-loading,[aria-busy="true"] .workspace-card,
+.auth-loading,.center-state[aria-busy="true"]{overflow:hidden}
+.workspace-card[aria-busy="true"]::before,.workspace-card.is-loading::before,
+[aria-busy="true"] .workspace-card::before,.auth-loading::before,.center-state[aria-busy="true"]::before{
+ content:"";position:absolute;inset:0;z-index:5;padding:1.5px;border-radius:inherit;
+ background:conic-gradient(from 0deg,transparent 0 76%,rgba(214,184,95,.08) 82%,rgba(255,232,158,.98) 87%,#d6b85e 91%,transparent 97%);
+ -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+ -webkit-mask-composite:xor;mask-composite:exclude;animation:calerisCometOrbit 2.25s linear infinite;pointer-events:none
+}
+.caleris-select-backdrop{z-index:1200}
+.caleris-select-sheet::before{pointer-events:none}
+@media(max-width:620px){
+ .caleris-select-backdrop{align-items:flex-end;padding:0;overflow:hidden}
+ .caleris-select-sheet{width:100%;height:auto;max-height:min(78dvh,720px);min-height:0;flex:0 1 auto;padding-bottom:env(safe-area-inset-bottom)}
+ .caleris-select-heading{flex-shrink:0}
+ .caleris-select-search{flex-shrink:0}
+ .caleris-select-options{min-height:0;max-height:100%;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+}
+.global-progress.comet-transition{inset:8px;width:auto;height:auto;overflow:visible;border:0;border-radius:18px;background:transparent;pointer-events:none}
+.global-progress.comet-transition::before{content:"";position:absolute;inset:0;padding:2px;border-radius:inherit;background:conic-gradient(from 0deg,transparent 0 76%,rgba(214,184,95,.1) 82%,#fff0a8 87%,#d6b85e 91%,transparent 97%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:calerisCometOrbit 1.65s linear infinite}
+.global-progress.comet-transition span{display:none}
+.global-progress.comet-transition i{display:none}
+@media(prefers-reduced-motion:reduce){
+ .comet-skeleton::before,.comet-skeleton::after,.workspace-card[aria-busy="true"]::before,.workspace-card.is-loading::before,[aria-busy="true"] .workspace-card::before,.auth-loading::before,.center-state[aria-busy="true"]::before,.global-progress.comet-transition::before{animation:none}
+}
