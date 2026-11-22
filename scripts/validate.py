@@ -94,7 +94,7 @@ def main():
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
     assert 'provider:"discord"' in app
-    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%202.png" alt=""/>' in layout_module
+    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%203.png" alt=""/>' in layout_module
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app

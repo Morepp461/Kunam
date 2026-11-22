@@ -40,9 +40,17 @@ assert 'border-left:2px solid rgba(214,184,94,.88)' in CONTROLS
 # All native select fields must open the shared CALERIS sheet, avoiding OS-native grey popups.
 assert "function CalerisSelectOverlay()" in APP
 assert "caleris-select-backdrop" in APP
-assert 'document.addEventListener("pointerdown",openSelect,true)' in APP
-assert 'document.addEventListener("click",suppressNativeClick,true)' in APP
+assert 'document.addEventListener("click",openSelect,true)' in APP
+assert 'document.addEventListener("pointerdown",openSelect,true)' not in APP
+assert 'suppressNativeClick' not in APP
+assert 'labelText+=node.textContent||""' in APP
+assert 'input value={filter} onChange={event=>setFilter(event.target.value)}' in APP
 assert ".caleris-select-sheet" in CONTROLS
+assert "touch-action:pan-y" in CONTROLS
+assert "min-height:0" in CONTROLS
+assert "calerisCometOrbit" in CONTROLS
+assert "comet-skeleton" in APP
+assert "Background%203.png" in NAV
 assert "rgba(91,20,34,.99)" in CONTROLS
 
 # The account menu is consolidated at the sidebar bottom; the duplicate category/header avatar is removed.
