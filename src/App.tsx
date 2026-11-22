@@ -136,7 +136,7 @@ function Application(){
  useEffect(()=>{const markBackground=()=>document.body.classList.toggle("app-backgrounded",document.visibilityState==="hidden");const onPageShow=()=>document.body.classList.remove("app-backgrounded");const onPageHide=()=>document.body.classList.add("app-backgrounded");document.addEventListener("visibilitychange",markBackground);window.addEventListener("pageshow",onPageShow);window.addEventListener("pagehide",onPageHide);markBackground();return()=>{document.removeEventListener("visibilitychange",markBackground);window.removeEventListener("pageshow",onPageShow);window.removeEventListener("pagehide",onPageHide);document.body.classList.remove("app-backgrounded")}},[]);
  useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data,error})=>{if(error)toast("error","Session gagal dimuat",error.message);sessionUserIdRef.current=data.session?.user.id??null;setSession(data.session);setAuthReady(true)});const {data}=supabase.auth.onAuthStateChange((event,s)=>{const nextUserId=s?.user.id??null;const identityChanged=sessionUserIdRef.current!==nextUserId;sessionUserIdRef.current=nextUserId;setSession(s);if(identityChanged||event==="USER_UPDATED")setProfileReady(false);setAuthReady(true)});return()=>data.subscription.unsubscribe()},[toast]);
  useEffect(()=>{if(authReady)void refreshProfile()},[authReady,refreshProfile]);
- useEffect(()=>{window.scrollTo(0,0);loading(true);const frame=requestAnimationFrame(()=>loading(false));return()=>cancelAnimationFrame(frame)},[location.pathname,loading]);
+ useEffect(()=>{window.scrollTo(0,0);loading(true);const timer=window.setTimeout(()=>loading(false),560);return()=>window.clearTimeout(timer)},[location.pathname,loading]);
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
@@ -386,7 +386,7 @@ function CalerisSelectOverlay(){
  if(!activeSelect)return null;
  const options=Array.from(activeSelect.options).map(option=>({value:option.value,label:option.label||option.textContent||"",disabled:option.disabled,group:option.parentElement instanceof HTMLOptGroupElement?option.parentElement.label:""}));
  const filtered=options.filter(option=>(option.label+" "+option.group).toLocaleLowerCase("id-ID").includes(filter.trim().toLocaleLowerCase("id-ID")));
- const label=activeSelect.labels?.[0];let labelText="";if(label){for(const node of Array.from(label.childNodes)){if(node===activeSelect)break;labelText+=node.textContent||"";}}const title=labelText.replace(/\\s+/g," ").trim()||activeSelect.getAttribute("aria-label")||"Pilih opsi";
+ const label=activeSelect.labels?.[0];let labelText="";if(label){for(const node of Array.from(label.childNodes)){if(node===activeSelect)break;labelText+=node.textContent||"";}}const title=labelText.replace(/\s+/g," ").trim()||activeSelect.getAttribute("aria-label")||"Pilih opsi";
  const choose=(value:string)=>{
   if(!activeSelect||activeSelect.disabled)return;
   activeSelect.value=value;
