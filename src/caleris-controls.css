@@ -249,7 +249,7 @@ body.light .market-license-options>label.is-selected{background:linear-gradient(
 .comet-skeleton::after{content:"";position:absolute;inset:1px;z-index:0;border-radius:inherit;background:rgba(214,184,95,.02);animation:calerisCometFill 2.25s ease-in-out infinite;pointer-events:none}
 .comet-skeleton>*{position:relative;z-index:1}
 .workspace-card[aria-busy="true"],.workspace-card.is-loading,[aria-busy="true"] .workspace-card,
-.auth-loading,.center-state[aria-busy="true"]{overflow:hidden}
+.auth-loading,.center-state[aria-busy="true"]{position:relative;overflow:hidden}
 .workspace-card[aria-busy="true"]::before,.workspace-card.is-loading::before,
 [aria-busy="true"] .workspace-card::before,.auth-loading::before,.center-state[aria-busy="true"]::before{
  content:"";position:absolute;inset:0;z-index:5;padding:1.5px;border-radius:inherit;
