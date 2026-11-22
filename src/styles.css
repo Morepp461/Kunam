@@ -627,3 +627,21 @@ body.app-backgrounded .scene-depth{backdrop-filter:none;-webkit-backdrop-filter:
  .scene-image,.scene-light,.scene-reflection,.scene-flare{animation:none!important;transform:none!important}
  .dust-canvas{display:none!important}
 }
+
+
+/* Responsive cinematic backdrop: fill every viewport and keep the image's center in focus. */
+.scene-image{
+  object-fit:cover!important;
+  object-position:50% 50%!important;
+}
+@keyframes cinematicCamera{
+  0%,100%{transform:scale(1.08) translate3d(0,0,0)}
+  50%{transform:scale(1.17) translate3d(0,0,0)}
+}
+@media(max-width:900px){
+  .scene-image{
+    object-fit:cover!important;
+    object-position:50% 50%!important;
+    animation:cinematicCamera 18s cubic-bezier(.42,0,.58,1) infinite!important;
+  }
+}
