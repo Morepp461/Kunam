@@ -26,6 +26,14 @@
 
 ### 3D Driver Exhibition
 
+- Interactive Three.js exhibition hall presenting registered Caleris Masters drivers as realistic 3D characters.
+- Desktop camera navigation supports mouse drag to look around, scroll to zoom, WASD keyboard movement, and an on-screen analog joystick for continuous directional movement. The joystick supports mouse and pointer input and returns to its neutral position when released.
+- Mobile camera navigation uses a touch analog joystick, drag-to-look, scroll/pinch-compatible zoom behavior, and on-screen directional controls.
+- Driver search and team filters update the visible exhibition lineup; selecting a character opens the driver information panel.
+- Character GLB assets are fingerprinted and cached in IndexedDB, with progressive model loading and browser-memory cleanup to reduce repeated generation and peak rendering load.
+- Fullscreen mode is supported where the browser permits it, with an in-page fallback for embedded browsers.
+- The exhibition is frontend-only and does not introduce a separate database schema or reward/scoring workflow.
+
 ### Race Engine 3D Visualization
 
 - The Three.js 3D Race Replay viewer is implemented in the current feature branch (PR #279, pending CI/merge). It is a replay presentation feature, not yet a complete live 3D broadcast.
@@ -34,14 +42,6 @@
 - External vehicle models are optional. Licensed .glb/.gltf assets can be added later with recorded provenance and license; team colors and livery will be data-driven. No unlicensed official F1/team models or logos will be bundled.
 - Current replay data is segment-level. Vehicle movement must not be presented as continuous GPS, and unsupported speed/throttle/brake/gear telemetry must not be fabricated.
 - Delivery gates and asset/performance rules are maintained in [Race Engine PRD](docs/race-engine/PRD.md#18-3d-race-visualization-and-asset-pipeline).
-
-- Interactive Three.js exhibition hall presenting registered Caleris Masters drivers as realistic 3D characters.
-- Desktop camera navigation supports mouse drag to look around, scroll to zoom, WASD keyboard movement, and an on-screen analog joystick for continuous directional movement. The joystick supports mouse and pointer input and returns to its neutral position when released.
-- Mobile camera navigation uses a touch analog joystick, drag-to-look, scroll/pinch-compatible zoom behavior, and on-screen directional controls.
-- Driver search and team filters update the visible exhibition lineup; selecting a character opens the driver information panel.
-- Character GLB assets are fingerprinted and cached in IndexedDB, with progressive model loading and browser-memory cleanup to reduce repeated generation and peak rendering load.
-- Fullscreen mode is supported where the browser permits it, with an in-page fallback for embedded browsers.
-- The exhibition is frontend-only and does not introduce a separate database schema or reward/scoring workflow.
 
 ### Main Event Registration Image Optimization
 
