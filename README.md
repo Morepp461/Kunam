@@ -36,7 +36,7 @@
 
 ### Race Engine 3D Visualization
 
-- The Three.js 3D Race Replay viewer is implemented in the current feature branch (PR #279, pending CI/merge). It is a replay presentation feature, not yet a complete live 3D broadcast.
+- The Three.js 3D Race Replay viewer was merged through PR #279 after CI passed. It is a replay presentation feature, not yet a complete live 3D broadcast.
 - The viewer will reuse the existing Three.js dependency, Circuit Maker geometry, Circuit Pool revisions, and authoritative Race Engine replay/timing projections. It will remain presentation-only; simulation and official results stay authoritative outside the renderer.
 - The first replay vertical slice renders one immutable circuit centerline and up to 10 procedural original single-seater cars, with broadcast, trackside, and overview cameras. The existing 2D map remains available as fallback.
 - External vehicle models are optional. Licensed .glb/.gltf assets can be added later with recorded provenance and license; team colors and livery will be data-driven. No unlicensed official F1/team models or logos will be bundled.
@@ -1048,3 +1048,12 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - Default Base Valuation is €120,000,000 for Caleris Premio and €45,000,000 for Caleris Zwei. The value is seeded for new teams and existing teams without a saved base value; Admin can edit each team's Base Valuation from Operations Suite → Team Valuation.
 - Team Valuation now includes Team Reputation at 10% of the Team Score and adds completed HQ asset value separately to the final valuation. Fan population contributes through the existing reputation fanbase metric; merchandise net cashflow contributes through the existing cashflow component. HQ assets are not counted twice.
 - Migration: `20261119020000_team_hq_brand_merchandise_integration.sql`. No dependency changes.
+
+### Team UV Livery Editor
+
+- Team Panel → Custom Team Livery provides a persistent per-team livery editor backed by `caleris_team_liveries`.
+- The editor produces a CALERIS UV texture atlas (template V1) with editable main/secondary/accent colors, split/stripe/solid/carbon patterns, car number, team wordmark, three sponsor labels, and one uploaded PNG/JPG/WebP logo (maximum 100 KB).
+- Livery designs can be saved to the team's database record and exported/imported as a versioned JSON file. Writes are restricted by RLS to the team's Owner/Principal or a verified site administrator; team members can read their own team's livery.
+- A lightweight procedural Three.js preview is included. It is a preview model, not a production UV-unwrapped GLB/GLTF car. The repository does not yet contain a production car model with a verified matching UV map, so the atlas is not represented as a final Monoposto-compatible texture for an arbitrary vehicle.
+- The livery editor is presentation-only and does not alter Race Engine physics, timing, classification, or save data. Historical race-start livery snapshot wiring remains gated on a non-synthetic race roster and the production vehicle UV asset.
+- Migration: `20261122130000_team_uv_livery_editor.sql`.

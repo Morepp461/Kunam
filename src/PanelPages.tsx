@@ -42,6 +42,7 @@ export const panelGroups: PanelGroup[] = [
   ]},
   { path: "team-panel", label: "TEAM PANEL", tabs: [
     { path: "team-summary", label: "Team Summary", description: "Profil, susunan driver, dan statistik tim." },
+    { path: "custom-livery", label: "Custom Team Livery", description: "UV texture atlas editor untuk warna, pola, nomor mobil, sponsor, dan logo tim." },
     { path: "team-hq", label: "Team HQ", description: "Fasilitas, aset, maintenance, dan konfigurasi headquarters tim." },
     { path: "command-center", label: "Owner Command Center", description: "Pusat kendali operasional, finansial, performa, dan sponsorship tim." },
     { path: "financial-centre", label: "Financial Intelligence", description: "Analisis kas, valuasi, komitmen sponsorship, dan kondisi finansial tim." },
