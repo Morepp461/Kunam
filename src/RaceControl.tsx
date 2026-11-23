@@ -2,11 +2,12 @@ import {useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import {AlertTriangle,CheckCircle2,Flag,Plus,RefreshCw,Save,ShieldCheck,Timer,Trash2,Trophy} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
 import RaceOCR from "./RaceOCR";
 
 type Round={id:string;round_number:number;title:string;season_division_id:string;status:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division?:{division_name:string;license_seasons?:{title:string}}};
-type Member={id:string;character_name:string|null;role:string|null;team_id:string|null;nationality:string|null};
+type Member={id:string;public_member_id:string;character_name:string|null;role:string|null;team_id:string|null;nationality:string|null};
 type Team={id:string;name:string};type Circuit={id:string;name:string;country_code:string};type Registration={member_id:string;season_division_id:string};
 type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";type FinishStatus="finished"|"dnf"|"dns"|"dsq";
 type Entry={memberId:string;driverName:string;teamName:string;driverNumber:string;country:string;flag:string;gridPosition:string;status:FinishStatus;position:string;timeOrLaps:string;gap:string;fastestLap:string;stints:Tyre[]};
@@ -25,7 +26,7 @@ export default function RaceControl(){
  const refresh=useCallback(async()=>{if(!supabase)return;setLoading(true);setNotice(null);
   const [r,m,t,reg,c]=await Promise.all([
    supabase.from("license_rounds").select("id,round_number,title,season_division_id,status,session_type,checkin_closes_at,circuit_name,circuit_country_code,license_season_divisions(division_name,license_seasons(title))").neq("status","closed").order("round_number"),
-   supabase.from("caleris_member_directory").select("id,character_name,role,team_id,nationality").eq("role","Driver").order("character_name"),
+   supabase.from("caleris_member_directory").select("id,public_member_id,character_name,role,team_id,nationality").eq("role","Driver").order("character_name"),
    supabase.from("caleris_team_directory").select("id,name").order("name"),
    supabase.from("license_season_members").select("member_id,season_division_id").eq("is_hiatus",false),
    supabase.from("caleris_circuits").select("id,name,country_code").order("name")
@@ -94,7 +95,7 @@ export default function RaceControl(){
     <p className="page-description">Grid P1 otomatis menjadi Pole Position. Masukkan race time, gap, status, fastest lap, dan semua stint ban.</p><RaceOCR entries={entries} drivers={participants} teams={teams} onDraft={setEntries}/>
     <div className="race-input-table-wrap"><table className="race-input-table race-complete-table"><thead><tr><th>Driver / Team</th><th>No.</th><th>Country / Flag</th><th>Grid</th><th>Status</th><th>Pos</th><th>Time / Laps Behind</th><th>Gap</th><th>Fastest Lap</th><th>Tyre Stints</th></tr></thead><tbody>
      {entries.map(x=><tr key={x.memberId}>
-      <td><select aria-label={`Pilih Driver ${x.driverName}`} value={x.memberId} onChange={e=>{const target=participants.find(m=>m.id===e.target.value);if(!target||entries.some(y=>y.memberId===target.id&&y.memberId!==x.memberId))return;const team=teams.find(t=>t.id===target.team_id);setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,memberId:target.id,driverName:target.character_name||"Driver",teamName:team?.name||"Unassigned",country:target.nationality||y.country}:y))}}>{participants.map(m=><option key={m.id} value={m.id}>{m.character_name||"Driver"} · {teams.find(t=>t.id===m.team_id)?.name||"Unassigned"}</option>)}</select><small>{x.teamName}</small></td>
+      <td><select aria-label={`Pilih Driver ${x.driverName}`} value={x.memberId} onChange={e=>{const target=participants.find(m=>m.id===e.target.value);if(!target||entries.some(y=>y.memberId===target.id&&y.memberId!==x.memberId))return;const team=teams.find(t=>t.id===target.team_id);setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,memberId:target.id,driverName:target.character_name||"Driver",teamName:team?.name||"Unassigned",country:target.nationality||y.country}:y))}}>{participants.map(m=><option key={m.id} value={m.id}>{m.character_name||"Driver"} · {teams.find(t=>t.id===m.team_id)?.name||"Unassigned"}</option>)}</select><small><MemberProfileLink memberId={participants.find(m=>m.id===x.memberId)?.public_member_id}>{x.driverName}</MemberProfileLink> · <TeamProfileLink teamId={participants.find(m=>m.id===x.memberId)?.team_id||undefined}>{x.teamName}</TeamProfileLink></small></td>
       <td><input aria-label={`Nomor mobil ${x.driverName}`} type="number" min="1" value={x.driverNumber} onChange={e=>update(x.memberId,{driverNumber:e.target.value})} placeholder="No." required/></td>
       <td><div className="race-country-fields"><input aria-label={`Negara ${x.driverName}`} value={x.country} onChange={e=>update(x.memberId,{country:e.target.value})} placeholder="Country" required/><input aria-label={`Flag ${x.driverName}`} value={x.flag} onChange={e=>update(x.memberId,{flag:e.target.value})} placeholder="🇮🇩" maxLength={8} required/></div></td>
       <td><input className="race-pos-input" aria-label={`Grid ${x.driverName}`} type="number" min="1" value={x.gridPosition} onChange={e=>update(x.memberId,{gridPosition:e.target.value})} required/></td>
