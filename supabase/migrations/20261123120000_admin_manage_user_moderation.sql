@@ -87,3 +87,41 @@ end;
 $function$;
 revoke all on function public.admin_assign_member_team(uuid,uuid,text) from public,anon;
 grant execute on function public.admin_assign_member_team(uuid,uuid,text) to authenticated;
+
+
+create or replace function public.member_sync_expired_ban()
+returns text
+language plpgsql
+security definer
+set search_path=''
+as $function$
+declare
+  v_actor uuid:=(select auth.uid());
+  v_latest public.caleris_user_moderation_actions%rowtype;
+  v_restored_status text;
+begin
+  if v_actor is null then raise exception 'Authentication required.'; end if;
+  select * into v_latest
+  from public.caleris_user_moderation_actions
+  where target_user_id=v_actor
+  order by created_at desc
+  limit 1;
+  if not found or v_latest.action_type<>'temporary_ban' or v_latest.expires_at is null or v_latest.expires_at>now() then
+    return 'unchanged';
+  end if;
+  v_restored_status:=case when v_latest.previous_account_status in ('public','active','admin')
+    then v_latest.previous_account_status else 'active' end;
+  update public.profiles
+  set account_status=v_restored_status,updated_at=now()
+  where user_id=v_actor and account_status='suspended';
+  insert into public.caleris_user_moderation_actions(
+    target_user_id,target_member_id,action_type,reason,metadata,created_by
+  )
+  select v_actor,p.member_id,'unban','Ban sementara berakhir otomatis.',
+    jsonb_build_object('automatic_expiry',true,'expired_action_id',v_latest.id),v_actor
+  from public.profiles p where p.user_id=v_actor;
+  return 'restored';
+end;
+$function$;
+revoke all on function public.member_sync_expired_ban() from public,anon;
+grant execute on function public.member_sync_expired_ban() to authenticated;
