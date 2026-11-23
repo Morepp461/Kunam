@@ -61,6 +61,10 @@ TEAM_CONTRACTS = (ROOT / "src" / "TeamDriverContracts.tsx").read_text(encoding="
 TEAM_APPLICATIONS = (ROOT / "src" / "TeamDriverApplications.tsx").read_text(encoding="utf-8")
 TEAM_AFFILIATE = (ROOT / "src" / "TeamAffiliate.tsx").read_text(encoding="utf-8")
 TEAM_TAKEOVER = (ROOT / "src" / "TeamTakeoverMarket.tsx").read_text(encoding="utf-8")
+ADMIN_PRIZEPOOL = (ROOT / "src" / "AdminPrizepool.tsx").read_text(encoding="utf-8")
+ADMIN_ADJUSTMENTS = (ROOT / "src" / "AdminAdjustmentCenter.tsx").read_text(encoding="utf-8")
+BRAND_ECOSYSTEM = (ROOT / "src" / "BrandEcosystem.tsx").read_text(encoding="utf-8")
+BRAND_ECOSYSTEM_ADMIN = (ROOT / "src" / "BrandEcosystemAdmin.tsx").read_text(encoding="utf-8")
 
 assert 'import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";' in FIA_OPERATIONS
 assert 'select("id,public_member_id,character_name,role,team_id")' in FIA_OPERATIONS
@@ -92,5 +96,14 @@ assert '<TeamProfileLink teamId={team?.id}>{team?.name||"Team"}</TeamProfileLink
 assert 'const teamName=(id:string)=><TeamProfileLink teamId={id}>' in TEAM_AFFILIATE
 assert '<TeamProfileLink teamId={ownTeam.id}>{ownTeam.name}</TeamProfileLink>' in TEAM_AFFILIATE
 assert '<TeamProfileLink teamId={ownTeam.id}>{ownTeam.name}</TeamProfileLink>' in TEAM_TAKEOVER
+
+
+assert '<TeamProfileLink teamId={s.team_id}>{teams.find(t=>t.id===s.team_id)?.name||"Team"}</TeamProfileLink>' in ADMIN_PRIZEPOOL
+assert 'supabase.from("caleris_member_directory").select("id,public_member_id").eq("role","Driver")' in ADMIN_ADJUSTMENTS
+assert '<MemberProfileLink memberId={drivers.find(d=>d.id===a.member_id)?.public_member_id}>' in ADMIN_ADJUSTMENTS
+assert '<TeamProfileLink teamId={o.target_team_id||undefined}>{teams.find(t=>t.id===o.target_team_id)?.name||"Team"}</TeamProfileLink>' in BRAND_ECOSYSTEM
+assert 'mode==="team"&&team?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in BRAND_ECOSYSTEM
+assert 'mode==="driver"&&member?.public_member_id?<MemberProfileLink memberId={member.public_member_id}>' in BRAND_ECOSYSTEM
+assert 'const teamName=(id:string|null)=><TeamProfileLink teamId={id||undefined}>' in BRAND_ECOSYSTEM_ADMIN
 
 print("Live driver/team directories, FIA operations, Community Hub and public profile-link regression checks passed.")
