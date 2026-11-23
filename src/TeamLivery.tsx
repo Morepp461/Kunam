@@ -50,7 +50,14 @@ function Preview3D({design}:{design:Design}){
    for(const side of [-1,1]){const plane=new T.Mesh(new T.PlaneGeometry(1.25,.3),decalMat);geometries.push(plane.geometry);plane.position.set(side*.91,.34,-.25);plane.rotation.y=side===1?Math.PI/2:-Math.PI/2;car.add(plane);}
    const floor=add(new T.CircleGeometry(5,48),mat("#20262D",1),0,-.2,0,1,.02,.72);floor.rotation.x=-Math.PI/2;floor.position.y=-.21;
    const resize=()=>{if(!renderer)return;const nw=Math.max(1,node.clientWidth),nh=Math.max(1,node.clientHeight);camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);};observer=new ResizeObserver(resize);observer.observe(node);
-   const animate=()=>{if(disposed)return;car.rotation.y=Math.sin(performance.now()*.0002)*.035;renderer?.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
+   const canvas=renderer.domElement;canvas.style.touchAction="none";let dragging=false,lastX=0,lastY=0;
+   const down=(event:PointerEvent)=>{dragging=true;lastX=event.clientX;lastY=event.clientY;canvas.setPointerCapture(event.pointerId);};
+   const move=(event:PointerEvent)=>{if(!dragging)return;orbitYaw-=(event.clientX-lastX)*.008;orbitPitch=Math.max(-.2,Math.min(1.25,orbitPitch+(event.clientY-lastY)*.006));lastX=event.clientX;lastY=event.clientY;updateCamera();};
+   const up=()=>{dragging=false;};
+   const wheel=(event:WheelEvent)=>{event.preventDefault();orbitDistance=Math.max(6,Math.min(17,orbitDistance+event.deltaY*.008));updateCamera();};
+   canvas.addEventListener("pointerdown",down);canvas.addEventListener("pointermove",move);canvas.addEventListener("pointerup",up);canvas.addEventListener("pointercancel",up);canvas.addEventListener("wheel",wheel,{passive:false});
+   interactionCleanup=()=>{canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",move);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("wheel",wheel);};
+   const animate=()=>{if(disposed)return;renderer?.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
   }).catch(()=>{if(!disposed)node.dataset.error="WebGL preview unavailable";});
   return()=>{disposed=true;cancelAnimationFrame(frame);observer?.disconnect();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(texture=>texture.dispose());if(renderer){interactionCleanup();renderer.dispose();renderer.domElement.remove();}};
  },[design]);
