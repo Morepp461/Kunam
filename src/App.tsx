@@ -7,6 +7,7 @@ import type {Session} from "@supabase/supabase-js";
 import {missingSupabaseMessage,supabase} from "./lib/supabase";
 import "./workspace.css";
 import "./stage5-panel.css";
+import CaleMascotPreview from "./CaleMascotPreview";
 import PanelPage,{panelGroups} from "./PanelPages";
 import MainLayout from "./MainLayout";
 import DashboardModule from "./DashboardModule";
@@ -155,6 +156,7 @@ function Application(){
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
  if(session&&profile?.account_status==="suspended")return <SuspendedAccountPage session={session}/>;
  return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} memberId={profile?.member_id??null} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin} panelAccess={panelAccess}/>} toast={toast} loading={loading}><CalerisSelectOverlay/><AnalyticsTracker/><Routes>
+  <Route path="/cale-lab" element={<CaleMascotPreview/>}/>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
