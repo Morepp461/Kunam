@@ -1203,3 +1203,41 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 5. Complete remaining global profile-link audit and mobile visual acceptance.
 
 **Release statement:** Core follow-up code is merged, CI passed, both Supabase Edge Function deployments are active, and the latest Vercel Production deployment is READY. The 11-scope program is not 100% complete because Scope 08 real GLB integration and the listed manual acceptance checks remain outstanding.
+
+
+
+---
+
+# INFRASTRUCTURE FINALIZATION CHECKPOINT — 23 November 2026
+
+## Repository / CI
+- Main HEAD: `0e61a1c037d7f070297df493b3fc4423bb538de2` (PR #310, FK-index hardening).
+- GitHub Actions run `45174167144` for this exact main SHA: **completed / success**.
+- PR #310 merged only after the required checks passed. The 14 FK indexes added by the migration are present in both databases.
+
+## Supabase migration ledger parity
+- Projects: Production `asltczqrmoxnayusvjta`; Testing `vxwvhyyvoipjwucbrvlu`.
+- The five workflow migration entries now use the exact canonical versions and names in both databases:
+  - `20261123110000_driver_contract_request_workflow`
+  - `20261123120000_admin_manage_user_moderation`
+  - `20261123130000_team_inactivity_freeze_and_compensation`
+  - `20261123140000_driver_first_contract_request_support`
+  - `20261123150000_caleris_scope_fk_indexes`
+- Before reconciliation, migration SQL had already been applied to both databases, but the ledger timestamps/names differed because the migration tool recorded generated versions. Only the ledger metadata was normalized; migrations were not re-executed and application data was not changed.
+- All 14 expected FK indexes are verified in Testing and Production. No RLS policies, grants, business data, or dummy testing data were changed by this reconciliation.
+- The four feature migrations and FK-index migration are aligned by canonical version/name across both databases.
+
+## Vercel Production
+- Project: `caleris_masters_newgen`.
+- Deployment: `dpl_12n9PkiSfPsonvUVAQzYjM16u98y`.
+- State: **READY**, target Production, branch `main`, exact source SHA `0e61a1c037d7f070297df493b3fc4423bb538de2`.
+- Production alias is attached to the same project deployment. No Vercel environment variables or project settings were changed.
+
+## Acceptance still outstanding
+- Scope 08 is not complete: the supplied 2025 GLB still needs an app-accessible hosted asset path, real GLTF loading, real-mesh decal/sponsor verification, Team Profile integration, and Android GPU/memory acceptance.
+- Real authenticated Driver/Owner contract workflow walkthrough remains a manual acceptance item.
+- Real Admin/FIA/Owner/member role-matrix walkthrough and authenticated Admin User browser/CORS request remain manual acceptance items.
+- Full page-by-page profile-link audit and Android visual acceptance remain open.
+- Team inactivity compensation must only be exercised with controlled Testing fixtures; do not trigger real Production wallet settlement as part of QA.
+
+**Status:** latest main CI is green, Supabase migration ledger parity is reconciled, the 14 FK indexes are present in both databases, and the exact main commit is deployed READY on Vercel. The full 11-scope program is not declared 100% complete while the manual acceptance items and real GLB integration above remain open.
