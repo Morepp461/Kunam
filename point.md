@@ -1413,3 +1413,13 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Scoped native-select suppression to the Digital ID editor, preserving the shared global select handler elsewhere.
 - Added a regression test for exactly one custom theme trigger and no native HTML select in the editor.
 - No database, Edge Function, wallet, or Vercel environment changes.
+
+
+---
+
+# RACE ENGINE GLOBAL CLOCK — 23 NOVEMBER 2026
+
+- Recomputed the shared tick duration from each entrant’s actual elapsed-time delta after segment processing.
+- Includes incident time loss and pit-lane loss in the shared clock, weather progression, and race-control expiry instead of using only nominal segment duration.
+- Added a checkpoint regression assertion for the shared clock against the maximum entrant elapsed time.
+- No database, migration, Edge Function, wallet, or Vercel environment changes.
