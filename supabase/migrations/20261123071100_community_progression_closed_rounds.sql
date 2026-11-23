@@ -20,28 +20,28 @@ begin
         select count(distinct e.round_id)::numeric
         from public.caleris_race_result_entries e
         join public.license_rounds r on r.id=e.round_id
-        where e.member_id=p_member and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+        where e.member_id=p_member and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       when 'driver_wins' then (
         select count(*)::numeric
         from public.caleris_race_result_entries e
         join public.license_rounds r on r.id=e.round_id
         where e.member_id=p_member and e.finishing_position=1
-          and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+          and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       when 'driver_podiums' then (
         select count(*)::numeric
         from public.caleris_race_result_entries e
         join public.license_rounds r on r.id=e.round_id
         where e.member_id=p_member and e.finishing_position between 1 and 3
-          and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+          and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       when 'driver_points' then (
         select coalesce(sum(rs.points_total),0)::numeric
         from public.license_round_standings rs
         join public.license_rounds r on r.id=rs.round_id
         where rs.member_id=p_member
-          and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+          and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       else null
     end;
@@ -97,21 +97,21 @@ begin
         select count(distinct e.round_id)::numeric
         from public.caleris_race_result_entries e
         join public.license_rounds r on r.id=e.round_id
-        where e.team_id=p_team and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+        where e.team_id=p_team and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       when 'team_wins' then (
         select count(*)::numeric
         from public.caleris_race_result_entries e
         join public.license_rounds r on r.id=e.round_id
         where e.team_id=p_team and e.finishing_position=1
-          and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+          and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       when 'team_podiums' then (
         select count(*)::numeric
         from public.caleris_race_result_entries e
         join public.license_rounds r on r.id=e.round_id
         where e.team_id=p_team and e.finishing_position between 1 and 3
-          and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+          and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       )
       when 'team_drivers' then (
         select count(*)::numeric from public.members m
@@ -150,10 +150,10 @@ begin
     'total_xp',total_xp,
     'level',public.caleris_xp_level(total_xp),
     'driver_stats',jsonb_build_object(
-      'race_starts',(select count(distinct e.round_id) from public.caleris_race_result_entries e join public.license_rounds r on r.id=e.round_id where e.member_id=member_id and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')),
-      'wins',(select count(*) from public.caleris_race_result_entries e join public.license_rounds r on r.id=e.round_id where e.member_id=member_id and e.finishing_position=1 and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')),
-      'podiums',(select count(*) from public.caleris_race_result_entries e join public.license_rounds r on r.id=e.round_id where e.member_id=member_id and e.finishing_position between 1 and 3 and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')),
-      'points',(select coalesce(sum(rs.points_total),0) from public.license_round_standings rs join public.license_rounds r on r.id=rs.round_id where rs.member_id=member_id and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed'))
+      'race_starts',(select count(distinct e.round_id) from public.caleris_race_result_entries e join public.license_rounds r on r.id=e.round_id where e.member_id=member_id and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')),
+      'wins',(select count(*) from public.caleris_race_result_entries e join public.license_rounds r on r.id=e.round_id where e.member_id=member_id and e.finishing_position=1 and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')),
+      'podiums',(select count(*) from public.caleris_race_result_entries e join public.license_rounds r on r.id=e.round_id where e.member_id=member_id and e.finishing_position between 1 and 3 and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')),
+      'points',(select coalesce(sum(rs.points_total),0) from public.license_round_standings rs join public.license_rounds r on r.id=rs.round_id where rs.member_id=member_id and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed'))
     ),
     'team_id',team
   ) into payload;
@@ -180,7 +180,7 @@ begin
       join public.license_rounds r on r.id=rs.round_id
       join public.license_season_divisions d on d.id=r.season_division_id
       where d.season_id=p_season
-        and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+        and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
       group by d.id,d.division_name,rs.member_id
     ),
     'driver_standings',(
@@ -207,7 +207,7 @@ begin
       join public.license_rounds r on r.id=e.round_id
       join public.license_season_divisions d on d.id=r.season_division_id
       where d.season_id=p_season
-        and lower(coalesce(r.race_lifecycle_status,r.status,''))in('completed','closed')
+        and lower(coalesce(r.race_lifecycle_status,r.status,'')) in('completed','closed')
     ),
     'scoring_rules',(
       select coalesce(jsonb_agg(to_jsonb(pr)),'[]'::jsonb)
