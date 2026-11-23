@@ -1202,3 +1202,12 @@ The extended Scope 09 source review found two additional groups of visible entit
 - No Production schema or wallet changes were made during the Scope 05 / Scope 11 rollback-only behavioral QA.
 
 Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 08; Android visual/GPU/memory acceptance requires the physical handset; Scope 09 still needs exhaustive page-by-page and manual route verification; Scope 10 still needs authenticated browser role walkthroughs; Scope 06 CRM requires the actual business workflow specification.
+
+
+### Scope 09 — Driver Exhibition profile navigation
+
+- Driver Exhibition card-detail and 3D selected-driver panels now link the selected Driver name to the public Member Profile and the current Team name to the public Team Profile.
+- Community Hub Team Milestones now links its team heading to the same public Team Profile.
+- Extended `scripts/test_profile_directory_links.py` to enforce these links in both views.
+- Existing Driver Exhibition data is sourced from the same member directory carrying `public_member_id`; no schema or dependency change is required.
+- Full page-by-page manual review remains open; this addendum records only the surfaces explicitly covered by source inspection and regression assertions.

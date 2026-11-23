@@ -1483,3 +1483,13 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 3. Scope 09: FIA Operations and Community Hub omissions are fixed and covered by CI; exhaustive page-by-page review and manual route verification remain outstanding.
 4. Scope 10: authenticated browser walkthrough across Admin/FIA/Owner/Member and Driver/Owner remains outstanding.
 5. Scope 06: CRM Workflow remains blocked on the business specification (statuses, owners, transitions, permissions).
+
+
+## Scope 09 — Driver Exhibition and Team Milestones link audit
+
+- Driver Exhibition card detail: Driver name links to public Member Profile; Team name links to public Team Profile.
+- Driver Exhibition 3D selected-driver panel: Driver and Team names link to their public profiles.
+- Community Hub Team Milestones heading links to the member's current Team Profile.
+- Added CI assertions to `scripts/test_profile_directory_links.py` for all above locations.
+- Uses existing `public_member_id` and `team.id` data; no dependency or database migration required.
+- Remaining: continue exhaustive page-by-page review and manual route verification.

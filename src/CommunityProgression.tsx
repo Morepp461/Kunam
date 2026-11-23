@@ -525,7 +525,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           </div>
         </section>
         <section className="cp-section">
-          <h2><Users size={20} /> Team Milestones {teamName && <small>· {teamName}</small>}</h2>
+          <h2><Users size={20} /> Team Milestones {teamName && member?.team_id && <small>· <TeamProfileLink teamId={member.team_id}>{teamName}</TeamProfileLink></small>}</h2>
           <div className="cp-grid cp-milestone-grid">
             {teamMilestones.map((item) => {
               const current = Number(item.current_value ?? 0);
