@@ -151,6 +151,9 @@ Deno.serve(async (req: Request) => {
     if (action === "profile") {
       const limited = await enforceIpLimit("profile", 60, 60);
       if (limited) return limited;
+    } else if (action === "team_profile") {
+      const limited = await enforceIpLimit("team_profile", 60, 60);
+      if (limited) return limited;
     } else if (action === "search") {
       const limited = await enforceIpLimit("search", 120, 60);
       if (limited) return limited;
@@ -187,12 +190,16 @@ Deno.serve(async (req: Request) => {
     };
 
     if (action === "profile") {
-      const memberId = typeof body.memberId === "string" ? body.memberId.trim().toUpperCase() : "";
-      if (!/^[A-Z0-9]{12,16}$/.test(memberId)) return respond(400, { error: "Member ID tidak valid." });
-      const { data: p, error } = await admin.from("profiles")
+      const memberId = typeof body.memberId === "string" ? body.memberId.trim() : "";
+      const isInternalMemberUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(memberId);
+      const isPublicMemberId = /^[A-Z0-9]{12,16}$/.test(memberId.toUpperCase());
+      if (!isInternalMemberUuid && !isPublicMemberId) return respond(400, { error: "Member ID tidak valid." });
+      let profileQuery = admin.from("profiles")
         .select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
-        .eq("public_member_id", memberId)
-        .in("account_status", ["public", "active", "admin"]).maybeSingle();
+        .in("account_status", ["public", "active", "admin"]);
+      const { data: p, error } = isInternalMemberUuid
+        ? await profileQuery.eq("member_id", memberId).maybeSingle()
+        : await profileQuery.eq("public_member_id", memberId.toUpperCase()).maybeSingle();
       if (error) return respond(500, { error: "Profil member gagal dimuat." });
       if (!p) return respond(404, { error: "Profil member tidak ditemukan." });
       const publicProfile = await withAvatar(p as ProfileRow);
@@ -206,10 +213,44 @@ Deno.serve(async (req: Request) => {
             const { data: team } = await admin.from("teams").select("name").eq("id", m.team_id).maybeSingle();
             teamName = team?.name ?? null;
           }
-          character = { character_name: m.character_name, role: m.role, license: m.license, team_name: teamName };
+          character = { character_name: m.character_name, role: m.role, license: m.license, team_name: teamName, team_id: m.team_id };
         }
       }
       return respond(200, { profile: publicProfile, character });
+    }
+
+    if (action === "team_profile") {
+      const teamId = typeof body.teamId === "string" ? body.teamId.trim() : "";
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(teamId)) {
+        return respond(400, { error: "Team ID tidak valid." });
+      }
+      const { data: team, error: teamError } = await admin.from("teams")
+        .select("id,name,division_key").eq("id", teamId).maybeSingle();
+      if (teamError) return respond(500, { error: "Profil tim gagal dimuat." });
+      if (!team) return respond(404, { error: "Tim tidak ditemukan." });
+      const { data: roster, error: rosterError } = await admin.from("members")
+        .select("id,character_name,role,license,team_id")
+        .eq("team_id", teamId).in("role", ["Owner","Principal","Driver"])
+        .order("role").order("character_name");
+      if (rosterError) return respond(500, { error: "Roster tim gagal dimuat." });
+      const memberIds = (roster || []).map((member) => member.id);
+      const { data: profiles, error: profilesError } = memberIds.length
+        ? await admin.from("profiles").select("public_member_id,first_name,last_name,web_nickname,driver_nickname,avatar_path,member_id")
+            .in("member_id", memberIds).in("account_status", ["public","active","admin"])
+        : { data: [], error: null };
+      if (profilesError) return respond(500, { error: "Identitas publik roster gagal dimuat." });
+      const profileByMember = new Map((profiles || []).map((profile) => [profile.member_id, profile]));
+      const publicRoster = await Promise.all((roster || []).map(async (member) => {
+        const profile = profileByMember.get(member.id);
+        const publicProfile = profile ? await withAvatar(profile as ProfileRow) : null;
+        return {
+          member_id: member.id, character_name: member.character_name, role: member.role,
+          license: member.license, public_member_id: publicProfile?.public_member_id ?? null,
+          display_name: publicProfile?.display_name ?? member.character_name ?? "Member",
+          avatar_url: publicProfile?.avatar_url ?? null
+        };
+      }));
+      return respond(200, { team, roster: publicRoster });
     }
 
     if (action === "search") {
