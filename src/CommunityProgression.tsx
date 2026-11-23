@@ -320,6 +320,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     if (!division) {
       setStanding("");
       setEventVectors([]);
+      setOfficialCountback({ race: {}, qualifying: {} });
       setRounds(0);
       return;
     }
@@ -577,7 +578,15 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       {tab === "predictor" && <section className="cp-section">
         <h2><Flag size={20} /> Championship Predictor</h2>
         <p>Simulasi 15.000 percobaan. Data resmi hanya memakai klasemen ronde selesai dan aturan poin aktif. Hasil tetap estimasi, bukan klasemen resmi.</p>
-        <label>Season<select value={selectedSeason} onChange={(event) => setSelectedSeason(event.target.value)}>
+        <label>Season<select value={selectedSeason} onChange={(event) => {
+          setSelectedSeason(event.target.value);
+          setSeasonData(null);
+          setSelectedDivision("");
+          setEventVectors(null);
+          setOfficialCountback({ race: {}, qualifying: {} });
+          setPrediction([]);
+          setPredictionMeta(null);
+        }}>
           <option value="">Pilih musim</option>
           {seasons.map((season) => <option key={season.id} value={season.id}>{season.title}</option>)}
         </select></label>
