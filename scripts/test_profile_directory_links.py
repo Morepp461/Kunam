@@ -54,4 +54,24 @@ assert 'select("member_id,team_id,driver_name_snapshot,team_name_snapshot,finish
 assert 'MemberProfileLink memberId={contract.member_id}' not in ECOSYSTEM
 assert 'MemberProfileLink memberId={entry.member_id}' not in ECOSYSTEM
 assert 'MemberProfileLink memberId={row.member_id}' not in ECOSYSTEM
-print("Live driver/team directories and public profile-link regression checks passed.")
+
+FIA_OPERATIONS = (ROOT / "src" / "FIAOperations.tsx").read_text(encoding="utf-8")
+COMMUNITY = (ROOT / "src" / "CommunityProgression.tsx").read_text(encoding="utf-8")
+
+assert 'import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";' in FIA_OPERATIONS
+assert 'select("id,public_member_id,character_name,role,team_id")' in FIA_OPERATIONS
+assert '<MemberProfileLink memberId={members.find(x=>x.id===m.driver_member_id)?.public_member_id}>' in FIA_OPERATIONS
+assert '<TeamProfileLink teamId={m.buyer_team_id}>' in FIA_OPERATIONS
+assert '<TeamProfileLink teamId={m.seller_team_id}>' in FIA_OPERATIONS
+assert '<TeamProfileLink teamId={t.target_team_id}>' in FIA_OPERATIONS
+assert '<MemberProfileLink memberId={members.find(x=>x.id===t.buyer_member_id)?.public_member_id}>' in FIA_OPERATIONS
+assert '<MemberProfileLink memberId={members.find(x=>x.id===t.seller_member_id)?.public_member_id}>' in FIA_OPERATIONS
+assert 'targetName=(f:Fine)=>f.target_kind==="member"?<MemberProfileLink' in FIA_OPERATIONS
+
+assert 'import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";' in COMMUNITY
+assert 'db.from("caleris_member_directory").select("id,public_member_id,character_name").eq("role", "Driver")' in COMMUNITY
+assert 'public_member_id: (() => { const matches = driverDirectory.filter' in COMMUNITY
+assert 'row.public_member_id ? <MemberProfileLink memberId={row.public_member_id}>' in COMMUNITY
+assert '<TeamProfileLink teamId={member.team_id}>' in COMMUNITY
+
+print("Live driver/team directories, FIA operations, Community Hub and public profile-link regression checks passed.")
