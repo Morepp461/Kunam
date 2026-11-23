@@ -169,7 +169,7 @@ begin
  update public.economy_wallet_accounts set balance=balance+p_amount,updated_at=now() where id=p_destination_account_id;
  return jsonb_build_object('transaction_id',v_transaction_id,'status','posted');
 end;
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION private.release_driver_role_after_contract_end()
  RETURNS trigger
@@ -186,7 +186,7 @@ begin
   where driver_member_id=new.member_id and status in ('offered','negotiating','seller_accepted','pending_fia','approved_waiting_window','approved','loan_active');
   return new;
 end;
-$function$
+$function$;
 
 
 create or replace function private.process_team_freeze_compensation(p_team_id uuid,p_season_id uuid)
