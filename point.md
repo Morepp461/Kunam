@@ -1286,3 +1286,17 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 - Admin Workflow remains a placeholder until its CRM requirements are supplied. No unapproved workflow or business rules were invented.
 
 **Release status:** Public Team Profile livery integration is merged, CI passed, both Supabase function deployments are active with matching source, and the exact main commit is deployed READY on Vercel. The full 11-scope program is still not honestly marked 100% complete while the external asset and authenticated/device acceptance blockers remain open.
+
+
+---
+
+# FINAL MAIN CLOSE-OUT — 23 November 2026
+
+- PR #313 (release-verification checkpoint) merged successfully. Merge commit / current main SHA: `480163be5b9a00d829bef46e2f4d219e48936a83`.
+- CI run `45178730099` for the PR #313 checkpoint completed **success** (41/41 steps; no failed steps).
+- Supabase `member-directory` remains ACTIVE in Testing v8 and Production v14, with identical source hash `e452c3f125db50b52423dbe9dab150bebc9b38a9a18da27f5fb711f5ac374e2b`.
+- Vercel Production deployment for the exact current main SHA is **READY**: `dpl_3qc6drRsYPYh4Bsu18EammLS5jNR`, URL https://calerismastersnewgen-hf7kvbgmb-morepp.vercel.app.
+- The release-verification documentation is itself merged and deployed. No application code, schema, production data, or Vercel settings changed in PR #313.
+
+## Final acceptance status
+All work that can be completed safely with the repository, current connected services, and available artifacts is merged and deployed. The project cannot honestly be called 100% accepted until the owner supplies/hosts the licensed 89 MB GLB asset with its UV mapping, and authorized real-user credentials/device access are available for the specified Driver/Owner and Admin/FIA role walkthroughs plus Android visual/GPU testing. Admin Workflow also remains a placeholder until its actual CRM requirements are defined. These are external prerequisites, not failures hidden by CI.
