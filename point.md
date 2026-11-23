@@ -1265,3 +1265,24 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 - Vercel Production must be READY for the exact merged main SHA.
 - Android visual/performance acceptance remains a real-device check.
 - The supplied 89 MB 2025 GLB is not present in the current repository/session or an app-accessible asset host. Real GLB mesh integration cannot be honestly completed without the binary asset and verified UV mapping; the procedural preview remains explicitly labeled as such.
+
+
+---
+
+# POST-MERGE RELEASE — PUBLIC TEAM PROFILE LIVERY — 23 November 2026
+
+- PR #312 merged to `main`; merge commit: `11ad9e029d725f13b1eae4aa49ebeb83b89d5757`.
+- GitHub Actions run `45178266610` completed **success**. Dependency security gate, Deno checks, TypeScript, production build, unit/schema tests, browser smoke tests, validation script, Member Directory rate-limit regression, privacy, and Supabase schema parity checks passed.
+- Supabase `member-directory` deployed to Testing v8 and Production v14. Both are ACTIVE, retain the existing `verify_jwt=false` function-level authorization model, and have identical source hash `e452c3f125db50b52423dbe9dab150bebc9b38a9a18da27f5fb711f5ac374e2b`.
+- Testing and Production both contain the existing `caleris_team_liveries`, `caleris_sponsorship_contracts`, and `caleris_sponsors` tables. No migration was required and no application data was modified.
+- Vercel Production deployment `dpl_23MTL6HXrp61WmEpYoVakMFxwqJj` is **READY**, exact source SHA `11ad9e029d725f13b1eae4aa49ebeb83b89d5757`.
+- Production deployment URL: https://calerismastersnewgen-5i0da51ew-morepp.vercel.app
+- No Vercel environment variables or project settings were changed.
+
+## Remaining external acceptance blockers
+- The supplied 89 MB 2025 GLB binary is not available in this repository or current working session. Real GLTF mesh loading, UV decal/sponsor placement, and Android GPU/memory acceptance remain blocked until that exact asset is made available at an approved host.
+- The automated browser smoke tests passed, but authenticated real-user Driver/Owner contract walkthrough, Admin/FIA/Owner/member role matrix, live browser CORS/list-users request, and physical Android visual QA require authorized accounts and an actual device session.
+- The broader text-by-text profile-link audit still needs a final manual review beyond the already corrected directories, standings, archive, contracts, Take Over, Admin, and Race Control views.
+- Admin Workflow remains a placeholder until its CRM requirements are supplied. No unapproved workflow or business rules were invented.
+
+**Release status:** Public Team Profile livery integration is merged, CI passed, both Supabase function deployments are active with matching source, and the exact main commit is deployed READY on Vercel. The full 11-scope program is still not honestly marked 100% complete while the external asset and authenticated/device acceptance blockers remain open.
