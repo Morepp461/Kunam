@@ -580,3 +580,19 @@ body.light .panel-table-wrap,body.light .panel-chart-visual{background:rgba(0,0,
 @media(max-width:560px){.header-notifications-trigger{width:36px;height:36px}.header-notifications-popover{right:-5px;width:min(370px,calc(100vw - 24px));max-height:min(72dvh,580px)}.header-notifications-actions button{flex:1;padding:0 5px;font-size:9px}}
 body.light .header-notifications-popover{background:linear-gradient(145deg,rgba(250,247,239,.99),rgba(232,225,210,.99));color:#302c23;border-color:rgba(143,108,30,.42)}
 body.light .header-notification-item>a>strong{color:#40351d}
+
+
+/* Admin Workflow operational navigation hub */
+.admin-workflow-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px;margin:0 0 18px;border:1px solid rgba(198,163,58,.24);border-radius:16px;background:linear-gradient(120deg,rgba(91,26,43,.28),rgba(18,20,24,.82));}
+.admin-workflow-intro h2{margin:7px 0 6px;color:#f0e4c6;font-size:22px}.admin-workflow-intro p{max-width:680px;margin:0;color:#bcb5a8;font-size:12px;line-height:1.65}
+.admin-workflow-access{display:inline-flex;align-items:center;gap:7px;flex:none;padding:8px 11px;border:1px solid rgba(198,163,58,.32);border-radius:999px;color:#e2c66f;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.12em}
+.admin-workflow-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.admin-workflow-section .section-title-row{margin-bottom:14px}.admin-workflow-section .section-title-row h2{margin:5px 0;color:#eee4d1;font-size:18px}.admin-workflow-section .section-title-row p{margin:0;color:#a9a295;font-size:11px;line-height:1.5}
+.admin-workflow-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.admin-workflow-link{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:0;padding:12px;border:1px solid rgba(198,163,58,.13);border-radius:10px;background:rgba(255,255,255,.025);color:inherit;text-decoration:none;transition:border-color .18s ease,background .18s ease}
+.admin-workflow-link:hover{border-color:rgba(198,163,58,.5);background:rgba(198,163,58,.07)}
+.admin-workflow-link>span{display:grid;gap:4px;min-width:0}.admin-workflow-link strong{color:#e9dfca;font-size:12px}.admin-workflow-link small{color:#a9a295;font-size:10px;line-height:1.45}.admin-workflow-link>svg{flex:none;color:#d8b957}
+.admin-workflow-notice{margin-top:16px;padding:16px 18px;border:1px solid rgba(198,163,58,.18);border-radius:12px;background:rgba(198,163,58,.035)}.admin-workflow-notice strong{color:#e2c66f;font-size:12px}.admin-workflow-notice p{margin:6px 0 0;color:#aaa396;font-size:11px;line-height:1.65}
+body.light .admin-workflow-intro{background:linear-gradient(120deg,rgba(122,38,58,.09),rgba(255,255,255,.92))}body.light .admin-workflow-intro h2,body.light .admin-workflow-section .section-title-row h2,body.light .admin-workflow-link strong{color:#30291d}
+body.light .admin-workflow-link{background:rgba(255,255,255,.65);border-color:rgba(143,108,30,.16)}body.light .admin-workflow-notice{background:rgba(198,163,58,.07)}
+@media(max-width:760px){.admin-workflow-grid{grid-template-columns:1fr}.admin-workflow-intro{flex-direction:column}.admin-workflow-links{grid-template-columns:1fr}}
