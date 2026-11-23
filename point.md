@@ -303,3 +303,13 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 07 — duplicate License & Wallet Adjustment routes (2026-11-23)
+- Status: IMPLEMENTED, CI/QA pending.
+- Branch: `fix/caleris-scope-07-adjustment-route-deduplication`.
+- Canonical destination: `/admin/adjustments` (Ledger). The actual page performs license assignment and wallet injection through official server RPCs and audit trail; both prior routes rendered this same component.
+- Legacy `/admin/data-adjustments` now redirects to the canonical route, and the duplicate Migration sidebar entry is removed.
+- Files: `src/App.tsx`, `src/MainLayout.tsx`.
+- DB: no schema/data changes. Vercel environment unchanged.
+- QA remaining: admin redirect, unauthenticated/non-admin redirect, sidebar single-entry, CI/build.
