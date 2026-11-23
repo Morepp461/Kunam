@@ -30,11 +30,11 @@ const eventTypeLabel = (value: string) => ({
   xp_adjustment: "XP adjustment",
   milestone_completed: "Milestone achieved",
   community_vote: "Community voting",
-}[value] ?? value.replace(/_/g, " "));
+} as Record<string, string>)[value] ?? value.replace(/_/g, " ");
 const badgeIcon = (value: string) => ({
   award: Award, medal: Medal, vote: Vote, target: Target, crown: Crown,
   "trending-up": TrendingUp, "shield-check": ShieldCheck, flag: Flag,
-}[value] ?? Medal);
+} as Record<string, any>)[value] ?? Medal;
 
 export default function CommunityProgression({ session, profile, toast }: Props) {
   const db = supabase;
