@@ -1186,3 +1186,8 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 - Vercel Production is READY for the exact main commit above. `calerismasters.com` returned HTTP 200 and the production aliases are attached.
 
 **Acceptance still open:** real 2025 GLB loading/UV/sponsor placement and Android GPU-memory testing; final exhaustive page-by-page profile-link review; authenticated browser walkthrough for Driver/Owner and Admin/FIA/Owner/Member; and physical Android visual acceptance. Admin Workflow remains a navigation hub until the actual CRM workflow specification is supplied. These checks are not represented as completed by automated tests.
+
+
+### Profile-link audit addendum — 24 November 2026
+
+The extended Scope 09 source review found two additional groups of visible entity names that were not linked. FIA Operations now links Driver and Team names in transfer approvals, takeover approvals, and fine history. Community Hub now links predictor Driver results and the current Team in the overview and Digital ID. The profile-link regression script covers these surfaces. The changes are subject to the full branch CI before merge.

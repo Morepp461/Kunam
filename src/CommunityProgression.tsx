@@ -4,6 +4,7 @@ import {
   RefreshCw, Save, Share2, ShieldCheck, Target, TrendingUp, Users, Vote
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import {
   buildYearbookPrintHtml,
   getCalerisLevel,
@@ -48,6 +49,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const db = supabase;
   const memberId = profile?.member_id;
   const [member, setMember] = useState<any>(null);
+  const [driverDirectory, setDriverDirectory] = useState<any[]>([]);
   const [teamName, setTeamName] = useState("");
   const [xp, setXp] = useState(0);
   const [driverStats, setDriverStats] = useState<any>({ race_starts: 0, wins: 0, podiums: 0, points: 0, championships: 0 });
@@ -102,7 +104,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     const [
       memberResult, dashboardResult, definitionsResult, progressResult, feedResult,
       awardsResult, badgeDefinitionsResult, pollsResult, optionsResult, votesResult,
-      idResult, seasonsResult, adminResult,
+      idResult, seasonsResult, adminResult, directoryResult,
     ] = await Promise.all([
       db.from("members").select("id,character_name,role,license,team_id,member_code").eq("id", memberId).maybeSingle(),
       db.rpc("caleris_get_community_dashboard"),
@@ -117,13 +119,15 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       db.from("caleris_digital_id_cards").select("*").eq("member_id", memberId).maybeSingle(),
       db.from("license_seasons").select("id,title,season_key,status,starts_on").order("starts_on", { ascending: false }),
       db.from("site_admins").select("user_id").eq("user_id", session?.user?.id).maybeSingle(),
+      db.from("caleris_member_directory").select("id,public_member_id,character_name").eq("role", "Driver"),
     ]);
 
-    if (memberResult.error || dashboardResult.error) {
-      toast("error", "Community Hub gagal dimuat", memberResult.error?.message || dashboardResult.error?.message);
+    if (memberResult.error || dashboardResult.error || directoryResult.error) {
+      toast("error", "Community Hub gagal dimuat", memberResult.error?.message || dashboardResult.error?.message || directoryResult.error?.message);
     }
     const currentMember = memberResult.data;
     setMember(currentMember ?? null);
+    setDriverDirectory((directoryResult.data ?? []) as any[]);
     const dashboard = dashboardResult.data ?? {};
     const totalXp = Number(dashboard.total_xp ?? 0);
     setXp(Number.isFinite(totalXp) ? totalXp : 0);
@@ -442,6 +446,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       const result = simulateChampionship(rows, vectors, 15000);
       setPrediction(rows.map((row, index) => ({
         name: row.name,
+        public_member_id: (() => { const matches = driverDirectory.filter((driver: any) => String(driver.character_name || "").trim() === row.name); return matches.length === 1 ? matches[0].public_member_id : null; })(),
         probability: result.probabilities[index] ?? 0,
         eliminated: result.eliminated[index] ?? false,
         locked: result.lockedChampionIndex === index,
@@ -483,7 +488,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           <article><span>Podiums</span><strong>{formatNumber(driverStats.podiums)}</strong><small>Official top-three results</small></article>
           <article><span>Championship Points</span><strong>{formatNumber(driverStats.points)}</strong><small>Completed rounds only</small></article>
           <article><span>Season Titles</span><strong>{formatNumber(driverStats.championships)}</strong><small>Official final standings</small></article>
-          <article><span>Current Team</span><strong>{teamName || "Independent"}</strong><small>{member.role} · {member.license || "Unlicensed"}</small></article>
+          <article><span>Current Team</span><strong>{member.team_id ? <TeamProfileLink teamId={member.team_id}>{teamName || "Team"}</TeamProfileLink> : "Independent"}</strong><small>{member.role} · {member.license || "Unlicensed"}</small></article>
         </section>
         {teamStats && <section className="cp-grid cp-stats">
           <article><span>Team Race Starts</span><strong>{formatNumber(teamStats.race_starts)}</strong></article>
@@ -625,7 +630,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <button onClick={runPredictor}>Jalankan 15.000 simulasi</button>
         {predictionMeta && <p className="cp-muted">Maksimal poin tersisa per driver: {formatNumber(predictionMeta.maxRemainingPoints)}. Tie-break memakai countback hasil Race (P1, P2, P3, dan seterusnya), lalu hasil Qualifying jika tersedia. {predictionMeta.unresolvedTiebreakTrials > 0 ? `${formatNumber(predictionMeta.unresolvedTiebreakTrials)} simulasi masih seri karena data countback/qualifying tidak cukup; peluang dibagi rata.` : "Tidak ada seri yang tersisa setelah countback pada simulasi ini."}</p>}
         {prediction.map((row) => <article key={row.name} className="cp-prediction">
-          <div><strong>{row.name}</strong><b>{row.probability.toFixed(1)}%</b></div>
+          <div><strong>{row.public_member_id ? <MemberProfileLink memberId={row.public_member_id}>{row.name}</MemberProfileLink> : row.name}</strong><b>{row.probability.toFixed(1)}%</b></div>
           {row.locked && <small><Crown size={14} /> Mathematical champion</small>}
           {row.eliminated && <small>Mathematically eliminated</small>}
           <div className="cp-bar"><i style={{ width: `${row.probability}%` }} /></div>
@@ -638,7 +643,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           <div className="cp-id-top"><span>CALERIS MASTERS</span><span>{id.theme.toUpperCase()}</span></div>
           <h1>{member.character_name}</h1>
           <p>{member.role} · {member.license || "UNLICENSED"}</p>
-          <p>{teamName || "Independent"} · {member.member_code}</p>
+          <p>{member.team_id ? <TeamProfileLink teamId={member.team_id}>{teamName || "Team"}</TeamProfileLink> : "Independent"} · {member.member_code}</p>
           <div className="cp-id-level"><strong>LV {lv}</strong><span>{formatNumber(xp)} XP</span></div>
           <div className="cp-id-bottom">{id.tagline || "Built through every season."}</div>
         </div>
