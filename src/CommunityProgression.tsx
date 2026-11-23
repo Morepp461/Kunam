@@ -29,6 +29,13 @@ const eventTypeLabel = (value: string) => ({
   xp_earned: "XP earned",
   xp_adjustment: "XP adjustment",
   milestone_completed: "Milestone achieved",
+  milestone_reversed: "Milestone recalculated",
+  race_result_voided: "Race result voided",
+  team_transfer: "Team transfer",
+  contract_status: "Driver contract update",
+  sponsorship_status: "Sponsorship update",
+  payroll_processed: "Payroll processed",
+  merchandise_sales: "Merchandise sales",
   community_vote: "Community voting",
 } as Record<string, string>)[value] ?? value.replace(/_/g, " ");
 const badgeIcon = (value: string) => ({
