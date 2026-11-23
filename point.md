@@ -1457,3 +1457,11 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 5. Scope 06: CRM workflow remains intentionally unimplemented until its statuses, owners, transitions, and permissions are specified.
 
 No Production data, wallet balance, Supabase schema, Edge Function, or Vercel configuration was changed during these acceptance tests.
+
+
+## Scope 09 — additional profile-link coverage
+
+- Added `MemberProfileLink` and `TeamProfileLink` to FIA Operations: transfer approvals, takeover approvals, and fine history.
+- Added profile links to Community Hub: predictor results and current Team references in the overview and Digital ID.
+- Extended `scripts/test_profile_directory_links.py` with regression assertions for both pages.
+- Remaining: exhaustive review of all other visible entity-name surfaces and manual route verification. The new changes are not marked complete until CI passes.
