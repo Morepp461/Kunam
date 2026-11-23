@@ -28,3 +28,8 @@ assert "Ban permanen" in ui or "Permanen" in ui
 assert "assign_team" in ui and "warn_user" in ui and "ban_user" in ui
 
 print("Manage User admin authorization, role/team actions, warning and ban audit checks passed.")
+
+
+# Production custom domains must pass the admin Edge Function CORS allowlist.
+assert 'origin === "https://calerismasters.com"' in edge
+assert 'origin === "https://www.calerismasters.com"' in edge
