@@ -1057,3 +1057,8 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 - A lightweight procedural Three.js preview is included. It is a preview model, not a production UV-unwrapped GLB/GLTF car. The repository does not yet contain a production car model with a verified matching UV map, so the atlas is not represented as a final Monoposto-compatible texture for an arbitrary vehicle.
 - The livery editor is presentation-only and does not alter Race Engine physics, timing, classification, or save data. Historical race-start livery snapshot wiring remains gated on a non-synthetic race roster and the production vehicle UV asset.
 - Migration: `20261122130000_team_uv_livery_editor.sql`.
+
+
+## Community Progression Suite
+
+Community Hub tersedia di `/community` untuk member terautentikasi. Sistem mencakup Career/Team Milestones, Member Activity Feed, Community Voting, Championship Predictor, Digital ID, Season Yearbook, Achievement Badges, dan XP Leveling kumulatif LV0–LV100. Ambang XP dimulai dari 50 dan berlipat dua setiap level; XP tidak direset saat naik level. Nilai reward XP dikonfigurasi Admin dan event race result, check-in, quest completion, serta development shop purchase tercatat melalui trigger database idempotent. Detail requirement, batasan Predictor, keamanan, dan skema data ada di `docs/COMMUNITY_PROGRESSION_PRD.md`.
