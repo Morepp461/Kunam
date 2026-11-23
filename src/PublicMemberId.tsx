@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Award, ShieldCheck } from "lucide-react";
+import { Award, Crown, Medal, ShieldCheck, Target, TrendingUp, Vote } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import "./community-progression.css";
+
+const badgeIcon = (value: string) => ({
+  award: Award, medal: Medal, vote: Vote, target: Target, crown: Crown,
+  "trending-up": TrendingUp, "shield-check": ShieldCheck,
+}[value] ?? Medal);
 
 export default function PublicMemberId() {
   const { memberCode = "" } = useParams();
@@ -71,10 +76,13 @@ export default function PublicMemberId() {
     <section className="cp-section">
       <h2><Award size={19} /> Earned Achievements</h2>
       <div className="cp-grid cp-badges">
-        {badges.map((badge: any) => <article key={badge.code} className="earned">
-          <div className="cp-badge-icon">{badge.icon || <Award size={22} />}</div>
-          <strong>{badge.title}</strong><p>{badge.description}</p><small>{badge.rarity || "Standard"}</small>
-        </article>)}
+        {badges.map((badge: any) => {
+          const Icon = badgeIcon(badge.icon);
+          return <article key={badge.code} className="earned">
+            <div className="cp-badge-icon"><Icon size={22} /></div>
+            <strong>{badge.title}</strong><p>{badge.description}</p><small>{badge.rarity || "Standard"}</small>
+          </article>;
+        })}
         {!badges.length && <article>No public achievements available.</article>}
       </div>
     </section>
