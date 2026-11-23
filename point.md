@@ -1424,3 +1424,13 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Restored full-width behavior only at tablet/mobile breakpoints using matching selector specificity; this prevents the desktop rule from overriding responsive layout.
 - Added regression checks for desktop width/height and responsive expansion.
 - No data, schema, Supabase, wallet, or Vercel environment changes.
+
+
+---
+
+# RACE ENGINE GLOBAL CLOCK — 23 NOVEMBER 2026
+
+- Recomputed the shared tick duration from each entrant’s actual elapsed-time delta after segment processing.
+- Includes incident time loss and pit-lane loss in the shared clock, weather progression, and race-control expiry instead of using only nominal segment duration.
+- Added a checkpoint regression assertion for the shared clock against the maximum entrant elapsed time.
+- No database, migration, Edge Function, wallet, or Vercel environment changes.
