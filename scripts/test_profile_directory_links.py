@@ -31,6 +31,9 @@ assert 'MemberProfileLink memberId={row.public_member_id}' in ECOSYSTEM
 assert 'MemberProfileLink memberId={x.public_member_id}' in ECOSYSTEM
 assert 'TeamProfileLink teamId={x.team_id_snapshot}' in ECOSYSTEM
 assert 'TeamProfileLink teamId={x.team_id}' in ECOSYSTEM
+assert '<MemberProfileLink memberId={r.public_member_id}>#{i+1} {r.name}</MemberProfileLink>' in ECOSYSTEM
+assert '<TeamProfileLink teamId={r.team_id}>#{i+1} {r.name}</TeamProfileLink>' in ECOSYSTEM
+assert 'select("member_id,team_id,driver_name_snapshot,team_name_snapshot,finishing_position,fastest_lap_ms")' in ECOSYSTEM
 assert 'MemberProfileLink memberId={contract.member_id}' not in ECOSYSTEM
 assert 'MemberProfileLink memberId={entry.member_id}' not in ECOSYSTEM
 assert 'MemberProfileLink memberId={row.member_id}' not in ECOSYSTEM
