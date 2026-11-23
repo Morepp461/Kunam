@@ -554,6 +554,8 @@ function PollAdmin({
   const [description, setDescription] = useState("");
   const [type, setType] = useState("driver_of_period");
   const [endsAt, setEndsAt] = useState("");
+  const [seasonId, setSeasonId] = useState("");
+  const [seasonOptions, setSeasonOptions] = useState<any[]>([]);
   const [candidates, setCandidates] = useState<any[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -610,23 +612,25 @@ function PollAdmin({
 
   const loadAdminConfig = async () => {
     if (!db) return;
-    const [definitionResult, badgeResult] = await Promise.all([
+    const [definitionResult, badgeResult, seasonResult] = await Promise.all([
       db.from("caleris_milestone_definitions").select("*").order("scope").order("title"),
       db.from("caleris_achievement_badges").select("code,title").eq("active", true).order("title"),
+      db.from("license_seasons").select("id,title").order("starts_on", { ascending: false }),
     ]);
-    if (definitionResult.error || badgeResult.error) {
-      toast("error", "Konfigurasi milestone gagal dimuat", definitionResult.error?.message || badgeResult.error?.message);
+    if (definitionResult.error || badgeResult.error || seasonResult.error) {
+      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message);
     }
     setDefinitions(definitionResult.data ?? []);
     setBadgeOptions(badgeResult.data ?? []);
+    setSeasonOptions(seasonResult.data ?? []);
   };
 
   useEffect(() => { void loadCandidates(); }, [type]);
   useEffect(() => { void loadAdminConfig(); }, []);
 
   const createPoll = async () => {
-    if (!db || selected.length < 2 || !endsAt) {
-      toast("warning", "Voting belum lengkap", "Pilih minimal dua kandidat dan waktu penutupan.");
+    if (!db || selected.length < 2 || !endsAt || (type.endsWith("_of_season") && !seasonId)) {
+      toast("warning", "Voting belum lengkap", "Pilih minimal dua kandidat, musim untuk award season, dan waktu penutupan.");
       return;
     }
     const endDate = new Date(endsAt);
@@ -642,7 +646,7 @@ function PollAdmin({
       p_type: type,
       p_ends_at: endDate.toISOString(),
       p_options: options,
-      p_season_id: null,
+      p_season_id: seasonId || null,
     });
     setSaving(false);
     if (error) toast("error", "Voting gagal dibuat", error.message);
@@ -678,7 +682,7 @@ function PollAdmin({
   };
 
   const saveMilestone = async () => {
-    if (!db || !milestoneTitle.trim() || Number(target) <= 0) {
+    if (!db || !milestoneTitle.trim() || !Number.isInteger(Number(target)) || Number(target) <= 0 || !Number.isInteger(Number(reward)) || Number(reward) < 0) {
       toast("warning", "Milestone belum lengkap", "Judul dan target harus valid.");
       return;
     }
@@ -754,6 +758,9 @@ function PollAdmin({
         <option value="team_of_season">Team of the Season</option>
         <option value="fia_nomination">FIA Nomination</option>
       </select></label>
+      {type.endsWith("_of_season") && <label>Season<select value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>
+        <option value="">Pilih season</option>{seasonOptions.map((season) => <option key={season.id} value={season.id}>{season.title}</option>)}
+      </select></label>}
       <label>Voting berakhir<input type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></label>
       <div><strong>Kandidat (pilih minimal dua)</strong><div className="cp-candidate-list">
         {candidates.map((candidate) => <label key={candidate.id}>
