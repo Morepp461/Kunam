@@ -1,0 +1,47 @@
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+MANIFEST = (ROOT / "src" / "cale" / "manifest.ts").read_text(encoding="utf-8")
+MASCOT = (ROOT / "src" / "CaleMascot.tsx").read_text(encoding="utf-8")
+LAYOUT = (ROOT / "src" / "MainLayout.tsx").read_text(encoding="utf-8")
+NOTIFICATIONS = (ROOT / "src" / "NotificationsCenter.tsx").read_text(encoding="utf-8")
+CSS = (ROOT / "src" / "cale-mascot.css").read_text(encoding="utf-8")
+
+ids = re.findall(r'^\s*\["([a-z0-9_]+)",', MANIFEST, flags=re.MULTILINE)
+assert len(ids) == 57, f"Expected 57 Cale design IDs, got {len(ids)}"
+assert len(set(ids)) == 57, "Cale design IDs must be unique"
+
+expected_groups = {
+    "idle": 7,
+    "welcome": 5,
+    "tutorial": 12,
+    "reactions": 10,
+    "interactions": 8,
+    "motorsport": 8,
+    "navigation": 7,
+}
+for category, expected in expected_groups.items():
+    match = re.search(rf'define\("{category}"[^\[]*\[(.*?)\]\)', MANIFEST, flags=re.DOTALL)
+    assert match, f"Missing category group: {category}"
+    count = len(re.findall(r'\["[a-z0-9_]+",', match.group(1)))
+    assert count == expected, f"{category} expected {expected} IDs, got {count}"
+
+assert 'artworkStatus: "wardrobe-master"' in MANIFEST
+assert 'case "onboarding":\n      return "formal"' in MANIFEST
+assert 'case "warning":\n      return "fia"' in MANIFEST
+assert 'case "race":\n      return "racing"' in MANIFEST
+assert 'item.id === "reaction_warning" || item.id === "reaction_error"' in MANIFEST
+
+for asset in ("cale-racing.webp", "cale-formal.webp", "cale-fia.webp"):
+    assert (ROOT / "public" / "assets" / "cale" / asset).is_file(), f"Missing {asset}"
+
+assert 'data-cale-design=' in MASCOT
+assert 'data-cale-outfit=' in MASCOT
+assert 'import CaleAssistant from "./CaleAssistant";' in LAYOUT
+assert '{session&&<CaleAssistant/>}' in LAYOUT
+assert 'designId="reaction_warning"' in NOTIFICATIONS
+assert "isWarningNotification(item)" in NOTIFICATIONS
+assert "@keyframes" not in CSS and "animation:" not in CSS
+
+print("Cale mascot checks passed: 57 unique state IDs, 3 wardrobe masters, contextual layout, FIA warning marker.")

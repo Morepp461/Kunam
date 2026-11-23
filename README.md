@@ -1219,3 +1219,13 @@ Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 
 - Extended the profile-link regression script to cover these workflow surfaces.
 - All links reuse the existing TeamProfileLink component and existing team IDs; no schema or dependency change is required.
 - Select-option labels and pending registration proposals remain non-links because they are selection/proposed data, not existing public profile entities.
+
+
+## Cale Mascot
+
+- Cale is integrated as a static, transparent-background assistant in the authenticated application layout.
+- Wardrobe routing is context-based: formal outfit for onboarding/general guidance, FIA outfit for warning and moderation notifications, and racing suit for motorsport pages.
+- The visual-state manifest contains the 57 stable IDs from the approved Cale list.
+- Master artwork currently ships as three optimized transparent WebP wardrobe assets under `public/assets/cale/`.
+- The 57 IDs are registered and callable, but dedicated per-ID pose artwork is still a separate asset-delivery gate. The current component intentionally falls back to the selected wardrobe master instead of pretending each ID has its own pose image.
+- No database schema, Supabase function, runtime dependency, or Vercel setting is changed by this UI-only integration.
