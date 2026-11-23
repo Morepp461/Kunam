@@ -1139,3 +1139,11 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 - Supabase Testing and Production migration ledgers are aligned for the Driver Contract Request, Manage User Moderation, Team Inactivity Freeze/Compensation, Driver First Contract support, and FK-index migrations. The migration SQL was already applied; only generated ledger version/name metadata was normalized. No application data was changed.
 - All 14 FK indexes from `20261123150000_caleris_scope_fk_indexes` are present in both databases.
 - The 11-scope work is not fully accepted yet: real 2025 GLB hosting/loading and mesh integration, Android GPU/memory acceptance, authenticated Driver/Owner and Admin role walkthroughs, full page-by-page profile-link verification, and safe Testing-only compensation scenario QA remain open. See `point.md` for the detailed checkpoint.
+
+
+## Digital ID Dropdown Fix — 23 November 2026
+
+- Community Hub → Digital ID now enforces a single custom theme picker (Classic, Premio, Zwei, Gold). Native HTML selects are suppressed within the Digital ID editor so the gray browser/Android default control cannot appear alongside the custom menu.
+- The custom menu closes on outside tap and Escape, and exposes an explicit accessible label/control relationship.
+- Added a regression test asserting exactly one custom trigger and no native select in the Digital ID editor.
+- No database migration or Supabase data change is required. Vercel environment settings remain untouched.
