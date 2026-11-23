@@ -111,6 +111,7 @@
 - Official Predictor models pole bonus independently from finishing position. It remains an equal-probability Monte Carlo estimate because no verified driver/car performance model is available.
 - Admin can configure XP rewards per source and maintain the achievement badge catalog, including rarity and activation state.
 - Driver/team career milestones reconcile against official standings and completed race data; correcting or voiding a round recalculates progress and reverses milestone/race XP awards where applicable.
+- Activity feed includes safe summaries for team transfers, driver contract status, sponsorship status, payroll completion, merchandise unit sales, quest/shop activity, race results, and milestone reconciliation. Contract values, salaries, sponsor amounts, and revenue are never exposed in feed text.
 - Career stats include official season titles. Pole counts are not fabricated because the current official result dataset does not contain qualifying pole records.
 - Product requirements and implementation notes: [Community Progression PRD](docs/COMMUNITY_PROGRESSION_PRD.md).
 - Community Progression migrations include the initial suite, authoritative integrations, security hardening, closed-round reconciliation, public Digital ID progression, and scheduled voting lifecycle.
