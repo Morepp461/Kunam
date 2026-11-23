@@ -78,7 +78,7 @@ function paintAtlas(canvas:HTMLCanvasElement,d:Design,sponsors:Sponsor[],selecte
     if(i===4||i===5){const other=sponsors.filter(s=>d.sponsorPlacements[s.id]==="other").map(s=>s.name);drawSponsorText(ctx,other.length?other:[d.sponsors[2]],p.x,p.y+p.h*.25,p.w,p.h*.55,16);}
     d.decals.forEach((decal,index)=>{
       if(decal.surface!==p.surface)return;
-      if(decal.surface==="sidepod"&&i!==1&&i!==2&&i!==3)return;
+      if(decal.surface==="sidepod"&&i!==1&&i!==2)return;
       if(decal.surface==="nose"&&i!==0&&i!==6)return;
       if(decal.surface==="frontWing"&&i!==4)return;
       if(decal.surface==="rearWing"&&i!==5)return;
@@ -95,6 +95,7 @@ function Preview3D({design,sponsors}:{design:Design;sponsors:Sponsor[]}){
   useEffect(()=>{
     let disposed=false,renderer:import("three").WebGLRenderer|null=null,frame=0,observer:ResizeObserver|null=null;
     const geometries:import("three").BufferGeometry[]=[],materials:import("three").Material[]=[],textures:import("three").Texture[]=[];
+    let interactionCleanup:(()=>void)|null=null;
     const node=host.current;if(!node)return;
     void import("three").then(T=>{
       if(disposed)return;
@@ -157,9 +158,9 @@ function Preview3D({design,sponsors}:{design:Design;sponsors:Sponsor[]}){
       const resize=()=>{if(!renderer)return;const nw=Math.max(1,node.clientWidth),nh=Math.max(1,node.clientHeight);camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);};
       observer=new ResizeObserver(resize);observer.observe(node);
       const animate=()=>{if(disposed)return;renderer?.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
-      return ()=>{node.removeEventListener("pointerdown",onDown);node.removeEventListener("pointermove",onMove);node.removeEventListener("pointerup",onUp);node.removeEventListener("pointercancel",onUp);node.removeEventListener("wheel",onWheel);};
+      interactionCleanup=()=>{node.removeEventListener("pointerdown",onDown);node.removeEventListener("pointermove",onMove);node.removeEventListener("pointerup",onUp);node.removeEventListener("pointercancel",onUp);node.removeEventListener("wheel",onWheel);};
     }).catch(()=>{if(!disposed)node.dataset.error="WebGL preview unavailable";});
-    return()=>{disposed=true;cancelAnimationFrame(frame);observer?.disconnect();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer?.dispose();renderer?.domElement.remove();};
+    return()=>{disposed=true;cancelAnimationFrame(frame);observer?.disconnect();interactionCleanup?.();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer?.dispose();renderer?.domElement.remove();};
   },[design,sponsors]);
   return <div className="team-livery-3d" ref={host}><span>INTERACTIVE 3D PREVIEW · DRAG TO ORBIT · SCROLL TO ZOOM</span></div>;
 }
