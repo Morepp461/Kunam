@@ -1512,3 +1512,27 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Brand Ecosystem: current Team/Driver identity and offer target Team names link to public profiles.
 - Brand Ecosystem Admin: offer, contract, and payment-history Team names link to public Team Profiles.
 - Regression script covers each surface. No dependency or database migration.
+
+
+## RELEASE CHECKPOINT — 24 NOVEMBER 2026 (SCOPE 09)
+
+Merged Scope 09 follow-up PRs and successful Caleris CI:
+
+| PR | Coverage | CI run |
+|---|---|---|
+| #329 | FIA Operations, Community Hub profile links | `45225638925` — 43/43 |
+| #332 | Driver Exhibition cards/3D panel, Team Milestones | `45227793407` — 43/43 |
+| #333 | Driver Contracts, Driver Registration, Affiliate Team, Take Over | `45228597986` — 43/43 |
+| #334 | Season Prizepool, License Adjustment audit, Brand Ecosystem, Brand Ecosystem Admin | `45229285743` — 43/43 |
+
+**Production:** main SHA `be7ecefa29b06576ae01b91fd752c55e0930ce68`; Vercel deployment `dpl_BkJSYcQdqDiawFEhDMEdfE7YHwhf` is **READY**. Apex and www domains are attached; apex returned HTTP 200.
+
+### Remaining external acceptance gates
+
+1. Scope 08: original 2025 GLB (89,383,844 bytes) remains unavailable in repo, Supabase Storage, or accessible Library; real mesh/UV/sponsor integration cannot be validated without that exact asset.
+2. Scope 01/08: physical Android touch/layout/WebGL/GPU/memory acceptance still needs the handset.
+3. Scope 09: multiple additional missed surfaces have been corrected and regression-tested; exhaustive page-by-page visual review and manual profile-route verification remain open.
+4. Scope 05/10: database workflow QA is automated in Testing, but authorized live Driver/Owner and Admin/FIA/Owner/Member browser walkthroughs remain open.
+5. Scope 06: CRM Workflow remains inactive pending explicit statuses, owners, transitions, and permissions.
+
+No Production schema, wallet data, or Edge Function was modified by these profile-link changes.
