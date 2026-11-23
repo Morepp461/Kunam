@@ -134,7 +134,7 @@ begin
   end if;
 
   update public.caleris_driver_contract_requests
-  set status='offer_sent',renewal_offer_id=v_offer_id,owner_response_note=nullif(trim(p_offer_note,' '),''),
+  set status='offer_sent',renewal_offer_id=v_offer_id,owner_response_note=nullif(trim(p_offer_note),''),
       reviewed_by=(select auth.uid()),reviewed_at=now(),updated_at=now()
   where id=v_request.id;
   return v_offer_id;
