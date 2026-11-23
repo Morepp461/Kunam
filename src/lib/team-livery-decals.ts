@@ -17,7 +17,6 @@ export function drawTeamLiveryDecal(ctx:CanvasRenderingContext2D,decal:TeamLiver
  const scale=Math.max(.2,Math.min(2,decal.scale));
  ctx.scale(scale,scale);ctx.fillStyle=decal.color;ctx.strokeStyle=decal.color;ctx.lineWidth=6+v;
  const polygon=(points:number[][])=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x*width/2,y*height/2):ctx.moveTo(x*width/2,y*height/2));ctx.closePath();ctx.fill();};
- const pathLine=(points:number[][])=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x*width/2,y*height/2):ctx.moveTo(x*width/2,y*height/2));ctx.stroke();};
  switch(item.family){
   case "chevron": for(let i=0;i<=v;i++)polygon([[-.5+i*.12,-.5],[.08+i*.12,0],[-.5+i*.12,.5],[-.24+i*.12,.5],[.34+i*.12,0],[-.24+i*.12,-.5]]);break;
   case "bolt": polygon([[-.18,-.5],[.25,-.5],[-.02,-.05],[.32,-.05],[-.3,.5],[-.12,.08],[-.42,.08]]);if(v%2)polygon([[.35,-.42],[.5,-.42],[.38,-.2],[.5,-.2],[.22,.1],[.31,-.12],[.18,-.12]]);break;
