@@ -1432,5 +1432,5 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 
 - Recomputed the shared tick duration from each entrant’s actual elapsed-time delta after segment processing.
 - Includes incident time loss and pit-lane loss in the shared clock, weather progression, and race-control expiry instead of using only nominal segment duration.
-- Added a checkpoint regression assertion for the shared clock against the maximum entrant elapsed time.
+- Added checkpoint regression assertions for the shared clock against the maximum entrant elapsed time in both pit-loss and incident-loss scenarios.
 - No database, migration, Edge Function, wallet, or Vercel environment changes.
