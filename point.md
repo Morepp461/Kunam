@@ -1142,3 +1142,17 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 - TypeScript/build, unit/schema validation, browser smoke, and integration CI are pending for this branch.
 - Manual authenticated account-role walkthrough and full Android visual verification remain required.
 - Continue the remaining repository-wide name/link audit after CI; the list above covers the identified core directory, standings, contract, archive, admin, and race-control views.
+
+
+---
+
+# PROFILE-LINK FOLLOW-UP MERGE CHECKPOINT — 23 November 2026
+
+- PR #308 merged to `main`; merge commit: `c65ceafcb5f768a9d16d6c27f43edc4568c4517d`.
+- Both required GitHub Actions build checks passed. TypeScript check, production build, unit/schema validation, browser smoke tests, cross-engine regression checks, Admin Manage User security checks, Team inactivity/compensation checks, and Supabase schema parity all passed.
+- `caleris_member_directory.public_member_id` verified in Testing and Production. No database migration required.
+- Driver profile links corrected across Main Event standings, directories, career and season archive, Hall of Fame, race results, Team Summary, driver contracts/applications, Take Over, Admin User, and Race Control. Team links corrected across team snapshots, team directory, Job Search, and Take Over.
+- The broader page-by-page link audit remains open for any additional unlinked names found in manual review; this checkpoint does not claim every text occurrence in every article has been converted.
+- Admin User CORS Edge Function remains ACTIVE in Testing v8 and Production v7 with matching source hash and `verify_jwt=true`. Production domains are explicitly allowed.
+- Scope 08 remains partial: 50 vector decal presets, RGB color selection, layers, sponsor placement, UV-atlas placement, and camera orbit/zoom are implemented. The supplied 2025 GLB is not hosted in an app-accessible asset location, so the preview remains procedural. Real GLB loading, sponsor logos on the real mesh, Team Profile rendering, and Android GPU/memory acceptance remain open.
+- No Vercel environment settings changed. Verify the latest Vercel production deployment for this main commit before declaring the release complete.
