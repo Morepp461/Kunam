@@ -12,6 +12,7 @@ import MainLayout from "./MainLayout";
 import DashboardModule from "./DashboardModule";
 import ProfileModule from "./ProfileModule";
 import CommunityProgression from "./CommunityProgression";
+import PublicMemberId from "./PublicMemberId";
 import Stage5Panel from "./Stage5Panel";
 import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
