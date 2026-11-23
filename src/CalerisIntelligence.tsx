@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import type { ReactNode } from "react";
 import { Activity, RefreshCw, Target, Wallet, FileSignature } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 
 type Row = Record<string, any>;
 type Scope = "roadmap" | "budget" | "renewals" | "operations";
@@ -12,7 +13,7 @@ const DRIVER_ATTRIBUTES = [
   ["overtake_skill", "Overtake Skill"], ["mistake_rate", "Mistake Rate"], ["tyre_management", "Tyre Management"]
 ] as const;
 const cash = (v: number) => "€ " + Number(v || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
-const Panel = ({ title, eyebrow, children }: { title: string; eyebrow: string; children: ReactNode }) => <section className="s5-card"><div className="s5-card-head"><div><span>{eyebrow}</span><h2>{title}</h2></div></div>{children}</section>;
+const Panel = ({ title, eyebrow, children }: { title: string; eyebrow: ReactNode; children: ReactNode }) => <section className="s5-card"><div className="s5-card-head"><div><span>{eyebrow}</span><h2>{title}</h2></div></div>{children}</section>;
 
 export default function CalerisIntelligence({ session, scope }: { session: Session; scope: Scope }) {
   const [member, setMember] = useState<Row | null>(null);
@@ -267,13 +268,13 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
         {suggestions.filter(s=>s.status==="pending").length ? suggestions.filter(s=>s.status==="pending").map(s=><article className="s5-record" key={s.id}><b>{String(s.attribute_key).replaceAll("_"," ")} → {s.target_value}</b><p>{s.note || "Saran pengembangan dari Team Owner."}</p><div className="s5-actions"><button className="s5-primary" disabled={saving} onClick={()=>void decideSuggestion(s,true)}>Terima saran</button><button className="s5-secondary" disabled={saving} onClick={()=>void decideSuggestion(s,false)}>Tolak</button></div></article>) : <p className="s5-footnote">Belum ada saran yang menunggu keputusan.</p>}
       </Panel>
     </>}
-    {scope === "roadmap" && member?.role === "Owner" && <Panel title="Saran target untuk Driver" eyebrow={team?.name || "TEAM OWNER"}>
+    {scope === "roadmap" && member?.role === "Owner" && <Panel title="Saran target untuk Driver" eyebrow={team?.id?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>:"TEAM OWNER"}>
       <div className="s5-form"><label className="s5-field"><span>Driver</span><select value={form.driver_id||""} onChange={e=>set("driver_id",e.target.value)}><option value="">Pilih Driver</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.character_name}</option>)}</select></label>
       <label className="s5-field"><span>Atribut</span><select value={form.attribute_key||""} onChange={e=>set("attribute_key",e.target.value)}><option value="">Pilih atribut</option>{DRIVER_ATTRIBUTES.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label>
       <label className="s5-field"><span>Target yang disarankan</span><input type="number" min="50" max="100" value={form.target_value||70} onChange={e=>set("target_value",e.target.value)}/></label>
       <label className="s5-field"><span>Catatan</span><textarea rows={2} value={form.suggestion_note||""} onChange={e=>set("suggestion_note",e.target.value)}/></label>
       <button className="s5-primary" disabled={saving||!form.driver_id||!form.attribute_key} onClick={()=>void suggestRoadmap()}>Kirim saran</button></div>
-      <div className="s5-record-list">{suggestions.map(s=><article className="s5-record" key={s.id}><b>{drivers.find(d=>d.id===s.member_id)?.character_name || "Driver"} · {s.attribute_key} {s.target_value}</b><small>{s.status.toUpperCase()} · {s.note||"—"}</small></article>)}</div>
+      <div className="s5-record-list">{suggestions.map(s=><article className="s5-record" key={s.id}><b><MemberProfileLink memberId={s.member_id}>{drivers.find(d=>d.id===s.member_id)?.character_name || "Driver"}</MemberProfileLink> · {s.attribute_key} {s.target_value}</b><small>{s.status.toUpperCase()} · {s.note||"—"}</small></article>)}</div>
     </Panel>}
     {scope === "budget" && <><div className="s5-grid s5-grid-3"><div className="s5-stat"><span>TEAM WALLET</span><strong>{cash(walletBalance)}</strong></div><div className="s5-stat"><span>OUTFLOW TERCATAT</span><strong>{cash(outflow)}</strong></div><div className="s5-stat"><span>PLANNED BUDGET</span><strong>{cash(Number(budget?.planned_budget||form.planned_budget||0))}</strong></div></div>
       <Panel title="Budget configuration" eyebrow={activeSeason?.title || "ACTIVE SEASON"}><div className="s5-form"><label className="s5-field"><span>Total budget (€)</span><input type="number" min="0" step="0.01" value={form.planned_budget||""} onChange={e=>set("planned_budget",e.target.value)}/></label><label className="s5-field"><span>Alert threshold (%)</span><input type="number" min="1" max="100" value={form.alert_threshold_percent||80} onChange={e=>set("alert_threshold_percent",e.target.value)}/></label><div className="s5-form-grid">{categories.map(key=><label className="s5-field" key={key}><span>{key.replaceAll("_"," ")} (€)</span><input type="number" min="0" step="0.01" value={form.category_budgets?.[key]||""} onChange={e=>set("category_budgets",{...form.category_budgets,[key]:e.target.value})}/></label>)}</div><label className="s5-field"><span>Catatan Owner</span><textarea rows={2} value={form.owner_notes||""} onChange={e=>set("owner_notes",e.target.value)}/></label><button className="s5-primary" disabled={saving} onClick={()=>void saveBudget()}><Wallet size={15}/> Simpan budget</button></div></Panel>
@@ -281,7 +282,7 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
     {scope === "renewals" && member?.role === "Owner" && <>
       <Panel title="Pengajuan dari Driver" eyebrow={team?.name || "TEAM OWNER"}>
         {requests.filter(r=>r.status==="pending").length ? requests.filter(r=>r.status==="pending").map(request=><article className="s5-record" key={request.id}>
-          <b>{drivers.find(d=>d.id===request.member_id)?.character_name || "Driver"} · {cash(request.requested_salary)} / season</b>
+          <b><MemberProfileLink memberId={request.member_id}>{drivers.find(d=>d.id===request.member_id)?.character_name || "Driver"}</MemberProfileLink> · {cash(request.requested_salary)} / season</b>
           <small>{Number(request.requested_duration_seasons)} Season · {new Date(request.created_at).toLocaleString("id-ID")}</small>
           <p>{request.request_note || "Tidak ada catatan tambahan."}</p>
           <div className="s5-actions">
@@ -291,9 +292,9 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
         </article>) : <p className="s5-footnote">Belum ada pengajuan kontrak baru dari Driver.</p>}
       </Panel>
       <Panel title="Buat penawaran kontrak" eyebrow={team?.name || "TEAM OWNER"}><div className="s5-form"><label className="s5-field"><span>{form.request_id?"Pengajuan Driver":"Kontrak Driver"}</span><select disabled={Boolean(form.request_id)} value={form.contract_id||""} onChange={e=>set("contract_id",e.target.value)}><option value="">{form.request_id?"Terhubung ke pengajuan":"Pilih kontrak aktif"}</option>{contracts.map(c=><option key={c.id} value={c.id}>{c.members?.character_name||"Driver"} · {cash(c.annual_salary)}</option>)}</select></label><label className="s5-field"><span>Durasi kontrak</span><select value={form.duration_seasons||"1"} onChange={e=>set("duration_seasons",e.target.value)}>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} Season</option>)}</select></label><label className="s5-field"><span>Gaji tahunan yang ditawarkan (€)</span><input type="number" min="0" step="0.01" value={form.proposed_salary||""} onChange={e=>set("proposed_salary",e.target.value)}/></label><label className="s5-field"><span>Catatan penawaran</span><textarea rows={2} value={form.offer_note||""} onChange={e=>set("offer_note",e.target.value)}/></label><button className="s5-primary" disabled={saving||(!form.request_id&&!form.contract_id)||!form.duration_seasons} onClick={()=>void sendRenewal()}><FileSignature size={15}/> {form.request_id?"Kirim penawaran untuk pengajuan":"Kirim penawaran"}</button></div></Panel>
-      <Panel title="Status penawaran" eyebrow="RENEWAL HISTORY">{offers.map(o=><article className="s5-record" key={o.id}><b>{drivers.find(d=>d.id===o.member_id)?.character_name||"Driver"} · {cash(o.proposed_salary)}</b><small>{seasons.find(s=>s.id===o.renewal_season_id)?.title||"Season"} · {Number(o.duration_seasons||1)} Season · {o.status.toUpperCase()}</small></article>)}</Panel></>}
+      <Panel title="Status penawaran" eyebrow="RENEWAL HISTORY">{offers.map(o=><article className="s5-record" key={o.id}><b><MemberProfileLink memberId={o.member_id}>{drivers.find(d=>d.id===o.member_id)?.character_name||"Driver"}</MemberProfileLink> · {cash(o.proposed_salary)}</b><small>{seasons.find(s=>s.id===o.renewal_season_id)?.title||"Season"} · {Number(o.duration_seasons||1)} Season · {o.status.toUpperCase()}</small></article>)}</Panel></>}
     {scope === "renewals" && member?.role === "Driver" && <>
-      <Panel title="Ajukan kontrak baru ke Team Owner" eyebrow={team?.name || "DRIVER CONTRACT REQUEST"}>
+      <Panel title="Ajukan kontrak baru ke Team Owner" eyebrow={team?.id?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>:"DRIVER CONTRACT REQUEST"}>
         {member?.team_id ? <div className="s5-form">
           <p className="s5-footnote">Ajukan perpanjangan jika kontrak aktif, atau pengajuan kontrak pertama jika kamu belum memiliki kontrak aktif. Lamaran ke tim lain tetap dilakukan melalui Job Search.</p>
           {requestSalaryBand&&<p className="s5-footnote">Salary band lisensi {member.license}: {cash(requestSalaryBand.salary_min_eur)} – {cash(requestSalaryBand.salary_max_eur)} per season.</p>}
@@ -311,6 +312,6 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
       </Panel>
     </>}
     {scope === "operations" && <><div className="s5-grid s5-grid-4">{Object.entries(health||{}).filter(([,v])=>typeof v==="number").map(([k,v])=><div className="s5-stat" key={k}><span>{k.replaceAll("_"," ").toUpperCase()}</span><strong>{String(v)}</strong></div>)}</div><Panel title="Latest system health runs" eyebrow="ADMIN ONLY">{healthRuns.length?healthRuns.map(run=><article className="s5-record" key={run.id}><b>{String(run.status||"UNKNOWN").toUpperCase()} · {new Date(run.started_at).toLocaleString("id-ID")}</b><small>Wallet mismatch {run.wallet_mismatches} · Cron failure 24h {run.cron_failures_24h} · Pending payroll {run.pending_payroll} · Race waiting result {run.races_awaiting_result} · Missing calendar {run.seasons_missing_calendar}</small>{run.error&&<p>{run.error}</p>}</article>):<p className="s5-footnote">Belum ada health run yang tercatat.</p>}</Panel></>}
-    <div className="s5-actions"><button className="s5-secondary" onClick={()=>void refresh()} disabled={saving}><RefreshCw size={14}/> Refresh</button><span className="s5-footnote">CALERIS · {team?.name || member?.character_name || "Admin"}</span></div>
+    <div className="s5-actions"><button className="s5-secondary" onClick={()=>void refresh()} disabled={saving}><RefreshCw size={14}/> Refresh</button><span className="s5-footnote">CALERIS · {team?.id?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>:member?.id?<MemberProfileLink memberId={member.id}>{member.character_name||"Member"}</MemberProfileLink>:"Admin"}</span></div>
   </section>;
 }
