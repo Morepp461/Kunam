@@ -1503,3 +1503,12 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Take Over: owner's current Team listing heading links to public Team Profile.
 - Regression script extended for these pages. Existing IDs/components reused; no migration or dependency change.
 - Pending proposed Team names and dropdown option labels are intentionally not links because they are not navigable existing public entities.
+
+
+## Scope 09 — Admin and Brand Ecosystem profile-link coverage
+
+- Season Prizepool: final-standing Team names are public Team Profile links.
+- License & Wallet Adjustments: Driver names in license audit history link to public Member Profiles via `caleris_member_directory.public_member_id`.
+- Brand Ecosystem: current Team/Driver identity and offer target Team names link to public profiles.
+- Brand Ecosystem Admin: offer, contract, and payment-history Team names link to public Team Profiles.
+- Regression script covers each surface. No dependency or database migration.
