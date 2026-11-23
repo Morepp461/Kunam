@@ -303,3 +303,11 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 06 — Admin Workflow purpose (2026-11-23)
+- Status: AUDIT RESOLVED; no new CRM workflow invented.
+- Existing route: `/admin-workflow`, Admin-only (FIA is explicitly excluded).
+- Verified implementation: a reserved Control Room workspace for future operational CRM workflows. The current page is intentionally a placeholder and contains no active workflow, records, or administrative actions.
+- Decision: keep the route and its access boundary. Do not fabricate CRM modules or duplicate existing Admin tools without a concrete workflow specification. Existing operations remain in their dedicated pages (Site Manager, Economy Engine, Operations Suite, Manage User/Admin Users, Registered Member, etc.).
+- No application runtime change, DB migration, or Vercel environment change.
