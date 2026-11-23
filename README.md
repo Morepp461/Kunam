@@ -1173,3 +1173,9 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 
 - Reduced the Job Search search field from a two-column desktop span to one filter-grid column and reduced its height to 38 px; it expands across the grid only on tablet/mobile layouts. The responsive overrides use matching selector specificity so the compact desktop rule does not leak into mobile breakpoints.
 - CI regression checks enforce the compact desktop geometry and responsive expansion.
+
+
+### Race Engine Shared Clock Accuracy
+
+- The shared simulation clock now advances by the largest actual entrant elapsed-time delta for each tick, including incident time loss and pit-lane loss, rather than only the nominal segment duration. This keeps weather progression and race-control expiry synchronized with the real staged race timeline.
+- A regression assertion verifies the checkpoint clock matches the maximum entrant elapsed time after the pit-model simulation step.
