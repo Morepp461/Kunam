@@ -1424,3 +1424,36 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Restored full-width behavior only at tablet/mobile breakpoints using matching selector specificity; this prevents the desktop rule from overriding responsive layout.
 - Added regression checks for desktop width/height and responsive expansion.
 - No data, schema, Supabase, wallet, or Vercel environment changes.
+
+
+---
+
+# SCOPE ACCEPTANCE VERIFICATION — 24 NOVEMBER 2026
+
+## Testing DB behavioral QA (transaction rollback)
+
+- Scope 05 — First contract: Driver request → Owner offer → Driver acceptance → next-season contract creation passed using existing Testing personas and temporary JWT claims.
+- Scope 05 — Existing contract: renewal request tied to the active contract, Owner offer, Driver rejection, and Owner decline passed. Renewal acceptance was not asserted because the existing fixture already has a contract in the target draft season.
+- Scope 11 — Funded freeze compensation: the Testing transaction paid the calculated €2,500,000,000 for two remaining contract seasons, created exactly one idempotent `contract_compensation` transaction, and reached `frozen`.
+- Scope 11 — Insufficient balance: the settlement remained `pending`, recorded no payout transaction, and left the state `awaiting_compensation`.
+- All transactions were explicitly rolled back. Post-rollback verification: zero request/offer/settlement/state/compensation rows from the tests; original Team Wallet balance restored to €17,550,000. No Production wallet or business data was changed.
+
+## CI, Supabase, and Vercel
+
+- Main SHA: `e854770ba4b5d3909b6b638d45d05609a1392971`.
+- GitHub Actions run `45220938488`: **success**.
+- Testing and Production Supabase projects: `ACTIVE_HEALTHY`.
+- `admin-user-management`: Testing v8 / Production v7, ACTIVE, `verify_jwt=true`, identical source hash `10b32d612208fe1ed681ea5ac93e5f72a215e78654ef724ca689478d509e4d34`.
+- `member-directory`: Testing v8 / Production v14, ACTIVE, identical source hash `e452c3f125db50b52423dbe9dab150bebc9b38a9a18da27f5fb711f5ac374e2b`.
+- `economy-workflows`: Testing v7 / Production v6, ACTIVE, `verify_jwt=true`, identical source hash `3b6c47df00d14c6d52277aeac674ebe05e35d6ab7b7a5b01d9dae620ea388867`.
+- Vercel Production deployment `dpl_8P6NaJdBbCcEfW5X8NB1azm9WfT2`: **READY**, exact source SHA above. `https://calerismasters.com` returned HTTP 200; aliases include `www.calerismasters.com` and `calerismastersnewgen-mu.vercel.app`.
+
+## Remaining acceptance gates
+
+1. Scope 08: the 89 MB 2025 GLB is not present in the current repository, Supabase Storage, or accessible Project Library. Real mesh/UV/sponsor integration and physical Android GPU/memory acceptance therefore remain unverified.
+2. Scope 09: reviewed profile-link components and regression tests are in place, but a final exhaustive text-by-text audit of every page and manual route verification remains open.
+3. Scope 05/10: automated database paths and CI checks passed; authenticated real-browser Driver/Owner and Admin/FIA/Owner/Member role walkthroughs remain open.
+4. Scope 01/08: Android-native dropdown, touch layout, WebGL/GPU, and memory acceptance require the actual handset.
+5. Scope 06: CRM workflow remains intentionally unimplemented until its statuses, owners, transitions, and permissions are specified.
+
+No Production data, wallet balance, Supabase schema, Edge Function, or Vercel configuration was changed during these acceptance tests.

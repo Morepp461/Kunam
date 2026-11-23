@@ -1173,3 +1173,16 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 
 - Reduced the Job Search search field from a two-column desktop span to one filter-grid column and reduced its height to 38 px; it expands across the grid only on tablet/mobile layouts. The responsive overrides use matching selector specificity so the compact desktop rule does not leak into mobile breakpoints.
 - CI regression checks enforce the compact desktop geometry and responsive expansion.
+
+
+## Scope acceptance verification — 24 November 2026
+
+- Testing DB transaction QA verified the Driver first-contract path end to end: Driver request, Owner offer, Driver acceptance, and next-season contract creation. The test used a transaction that was rolled back.
+- Testing DB transaction QA verified the existing-contract renewal request, Owner offer, Driver rejection, and Owner decline paths. Renewal acceptance was not asserted against the current fixture because the target Driver already has an active contract in the next draft season.
+- Team inactivity compensation was exercised in Testing through both branches: a funded settlement paid €2,500,000,000 for two remaining contract seasons and produced one idempotent transaction; insufficient funds left one pending settlement and produced no transaction.
+- Every QA transaction was rolled back. A follow-up query confirmed no contract requests, offers, freeze settlements, inactivity state, or compensation transactions remained, and the test Team Wallet returned to its original €17,550,000 balance. Production wallet data was not touched.
+- GitHub Actions **Caleris CI** passed for main commit `e854770ba4b5d3909b6b638d45d05609a1392971`. The production-dependency audit, TypeScript, build, unit/schema tests, browser smoke tests, workflow regression scripts, and Supabase schema parity guard are included in the workflow.
+- Supabase `admin-user-management` is ACTIVE in Testing v8 and Production v7, with `verify_jwt=true` and matching source hash `10b32d612208fe1ed681ea5ac93e5f72a215e78654ef724ca689478d509e4d34`. `member-directory` and `economy-workflows` are also ACTIVE with matching source hashes in both environments.
+- Vercel Production is READY for the exact main commit above. `calerismasters.com` returned HTTP 200 and the production aliases are attached.
+
+**Acceptance still open:** real 2025 GLB loading/UV/sponsor placement and Android GPU-memory testing; final exhaustive page-by-page profile-link review; authenticated browser walkthrough for Driver/Owner and Admin/FIA/Owner/Member; and physical Android visual acceptance. Admin Workflow remains a navigation hub until the actual CRM workflow specification is supplied. These checks are not represented as completed by automated tests.
