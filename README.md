@@ -1155,3 +1155,9 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 - Team Summary, Owner/Finance views, Hall of Fame, and Admin Users now resolve Public Member ID before linking driver profiles; team identity links use actual team IDs. Missing public IDs render as plain text rather than exposing internal member UUIDs.
 
 - Shared profile-link helpers validate Public Member ID and UUID team IDs. Internal database member UUIDs are rendered as plain text rather than treated as public profile identifiers.
+
+
+### Admin Workflow
+
+- Admin Workflow is an Admin-only operations hub linking to existing configuration, approval, lifecycle, audit, intelligence, and platform modules.
+- It does not create or mutate CRM records, workflows, or automated tasks. The CRM-specific pipeline remains inactive until its statuses, ownership, approvals, and follow-up rules are specified.
