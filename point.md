@@ -1402,3 +1402,14 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - The hub is navigation-only and read-only. It does not create CRM entities, tasks, notes, statuses, or automated actions. CRM-specific workflow remains inactive pending an explicit specification of statuses, task ownership, approval transitions, and follow-up rules.
 - Added CI regression coverage for the Admin allow-list boundary, existing destination routes, and absence of CRM mutation/RPC actions.
 - No database migration, Supabase function, wallet, production data, or Vercel environment change.
+
+
+---
+
+# DIGITAL ID THEME PICKER ACCESSIBILITY — 23 NOVEMBER 2026
+
+- Added outside-pointer and Escape dismissal to the Community Hub Digital ID theme picker.
+- Added an explicit accessible label and `aria-controls` association for the theme option list.
+- Scoped native-select suppression to the Digital ID editor, preserving the shared global select handler elsewhere.
+- Added a regression test for exactly one custom theme trigger and no native HTML select in the editor.
+- No database, Edge Function, wallet, or Vercel environment changes.
