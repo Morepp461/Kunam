@@ -64,7 +64,8 @@ This feature set adds seven connected CALERIS Masters community systems:
 - Badge definitions and member awards are stored separately.
 - Community voting grants the Community Voice badge once per member and poll.
 - Admin can create an immediately open poll or schedule a future start. Period awards must reference a period from the selected official season calendar; season awards must reference an official season. Poll records transition from scheduled to open when the first eligible vote arrives after the configured start time; voting is rejected outside the configured window.
-- Admin can close and publish aggregate results; individual vote records remain private.
+- Admin can finalize, publish, or cancel a poll; individual vote records remain private.
+- Finalization records the winner option IDs. If the top vote count is tied, the configured policy is shared winners; a poll with zero votes has no winner.
 - Admin can configure reward XP per supported event source and maintain the badge catalog (title, description, icon key, rarity, and active state) through authorization-checked RPCs.
 - Milestone badges are defined for the configured XP thresholds.
 
