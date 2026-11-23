@@ -1518,3 +1518,14 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - GitHub Actions run `45229605292`: **success** for commit `65852b76a67c99f452b7dbec76c471c5dd5b378f`.
 - Vercel Preview deployment `dpl_2P9WJLCR6v6cXpVQHBegPuaPGGha`: **READY** at https://calerismastersnewgen-dy6xeyeyr-morepp.vercel.app for application-code commit `65852b76a67c99f452b7dbec76c471c5dd5b378f`. Production deployment and production aliases remain unchanged.
 - PR #335 is mergeable and remains **Draft**. Do not merge until the 57 individually illustrated transparent pose assets are completed and visually accepted.
+
+
+### Cale Mascot — account onboarding integration
+
+- Added a seven-step Indonesian Paddock Access guide presented by the locked Cale formal master asset.
+- The guide covers welcome, avatar upload, basic identity, nationality/hometown, Caleris nickname, role preference, and privacy/review.
+- First-visit completion is stored per authenticated user in browser local storage; the guide can be reopened from the Paddock Access page.
+- The guide is a functional UI walkthrough and does not submit, modify, or infer profile data. Existing form validation and the `complete-paddock-access` Edge Function remain authoritative.
+- FIA outfit routing is limited to warning/punishment/appeal contexts; FIA panel navigation alone does not force warning attire.
+- Cale still ships three transparent wardrobe master assets. The 57 IDs are a stable manifest contract, not 57 individually illustrated images; no new artwork was generated in this implementation pass.
+- Added regression assertions for the tutorial, per-user completion state, and accessible dialog. No schema, migration, dependency, or runtime configuration change.
