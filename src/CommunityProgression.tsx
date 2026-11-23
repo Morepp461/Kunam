@@ -61,6 +61,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [polls, setPolls] = useState<any[]>([]);
   const [tab, setTab] = useState("overview");
   const [id, setId] = useState<any>({ theme: "classic", accent_color: "#b99752", tagline: "", public_visible: false });
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [seasons, setSeasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -624,9 +625,18 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           <div className="cp-id-level"><strong>LV {lv}</strong><span>{formatNumber(xp)} XP</span></div>
           <div className="cp-id-bottom">{id.tagline || "Built through every season."}</div>
         </div>
-        <label>Theme<select value={id.theme} onChange={(event) => setId({ ...id, theme: event.target.value })}>
-          <option value="classic">Classic</option><option value="premio">Premio</option><option value="zwei">Zwei</option><option value="gold">Gold</option>
-        </select></label>
+        <div className="cp-theme-picker">
+          <span className="cp-theme-label">Theme</span>
+          <button type="button" className="cp-theme-trigger" aria-haspopup="listbox" aria-expanded={themeMenuOpen} onClick={() => setThemeMenuOpen(open => !open)}>
+            <span>{({classic:"Classic",premio:"Premio",zwei:"Zwei",gold:"Gold"} as Record<string,string>)[id.theme] || "Classic"}</span>
+            <span className="cp-theme-chevron" aria-hidden="true">⌄</span>
+          </button>
+          {themeMenuOpen && <div className="cp-theme-options" role="listbox" aria-label="Pilih tema Digital ID">
+            {(["classic","premio","zwei","gold"] as const).map(theme => <button type="button" role="option" aria-selected={id.theme===theme} className={id.theme===theme?"is-selected":""} key={theme} onClick={() => { setId({ ...id, theme }); setThemeMenuOpen(false); }}>
+              <span>{theme[0].toUpperCase()+theme.slice(1)}</span>{id.theme===theme&&<CheckCircle size={15}/>}
+            </button>)}
+          </div>}
+        </div>
         <label>Accent color<input type="color" value={id.accent_color} onChange={(event) => setId({ ...id, accent_color: event.target.value })} /></label>
         <label>Tagline<input maxLength={80} value={id.tagline ?? ""} onChange={(event) => setId({ ...id, tagline: event.target.value })} placeholder="Your personal tagline" /></label>
         <label className="cp-checkbox"><input type="checkbox" checked={Boolean(id.public_visible)} onChange={(event) => setId({ ...id, public_visible: event.target.checked })} /> Public verification page</label>
