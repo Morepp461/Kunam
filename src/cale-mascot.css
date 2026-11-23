@@ -1,6 +1,8 @@
 .cale-mascot{--cale-size:180px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:var(--cale-size);max-width:100%;margin:0;min-width:0;line-height:1}
-.cale-mascot__art{position:relative;display:flex;align-items:flex-end;justify-content:center;width:100%;min-width:0}
-.cale-mascot__art img{display:block;width:100%;height:auto;max-height:100%;object-fit:contain;object-position:center bottom;user-select:none;-webkit-user-drag:none}
+.cale-mascot__art{position:relative;display:flex;align-items:flex-end;justify-content:center;width:100%;min-width:0;aspect-ratio:2/3}
+.cale-mascot[data-cale-outfit="formal"] .cale-mascot__art{aspect-ratio:128/298}
+.cale-mascot[data-cale-outfit="fia"] .cale-mascot__art{aspect-ratio:100/240}
+.cale-mascot__art img{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;object-position:center bottom;user-select:none;-webkit-user-drag:none}
 .cale-mascot__marker{position:absolute;top:5%;right:2%;display:grid;place-items:center;min-width:25px;height:25px;padding:0 6px;border:1px solid rgba(214,184,94,.75);border-radius:50%;background:rgba(12,12,14,.94);color:#e2c36a;font-size:14px;font-weight:800;line-height:1}
 .cale-mascot__caption{display:grid;gap:4px;width:100%;padding:8px 0 0;text-align:center;color:var(--text-primary,#f4f0e7)}
 .cale-mascot__caption strong{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
@@ -17,6 +19,7 @@
 .cale-assistant__close{display:grid;place-items:center;width:32px;height:32px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);color:#f4f0e7;cursor:pointer}
 .cale-assistant__body{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:center;gap:12px;padding:14px 16px 16px}
 .cale-assistant__character{--cale-size:112px;width:112px;max-height:190px;align-self:end}
+.cale-assistant__character .cale-mascot__art{height:180px;aspect-ratio:auto}
 .cale-assistant__character .cale-mascot__marker{display:none}
 .cale-assistant__copy{min-width:0}
 .cale-assistant__copy strong{font-size:13px;color:#e8cb72}
