@@ -3,6 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 migration = (ROOT / "supabase/migrations/20261123130000_team_inactivity_freeze_and_compensation.sql").read_text()
 ui = (ROOT / "src/AdminTeamInactivity.tsx").read_text()
+indexes = (ROOT / "supabase/migrations/20261123150000_caleris_scope_fk_indexes.sql").read_text()
 
 required = [
     "caleris_team_inactivity_reviews", "caleris_team_freeze_settlements",
@@ -41,4 +42,7 @@ assert "p_frozen_team_id" in migration and "Hanya Admin" in migration
 assert "reactivation_activity_count" in ui and "Buka slot pengganti" in ui
 assert "admin_fill_team_replacement_slot" in ui
 
-print("Team inactivity, full-season compensation, idempotency, replacement and reactivation checks passed.")
+for token in ["caleris_team_freeze_settlements_contract_term_fk_idx","caleris_team_freeze_settlements_member_fk_idx","caleris_team_freeze_settlements_season_fk_idx","caleris_team_inactivity_reviews_team_fk_idx","caleris_team_inactivity_states_frozen_season_fk_idx","caleris_team_inactivity_states_last_reviewed_season_fk_idx","caleris_team_replacement_slots_replaced_team_fk_idx","caleris_team_replacement_slots_replacement_team_fk_idx"]:
+    assert token in indexes, f"Missing inactivity FK index: {token}"
+
+print("Team inactivity, compensation, idempotency, replacement, reactivation and FK index checks passed.")
