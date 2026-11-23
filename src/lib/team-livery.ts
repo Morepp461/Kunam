@@ -38,5 +38,6 @@ export function validateTeamLiveryDesign(value: unknown): value is TeamLiveryDes
         typeof decal.x === "number" && decal.x >= 0 && decal.x <= 100 &&
         typeof decal.y === "number" && decal.y >= 0 && decal.y <= 100 &&
         ["sidepod", "nose", "frontWing", "rearWing"].includes(String(decal.surface));
-    })));
+    }))) &&
+    (row.sponsorPlacements === undefined || (row.sponsorPlacements !== null && typeof row.sponsorPlacements === "object" && !Array.isArray(row.sponsorPlacements) && Object.keys(row.sponsorPlacements).length <= 20 && Object.values(row.sponsorPlacements).every(value => ["title", "major", "other"].includes(String(value)))));
 }
