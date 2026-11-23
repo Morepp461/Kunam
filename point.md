@@ -312,3 +312,12 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 - Database: no migration required; Testing and Production unchanged.
 - Vercel environment: unchanged.
 - QA remaining: Android viewport, desktop viewport, search input usability, CI/build.
+
+
+### Checkpoint Scope 02 — shared panel loading copy (2026-11-23)
+- Status: IMPLEMENTED, CI/QA pending.
+- Branch: `fix/caleris-scope-02-loading-copy-final`.
+- Changed: `src/Stage5Panel.tsx`; shared Stage5 panel loader now displays “Mempersiapkan Data...” instead of “Memuat data Supabase...”.
+- Database: no migration required. Testing and Production unchanged.
+- Vercel environment: unchanged.
+- QA remaining: verify shared loader on Stage5 tabs, Android/desktop viewport and CI/build.
