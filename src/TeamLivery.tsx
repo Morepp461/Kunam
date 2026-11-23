@@ -33,7 +33,7 @@ function paintAtlas(canvas:HTMLCanvasElement,d:Design){
 }
 function Preview3D({design}:{design:Design}){
  const host=useRef<HTMLDivElement>(null);
- useEffect(()=>{let disposed=false,renderer:import("three").WebGLRenderer|null=null,frame=0,observer:ResizeObserver|null=null;let geometries:import("three").BufferGeometry[]=[];let materials:import("three").Material[]=[];let textures:import("three").Texture[]=[];const node=host.current;if(!node)return;
+ useEffect(()=>{let disposed=false,renderer:import("three").WebGLRenderer|null=null,frame=0,observer:ResizeObserver|null=null;let geometries:import("three").BufferGeometry[]=[];let materials:import("three").Material[]=[];let textures:import("three").Texture[]=[];const node=host.current;if(!node)return;let interactionCleanup=()=>{};
   void import("three").then(T=>{if(disposed)return;const w=Math.max(1,node.clientWidth),h=Math.max(1,node.clientHeight);renderer=new T.WebGLRenderer({antialias:false,alpha:false,powerPreference:"low-power"});renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.2));renderer.setSize(w,h);renderer.outputColorSpace=T.SRGBColorSpace;node.appendChild(renderer.domElement);
    const scene=new T.Scene();scene.background=new T.Color("#111419");const camera=new T.PerspectiveCamera(35,w/h,.1,100);let orbitYaw=.65,orbitPitch=.42,orbitDistance=10;const updateCamera=()=>{camera.position.set(Math.sin(orbitYaw)*Math.cos(orbitPitch)*orbitDistance,Math.sin(orbitPitch)*orbitDistance,Math.cos(orbitYaw)*Math.cos(orbitPitch)*orbitDistance);camera.lookAt(0,0,0);};updateCamera();scene.add(new T.HemisphereLight(0xffffff,0x202630,2));const light=new T.DirectionalLight(0xffe6bf,2.4);light.position.set(-4,8,5);scene.add(light);const fill=new T.DirectionalLight(0xb7c8dd,.8);fill.position.set(5,4,-5);scene.add(fill);
    const car=new T.Group();scene.add(car);const mat=(color:string,rough=.45)=>{const m=new T.MeshStandardMaterial({color,roughness:rough,metalness:.15});materials.push(m);return m;};
@@ -52,7 +52,7 @@ function Preview3D({design}:{design:Design}){
    const resize=()=>{if(!renderer)return;const nw=Math.max(1,node.clientWidth),nh=Math.max(1,node.clientHeight);camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);};observer=new ResizeObserver(resize);observer.observe(node);
    const animate=()=>{if(disposed)return;car.rotation.y=Math.sin(performance.now()*.0002)*.035;renderer?.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
   }).catch(()=>{if(!disposed)node.dataset.error="WebGL preview unavailable";});
-  return()=>{disposed=true;cancelAnimationFrame(frame);observer?.disconnect();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(texture=>texture.dispose());if(renderer){const canvas=renderer.domElement;canvas.removeEventListener("pointerdown",down);canvas.removeEventListener("pointermove",move);canvas.removeEventListener("pointerup",up);canvas.removeEventListener("pointercancel",up);canvas.removeEventListener("wheel",wheel);renderer.dispose();canvas.remove();}};
+  return()=>{disposed=true;cancelAnimationFrame(frame);observer?.disconnect();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(texture=>texture.dispose());if(renderer){interactionCleanup();renderer.dispose();renderer.domElement.remove();}};
  },[design]);
  return <div className="team-livery-3d" ref={host}><span>3D PREVIEW · PROCEDURAL CAR MODEL</span></div>;
 }
