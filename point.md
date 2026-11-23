@@ -303,3 +303,57 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+## 7. User clarification and implementation checkpoints (2026-11-23)
+
+### Scope 08 — Uploaded 3D asset and decal requirements
+
+User supplied `2025_f1_car.glb` and attribution:
+- “2025 F1 CAR” by Abu Saif
+- Sketchfab source: https://skfb.ly/pHRJU
+- License: Creative Commons Attribution 4.0 (CC BY 4.0)
+
+The uploaded GLB was inspected:
+- 89,383,844 bytes; 143 mesh geometries; 271 nodes.
+- 1,622,787 vertices; 3,109,067 triangles.
+- UV coordinates exist on all 143 geometries.
+- Eight material definitions; no embedded image textures.
+- GLB metadata identifies the title, creator, source and CC-BY-4.0 license.
+
+Important accuracy note: the supplied asset is titled **2025 F1 CAR**, not a verified 2026-regulation chassis. It must not be represented as an exact 2026 chassis. The binary asset is not yet present in the repository/deployment, so production GLB rendering remains blocked until the asset can be placed in approved project asset storage and optimized for mobile delivery.
+
+Implementation added on `feat/caleris-scope-08-livery-decal-library`:
+- `src/lib/team-livery-decals.ts`: 50 distinct vector decal variants across ten visual families.
+- `src/TeamLivery.tsx`: decal selection, RGB 24-bit color picker (16,777,216 possible RGB colors), HEX input, decal painting in atlas and preview texture, drag-to-orbit and wheel zoom in the existing Three.js preview.
+- `src/lib/team-livery.ts`: persisted decal/color validation while retaining the existing schema version and legacy livery shape normalization.
+- `src/lib/team-livery.test.ts`: tests for 50 unique decal IDs, catalog metadata, valid color and invalid decal/color.
+- `src/team-livery.css`: responsive decal library and color controls.
+- `docs/assets/2025-f1-car-attribution.md`: source credit, license and asset inspection.
+
+**Checkpoint Scope 08**
+- Status: **IN PROGRESS — partial implementation; not QA PASSED**.
+- Branch: `feat/caleris-scope-08-livery-decal-library`.
+- Latest implementation commit at checkpoint: `213861dd1dbd562844949ce26872ddabba683c5f` (later commits may update this checkpoint).
+- Migration: none yet; existing `caleris_team_liveries` JSON storage can hold the added bounded decal fields without a schema change.
+- QA: pending CI, browser rendering and Android touch inspection.
+- Asset gate: original GLB has not yet been added to repository or deployed asset storage. Current preview is still procedural; hyper-realistic GLB rendering and real sponsor-to-tier placement remain incomplete.
+- Supabase Testing/Production: unchanged.
+- Vercel environment: unchanged.
+- Next: validate CI, fix any failures, then integrate the credited GLB through an approved asset upload path, validate UV/material mapping, add sponsor roster placements from active team sponsor contracts, and display the same livery in team profiles before marking Scope 08 complete.
+
+### Scope 11 — Explicit compensation rule supplied by user
+
+When a team is frozen at the end of a season, compensation is calculated using only the **future contract seasons after the current season**:
+`remaining_seasons = contract_duration_seasons - completed_contract_seasons_including_current`
+`compensation_per_driver = remaining_seasons * annual_salary`
+
+Example confirmed by user:
+- Freeze at the end of Season 2.
+- Contract began in Season 2 and has a total duration of 4 seasons.
+- Seasons 3, 4 and 5 remain: 3 seasons.
+- Annual salary: €10,000,000.
+- Each Driver receives €30,000,000; two Drivers receive €60,000,000 total.
+- Drivers become Free Agents after successful full compensation settlement.
+
+The payment source and insufficient-funds recovery must still be grounded in existing team-wallet/payroll rules. A freeze must not be silently marked fully settled if the team cannot fund the full amount. Settlement must be atomic, auditable and idempotent.
