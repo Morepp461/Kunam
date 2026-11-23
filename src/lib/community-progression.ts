@@ -1,6 +1,17 @@
-export type PredictorDriver = { name: string; points: number };
-export type PredictorEvent = { finishingPoints: number[]; poleBonus: number };
-export type PredictorResult = { probabilities: number[]; lockedChampionIndex: number | null; eliminated: boolean[]; maxRemainingPoints: number };
+export type PredictorDriver = {
+  name: string;
+  points: number;
+  countback?: number[];
+  qualifyingCountback?: number[];
+};
+export type PredictorEvent = { finishingPoints: number[]; poleBonus: number; sessionType: string };
+export type PredictorResult = {
+  probabilities: number[];
+  lockedChampionIndex: number | null;
+  eliminated: boolean[];
+  maxRemainingPoints: number;
+  unresolvedTiebreakTrials: number;
+};
 
 export function getCalerisLevel(totalXp: number): number {
   if (!Number.isFinite(totalXp) || totalXp <= 0) return 0;
@@ -11,6 +22,15 @@ export function getCalerisLevel(totalXp: number): number {
     threshold *= 2;
   }
   return currentLevel;
+}
+
+function compareCountback(left: number[], right: number[]): number {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (left[index] ?? 0) - (right[index] ?? 0);
+    if (difference !== 0) return difference;
+  }
+  return 0;
 }
 
 function shuffle<T>(items: T[], random: () => number): T[] {
@@ -33,8 +53,8 @@ export function simulateChampionship(
     throw new Error("Data driver atau poin tidak valid.");
   }
   const normalizedEvents = eventVectors.map((event) => Array.isArray(event)
-    ? { finishingPoints: event, poleBonus: 0 }
-    : event);
+    ? { finishingPoints: event, poleBonus: 0, sessionType: "race" }
+    : { ...event, sessionType: event.sessionType || "race" });
   if (normalizedEvents.some((event) =>
     !event.finishingPoints.length
     || event.finishingPoints.some((value) => !Number.isFinite(value) || value < 0)
@@ -63,26 +83,50 @@ export function simulateChampionship(
       lockedChampionIndex,
       eliminated,
       maxRemainingPoints,
+      unresolvedTiebreakTrials: 0,
     };
   }
 
   const wins = drivers.map(() => 0);
+  let unresolvedTiebreakTrials = 0;
   for (let trial = 0; trial < trials; trial += 1) {
     const totals = drivers.map((driver) => driver.points);
+    const raceCountback = drivers.map((driver) => [...(driver.countback ?? [])]);
+    const qualifyingCountback = drivers.map((driver) => [...(driver.qualifyingCountback ?? [])]);
     for (const event of normalizedEvents) {
       const order = shuffle(drivers.map((_, index) => index), random);
       order.forEach((driverIndex, position) => {
         totals[driverIndex] += event.finishingPoints[position] ?? 0;
+        if (event.sessionType === "race") {
+          raceCountback[driverIndex][position] = (raceCountback[driverIndex][position] ?? 0) + 1;
+        } else if (event.sessionType === "qualifying") {
+          qualifyingCountback[driverIndex][position] = (qualifyingCountback[driverIndex][position] ?? 0) + 1;
+        }
       });
       if (event.poleBonus > 0) {
         const poleWinner = Math.min(drivers.length - 1, Math.max(0, Math.floor(random() * drivers.length)));
         totals[poleWinner] += event.poleBonus;
       }
     }
+
     const high = Math.max(...totals);
-    const tied = totals.map((value, index) => value === high ? index : -1).filter((index) => index >= 0);
-    const winner = tied[Math.min(tied.length - 1, Math.floor(random() * tied.length))];
-    wins[winner] += 1;
+    const tiedOnPoints = totals.map((value, index) => value === high ? index : -1).filter((index) => index >= 0);
+    const bestRaceCountback = tiedOnPoints.reduce((best, index) =>
+      compareCountback(raceCountback[index], raceCountback[best]) > 0 ? index : best, tiedOnPoints[0]);
+    const tiedOnRaceCountback = tiedOnPoints.filter((index) =>
+      compareCountback(raceCountback[index], raceCountback[bestRaceCountback]) === 0);
+    const bestQualifyingCountback = tiedOnRaceCountback.reduce((best, index) =>
+      compareCountback(qualifyingCountback[index], qualifyingCountback[best]) > 0 ? index : best, tiedOnRaceCountback[0]);
+    const tiedAfterCountback = tiedOnRaceCountback.filter((index) =>
+      compareCountback(qualifyingCountback[index], qualifyingCountback[bestQualifyingCountback]) === 0);
+
+    if (tiedAfterCountback.length > 1) {
+      unresolvedTiebreakTrials += 1;
+      const share = 1 / tiedAfterCountback.length;
+      tiedAfterCountback.forEach((index) => { wins[index] += share; });
+    } else {
+      wins[tiedAfterCountback[0]] += 1;
+    }
   }
 
   const probabilities = wins.map((count, index) => eliminated[index] ? 0 : count / trials * 100);
@@ -92,6 +136,7 @@ export function simulateChampionship(
     lockedChampionIndex: null,
     eliminated,
     maxRemainingPoints,
+    unresolvedTiebreakTrials,
   };
 }
 
