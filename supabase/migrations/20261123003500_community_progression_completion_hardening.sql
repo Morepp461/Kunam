@@ -2,6 +2,9 @@ begin;
 
 -- Restrict internal trigger helpers. SECURITY DEFINER alone is not an authorization boundary.
 revoke all on function public.caleris_log_activity(uuid,uuid,text,text,text,jsonb) from public, anon, authenticated;
+revoke all on function public.caleris_refresh_driver_milestones(uuid) from public, anon, authenticated;
+revoke all on function public.caleris_reverse_race_entry_xp() from public, anon, authenticated;
+revoke all on function public.caleris_team_roster_milestone_trigger() from public, anon, authenticated;
 revoke all on function public.caleris_refresh_team_milestones(uuid) from public, anon, authenticated;
 revoke all on function public.caleris_award_configured_xp(uuid,text,text,text) from public, anon, authenticated;
 revoke all on function public.caleris_sync_xp_milestones() from public, anon, authenticated;
@@ -23,17 +26,22 @@ create policy "cp votes own read" on public.caleris_community_votes
 for select to authenticated
 using (voter_member_id = public.caleris_current_member_id());
 
+-- A SECURITY DEFINER predicate lets RLS check public visibility without exposing the card table.
+create or replace function public.caleris_is_public_digital_id(p_member uuid)
+returns boolean language sql stable security definer set search_path=public
+as $public_id_visibility$
+  select exists(select 1 from public.caleris_digital_id_cards where member_id=p_member and public_visible=true);
+$public_id_visibility$;
+revoke all on function public.caleris_is_public_digital_id(uuid) from public,anon;
+grant execute on function public.caleris_is_public_digital_id(uuid) to authenticated;
+
 -- Badges are public only when the member explicitly publishes their Digital ID.
 drop policy if exists "cp member badges read" on public.caleris_member_badges;
 create policy "cp member badges read" on public.caleris_member_badges
 for select to authenticated
 using (
   member_id = public.caleris_current_member_id()
-  or exists (
-    select 1 from public.caleris_digital_id_cards card
-    where card.member_id = caleris_member_badges.member_id
-      and card.public_visible = true
-  )
+  or public.caleris_is_public_digital_id(member_id)
 );
 
 -- Activity feed events have a stable source identity, so trigger retries cannot duplicate them.
@@ -467,9 +475,404 @@ as $save_milestone$
 declare milestone_id uuid;
 begin
   if not exists(select 1 from public.site_admins where user_id=auth.uid()) then raise exception 'not_authorized'; end if;
-  if p_code !~ '^[a-z0-9_]{3,80}$' or p_scope not in('driver','team')
-    or nullif(trim(p_title),'') is null or p_target<=0
-    or coalesce(p_xp_reward,0)<0 or p_xp_reward>100000 then
+  if p_code is null or p_code !~ '^[a-z0-9_]{3,80}
+    raise exception 'invalid_milestone_definition';
+  end if;
+  if p_scope='driver' and p_metric_key not in('xp_total','driver_race_starts','driver_wins','driver_podiums','driver_points') then
+    raise exception 'invalid_driver_metric';
+  end if;
+  if p_scope='team' and p_metric_key not in('team_races','team_wins','team_podiums','team_drivers') then
+    raise exception 'invalid_team_metric';
+  end if;
+  if p_scope='team' and p_xp_reward<>0 then raise exception 'team_xp_rewards_not_supported'; end if;
+  if p_badge_code is not null and not exists(select 1 from public.caleris_achievement_badges where code=p_badge_code) then
+    raise exception 'badge_not_found';
+  end if;
+  if exists(select 1 from public.caleris_milestone_definitions where code=p_code and (scope<>p_scope or metric_key<>p_metric_key)) then
+    raise exception 'milestone_identity_immutable';
+  end if;
+  insert into public.caleris_milestone_definitions(scope,code,title,description,metric_key,target_value,xp_reward,badge_code,active)
+  values(p_scope,p_code,left(trim(p_title),120),left(coalesce(p_description,''),500),p_metric_key,p_target,coalesce(p_xp_reward,0),p_badge_code,coalesce(p_active,true))
+  on conflict(code) do update set
+    title=excluded.title,description=excluded.description,target_value=excluded.target_value,
+    xp_reward=excluded.xp_reward,badge_code=excluded.badge_code,active=excluded.active
+  returning id into milestone_id;
+  if p_scope='driver' then
+    perform public.caleris_refresh_driver_milestones(m.id)
+    from public.members m;
+  else
+    perform public.caleris_refresh_team_milestones(t.id)
+    from public.teams t;
+  end if;
+  return milestone_id;
+end;
+$save_milestone$;
+
+create or replace function public.caleris_admin_adjust_xp(
+  p_member_id uuid,p_amount integer,p_source_id text,p_description text
+) returns jsonb
+language plpgsql security definer set search_path=public
+as $adjust_xp$
+declare current_total numeric; inserted integer;
+begin
+  if not exists(select 1 from public.site_admins where user_id=auth.uid()) then raise exception 'not_authorized'; end if;
+  if p_amount is null or p_amount=0 or abs(p_amount)>100000 or nullif(trim(p_source_id),'') is null
+    or nullif(trim(p_description),'') is null then raise exception 'invalid_xp_adjustment'; end if;
+  perform 1 from public.members where id=p_member_id for update;
+  if not found then raise exception 'member_not_found'; end if;
+  select coalesce(sum(amount),0) into current_total from public.caleris_xp_ledger where member_id=p_member_id;
+  if current_total+p_amount<0 then raise exception 'xp_total_cannot_be_negative'; end if;
+  insert into public.caleris_xp_ledger(member_id,amount,source_type,source_id,description)
+  values(p_member_id,p_amount,'admin_adjustment',trim(p_source_id),left(trim(p_description),240))
+  on conflict(member_id,source_type,source_id) do nothing;
+  get diagnostics inserted = row_count;
+  if inserted=1 then
+    perform public.caleris_log_activity(
+      p_member_id,null,'xp_adjustment','Penyesuaian XP',
+      case when p_amount>0 then '+' else '' end||p_amount||' XP · '||left(trim(p_description),160),
+      jsonb_build_object('source_id',trim(p_source_id),'amount',p_amount)
+    );
+  end if;
+  select coalesce(sum(amount),0) into current_total from public.caleris_xp_ledger where member_id=p_member_id;
+  return jsonb_build_object('member_id',p_member_id,'total_xp',current_total,'inserted',inserted=1);
+end;
+$adjust_xp$;
+
+create or replace function public.caleris_admin_create_poll(
+  p_title text,p_description text,p_type text,p_ends_at timestamptz,p_options jsonb,p_season_id uuid default null
+) returns uuid
+language plpgsql security definer set search_path=public
+as $create_poll$
+declare poll_id uuid; item jsonb; candidate_member uuid; candidate_team uuid; candidate_label text; candidate_key text; is_team_poll boolean; seen_candidates text[]:=array[]::text[];
+begin
+  if not exists(select 1 from public.site_admins where user_id=auth.uid()) then raise exception 'not_authorized'; end if;
+  if nullif(trim(p_title),'') is null or length(p_title)>160 or length(coalesce(p_description,''))>1000 then
+    raise exception 'invalid_poll_text';
+  end if;
+  if p_type is null or p_type not in('driver_of_period','team_of_period','driver_of_season','team_of_season','fia_nomination') then
+    raise exception 'invalid_poll_type';
+  end if;
+  if p_ends_at is null or p_ends_at<=now() then raise exception 'poll_end_must_be_future'; end if;
+  if p_season_id is not null and not exists(select 1 from public.license_seasons where id=p_season_id) then
+    raise exception 'season_not_found';
+  end if;
+  if jsonb_typeof(p_options) is distinct from 'array'
+    or jsonb_array_length(p_options)<2 or jsonb_array_length(p_options)>50 then
+    raise exception 'poll_requires_two_to_fifty_options';
+  end if;
+  is_team_poll:=p_type in('team_of_period','team_of_season');
+  insert into public.caleris_community_polls(title,description,poll_type,status,starts_at,ends_at,season_id,created_by)
+  values(left(trim(p_title),160),left(coalesce(p_description,''),1000),p_type,'open',now(),p_ends_at,p_season_id,auth.uid())
+  returning id into poll_id;
+  for item in select value from jsonb_array_elements(p_options) as options(value) loop
+    candidate_member:=nullif(item->>'member_id','')::uuid;
+    candidate_team:=nullif(item->>'team_id','')::uuid;
+    candidate_label:=left(trim(coalesce(item->>'label','')),120);
+    if candidate_label='' then raise exception 'candidate_label_required'; end if;
+    if is_team_poll then
+      if candidate_team is null or candidate_member is not null
+        or not exists(select 1 from public.teams where id=candidate_team) then
+        raise exception 'invalid_team_candidate';
+      end if;
+      candidate_key:='team:'||candidate_team::text;
+    else
+      if candidate_member is null or candidate_team is not null
+        or not exists(select 1 from public.members where id=candidate_member) then
+        raise exception 'invalid_member_candidate';
+      end if;
+      if p_type in('driver_of_period','driver_of_season')
+        and not exists(select 1 from public.members where id=candidate_member and role='Driver') then
+        raise exception 'driver_candidate_required';
+      end if;
+      candidate_key:='member:'||candidate_member::text;
+    end if;
+    if candidate_key=any(seen_candidates) then raise exception 'duplicate_poll_candidate'; end if;
+    seen_candidates:=array_append(seen_candidates,candidate_key);
+    insert into public.caleris_community_poll_options(poll_id,member_id,team_id,label)
+    values(poll_id,candidate_member,candidate_team,candidate_label);
+  end loop;
+  return poll_id;
+end;
+$create_poll$;
+
+create or replace function public.caleris_cast_community_vote(p_poll_id uuid,p_option_id uuid)
+returns void language plpgsql security definer set search_path=public
+as $cast_vote$
+declare member_id uuid:=public.caleris_current_member_id(); poll public.caleris_community_polls%rowtype;
+begin
+  if auth.uid() is null or member_id is null then raise exception 'member_profile_required'; end if;
+  select * into poll from public.caleris_community_polls where id=p_poll_id for update;
+  if not found or poll.status<>'open' or now()<poll.starts_at or now()>=poll.ends_at then raise exception 'poll_not_open'; end if;
+  if not exists(select 1 from public.caleris_community_poll_options where id=p_option_id and poll_id=p_poll_id) then
+    raise exception 'invalid_option';
+  end if;
+  insert into public.caleris_community_votes(poll_id,voter_member_id,option_id)
+  values(p_poll_id,member_id,p_option_id);
+  perform public.caleris_log_activity(
+    member_id,(select team_id from public.members where id=member_id),
+    'community_vote','Member berpartisipasi dalam voting','Suara komunitas telah dicatat.',
+    jsonb_build_object('source_id',p_poll_id::text||':'||member_id::text,'poll_id',p_poll_id)
+  );
+  insert into public.caleris_member_badges(member_id,badge_code,source_type,source_id)
+  values(member_id,'community_voice','community_vote',p_poll_id::text)
+  on conflict do nothing;
+end;
+$cast_vote$;
+
+create or replace function public.caleris_get_community_poll_results(p_poll_id uuid)
+returns jsonb language plpgsql stable security definer set search_path=public
+as $poll_results$
+declare poll public.caleris_community_polls%rowtype; payload jsonb;
+begin
+  if auth.uid() is null then raise exception 'authentication_required'; end if;
+  select * into poll from public.caleris_community_polls where id=p_poll_id;
+  if not found then raise exception 'poll_not_found'; end if;
+  if poll.status not in('closed','published') and poll.ends_at>now() then raise exception 'poll_results_not_available'; end if;
+  select jsonb_build_object(
+    'poll_id',poll.id,
+    'status',case when poll.status='open' and poll.ends_at<=now() then 'ended_pending_finalization' else poll.status end,
+    'total_votes',(select count(*) from public.caleris_community_votes v where v.poll_id=poll.id),
+    'options',coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'option_id',counts.id,'label',counts.label,'votes',counts.vote_count
+      ) order by counts.vote_count desc,counts.label)
+      from (
+        select o.id,o.label,count(v.id)::integer as vote_count
+        from public.caleris_community_poll_options o
+        left join public.caleris_community_votes v on v.option_id=o.id
+        where o.poll_id=poll.id
+        group by o.id,o.label
+      ) counts
+    ),'[]'::jsonb)
+  ) into payload;
+  return payload;
+end;
+$poll_results$;
+
+create or replace function public.caleris_admin_finalize_poll(p_poll_id uuid,p_publish boolean default false)
+returns jsonb language plpgsql security definer set search_path=public
+as $finalize_poll$
+declare poll public.caleris_community_polls%rowtype;
+begin
+  if not exists(select 1 from public.site_admins where user_id=auth.uid()) then raise exception 'not_authorized'; end if;
+  select * into poll from public.caleris_community_polls where id=p_poll_id for update;
+  if not found or poll.status='draft' then raise exception 'poll_not_found_or_not_open'; end if;
+  update public.caleris_community_polls
+  set status=case when coalesce(p_publish,false) then 'published' else 'closed' end
+  where id=p_poll_id;
+  return public.caleris_get_community_poll_results(p_poll_id);
+end;
+$finalize_poll$;
+
+-- Generate a trusted yearbook snapshot server-side. Client-supplied JSON is deliberately ignored.
+create or replace function public.caleris_generate_yearbook(p_season uuid,p_title text default null)
+returns jsonb language plpgsql security definer set search_path=public
+as $generate_yearbook$
+declare member_id uuid; member_row public.members%rowtype; total_xp numeric; official jsonb; snapshot jsonb; team_name text;
+begin
+  member_id:=public.caleris_current_member_id();
+  if auth.uid() is null or member_id is null then raise exception 'member_profile_required'; end if;
+  select * into member_row from public.members where id=member_id;
+  if not found then raise exception 'member_not_found'; end if;
+  official:=public.caleris_get_season_community_data(p_season);
+  if official->'season' is null or official->'season'='null'::jsonb then raise exception 'season_not_found'; end if;
+  select coalesce(sum(amount),0) into total_xp from public.caleris_xp_ledger where caleris_xp_ledger.member_id=member_id;
+  select name into team_name from public.teams where id=member_row.team_id;
+  snapshot:=jsonb_build_object(
+    'snapshot_version',2,
+    'generated_at',now(),
+    'season',official->'season',
+    'official_season_data',official,
+    'member',jsonb_build_object(
+      'member_code',member_row.member_code,
+      'character_name',member_row.character_name,
+      'role',member_row.role,
+      'license',member_row.license,
+      'team_name',team_name
+    ),
+    'xp',total_xp,
+    'level',public.caleris_xp_level(total_xp),
+    'badges',coalesce((
+      select jsonb_agg(jsonb_build_object(
+        'code',b.code,'title',b.title,'description',b.description,'icon',b.icon,'rarity',b.rarity,'awarded_at',mb.awarded_at
+      ) order by mb.awarded_at)
+      from public.caleris_member_badges mb
+      join public.caleris_achievement_badges b on b.code=mb.badge_code
+      where mb.member_id=member_id
+    ),'[]'::jsonb),
+    'activity',coalesce((
+      select jsonb_agg(to_jsonb(recent) order by recent.created_at desc)
+      from (
+        select f.title,f.body,f.event_type,f.created_at
+        from public.caleris_activity_feed f
+        where f.visibility='community'
+          or f.actor_member_id=member_id
+          or (f.visibility='team' and f.team_id=member_row.team_id)
+        order by f.created_at desc limit 50
+      ) recent
+    ),'[]'::jsonb)
+  );
+  insert into public.caleris_season_yearbooks(season_id,member_id,title,content,status,generated_by)
+  values(p_season,member_id,left(coalesce(nullif(trim(p_title),''),(official->'season'->>'title')||' Yearbook'),160),snapshot,'draft',auth.uid())
+  on conflict(member_id,season_id) do update
+    set title=excluded.title,content=excluded.content,status='draft',generated_at=now(),generated_by=auth.uid();
+  return snapshot;
+end;
+$generate_yearbook$;
+
+create or replace function public.caleris_save_yearbook(p_season uuid,p_title text,p_content jsonb)
+returns void language plpgsql security definer set search_path=public
+as $legacy_yearbook$
+begin
+  perform public.caleris_generate_yearbook(p_season,p_title);
+end;
+$legacy_yearbook$;
+
+-- A public verification endpoint exposes only the fields intentionally included in Digital ID.
+create or replace function public.caleris_get_public_digital_id(p_member_code text)
+returns jsonb language sql stable security definer set search_path=public
+as $public_id$
+  select jsonb_build_object(
+    'card',jsonb_build_object(
+      'theme',card.theme,'accent_color',card.accent_color,'tagline',card.tagline,'updated_at',card.updated_at
+    ),
+    'member',jsonb_build_object(
+      'member_code',m.member_code,'character_name',m.character_name,'role',m.role,
+      'license',m.license,'team_name',team.name
+    ),
+    'badges',coalesce((
+      select jsonb_agg(jsonb_build_object('code',b.code,'title',b.title,'description',b.description,'icon',b.icon,'rarity',b.rarity,'awarded_at',mb.awarded_at) order by mb.awarded_at)
+      from public.caleris_member_badges mb
+      join public.caleris_achievement_badges b on b.code=mb.badge_code and b.active=true
+      where mb.member_id=m.id
+    ),'[]'::jsonb)
+  )
+  from public.members m
+  join public.caleris_digital_id_cards card on card.member_id=m.id and card.public_visible=true
+  left join public.teams team on team.id=m.team_id
+  where upper(m.member_code)=upper(trim(p_member_code))
+  limit 1;
+$public_id$;
+
+-- Official predictor standings only include completed rounds. Scheduled rounds remain available for simulation.
+create or replace function public.caleris_get_season_community_data(p_season uuid)
+returns jsonb language plpgsql stable security definer set search_path=public
+as $season_data$
+declare payload jsonb;
+begin
+  if auth.uid() is null then raise exception 'authentication_required'; end if;
+  select jsonb_build_object(
+    'season',(select to_jsonb(s) from public.license_seasons s where s.id=p_season),
+    'divisions',(select coalesce(jsonb_agg(to_jsonb(d)),'[]'::jsonb) from public.license_season_divisions d where d.season_id=p_season),
+    'current_driver_standings',(
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'season_division_id',d.id,'division_name',d.division_name,'member_id',rs.member_id,
+        'driver_name_snapshot',max(rs.driver_name_snapshot),'team_id_snapshot',max(rs.team_id_snapshot),
+        'team_name_snapshot',max(rs.team_name_snapshot),'final_points',sum(rs.points_total)
+      ) order by sum(rs.points_total) desc),'[]'::jsonb)
+      from public.license_round_standings rs
+      join public.license_rounds r on r.id=rs.round_id
+      join public.license_season_divisions d on d.id=r.season_division_id
+      where d.season_id=p_season
+        and lower(coalesce(r.race_lifecycle_status,r.status,''))='completed'
+      group by d.id,d.division_name,rs.member_id
+    ),
+    'driver_standings',(
+      select coalesce(jsonb_agg(to_jsonb(fs)||jsonb_build_object('division_name',d.division_name)),'[]'::jsonb)
+      from public.license_final_standings fs
+      join public.license_season_divisions d on d.id=fs.season_division_id
+      where d.season_id=p_season
+    ),
+    'team_standings',(
+      select coalesce(jsonb_agg(to_jsonb(ts)||jsonb_build_object('division_name',d.division_name)),'[]'::jsonb)
+      from public.license_team_final_standings ts
+      join public.license_season_divisions d on d.id=ts.season_division_id
+      where d.season_id=p_season
+    ),
+    'rounds',(
+      select coalesce(jsonb_agg(to_jsonb(r)||jsonb_build_object('division_name',d.division_name)),'[]'::jsonb)
+      from public.license_rounds r
+      join public.license_season_divisions d on d.id=r.season_division_id
+      where d.season_id=p_season
+    ),
+    'race_results',(
+      select coalesce(jsonb_agg(to_jsonb(e)||jsonb_build_object('round_number',r.round_number,'division_name',d.division_name)),'[]'::jsonb)
+      from public.caleris_race_result_entries e
+      join public.license_rounds r on r.id=e.round_id
+      join public.license_season_divisions d on d.id=r.season_division_id
+      where d.season_id=p_season
+        and lower(coalesce(r.race_lifecycle_status,r.status,''))='completed'
+    ),
+    'scoring_rules',(
+      select coalesce(jsonb_agg(to_jsonb(pr)),'[]'::jsonb)
+      from public.caleris_race_points_rules pr where pr.is_active
+    )
+  ) into payload;
+  if payload->'season' is null or payload->'season'='null'::jsonb then raise exception 'season_not_found'; end if;
+  return coalesce(payload,'{}'::jsonb);
+end;
+$season_data$;
+
+-- Existing hard-coded Team XP milestones are not backed by a Team XP ledger.
+update public.caleris_milestone_definitions
+set active=false
+where scope='team' and metric_key='team_xp';
+
+-- Only reset untouched seed rewards. Existing awarded history is preserved.
+update public.caleris_milestone_definitions d
+set xp_reward=0
+where d.code in('driver_xp_50','driver_xp_100','driver_xp_200','driver_xp_400','driver_xp_800','driver_xp_1600','driver_xp_3200','driver_xp_6400')
+  and not exists(
+    select 1 from public.caleris_xp_ledger ledger
+    where ledger.member_id in(select id from public.members)
+      and ledger.source_type='milestone' and ledger.source_id=d.code
+  );
+
+-- Replace public vote, badge and Digital ID reads with the privacy rules above.
+revoke all on function public.caleris_cast_community_vote(uuid,uuid) from public,anon;
+grant execute on function public.caleris_cast_community_vote(uuid,uuid) to authenticated;
+revoke all on function public.caleris_save_digital_id(text,text,text,boolean) from public,anon;
+grant execute on function public.caleris_save_digital_id(text,text,text,boolean) to authenticated;
+revoke all on function public.caleris_admin_create_poll(text,text,text,timestamptz,jsonb,uuid) from public,anon;
+grant execute on function public.caleris_admin_create_poll(text,text,text,timestamptz,jsonb,uuid) to authenticated;
+revoke all on function public.caleris_save_yearbook(uuid,text,jsonb) from public,anon;
+grant execute on function public.caleris_save_yearbook(uuid,text,jsonb) to authenticated;
+revoke all on function public.caleris_set_xp_reward(text,integer) from public,anon;
+grant execute on function public.caleris_set_xp_reward(text,integer) to authenticated;
+revoke all on function public.caleris_get_season_community_data(uuid) from public,anon;
+grant execute on function public.caleris_get_season_community_data(uuid) to authenticated;
+revoke all on function public.caleris_generate_yearbook(uuid,text) from public,anon;
+grant execute on function public.caleris_generate_yearbook(uuid,text) to authenticated;
+revoke all on function public.caleris_get_community_dashboard() from public,anon;
+grant execute on function public.caleris_get_community_dashboard() to authenticated;
+revoke all on function public.caleris_admin_save_milestone(text,text,text,text,text,numeric,integer,text,boolean) from public,anon;
+grant execute on function public.caleris_admin_save_milestone(text,text,text,text,text,numeric,integer,text,boolean) to authenticated;
+revoke all on function public.caleris_admin_adjust_xp(uuid,integer,text,text) from public,anon;
+grant execute on function public.caleris_admin_adjust_xp(uuid,integer,text,text) to authenticated;
+revoke all on function public.caleris_get_community_poll_results(uuid) from public,anon;
+grant execute on function public.caleris_get_community_poll_results(uuid) to authenticated;
+revoke all on function public.caleris_admin_finalize_poll(uuid,boolean) from public,anon;
+grant execute on function public.caleris_admin_finalize_poll(uuid,boolean) to authenticated;
+revoke all on function public.caleris_get_public_digital_id(text) from public;
+grant execute on function public.caleris_get_public_digital_id(text) to anon,authenticated;
+
+-- Backfill career and roster milestones without touching wallets or competition records.
+do $backfill$
+declare item record;
+begin
+  for item in select id from public.members loop
+    perform public.caleris_refresh_driver_milestones(item.id);
+  end loop;
+  for item in select id from public.teams loop
+    perform public.caleris_refresh_team_milestones(item.id);
+  end loop;
+end;
+$backfill$;
+
+commit;
+ or p_scope is null or p_scope not in('driver','team')
+    or p_metric_key is null or nullif(trim(p_title),'') is null or p_target is null or p_target<=0
+    or coalesce(p_xp_reward,0)<0 or coalesce(p_xp_reward,0)>100000 then
     raise exception 'invalid_milestone_definition';
   end if;
   if p_scope='driver' and p_metric_key not in('xp_total','driver_race_starts','driver_wins','driver_podiums','driver_points') then
@@ -537,13 +940,13 @@ create or replace function public.caleris_admin_create_poll(
 ) returns uuid
 language plpgsql security definer set search_path=public
 as $create_poll$
-declare poll_id uuid; item jsonb; candidate_member uuid; candidate_team uuid; candidate_label text; candidate_key text; is_team_poll boolean;
+declare poll_id uuid; item jsonb; candidate_member uuid; candidate_team uuid; candidate_label text; candidate_key text; is_team_poll boolean; seen_candidates text[]:=array[]::text[];
 begin
   if not exists(select 1 from public.site_admins where user_id=auth.uid()) then raise exception 'not_authorized'; end if;
   if nullif(trim(p_title),'') is null or length(p_title)>160 or length(coalesce(p_description,''))>1000 then
     raise exception 'invalid_poll_text';
   end if;
-  if p_type not in('driver_of_period','team_of_period','driver_of_season','team_of_season','fia_nomination') then
+  if p_type is null or p_type not in('driver_of_period','team_of_period','driver_of_season','team_of_season','fia_nomination') then
     raise exception 'invalid_poll_type';
   end if;
   if p_ends_at is null or p_ends_at<=now() then raise exception 'poll_end_must_be_future'; end if;
@@ -580,9 +983,8 @@ begin
       end if;
       candidate_key:='member:'||candidate_member::text;
     end if;
-    if candidate_key=any(coalesce((select array_agg((case when o.member_id is not null then 'member:'||o.member_id::text else 'team:'||o.team_id::text end)) from public.caleris_community_poll_options o where o.poll_id=poll_id),array[]::text[])) then
-      raise exception 'duplicate_poll_candidate';
-    end if;
+    if candidate_key=any(seen_candidates) then raise exception 'duplicate_poll_candidate'; end if;
+    seen_candidates:=array_append(seen_candidates,candidate_key);
     insert into public.caleris_community_poll_options(poll_id,member_id,team_id,label)
     values(poll_id,candidate_member,candidate_team,candidate_label);
   end loop;
@@ -629,12 +1031,15 @@ begin
     'total_votes',(select count(*) from public.caleris_community_votes v where v.poll_id=poll.id),
     'options',coalesce((
       select jsonb_agg(jsonb_build_object(
-        'option_id',o.id,'label',o.label,'votes',count(v.id)
-      ) order by count(v.id) desc,o.label)
-      from public.caleris_community_poll_options o
-      left join public.caleris_community_votes v on v.option_id=o.id
-      where o.poll_id=poll.id
-      group by o.poll_id
+        'option_id',counts.id,'label',counts.label,'votes',counts.vote_count
+      ) order by counts.vote_count desc,counts.label)
+      from (
+        select o.id,o.label,count(v.id)::integer as vote_count
+        from public.caleris_community_poll_options o
+        left join public.caleris_community_votes v on v.option_id=o.id
+        where o.poll_id=poll.id
+        group by o.id,o.label
+      ) counts
     ),'[]'::jsonb)
   ) into payload;
   return payload;
