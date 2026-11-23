@@ -75,6 +75,24 @@ Deno.serve(async (req: Request) => {
     const action = typeof body.action === "string" ? body.action : "";
 
     if (action === "list_users") {
+      const { data: expiredBans, error: expiredError } = await admin.from("caleris_user_moderation_actions")
+        .select("id,target_user_id,target_member_id,previous_account_status,expires_at")
+        .eq("action_type","temporary_ban").lte("expires_at",new Date().toISOString()).order("created_at",{ascending:false}).limit(500);
+      if (expiredError) throw expiredError;
+      for (const ban of expiredBans ?? []) {
+        const { data: latest, error: latestError } = await admin.from("caleris_user_moderation_actions")
+          .select("id,action_type").eq("target_user_id",ban.target_user_id).order("created_at",{ascending:false}).limit(1).maybeSingle();
+        if (latestError) throw latestError;
+        if (latest?.id !== ban.id) continue;
+        const restoredStatus = ["public","active","admin"].includes(String(ban.previous_account_status)) ? ban.previous_account_status : "active";
+        const { error: profileError } = await admin.from("profiles").update({account_status:restoredStatus,updated_at:new Date().toISOString()}).eq("user_id",ban.target_user_id);
+        if (profileError) throw profileError;
+        const { error: logError } = await admin.from("caleris_user_moderation_actions").insert({
+          target_user_id:ban.target_user_id,target_member_id:ban.target_member_id,action_type:"unban",
+          reason:"Ban sementara berakhir otomatis.",metadata:{automatic_expiry:true,expired_action_id:ban.id},created_by:actorId
+        });
+        if (logError) throw logError;
+      }
       const users: Record<string, unknown>[] = [];
       for (let page = 1; page <= 100; page += 1) {
         const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
