@@ -13,7 +13,7 @@ type SlotRow={id:string;season_id:string;division_key:string;replaced_team_id:st
 const money=(value:number)=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(value||0);
 export default function AdminTeamInactivity(){
  const [teams,setTeams]=useState<TeamRow[]>([]),[seasons,setSeasons]=useState<SeasonRow[]>([]),[states,setStates]=useState<StateRow[]>([]),[reviews,setReviews]=useState<ReviewRow[]>([]),[settlements,setSettlements]=useState<SettlementRow[]>([]),[slots,setSlots]=useState<SlotRow[]>([]);
- const [members,setMembers]=useState<{id:string;character_name:string|null}[]>([]);
+ const [members,setMembers]=useState<{id:string;character_name:string|null;public_member_id:string|null}[]>([]);
  const [slotTeams,setSlotTeams]=useState<Record<string,string>>({});
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
  const load=useCallback(async()=>{
@@ -26,12 +26,12 @@ export default function AdminTeamInactivity(){
    supabase.from("caleris_team_inactivity_reviews").select("*").order("created_at",{ascending:false}).limit(200),
    supabase.from("caleris_team_freeze_settlements").select("*").order("created_at",{ascending:false}).limit(300),
    supabase.from("caleris_team_replacement_slots").select("*").order("created_at",{ascending:false}),
-   supabase.from("members").select("id,character_name").order("character_name")
+   supabase.from("caleris_member_directory").select("id,character_name,public_member_id").order("character_name")
   ]);
   const failed=[t.error,s.error,st.error,r.error,sett.error,sl.error,m.error].find(Boolean);
   if(failed){setError(failed.message);setLoading(false);return;}
   setTeams((t.data||[]) as TeamRow[]);setSeasons((s.data||[]) as SeasonRow[]);setStates((st.data||[]) as StateRow[]);
-  setReviews((r.data||[]) as ReviewRow[]);setSettlements((sett.data||[]) as SettlementRow[]);setSlots((sl.data||[]) as SlotRow[]);setMembers((m.data||[]) as {id:string;character_name:string|null}[]);
+  setReviews((r.data||[]) as ReviewRow[]);setSettlements((sett.data||[]) as SettlementRow[]);setSlots((sl.data||[]) as SlotRow[]);setMembers((m.data||[]) as {id:string;character_name:string|null;public_member_id:string|null}[]);
   setLoading(false);
  },[]);
  useEffect(()=>{void load()},[load]);
@@ -85,7 +85,7 @@ export default function AdminTeamInactivity(){
   </div>
   <div className="admin-inactivity-section-heading"><div><h2>Compensation ledger</h2><p>Setiap kompensasi menggunakan transaksi resmi Team Wallet → Driver Wallet.</p></div></div>
   <div className="workspace-card admin-inactivity-table-wrap"><table className="admin-inactivity-table"><thead><tr><th>Team / Driver</th><th>Season</th><th>Sisa kontrak</th><th>Gaji tahunan</th><th>Kompensasi</th><th>Status</th><th>Transaction</th></tr></thead><tbody>
-   {settlements.map(s=><tr key={s.id}><td><strong><TeamProfileLink teamId={s.team_id}>{teamMap.get(s.team_id)?.name||"Team"}</TeamProfileLink></strong><small><MemberProfileLink memberId={s.member_id}>{memberMap.get(s.member_id)?.character_name||"Driver"}</MemberProfileLink></small></td><td>{seasonMap.get(s.season_id)?.title||"Season"}</td><td>{s.remaining_seasons} season</td><td>{s.annual_salary_snapshot?money(Number(s.annual_salary_snapshot)):"—"}</td><td><strong>{money(Number(s.compensation_amount))}</strong></td><td><span className={"admin-inactivity-status "+s.status}>{s.status.toUpperCase()}</span>{s.error_note&&<small className="admin-inactivity-error-note">{s.error_note}</small>}</td><td>{s.transaction_id?<code>{s.transaction_id.slice(0,8)}…</code>:"—"}</td></tr>)}
+   {settlements.map(s=><tr key={s.id}><td><strong><TeamProfileLink teamId={s.team_id}>{teamMap.get(s.team_id)?.name||"Team"}</TeamProfileLink></strong><small><MemberProfileLink memberId={memberMap.get(s.member_id)?.public_member_id}>{memberMap.get(s.member_id)?.character_name||"Driver"}</MemberProfileLink></small></td><td>{seasonMap.get(s.season_id)?.title||"Season"}</td><td>{s.remaining_seasons} season</td><td>{s.annual_salary_snapshot?money(Number(s.annual_salary_snapshot)):"—"}</td><td><strong>{money(Number(s.compensation_amount))}</strong></td><td><span className={"admin-inactivity-status "+s.status}>{s.status.toUpperCase()}</span>{s.error_note&&<small className="admin-inactivity-error-note">{s.error_note}</small>}</td><td>{s.transaction_id?<code>{s.transaction_id.slice(0,8)}…</code>:"—"}</td></tr>)}
   </tbody></table>{!settlements.length&&<p className="admin-inactivity-empty">Belum ada settlement kompensasi.</p>}</div>
   <div className="admin-inactivity-footnote"><Activity size={15}/> Reaktivasi membutuhkan minimal 3 aktivitas baru setelah freeze, gabungan Quest selesai dan upgrade Development. Roster season yang sudah dikunci tidak diubah di tengah season.</div>
  </section>;

@@ -6,7 +6,7 @@ import "./caleris-ecosystem.css";
 type Mode = "owner" | "finance" | "news" | "hall";
 type NewsItem = { id:string; title:string; body:string; category:string; date:string; source:string; imageUrl?:string|null; lead?:string; facts?:string[] };
 type TeamInfo = { id:string; name:string; division_key:string|null };
-type Standing = { id:string; final_position:number|null; final_points:number|null; driver_name_snapshot?:string|null; team_name_snapshot?:string|null; season_division_id:string };
+type Standing = { id:string; final_position:number|null; final_points:number|null; driver_name_snapshot?:string|null; team_name_snapshot?:string|null; season_division_id:string; member_id?:string|null; public_member_id?:string|null; team_id?:string|null; team_id_snapshot?:string|null };
 const currency=(v:number)=>"€"+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(v||0);
 const dateLabel=(v:string)=>new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v));
 const newsroomCategory=(value:string)=>({general:"Umum",sporting:"Olahraga",disciplinary:"Disiplin",schedule:"Jadwal",administrative:"Administrasi",announcement:"Pengumuman",sponsorship:"Sponsorship",sponsor:"Sponsorship",contract_signed:"Kontrak Baru",contract_renewed:"Perpanjangan Kontrak",contract_ended:"Akhir Kerja Sama","Official Classification":"Hasil Balapan"}[value]??value.replaceAll("_"," ").replace(/\b\w/g,letter=>letter.toUpperCase()));
@@ -28,8 +28,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [loading,setLoading]=useState(true),[error,setError]=useState(""),[team,setTeam]=useState<TeamInfo|null>(null);
  const [wallet,setWallet]=useState(0),[valuation,setValuation]=useState<number|null>(null),[reputation,setReputation]=useState<number|null>(null);
  const [development,setDevelopment]=useState<{part_key:string;current_value:number}[]>([]);
- const [contracts,setContracts]=useState<{id:string;member_id:string;annual_salary:number;status:string;driver_name:string}[]>([]);
- const [raceForm,setRaceForm]=useState<{id:string;round_id:string;member_id:string|null;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
+ const [contracts,setContracts]=useState<{id:string;member_id:string;public_member_id:string|null;annual_salary:number;status:string;driver_name:string}[]>([]);
+ const [raceForm,setRaceForm]=useState<{id:string;round_id:string;member_id:string|null;public_member_id:string|null;team_id:string|null;team_name_snapshot:string|null;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
  const [hqFacilities,setHqFacilities]=useState<{facility_key:string;level:number;condition:number;asset_value:number}[]>([]);
  const [loanRisk,setLoanRisk]=useState({active:0,overdue:0});
  const [teamTarget,setTeamTarget]=useState<{vision:string|null;long_term_target:string|null}>({vision:null,long_term_target:null});
@@ -37,8 +37,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [news,setNews]=useState<NewsItem[]>([]),[selectedArticle,setSelectedArticle]=useState<NewsItem|null>(null);
  const [achievements,setAchievements]=useState<{id:string;title:string;description:string|null;awarded_at:string;target_kind:string}[]>([]);
  const [drivers,setDrivers]=useState<Standing[]>([]),[teams,setTeams]=useState<Standing[]>([]),[refreshKey,setRefreshKey]=useState(0);
- const [driverRecords,setDriverRecords]=useState<{name:string;starts:number;wins:number;podiums:number;fastestLaps:number}[]>([]);
- const [teamRecords,setTeamRecords]=useState<{name:string;starts:number;wins:number;podiums:number}[]>([]);
+ const [driverRecords,setDriverRecords]=useState<{id:string|null;public_member_id:string|null;name:string;starts:number;wins:number;podiums:number;fastestLaps:number}[]>([]);
+ const [teamRecords,setTeamRecords]=useState<{team_id:string|null;name:string;starts:number;wins:number;podiums:number}[]>([]);
  const [teamHistories,setTeamHistories]=useState<{team_id:string;history:string|null;founded_year:number|null}[]>([]);
  const load=useCallback(async()=>{
   if(!supabase){setError("Koneksi Supabase belum tersedia.");setLoading(false);return;}
@@ -70,16 +70,20 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
     setTeamTarget({vision:profileRes.data?.vision??null,long_term_target:profileRes.data?.long_term_target??null});
     if(seasonRes.data?.id){
       const {data:seasonContracts}=await supabase.from("economy_driver_contracts").select("id,member_id,annual_salary,status").eq("team_id",currentTeam.id).eq("season_id",seasonRes.data.id).eq("status","active");
-      const memberIds=(seasonContracts??[]).map((row:any)=>row.member_id);
-      const {data:memberRows}=memberIds.length?await supabase.from("members").select("id,character_name").in("id",memberIds):{data:[]};
+      const memberIds=[...new Set((seasonContracts??[]).map((row:any)=>row.member_id).filter(Boolean))];
+      const {data:memberRows}=memberIds.length?await supabase.from("caleris_member_directory").select("id,character_name,public_member_id").in("id",memberIds):{data:[]};
       const nameMap=new Map((memberRows??[]).map((m:any)=>[m.id,m.character_name]));
-      setContracts((seasonContracts??[]).map((row:any)=>({...row,driver_name:nameMap.get(row.member_id)??"Driver"})));
+      const publicIdMap=new Map((memberRows??[]).map((m:any)=>[m.id,m.public_member_id]));
+      setContracts((seasonContracts??[]).map((row:any)=>({...row,driver_name:nameMap.get(row.member_id)??"Driver",public_member_id:publicIdMap.get(row.member_id)??null})));
     }else setContracts([]);
     const {data:publishedRaces}=await supabase.from("caleris_race_results").select("round_id").not("published_at","is",null);
     const publishedRoundIds=[...new Set((publishedRaces??[]).map((row:any)=>row.round_id).filter(Boolean))];
     if(publishedRoundIds.length){
-      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,member_id,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
-      setRaceForm((entries??[]) as any);
+      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,member_id,team_id,team_name_snapshot,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
+      const raceMemberIds=[...new Set((entries??[]).map((row:any)=>row.member_id).filter(Boolean))];
+      const {data:raceMembers}=raceMemberIds.length?await supabase.from("caleris_member_directory").select("id,public_member_id").in("id",raceMemberIds):{data:[]};
+      const racePublicIds=new Map((raceMembers??[]).map((row:any)=>[row.id,row.public_member_id]));
+      setRaceForm((entries??[]).map((row:any)=>({...row,public_member_id:row.member_id?racePublicIds.get(row.member_id)??null:null})));
     }else setRaceForm([]);
    }else{setWallet(0);setValuation(null);setReputation(null);setDevelopment([]);setSponsors([]);setContracts([]);setRaceForm([]);setHqFacilities([]);setLoanRisk({active:0,overdue:0});setTeamTarget({vision:null,long_term_target:null});}
    if(mode==="news"){
@@ -131,25 +135,33 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    if(mode==="hall"){
     const [ach,driverRows,teamRows,publishedRows,historyRows]=await Promise.all([
      supabase.from("caleris_achievements").select("id,title,description,awarded_at,target_kind").order("awarded_at",{ascending:false}).limit(100),
-     supabase.from("license_final_standings").select("id,final_position,final_points,driver_name_snapshot,team_name_snapshot,season_division_id").eq("final_position",1).order("updated_at",{ascending:false}).limit(50),
-     supabase.from("license_team_final_standings").select("id,final_position,final_points,team_name_snapshot,season_division_id").eq("final_position",1).order("updated_at",{ascending:false}).limit(50),
+     supabase.from("license_final_standings").select("id,member_id,team_id_snapshot,final_position,final_points,driver_name_snapshot,team_name_snapshot,season_division_id").eq("final_position",1).order("updated_at",{ascending:false}).limit(50),
+     supabase.from("license_team_final_standings").select("id,team_id,final_position,final_points,team_name_snapshot,season_division_id").eq("final_position",1).order("updated_at",{ascending:false}).limit(50),
      supabase.from("caleris_race_results").select("round_id").not("published_at","is",null),
      supabase.from("caleris_team_profiles").select("team_id,history,founded_year").not("history","is",null)
     ]);
-    setAchievements((ach.data??[]) as any);setDrivers((driverRows.data??[]) as Standing[]);setTeams((teamRows.data??[]) as Standing[]);
+    setAchievements((ach.data??[]) as any);
+    const hallMemberIds=[...new Set((driverRows.data??[]).map((row:any)=>row.member_id).filter(Boolean))];
+    const {data:hallMembers}=hallMemberIds.length?await supabase.from("caleris_member_directory").select("id,public_member_id").in("id",hallMemberIds):{data:[]};
+    const hallPublicIds=new Map((hallMembers??[]).map((row:any)=>[row.id,row.public_member_id]));
+    setDrivers((driverRows.data??[]).map((row:any)=>({...row,public_member_id:row.member_id?hallPublicIds.get(row.member_id)??null:null})) as Standing[]);
+    setTeams((teamRows.data??[]) as Standing[]);
     setTeamHistories((historyRows.data??[]) as any);
     const roundIds=[...new Set((publishedRows.data??[]).map((row:any)=>row.round_id).filter(Boolean))];
     if(roundIds.length){
-     const {data:entries}=await supabase.from("caleris_race_result_entries").select("driver_name_snapshot,team_name_snapshot,finishing_position,fastest_lap_ms").in("round_id",roundIds);
-     const dm=new Map<string,{name:string;starts:number;wins:number;podiums:number;fastestLaps:number}>();
-     const tm=new Map<string,{name:string;starts:number;wins:number;podiums:number}>();
+     const {data:entries}=await supabase.from("caleris_race_result_entries").select("member_id,team_id,driver_name_snapshot,team_name_snapshot,finishing_position,fastest_lap_ms").in("round_id",roundIds);
+     const dm=new Map<string,{id:string|null;public_member_id:string|null;name:string;starts:number;wins:number;podiums:number;fastestLaps:number}>();
+     const tm=new Map<string,{team_id:string|null;name:string;starts:number;wins:number;podiums:number}>();
      for(const row of entries??[]){
-      const dn=String(row.driver_name_snapshot??"Unknown Driver");const d=dm.get(dn)??{name:dn,starts:0,wins:0,podiums:0,fastestLaps:0};
-      d.starts++;if(row.finishing_position===1)d.wins++;if(row.finishing_position!==null&&row.finishing_position<=3)d.podiums++;if(row.fastest_lap_ms!==null)d.fastestLaps++;dm.set(dn,d);
-      const tn=String(row.team_name_snapshot??"Unknown Team");const t=tm.get(tn)??{name:tn,starts:0,wins:0,podiums:0};
-      t.starts++;if(row.finishing_position===1)t.wins++;if(row.finishing_position!==null&&row.finishing_position<=3)t.podiums++;tm.set(tn,t);
+      const dn=String(row.driver_name_snapshot??"Unknown Driver"),driverKey=String(row.member_id||"name:"+dn);const d=dm.get(driverKey)??{id:row.member_id??null,public_member_id:null,name:dn,starts:0,wins:0,podiums:0,fastestLaps:0};
+      d.starts++;if(row.finishing_position===1)d.wins++;if(row.finishing_position!==null&&row.finishing_position<=3)d.podiums++;if(row.fastest_lap_ms!==null)d.fastestLaps++;dm.set(driverKey,d);
+      const tn=String(row.team_name_snapshot??"Unknown Team"),teamKey=String(row.team_id||"name:"+tn);const t=tm.get(teamKey)??{team_id:row.team_id??null,name:tn,starts:0,wins:0,podiums:0};
+      t.starts++;if(row.finishing_position===1)t.wins++;if(row.finishing_position!==null&&row.finishing_position<=3)t.podiums++;tm.set(teamKey,t);
      }
-     setDriverRecords([...dm.values()].sort((x,y)=>y.wins-x.wins||y.podiums-x.podiums||y.starts-x.starts).slice(0,10));
+     const recordMemberIds=[...new Set([...dm.values()].map(row=>row.id).filter(Boolean))] as string[];
+     const {data:recordMembers}=recordMemberIds.length?await supabase.from("caleris_member_directory").select("id,public_member_id").in("id",recordMemberIds):{data:[]};
+     const recordPublicIds=new Map((recordMembers??[]).map((row:any)=>[row.id,row.public_member_id]));
+     setDriverRecords([...dm.values()].map(row=>({...row,public_member_id:row.id?recordPublicIds.get(row.id)??null:null})).sort((x,y)=>y.wins-x.wins||y.podiums-x.podiums||y.starts-x.starts).slice(0,10));
      setTeamRecords([...tm.values()].sort((x,y)=>y.wins-x.wins||y.podiums-x.podiums||y.starts-x.starts).slice(0,10));
     }else{setDriverRecords([]);setTeamRecords([]);}
    }
@@ -170,8 +182,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
     <article><BarChart3/><span>HQ FACILITIES</span><strong>{hqFacilities.length}</strong></article>
    </div>
    <div className="ce-columns">
-    <section className="workspace-card"><div className="ce-title"><h2>Driver Line-up</h2><span>{contracts.length} active contracts</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong><MemberProfileLink memberId={contract.member_id}>{contract.driver_name}</MemberProfileLink></strong><span>Kontrak aktif</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section>
-    <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong><MemberProfileLink memberId={entry.member_id}>{entry.driver_name_snapshot??"Driver"}</MemberProfileLink></strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Driver Line-up</h2><span>{contracts.length} active contracts</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong><MemberProfileLink memberId={contract.public_member_id}>{contract.driver_name}</MemberProfileLink></strong><span>Kontrak aktif</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong><MemberProfileLink memberId={entry.public_member_id}>{entry.driver_name_snapshot??"Driver"}</MemberProfileLink> <span>·</span> <TeamProfileLink teamId={entry.team_id}>{entry.team_name_snapshot??"Team"}</TeamProfileLink></strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
    </div>
    <div className="ce-columns">
     <section className="workspace-card"><div className="ce-title"><h2>HQ Facilities</h2><span>{hqFacilities.length} facilities</span></div>{hqFacilities.map(f=><div className="ce-row" key={f.facility_key}><strong>{f.facility_key.replaceAll("_"," ")}</strong><span>Lv. {f.level} · {Number(f.condition).toFixed(0)}%</span></div>)}{!hqFacilities.length&&<p className="ce-empty">Data fasilitas belum tersedia.</p>}</section>
@@ -193,7 +205,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    </div>
    <div className="ce-columns">
     <section className="workspace-card"><div className="ce-title"><h2>Sponsorship Commitments</h2><span>{sponsors.length} active contracts</span></div><div className="ce-finance-summary"><span>Total active commitment</span><strong>{currency(sponsors.reduce((sum,row)=>sum+Number(row.annual_contract_amount??row.contract_amount??0),0))}</strong></div><p className="ce-note">Nilai dihitung dari nominal kontrak aktif; kontrak tahunan memakai annual contract amount jika tersedia.</p>{sponsors.length?sponsors.map(row=><div className="ce-row" key={row.id}><strong>Active sponsorship</strong><span>{currency(Number(row.annual_contract_amount??row.contract_amount??0))}</span></div>):<p className="ce-empty">Belum ada sponsorship aktif.</p>}</section>
-    <section className="workspace-card"><div className="ce-title"><h2>Payroll Obligations</h2><span>{contracts.length} active contracts</span></div><div className="ce-finance-summary"><span>Annual salary commitment</span><strong>{currency(contracts.reduce((sum,row)=>sum+Number(row.annual_salary||0),0))}</strong></div>{contracts.length?contracts.map(row=><div className="ce-row" key={row.id}><strong><MemberProfileLink memberId={row.member_id}>{row.driver_name}</MemberProfileLink></strong><span>{currency(Number(row.annual_salary||0))} / season</span></div>):<p className="ce-empty">Belum ada payroll kontrak aktif pada season terbaru.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Payroll Obligations</h2><span>{contracts.length} active contracts</span></div><div className="ce-finance-summary"><span>Annual salary commitment</span><strong>{currency(contracts.reduce((sum,row)=>sum+Number(row.annual_salary||0),0))}</strong></div>{contracts.length?contracts.map(row=><div className="ce-row" key={row.id}><strong><MemberProfileLink memberId={row.public_member_id}>{row.driver_name}</MemberProfileLink></strong><span>{currency(Number(row.annual_salary||0))} / season</span></div>):<p className="ce-empty">Belum ada payroll kontrak aktif pada season terbaru.</p>}</section>
    </div>
    <section className="workspace-card"><div className="ce-title"><h2>HQ Asset Portfolio</h2><span>{hqFacilities.length} registered facilities</span></div><div className="ce-finance-summary"><span>Total recorded HQ asset value</span><strong>{currency(hqFacilities.reduce((sum,row)=>sum+Number(row.asset_value||0),0))}</strong></div>{hqFacilities.length?hqFacilities.map(row=><div className="ce-row" key={row.facility_key}><strong>{row.facility_key.replaceAll("_"," ")}</strong><span>{currency(Number(row.asset_value||0))} · Lv. {row.level}</span></div>):<p className="ce-empty">Belum ada aset HQ yang tercatat.</p>}</section>
    <p className="ce-finance-footnote">Angka di atas berasal dari data resmi yang dapat dibaca oleh akun tim. Riwayat ledger transaksi tidak ditampilkan di sini karena akses transaksi saat ini dibatasi oleh kebijakan keamanan Economy Engine.</p>
@@ -220,8 +232,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    </article></div>}
   </div>}
   {mode==="hall"&&<div className="ce-hall-grid">
-      <section className="workspace-card"><div className="ce-title"><h2>All-time Driver Records</h2><span>Official results</span></div>{driverRecords.map((r,i)=><div className="ce-hall-row" key={r.name}><Trophy/><div><strong>#{i+1} {r.name}</strong><small>{r.wins} wins · {r.podiums} podiums · {r.fastestLaps} fastest laps · {r.starts} starts</small></div></div>)}{!driverRecords.length&&<p className="ce-empty">Belum ada statistik historis resmi.</p>}</section>
-      <section className="workspace-card"><div className="ce-title"><h2>All-time Constructor Records</h2><span>Official results</span></div>{teamRecords.map((r,i)=><div className="ce-hall-row" key={r.name}><Award/><div><strong>#{i+1} {r.name}</strong><small>{r.wins} wins · {r.podiums} podiums · {r.starts} entries</small></div></div>)}{!teamRecords.length&&<p className="ce-empty">Belum ada statistik konstruktor historis.</p>}</section>
-      <section className="workspace-card ce-achievements"><div className="ce-title"><h2>Team History Archive</h2><span>{teamHistories.length} records</span></div>{teamHistories.map(item=><div className="ce-achievement" key={item.team_id}><strong>{item.founded_year??"—"} · Team history</strong><p>{item.history}</p></div>)}{!teamHistories.length&&<p className="ce-empty">Belum ada sejarah tim yang dicatat.</p>}</section><section className="workspace-card"><div className="ce-title"><h2><Crown size={18}/> Driver Champions</h2><span>{drivers.length} records</span></div>{drivers.map(x=><div className="ce-hall-row" key={x.id}><Trophy/><div><strong>{x.driver_name_snapshot??"Driver"}</strong><small>{x.team_name_snapshot??"Team"} · {x.final_points??0} points</small></div></div>)}{!drivers.length&&<p className="ce-empty">Belum ada juara pembalap yang difinalisasi.</p>}</section><section className="workspace-card"><div className="ce-title"><h2><Trophy size={18}/> Constructor Champions</h2><span>{teams.length} records</span></div>{teams.map(x=><div className="ce-hall-row" key={x.id}><Award/><div><strong>{x.team_name_snapshot??"Team"}</strong><small>{x.final_points??0} points</small></div></div>)}{!teams.length&&<p className="ce-empty">Belum ada juara konstruktor yang difinalisasi.</p>}</section><section className="workspace-card ce-achievements"><div className="ce-title"><h2><Award size={18}/> Achievement Archive</h2><span>{achievements.length} records</span></div>{achievements.map(a=><div className="ce-achievement" key={a.id}><strong>{a.title}</strong><p>{a.description}</p><small>{a.target_kind} · {dateLabel(a.awarded_at)}</small></div>)}{!achievements.length&&<p className="ce-empty">Belum ada achievement yang tercatat.</p>}</section></div>}
+      <section className="workspace-card"><div className="ce-title"><h2>All-time Driver Records</h2><span>Official results</span></div>{driverRecords.map((r,i)=><div className="ce-hall-row" key={r.name}><Trophy/><div><strong><MemberProfileLink memberId={r.public_member_id}>#{i+1} {r.name}</MemberProfileLink></strong><small>{r.wins} wins · {r.podiums} podiums · {r.fastestLaps} fastest laps · {r.starts} starts</small></div></div>)}{!driverRecords.length&&<p className="ce-empty">Belum ada statistik historis resmi.</p>}</section>
+      <section className="workspace-card"><div className="ce-title"><h2>All-time Constructor Records</h2><span>Official results</span></div>{teamRecords.map((r,i)=><div className="ce-hall-row" key={r.name}><Award/><div><strong><TeamProfileLink teamId={r.team_id}>#{i+1} {r.name}</TeamProfileLink></strong><small>{r.wins} wins · {r.podiums} podiums · {r.starts} entries</small></div></div>)}{!teamRecords.length&&<p className="ce-empty">Belum ada statistik konstruktor historis.</p>}</section>
+      <section className="workspace-card ce-achievements"><div className="ce-title"><h2>Team History Archive</h2><span>{teamHistories.length} records</span></div>{teamHistories.map(item=><div className="ce-achievement" key={item.team_id}><strong>{item.founded_year??"—"} · Team history</strong><p>{item.history}</p></div>)}{!teamHistories.length&&<p className="ce-empty">Belum ada sejarah tim yang dicatat.</p>}</section><section className="workspace-card"><div className="ce-title"><h2><Crown size={18}/> Driver Champions</h2><span>{drivers.length} records</span></div>{drivers.map(x=><div className="ce-hall-row" key={x.id}><Trophy/><div><strong><MemberProfileLink memberId={x.public_member_id}>{x.driver_name_snapshot??"Driver"}</MemberProfileLink></strong><small>{x.team_id_snapshot?<TeamProfileLink teamId={x.team_id_snapshot}>{x.team_name_snapshot??"Team"}</TeamProfileLink>:(x.team_name_snapshot??"Team")} · {x.final_points??0} points</small></div></div>)}{!drivers.length&&<p className="ce-empty">Belum ada juara pembalap yang difinalisasi.</p>}</section><section className="workspace-card"><div className="ce-title"><h2><Trophy size={18}/> Constructor Champions</h2><span>{teams.length} records</span></div>{teams.map(x=><div className="ce-hall-row" key={x.id}><Award/><div><strong><TeamProfileLink teamId={x.team_id}>{x.team_name_snapshot??"Team"}</TeamProfileLink></strong><small>{x.final_points??0} points</small></div></div>)}{!teams.length&&<p className="ce-empty">Belum ada juara konstruktor yang difinalisasi.</p>}</section><section className="workspace-card ce-achievements"><div className="ce-title"><h2><Award size={18}/> Achievement Archive</h2><span>{achievements.length} records</span></div>{achievements.map(a=><div className="ce-achievement" key={a.id}><strong>{a.title}</strong><p>{a.description}</p><small>{a.target_kind} · {dateLabel(a.awarded_at)}</small></div>)}{!achievements.length&&<p className="ce-empty">Belum ada achievement yang tercatat.</p>}</section></div>}
  </section>;
 }

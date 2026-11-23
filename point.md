@@ -1338,3 +1338,38 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - `data-native-popup="true"` remains an explicit opt-out for any control that must intentionally use the native picker.
 - QA gate: run TypeScript, production build, unit/schema/browser smoke tests and verify one dropdown only on Android Chrome and desktop keyboard navigation before merge/deploy. Physical Android acceptance is still required for final confirmation.
 - No dependency, database schema, Supabase function, wallet, or Vercel environment changes are included.
+
+
+---
+
+# LIVE PROFILE DIRECTORY FOLLOW-UP — 23 NOVEMBER 2026
+
+- Follow-up scope from the page-by-page profile-link audit: the Global Driver List and Team List were still generic empty placeholders despite existing authenticated directory read models.
+- Added live read-only directory rendering using `caleris_driver_market_directory` and `caleris_team_directory`, both already used by the authenticated marketplace/read model.
+- Driver names link to `/member/:public_member_id` only when the public ID is present. Team names link to `/team/:team_id`.
+- Added CI regression coverage for source read models, role filter, route link helpers, and page routing.
+- No schema, RLS, grant, Supabase Edge Function, wallet, or production data changes. Other pages still require separate route/content audit; authenticated acceptance and physical Android QA remain external gates.
+
+
+---
+
+# GLOBAL SELECT DOUBLE-POPUP RELEASE — 23 NOVEMBER 2026
+
+- PR #318 merged to `main` as `f6674ebba0abb371ab723a9b20c08aa0feeded68`.
+- GitHub Actions run `45210965067` completed **success**. TypeScript, production build, unit/schema checks, Playwright browser smoke test, CALERIS dropdown/navigation regression checks, economy and security regression checks, and Supabase schema parity guard passed.
+- Vercel Production deployment `dpl_3UzYs7MWJjEoH9txoa6vBKi7KnjE` is **READY** for that exact main commit. No Supabase schema/function, wallet, Vercel environment variable, or project setting was changed.
+- Global select handler now intercepts eligible native select pointer activation before the browser/Android native picker opens, and routes it to the shared CALERIS option sheet. Keyboard activation and non-pointer accessibility fallback are retained.
+- Final physical Android acceptance is still required to verify the operating-system picker is absent on the target handset.
+
+
+# PROFILE LINK AUDIT FOLLOW-UP — 23 NOVEMBER 2026
+
+- Extended the audit beyond the Global directories: Team Summary now links the current team and linked driver roster; Team Owner/Finance and recent race views resolve `public_member_id` from the existing `caleris_member_directory` before rendering profile links; Hall of Fame driver/team winners use their persisted member/team IDs and public IDs; Admin Users no longer falls back to an internal member UUID for public profile routes.
+- Added regression assertions covering these route helpers and forbidding internal UUID fallbacks in the reviewed components.
+- Testing and Production schema inspection confirms the required `public_member_id`, standings `member_id`, `team_id`, and team snapshot IDs already exist. No migration is required.
+- Checked `storage.objects` in both Supabase Testing and Production: no `.glb` or `.gltf` asset is present. Repository tree also contains no GLB/GLTF binary. Real vehicle mesh integration remains blocked by the missing asset.
+
+
+- Additional profile-link audit fixes: Team Summary, Team HQ, Team Engine Market, Team Inactivity settlement, Admin Users, Team Owner/Finance, recent race results, Hall of Fame winners, and all-time driver/team records now use verified public member IDs or team IDs. Internal member UUIDs are no longer passed as public profile route IDs in the reviewed views.
+
+- Added a global guard in `EntityProfileLink`: Member Profile links require a valid 12–16 character public ID, and Team Profile links require a valid UUID. This prevents overlooked components from accidentally exposing internal member UUIDs as public profile routes.

@@ -2,6 +2,7 @@ import {useCallback,useEffect,useState} from "react";
 import {RefreshCw,ShoppingCart,ShieldCheck,Tag} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import {TeamProfileLink} from "./EntityProfileLink";
 import "./team-engine-market.css";
 
 type Engine={id:string;name:string;manufacturer?:string|null;country_of_origin?:string|null;description?:string|null;asking_price:number|null;is_for_sale?:boolean;seller_team_id?:string;seller_team_name?:string;race_pace:number;qualifying_pace:number;engine_power:number;active_usage_count?:number};
@@ -54,14 +55,14 @@ export default function TeamEngineMarket({session}:{session:Session}){
    </section>
    <section className="workspace-card tem-card"><div className="tem-head"><div><span className="section-eyebrow">AVAILABLE ENGINE</span><h2>Engine tersedia</h2></div><span className="empty-tag">{market.length} listing</span></div>
     {!season?<p className="muted">Season aktif belum tersedia.</p>:market.length===0?<p className="muted">Belum ada listing penggunaan Engine dari tim lain.</p>:market.map(engine=><article className="tem-engine" key={engine.id}>
-     <div className="tem-engine-title"><Tag size={18}/><div><strong>{engine.name}</strong><small>{engine.manufacturer||"Manufacturer tidak tersedia"} · Pemilik: {engine.seller_team_name||"Team"}</small></div><strong>{money(Number(engine.asking_price||0))}</strong></div>
+     <div className="tem-engine-title"><Tag size={18}/><div><strong>{engine.name}</strong><small>{engine.manufacturer||"Manufacturer tidak tersedia"} · Pemilik: {engine.seller_team_id?<TeamProfileLink teamId={engine.seller_team_id}>{engine.seller_team_name||"Team"}</TeamProfileLink>:(engine.seller_team_name||"Team")}</small></div><strong>{money(Number(engine.asking_price||0))}</strong></div>
      <Attributes engine={engine}/>{engine.description&&<p className="muted">{engine.description}</p>}
      <small>Dapat digunakan bersama oleh beberapa tim · {Number(engine.active_usage_count||0)} pengguna aktif</small>
      <button className="action primary" disabled={saving===engine.id||!season} onClick={()=>void purchase(engine)}><ShoppingCart size={15}/>{saving===engine.id?"Memproses...":"Beli hak penggunaan"}</button>
     </article>)}
    </section>
    <section className="workspace-card tem-card"><div className="tem-head"><div><span className="section-eyebrow">OWNED ENGINES</span><h2>Engine milik tim</h2></div><span className="empty-tag">{engines.length} Engine</span></div>
-    {engines.length?engines.map(engine=><article className="tem-engine" key={engine.id}><div className="tem-engine-title"><Tag size={18}/><div><strong>{engine.name}</strong><small>Pemilik tetap: {team.name} · {Number(engine.active_usage_count||0)} pengguna aktif</small></div></div><Attributes engine={engine}/></article>):<p className="muted">Tim belum memiliki Engine.</p>}
+    {engines.length?engines.map(engine=><article className="tem-engine" key={engine.id}><div className="tem-engine-title"><Tag size={18}/><div><strong>{engine.name}</strong><small>Pemilik tetap: <TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink> · {Number(engine.active_usage_count||0)} pengguna aktif</small></div></div><Attributes engine={engine}/></article>):<p className="muted">Tim belum memiliki Engine.</p>}
    </section>
   </>}
  </section>;

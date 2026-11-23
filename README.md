@@ -1144,3 +1144,14 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 ### Shared Select Controls
 
 - Native HTML select controls across the application are routed through one CALERIS option sheet on pointer and keyboard activation, preventing the browser/Android system picker from appearing underneath or alongside the branded dropdown. Controls explicitly marked `data-native-popup="true"` remain native by design.
+
+
+### Live Driver and Team Directories
+
+- Main Event → Global → Driver List and Team List load records from the existing authenticated `caleris_driver_market_directory` and `caleris_team_directory` read models.
+- Driver names link to public profiles only when a `public_member_id` exists. Team names link to the public Team Profile using the team ID.
+- Directory search filters the loaded official records locally; no new database schema, public grants, or data mutation is introduced.
+
+- Team Summary, Owner/Finance views, Hall of Fame, and Admin Users now resolve Public Member ID before linking driver profiles; team identity links use actual team IDs. Missing public IDs render as plain text rather than exposing internal member UUIDs.
+
+- Shared profile-link helpers validate Public Member ID and UUID team IDs. Internal database member UUIDs are rendered as plain text rather than treated as public profile identifiers.

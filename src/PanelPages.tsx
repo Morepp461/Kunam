@@ -3,8 +3,10 @@ import TeamHQ from "./TeamHQ";
 import DiscordBroadcastPanel from "./DiscordBroadcastPanel";
 import CalerisEcosystem from "./CalerisEcosystem";
 import TeamSummary from "./TeamSummary";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import {
   Activity, ArrowLeft, ArrowUpRight, BarChart3, CalendarDays,
   CarFront, ChartNoAxesCombined, ClipboardList, FileText, Flag, Gauge,
@@ -104,6 +106,53 @@ function FilterDirectory({ title, description, fields, columns = [] }: { title: 
   const [filters,setFilters]=useState<Record<string,string>>({});
   return <><div className="panel-filter-bar"><label className="panel-search"><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={"Cari " + title.toLowerCase() + "..."}/></label>{fields.map(field=><label className="panel-filter" key={field}><span>{field}</span><select value={filters[field]||""} onChange={e=>setFilters(v=>({...v,[field]:e.target.value}))}><option value="">Semua</option><option value="available">Tersedia</option><option value="active">Aktif</option></select></label>)}</div>{columns.length>0&&<div className="panel-table-wrap"><table className="panel-data-table"><thead><tr>{columns.map(column=><th key={column}>{column}</th>)}</tr></thead><tbody><tr><td colSpan={columns.length}><span className="panel-table-empty">{query?"Tidak ada data yang cocok":"Menunggu data listing tersedia"}</span></td></tr></tbody></table></div>}<p className="panel-note">{description} Filter dan kolom sudah disiapkan; data resmi akan dihubungkan pada tahap integrasi database.</p></>;
 }
+type DirectoryDriver={id:string;character_name:string|null;role:string|null;team_id:string|null;license:string|null;public_member_id:string|null};
+type DirectoryTeam={id:string;name:string;division_key:string|null};
+function LiveEntityDirectory({kind}:{kind:"drivers"|"teams"}){
+ const [drivers,setDrivers]=useState<DirectoryDriver[]>([]);
+ const [teams,setTeams]=useState<DirectoryTeam[]>([]);
+ const [query,setQuery]=useState("");
+ const [busy,setBusy]=useState(true);
+ const [error,setError]=useState("");
+ useEffect(()=>{
+  let active=true;
+  async function load(){
+   if(!supabase){setError("Koneksi database belum tersedia.");setBusy(false);return;}
+   setBusy(true);setError("");
+   if(kind==="drivers"){
+    const [driverResult,teamResult]=await Promise.all([
+     supabase.from("caleris_driver_market_directory").select("id,character_name,role,team_id,license,public_member_id").eq("role","Driver").order("character_name"),
+     supabase.from("caleris_team_directory").select("id,name,division_key").order("name")
+    ]);
+    if(!active)return;
+    if(driverResult.error||teamResult.error){setError(driverResult.error?.message||teamResult.error?.message||"Direktori gagal dimuat.");setDrivers([]);setTeams([]);}
+    else{setDrivers((driverResult.data||[]) as DirectoryDriver[]);setTeams((teamResult.data||[]) as DirectoryTeam[]);}
+   }else{
+    const result=await supabase.from("caleris_team_directory").select("id,name,division_key").order("name");
+    if(!active)return;
+    if(result.error){setError(result.error.message);setTeams([]);}
+    else setTeams((result.data||[]) as DirectoryTeam[]);
+   }
+   setBusy(false);
+  }
+  void load();
+  return()=>{active=false};
+ },[kind]);
+ const teamById=useMemo(()=>new Map(teams.map(team=>[team.id,team])),[teams]);
+ const needle=query.trim().toLocaleLowerCase("id-ID");
+ const filteredDrivers=drivers.filter(driver=>[driver.character_name,driver.license,teamById.get(driver.team_id||"")?.name].some(value=>String(value||"").toLocaleLowerCase("id-ID").includes(needle)));
+ const filteredTeams=teams.filter(team=>[team.name,team.division_key].some(value=>String(value||"").toLocaleLowerCase("id-ID").includes(needle)));
+ const columns=kind==="drivers"?["Driver","License","Team","Division"]:["Team","Division"];
+ return <div className="workspace-card">
+  <div className="section-title-row"><div><span className="section-eyebrow">OFFICIAL DIRECTORY</span><h2>{kind==="drivers"?"Driver List":"Team List"}</h2><p>{busy?"Memuat data resmi...":kind==="drivers"?filteredDrivers.length+" driver ditemukan":filteredTeams.length+" tim terdaftar"}</p></div></div>
+  <div className="panel-filter-bar"><label className="panel-search"><Search size={16}/><input value={query} onChange={event=>setQuery(event.target.value)} placeholder={kind==="drivers"?"Cari nama driver, lisensi, atau tim...":"Cari nama tim atau divisi..."}/></label></div>
+  {error?<p className="panel-table-empty">{error}</p>:busy?<p className="panel-table-empty">Menghubungkan direktori resmi...</p>:<div className="panel-table-wrap"><table className="panel-data-table"><thead><tr>{columns.map(column=><th key={column}>{column}</th>)}</tr></thead><tbody>
+   {kind==="drivers"?filteredDrivers.map(driver=>{const team=teamById.get(driver.team_id||"");return <tr key={driver.id}><td><MemberProfileLink memberId={driver.public_member_id}>{driver.character_name||"Driver"}</MemberProfileLink></td><td>{driver.license||"Belum ditetapkan"}</td><td>{team?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>:"Independent"}</td><td>{team?.division_key||"—"}</td></tr>}):filteredTeams.map(team=><tr key={team.id}><td><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink></td><td>{team.division_key||"—"}</td></tr>)}
+   {((kind==="drivers"&&!filteredDrivers.length)||(kind==="teams"&&!filteredTeams.length))&&<tr><td colSpan={columns.length}><span className="panel-table-empty">{query?"Tidak ada hasil yang cocok.":"Belum ada data direktori."}</span></td></tr>}
+  </tbody></table></div>}
+  <p className="panel-note">Data berasal dari read model direktori CALERIS. Nama Driver hanya menjadi tautan profil jika Public Member ID tersedia; nama tim membuka profil tim.</p>
+ </div>;
+}
 function ChartGraphic({ title, variant = "line" }: { title: string; variant?: "line" | "bar" }) {
   return <div className="workspace-card panel-chart-card"><div className="section-title-row"><div><span className="section-eyebrow">PERFORMANCE VISUALIZATION</span><h2>{title}</h2></div><span className="empty-tag">AWAITING DATA</span></div><div className={"panel-chart-visual "+(variant==="bar"?"bar-chart":"line-chart")}><svg viewBox="0 0 720 210" role="img" aria-label={title+" chart placeholder"}><g className="chart-grid">{[25,65,105,145,185].map(y=><line key={y} x1="36" x2="700" y1={y} y2={y}/>)}</g>{variant==="line"?<><path className="chart-line-muted" d="M36 160 L700 160"/><path className="chart-line-dash" d="M36 150 L145 130 L255 142 L365 90 L475 112 L585 68 L700 82"/></>:<g className="chart-bars-muted">{[72,104,84,132,96,148,115,88].map((height,i)=><rect key={i} x={55+i*80} y={185-height} width="34" height={height} rx="3"/>)}</g>}</svg><span>Visualisasi akan menampilkan data aktual setelah data kompetisi tersedia.</span></div></div>;
 }
@@ -129,9 +178,8 @@ export default function PanelPage() {
     if(detail){
       const selected=cards.find(card=>card[0]===detail);
       const chartPages=["driver-ranking","team-ranking","engine-ranking","statistic","comparison"];
-      const listPages=["driver-list","team-list","rookie-of-the-season"];
       const chartVariant=detail==="engine-ranking"||detail==="team-ranking"?"bar":"line";
-      return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><ChartGraphic title={selected?.[1]||"Competition Statistics"} variant={chartVariant}/><EmptyPanel title="Belum ada data statistik" body="Grafik ini akan membaca hasil dan statistik resmi dari database kompetisi. Tidak ada angka simulasi yang ditampilkan."/></>:listPages.includes(detail)?<div className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">OFFICIAL DIRECTORY</span><h2>{selected?.[1]}</h2></div></div><FilterDirectory title={selected?.[1]||"Directory"} description="Direktori akan menampilkan data resmi sesuai divisi dan season." fields={["Season","Divisi","Status"]} columns={detail==="team-list"?["Team","Division","Engine","Drivers","Points","Position"]:["Driver","License","Team","Division","Points","Position"]}/></div>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
+      return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><ChartGraphic title={selected?.[1]||"Competition Statistics"} variant={chartVariant}/><EmptyPanel title="Belum ada data statistik" body="Grafik ini akan membaca hasil dan statistik resmi dari database kompetisi. Tidak ada angka simulasi yang ditampilkan."/></>:detail==="driver-list"?<LiveEntityDirectory kind="drivers"/>:detail==="team-list"?<LiveEntityDirectory kind="teams"/>:detail==="rookie-of-the-season"?<EmptyPanel title="Data rookie belum tersedia" body="Rookie of the Season akan menampilkan data resmi setelah sumber klasemen dan status rookie terhubung."/>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
     }
     return <section className="workspace"><Heading eyebrow="Main Event" title={title} description={tab.description}/><CardGrid items={cards as any} base={base}/></section>;
   }
