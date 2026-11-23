@@ -8,6 +8,7 @@ import {
   buildYearbookPrintHtml,
   getCalerisLevel,
   simulateChampionship,
+  type PredictorEvent,
 } from "./lib/community-progression";
 import "./community-progression.css";
 
@@ -47,7 +48,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [seasonData, setSeasonData] = useState<any>(null);
   const [selectedSeason, setSelectedSeason] = useState("");
   const [selectedDivision, setSelectedDivision] = useState("");
-  const [eventVectors, setEventVectors] = useState<number[][] | null>(null);
+  const [eventVectors, setEventVectors] = useState<PredictorEvent[] | null>(null);
 
   const load = async () => {
     if (!db || !memberId) {
@@ -278,14 +279,15 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       const matching = rules.filter((rule: any) => rule.session_type === event.session_type);
       if (!matching.length) return [];
       const maxPosition = Math.max(...matching.map((rule: any) => Number(rule.finishing_position)));
-      const vector = Array.from({ length: Math.max(0, maxPosition) }, () => 0);
+      const finishingPoints = Array.from({ length: Math.max(0, maxPosition) }, () => 0);
       matching.forEach((rule: any) => {
         const position = Number(rule.finishing_position);
         if (Number.isInteger(position) && position > 0) {
-          vector[position - 1] = Number(rule.points ?? 0) + Number(rule.pole_bonus ?? 0);
+          finishingPoints[position - 1] = Number(rule.points ?? 0);
         }
       });
-      return vector;
+      const poleBonus = Math.max(0, ...matching.map((rule: any) => Number(rule.pole_bonus ?? 0)));
+      return { finishingPoints, poleBonus };
     });
     setRounds(remaining.length);
     setEventVectors(vectors);
