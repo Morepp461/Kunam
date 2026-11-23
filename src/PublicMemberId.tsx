@@ -42,7 +42,7 @@ export default function PublicMemberId() {
     </section>
   </main>;
 
-  const { member, card, badges = [] } = record;
+  const { member, card, badges = [], milestones = [], progression = { xp: 0, level: 0 } } = record;
   return <main className="cp-page cp-public-id">
     <header className="cp-header"><div><small>CALERIS MASTERS · VERIFIED MEMBER</small><h1>Digital ID</h1><p>Public identity card and earned achievements.</p></div><ShieldCheck size={30} /></header>
     <section className="cp-id cp-id-public" style={{ borderColor: card.accent_color || "#b99752" }}>
@@ -51,6 +51,22 @@ export default function PublicMemberId() {
       <p>{member.role} · {member.license || "UNLICENSED"}</p>
       <p>{member.team_name || "Independent"} · {member.member_code}</p>
       <div className="cp-id-bottom">{card.tagline || "CALERIS MASTERS Member"}</div>
+    </section>
+    <section className="cp-section cp-public-progress">
+      <h2>Account Progression</h2>
+      <div className="cp-grid cp-stats">
+        <article><span>Account Level</span><strong>LV {Number(progression.level ?? 0)}</strong></article>
+        <article><span>Cumulative XP</span><strong>{Number(progression.xp ?? 0).toLocaleString("id-ID")}</strong></article>
+        <article><span>Milestones</span><strong>{milestones.length}</strong></article>
+      </div>
+      <h3>Completed Career Milestones</h3>
+      <div className="cp-grid cp-milestone-grid">
+        {milestones.map((milestone: any) => <article key={milestone.code} className="earned">
+          <strong>{milestone.title}</strong><p>{milestone.description}</p>
+          <small>Completed {milestone.completed_at ? new Date(milestone.completed_at).toLocaleDateString("id-ID") : ""}</small>
+        </article>)}
+        {!milestones.length && <article>Belum ada milestone yang dipublikasikan.</article>}
+      </div>
     </section>
     <section className="cp-section">
       <h2><Award size={19} /> Earned Achievements</h2>
