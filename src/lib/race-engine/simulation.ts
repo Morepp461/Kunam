@@ -890,6 +890,7 @@ export class RaceSimulation {
       stagedSimulationClockMs = resumeAtSimulationTimeMs;
     }
     const activeFlagsForTick = stagedRaceControlFlags.map((flag) => ({ ...flag }));
+    const elapsedBeforeSegmentTick = new Map(stagedEntrants.map((entrant) => [entrant.driverId, entrant.elapsedMs]));
     const activeFlagCountAtTickStart = stagedRaceControlFlags.length;
     const weatherReferenceState = this.mutableEntrants.find((entrant) => !entrant.finished && !entrant.retired);
     const weatherLap = weatherReferenceState ? weatherReferenceState.lapCompleted + 1 : this.snapshot.circuit.totalLaps;
@@ -1116,6 +1117,13 @@ export class RaceSimulation {
         });
       }
     }
+
+    globalTickDurationMs = Math.max(
+      0,
+      ...stagedEntrants.map((entrant) =>
+        entrant.elapsedMs - (elapsedBeforeSegmentTick.get(entrant.driverId) ?? entrant.elapsedMs)
+      )
+    );
 
     for (let index = activeFlagCountAtTickStart; index < stagedRaceControlFlags.length; index += 1) {
       const flag = stagedRaceControlFlags[index];
