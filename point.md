@@ -1413,3 +1413,14 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Scoped native-select suppression to the Digital ID editor, preserving the shared global select handler elsewhere.
 - Added a regression test for exactly one custom theme trigger and no native HTML select in the editor.
 - No database, Edge Function, wallet, or Vercel environment changes.
+
+
+---
+
+# JOB SEARCH COMPACT SEARCH FIELD — 23 NOVEMBER 2026
+
+- Reduced the Job Search search box to one filter-grid column on desktop instead of spanning two columns.
+- Reduced its height from 44 px to 38 px (input minimum height 36 px).
+- Restored full-width behavior only at tablet/mobile breakpoints using matching selector specificity; this prevents the desktop rule from overriding responsive layout.
+- Added regression checks for desktop width/height and responsive expansion.
+- No data, schema, Supabase, wallet, or Vercel environment changes.
