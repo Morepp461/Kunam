@@ -5,7 +5,7 @@ import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
 import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 
-type Member={id:string;character_name:string|null;role:string|null;team_id:string|null};
+type Member={id:string;public_member_id:string;character_name:string|null;role:string|null;team_id:string|null};
 type Team={id:string;name:string;division_key:string|null;takeover_listed:boolean;latest_valuation:number|null;minimum_offer?:number|null;maximum_offer?:number|null};
 type Takeover={id:string;target_team_id:string;buyer_member_id:string;seller_member_id:string;valuation_id:string;agreed_amount:number|null;status:string;created_at:string;transaction_id?:string|null;settled_at?:string|null};
 type Offer={id:string;takeover_id:string;offered_by_member_id:string;offered_amount:number;response:string;note:string|null;created_at:string};
@@ -22,7 +22,7 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe){setMember(null);setLoading(false);setNotice(pe.message);return}
   const [m,t,n,o,b]=await Promise.all([
-   supabase.from("caleris_member_directory").select("id,character_name,role,team_id").order("character_name"),
+   supabase.from("caleris_member_directory").select("id,public_member_id,character_name,role,team_id").order("character_name"),
    supabase.from("caleris_team_directory").select("id,name,division_key,takeover_listed,latest_valuation").order("name"),
    supabase.from("caleris_team_takeovers").select("id,target_team_id,buyer_member_id,seller_member_id,valuation_id,agreed_amount,status,created_at,transaction_id,settled_at").order("created_at",{ascending:false}),
    supabase.from("caleris_team_takeover_offers").select("*").order("created_at",{ascending:true}),
@@ -43,7 +43,7 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
  const targets=useMemo(()=>teams,[teams]);
  const selectedTarget=targets.find(t=>t.id===targetTeamId);const selectedBounds=selectedTarget?offerBounds[selectedTarget.id]:null;
  const teamName=(id:string)=>{const t=teams.find(x=>x.id===id);return <TeamProfileLink teamId={id}>{t?.name||"Team"}</TeamProfileLink>};
- const memberName=(id:string)=>{const m=members.find(x=>x.id===id);return <MemberProfileLink memberId={id}>{m?.character_name||"Member"}</MemberProfileLink>};
+ const memberName=(id:string)=>{const m=members.find(x=>x.id===id);return <MemberProfileLink memberId={m?.public_member_id}>{m?.character_name||"Member"}</MemberProfileLink>};
  const memberRole=(id:string)=>members.find(m=>m.id===id)?.role||"Public Member";
  const lastOffer=(id:string)=>offers.filter(o=>o.takeover_id===id).sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime())[0];
 
