@@ -354,3 +354,11 @@ Branch integrasi aktif: `feat/caleris-11-scope-integration-20261123`. Perubahan 
 - RLS aktif pada enam tabel request/moderation/inactivity; pemeriksaan Testing menemukan satu policy per tabel. RPC yang diuji memberi EXECUTE ke authenticated dan menolak anon.
 - Vercel environment tidak diubah. Deployment hanya boleh dilakukan setelah merge, migrasi Production, dan verifikasi deployment.
 
+
+
+### Checkpoint tambahan — indeks FK setelah Supabase Advisors
+- Supabase Advisors menemukan foreign key baru yang belum memiliki covering index pada tabel request kontrak, moderation, inactivity, settlement, dan replacement slot.
+- Ditambahkan migration `20261123150000_caleris_scope_fk_indexes.sql` untuk indeks lookup foreign key tersebut.
+- CI regression tests diperluas untuk memverifikasi seluruh indeks baru.
+- Migration ini harus diterapkan ke Testing lebih dahulu, lalu Production setelah QA dan merge. Tidak mengubah data aplikasi maupun environment Vercel.
+- RLS pada `caleris_team_inactivity_config` tetap tanpa policy langsung karena konfigurasi hanya dibaca oleh fungsi database yang terkontrol; tabel tidak diekspos untuk akses langsung authenticated/anon.
