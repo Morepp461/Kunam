@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, AlertTriangle, CalendarDays, CheckCircle2, RefreshCw, ShieldAlert, Users } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import "./admin-team-inactivity.css";
 
@@ -10,7 +10,6 @@ type ReviewRow={id:string;season_id:string;team_id:string;quest_activity_count:n
 type SettlementRow={id:string;team_id:string;season_id:string;member_id:string;remaining_seasons:number;annual_salary_snapshot:number|null;compensation_amount:number;status:"pending"|"paid";transaction_id:string|null;error_note:string|null;created_at:string};
 type SlotRow={id:string;season_id:string;division_key:string;replaced_team_id:string;replacement_team_id:string|null;status:"open"|"filled";note:string|null;created_at:string};
 const money=(value:number)=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(value||0);
-const date=(value:string|null)=>value?new Date(value).toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}):"—";
 export default function AdminTeamInactivity(){
  const [teams,setTeams]=useState<TeamRow[]>([]),[seasons,setSeasons]=useState<SeasonRow[]>([]),[states,setStates]=useState<StateRow[]>([]),[reviews,setReviews]=useState<ReviewRow[]>([]),[settlements,setSettlements]=useState<SettlementRow[]>([]),[slots,setSlots]=useState<SlotRow[]>([]);
  const [members,setMembers]=useState<{id:string;character_name:string|null}[]>([]);
