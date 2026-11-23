@@ -2,7 +2,7 @@ import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState,F
 import {createPortal} from "react-dom";
 import type {ChangeEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
 import {Link,Navigate,Route,Routes,useLocation,useNavigate,useParams} from "react-router-dom";
-import {ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ClipboardList,ExternalLink,Flag,LoaderCircle,LogIn,Moon,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Search} from "lucide-react";
+import {ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ExternalLink,Flag,LoaderCircle,LogIn,Moon,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Search} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {missingSupabaseMessage,supabase} from "./lib/supabase";
 import "./workspace.css";
