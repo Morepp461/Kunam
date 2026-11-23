@@ -2,10 +2,12 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import {Bell,CheckCheck,ExternalLink,Trash2,X} from "lucide-react";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
+import CaleMascot from "./CaleMascot";
 
 type Notification={id:string;category:string;title:string;body:string;href:string|null;created_at:string;read_at:string|null};
 type MemberRole="Driver"|"Owner"|"Principal"|string|null;
 const when=(value:string)=>{const date=new Date(value);return Number.isNaN(date.getTime())?"":new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short"}).format(date)};
+function isWarningNotification(item:Notification){return /(warning|warn|fine|punish|suspend|moderation|violation|appeal|error)/i.test(item.category+" "+item.title)}
 function destination(item:Notification,role:MemberRole){
  const href=item.href?.trim()||"/dashboard";
  if(["/quests","/quest","quests","quest","/driver-panel/quest","/team-panel/quest"].includes(href)){
@@ -68,7 +70,7 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
    {error&&<p className="header-notifications-error">{error}</p>}
    <div className="header-notifications-list">
     {loading?<p className="header-notifications-empty">Memuat notifikasi...</p>:!items.length?<p className="header-notifications-empty">Belum ada notifikasi.</p>:items.map(item=><article className={"header-notification-item"+(item.read_at?" is-read":" is-unread")} key={item.id}>
-     <Link to={destination(item,memberRole)} onClick={()=>{if(!item.read_at)void markRead(item.id);setOpen(false)}}><span className="header-notification-meta">{item.category.replaceAll("_"," ").toUpperCase()} · {when(item.created_at)}</span><strong>{item.title}</strong>{item.body&&<p>{item.body}</p>}<span className="header-notification-link">Buka detail <ExternalLink size={12}/></span></Link>
+     <Link to={destination(item,memberRole)} onClick={()=>{if(!item.read_at)void markRead(item.id);setOpen(false)}}><span className="header-notification-meta">{isWarningNotification(item)&&<CaleMascot designId="reaction_warning" size={28} className="header-notification-cale"/>}{item.category.replaceAll("_"," ").toUpperCase()} · {when(item.created_at)}</span><strong>{item.title}</strong>{item.body&&<p>{item.body}</p>}<span className="header-notification-link">Buka detail <ExternalLink size={12}/></span></Link>
      {!item.read_at&&<button type="button" aria-label="Tandai sudah dibaca" title="Tandai sudah dibaca" onClick={()=>void markRead(item.id)}><CheckCheck size={15}/></button>}
     </article>)}
    </div>

@@ -1,0 +1,15 @@
+.cale-tutorial-reopen{display:inline-flex;align-items:center;gap:8px;margin:0 0 14px;padding:7px 12px;border:1px solid rgba(204,171,81,.42);border-radius:999px;background:rgba(16,16,18,.88);color:#e6c66c;font:600 12px/1.2 inherit;cursor:pointer}
+.cale-tutorial-reopen .cale-mascot{width:30px!important;flex:0 0 30px}
+.cale-tutorial-reopen .cale-mascot__art{aspect-ratio:128/298}
+.cale-tutorial-backdrop{position:fixed;inset:0;z-index:1600;display:grid;place-items:center;padding:16px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px)}
+.cale-tutorial-dialog{width:min(560px,100%);overflow:hidden;border:1px solid rgba(208,177,91,.48);border-radius:20px;background:linear-gradient(145deg,#19191b,#09090a);color:#f4f0e7;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.cale-tutorial-header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:16px 18px;border-bottom:1px solid rgba(255,255,255,.08)}
+.cale-tutorial-header div{display:grid;gap:5px}.cale-tutorial-header span,.cale-tutorial-copy small{color:#d9b95c;font-size:9px;font-weight:800;letter-spacing:.13em}.cale-tutorial-header strong{font-size:15px}
+.cale-tutorial-header button{width:32px;height:32px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.04);color:inherit;font-size:22px;cursor:pointer}
+.cale-tutorial-progress{display:flex;gap:5px;padding:14px 18px 0}.cale-tutorial-progress span{height:3px;flex:1;border-radius:8px;background:rgba(255,255,255,.12)}.cale-tutorial-progress span.is-complete{background:#d8b95c}
+.cale-tutorial-content{display:grid;grid-template-columns:132px minmax(0,1fr);align-items:center;gap:18px;padding:22px 24px 26px;min-height:205px}
+.cale-tutorial-character{width:112px!important;justify-self:center}.cale-tutorial-character .cale-mascot__art{aspect-ratio:128/298}
+.cale-tutorial-copy{min-width:0}.cale-tutorial-copy h2{margin:8px 0;font-size:clamp(18px,4vw,23px);line-height:1.2}.cale-tutorial-copy p{margin:0;color:#d0cbc1;font-size:13px;line-height:1.65}
+.cale-tutorial-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-top:1px solid rgba(255,255,255,.08)}.cale-tutorial-footer>div{display:flex;gap:8px}.cale-tutorial-footer button{min-height:38px;padding:0 13px;border:1px solid rgba(255,255,255,.14);border-radius:10px;background:rgba(255,255,255,.05);color:#f4f0e7;font-size:12px;font-weight:700;cursor:pointer}.cale-tutorial-footer button:disabled{opacity:.35;cursor:not-allowed}.cale-tutorial-footer button.is-primary{border-color:#d8b95c;background:#d8b95c;color:#17130a}.cale-tutorial-footer .cale-tutorial-skip{border:0;background:transparent;color:#bcb5a8}
+@media(max-width:480px){.cale-tutorial-backdrop{padding:10px}.cale-tutorial-content{grid-template-columns:82px minmax(0,1fr);gap:12px;padding:18px 14px 22px;min-height:190px}.cale-tutorial-character{width:82px!important}.cale-tutorial-copy p{font-size:12px}.cale-tutorial-footer{padding:12px}.cale-tutorial-footer button{padding:0 10px;font-size:11px}}
+@media(prefers-reduced-motion:reduce){.cale-tutorial-backdrop{backdrop-filter:none}}

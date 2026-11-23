@@ -1242,3 +1242,14 @@ The additional public profile-link coverage from PRs #329, #332, #333, and #334 
 Latest Production release: commit `be7ecefa29b06576ae01b91fd752c55e0930ce68`, deployment `dpl_BkJSYcQdqDiawFEhDMEdfE7YHwhf`, state **READY**. The deployment is attached to `calerismasters.com` and `www.calerismasters.com`; the live apex domain returned HTTP 200.
 
 This confirms the code and automated regression coverage, not the remaining manual acceptance gates: the original 2025 GLB, physical Android visual/GPU/memory checks, authenticated role-matrix walkthrough, and full manual page-by-page profile route review. CRM Workflow remains inactive pending its business specification.
+
+
+### Cale Mascot — account onboarding integration
+
+- Added a seven-step Indonesian Paddock Access guide presented by the locked Cale formal master asset.
+- The guide covers welcome, avatar upload, basic identity, nationality/hometown, Caleris nickname, role preference, and privacy/review.
+- First-visit completion is stored per authenticated user in browser local storage; the guide can be reopened from the Paddock Access page.
+- The guide is a functional UI walkthrough and does not submit, modify, or infer profile data. Existing form validation and the `complete-paddock-access` Edge Function remain authoritative.
+- FIA outfit routing is limited to warning/punishment/appeal contexts; FIA panel navigation alone does not force warning attire.
+- Cale still ships three transparent wardrobe master assets. The 57 IDs are a stable manifest contract, not 57 individually illustrated images; no new artwork was generated in this implementation pass.
+- Added regression assertions for the tutorial, per-user completion state, and accessible dialog. No schema, migration, dependency, or runtime configuration change.

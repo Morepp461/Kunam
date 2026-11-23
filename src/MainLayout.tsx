@@ -6,6 +6,8 @@ import {Activity,ShoppingBag,BookOpen,Palette,ChevronDown,Flag,LogOut,Moon,Setti
 import {supabase} from "./lib/supabase";
 import {panelGroups} from "./PanelPages";
 import NotificationsCenter from "./NotificationsCenter";
+import CaleAssistant from "./CaleAssistant";
+import "./cale-mascot.css";
 
 type Toast=(kind:"success"|"error"|"warning"|"info",title:string,message?:string)=>void;
 type PanelAccess={is_admin:boolean;member_role:string|null;main_event:boolean;driver_panel:boolean;team_panel:boolean;fia_panel:boolean};
@@ -114,6 +116,7 @@ export default function MainLayout({children,theme,setTheme,session,profile,memb
   {session&&<div className="app-navigation-shell">{renderSidebar(false)}<main className="page-content">{children}</main></div>}
   {!session&&<main className="page-content">{children}</main>}
   {session&&navOpen&&<><button className="drawer-dismiss" aria-label="Tutup navigasi" onClick={()=>setNavOpen(false)}/>{renderSidebar(true)}</>}
+  {session&&<CaleAssistant/>}
   <SiteFooter/>
  </div>;
 }

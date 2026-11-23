@@ -1536,3 +1536,14 @@ Merged Scope 09 follow-up PRs and successful Caleris CI:
 5. Scope 06: CRM Workflow remains inactive pending explicit statuses, owners, transitions, and permissions.
 
 No Production schema, wallet data, or Edge Function was modified by these profile-link changes.
+
+
+### Cale Mascot — account onboarding integration
+
+- Added a seven-step Indonesian Paddock Access guide presented by the locked Cale formal master asset.
+- The guide covers welcome, avatar upload, basic identity, nationality/hometown, Caleris nickname, role preference, and privacy/review.
+- First-visit completion is stored per authenticated user in browser local storage; the guide can be reopened from the Paddock Access page.
+- The guide is a functional UI walkthrough and does not submit, modify, or infer profile data. Existing form validation and the `complete-paddock-access` Edge Function remain authoritative.
+- FIA outfit routing is limited to warning/punishment/appeal contexts; FIA panel navigation alone does not force warning attire.
+- Cale still ships three transparent wardrobe master assets. The 57 IDs are a stable manifest contract, not 57 individually illustrated images; no new artwork was generated in this implementation pass.
+- Added regression assertions for the tutorial, per-user completion state, and accessible dialog. No schema, migration, dependency, or runtime configuration change.

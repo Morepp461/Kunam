@@ -46,6 +46,8 @@ jobs:
         run: python3 -B scripts/test_mobile_lifecycle_and_consent.py
       - name: CALERIS dropdown and navigation UI regression checks
         run: python3 -B scripts/test_caleris_controls_ui.py
+      - name: Cale mascot and wardrobe regression checks
+        run: python3 -B scripts/test_cale_mascot.py
       - name: Live driver and team profile directory checks
         run: python3 -B scripts/test_profile_directory_links.py
       - name: Admin Workflow operations hub checks
