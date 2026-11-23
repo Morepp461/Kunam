@@ -137,7 +137,7 @@ describe("Digital ID theme dropdown", () => {
     const source = readFileSync(new URL("../../src/CommunityProgression.tsx", import.meta.url), "utf8");
     const identitySection = source.split('{tab === "identity" && <section')[1]?.split('{tab === "yearbook"')[0] ?? "";
     expect(identitySection).toContain('className="cp-section cp-digital-id-editor"');
-    expect(identitySection).not.toMatch(/<select\\b/);
+    expect(identitySection).not.toMatch(/<select\b/);
     expect(identitySection.match(/className="cp-theme-trigger"/g)).toHaveLength(1);
     expect(identitySection).toContain('["classic","premio","zwei","gold"]');
     const css = readFileSync(new URL("../../src/community-progression.css", import.meta.url), "utf8");
