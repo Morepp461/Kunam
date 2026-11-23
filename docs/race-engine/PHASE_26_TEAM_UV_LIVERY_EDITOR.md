@@ -22,3 +22,8 @@
 - Migration: `20261122130000_team_uv_livery_editor.sql`.
 - Apply to Supabase Testing first, verify RLS and save/load with Owner/Principal/Admin identities, then apply the same migration to Production after merge.
 - CI must pass before merge. Manual Android QA is still required for touch interactions, file upload, atlas readability, and WebGL performance.
+
+
+## 2025 vehicle asset intake — 2026-11-24
+
+The original CC BY 4.0 2025 F1 CAR GLB has been supplied and structurally verified. It contains 143 UV-mapped primitives but no embedded texture images and is approximately 3.1 million triangles / 85.2 MiB. The procedural preview remains the active renderer. Real-model integration is gated on an optimized derivative, verified UV/material body-zone mapping, approved asset hosting, and Android performance acceptance. See [asset attribution and intake](../assets/2025-f1-car-attribution.md).

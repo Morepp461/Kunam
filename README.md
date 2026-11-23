@@ -1253,3 +1253,13 @@ This confirms the code and automated regression coverage, not the remaining manu
 - FIA outfit routing is limited to warning/punishment/appeal contexts; FIA panel navigation alone does not force warning attire.
 - Cale still ships three transparent wardrobe master assets. The 57 IDs are a stable manifest contract, not 57 individually illustrated images; no new artwork was generated in this implementation pass.
 - Added regression assertions for the tutorial, per-user completion state, and accessible dialog. No schema, migration, dependency, or runtime configuration change.
+
+
+## 2025 F1 CAR asset intake — 24 November 2026
+
+- The exact user-supplied `2025_f1_car.glb` has now been received and inspected. GLB 2.0 container is valid; size is 89,383,844 bytes; SHA-256: `89437329daa06c0f8674a8494fb581e1c22b7d6147acbfd3b534438d99dfbeed`.
+- Embedded glTF metadata identifies **2025 F1 CAR** by Abu Saif, source Sketchfab model `8e323bae81574816be809ea4a63f9898`, licensed CC BY 4.0. Attribution requirements remain mandatory.
+- Structural inspection: 1 scene, 271 nodes, 143 mesh geometries/primitives, 8 materials, 572 accessors, and TEXCOORD_0 UVs on all 143 primitives. No embedded images or textures are present.
+- The asset intake removes the prior missing-source-file blocker, but does not mean the model is deployed or production-ready. The source is approximately 3.1 million triangles and 85.2 MiB; a mobile-safe optimized runtime derivative, UV/material-to-body-zone mapping, sponsor decal validation, asset hosting, and Android GPU/memory acceptance are still required.
+- Preserve this original source and its checksum. Do not overwrite it with an optimized derivative. Record every derivative's tool/version/settings and checksum, and keep the attribution adjacent to the hosted asset and in the application.
+- No production asset path, storage object, application loader, database schema, or race snapshot was changed in this intake-only checkpoint. Do not claim the real model is integrated until a runtime asset can be hosted and loaded in the application.
