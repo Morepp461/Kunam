@@ -52,7 +52,7 @@ export default function CaleAssistant() {
             <CaleMascot
               designId={designId}
               context={context}
-              size={132}
+              size={112}
               className="cale-assistant__character"
               eager
             />
