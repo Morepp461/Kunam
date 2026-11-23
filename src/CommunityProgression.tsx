@@ -1,5 +1,5 @@
 import {useEffect,useState} from "react";
-import {Award,BookOpen,Crown,Flag,IdCard,Medal,RefreshCw,Target,Vote} from "lucide-react";
+import {Award,BookOpen,Crown,Flag,Medal,RefreshCw,Target,Vote} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import "./community-progression.css";
 type Toast=(kind:"success"|"error"|"warning"|"info",title:string,message?:string)=>void;
