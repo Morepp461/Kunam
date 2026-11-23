@@ -60,8 +60,6 @@ export default function CaleMascot({
         <img
           src={imageSource}
           alt={`Cale — ${label}`}
-          width="256"
-          height="384"
           loading={eager ? "eager" : "lazy"}
           decoding="async"
           onError={handleImageError}
