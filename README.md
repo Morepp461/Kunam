@@ -1116,3 +1116,15 @@ The follow-up is implemented in a separate branch and awaits CI/review. The prod
 ### Profile-link follow-up release — 23 November 2026
 
 PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required CI checks passed. Driver profile links now use `public_member_id` across the identified standings, directory, career/archive, contract/application, takeover, Admin User, and Race Control views; Team links use team UUIDs. Both Testing and Production expose `caleris_member_directory.public_member_id`, so no migration was needed. The broader page-by-page audit remains open for any additional unlinked mentions found during manual review.
+
+
+### Final deployment checkpoint — 23 November 2026
+
+- Main code integration PR #307 merged at `6c8fbdbe7d3f1adfc8c3314f41079836939ae0f5`; global profile-link PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d`.
+- Both required CI checks passed for each implementation PR.
+- Latest main commit at this checkpoint: `c28c569476abf5a6a125dd1346ba64b22ac7f022`.
+- Vercel Production deployment for that exact commit is **READY**: `dpl_GqVfJ8zT8hG6bhYNLN7F5gwtbCa5`, with aliases `calerismasters.com` and `www.calerismasters.com`. The site returned HTTP 200 in the deployment verification.
+- Admin User Edge Function is ACTIVE in Testing v8 and Production v7, both with `verify_jwt=true` and identical source hash. Both custom production domains are on its CORS allow-list.
+- No Vercel environment settings were changed.
+
+**Open work:** Scope 08 remains partial until the supplied 2025 GLB is hosted and loaded by the production editor; the current preview is procedural. Global profile-link manual acceptance and the authenticated Admin User browser walkthrough also remain outstanding.
