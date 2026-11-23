@@ -308,10 +308,10 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ### Implementation checkpoint — Scope 03 (2026-11-23)
 
 - Status: **IN PROGRESS** (CSS correction committed; not yet QA PASSED).
-- Branch + commit: `fix/caleris-11-scope-improvements` · `4ed37302c4634ad02d788852d6c79d3943a9f8a0`.
+- Branch + commit: `fix/caleris-11-scope-improvements` · `85dc85d83121a1d1b3e7eff8ba44f6216bcb6961`.
 - Implementasi: `src/marketplace-directory.css` memperbaiki specificity yang membuat aturan `.market-filter-grid > label` menimpa flex-row pada `.market-search`. Search control sekarang mempertahankan ikon dan input pada satu baris, tinggi minimum konsisten, dan ikon tetap center-aligned.
 - Migration: N/A.
-- QA: belum dilakukan pada Android Chrome dan desktop; belum ada klaim lolos.
+- QA: regression assertion ditambahkan ke `scripts/test_caleris_controls_ui.py`; browser Android Chrome dan desktop masih menunggu pemeriksaan.
 - CI + build + validation: menunggu workflow branch.
 - Supabase Testing: N/A. Supabase Production: N/A.
 - Vercel: environment tidak diubah; belum ada deployment fitur.
