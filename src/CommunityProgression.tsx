@@ -337,10 +337,11 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     const rules = data.scoring_rules ?? [];
     const vectors = remaining.map((event: any) => {
       const matching = rules.filter((rule: any) => rule.session_type === event.session_type);
-      if (event.session_type === "qualifying") {
-        return { finishingPoints: Array.from({ length: rows.length }, () => 0), poleBonus: 0, sessionType: "qualifying" };
+      const sessionType = String(event.session_type ?? "").toLowerCase();
+      if (sessionType === "qualifying") {
+        return { finishingPoints: Array.from({ length: rows.length }, () => 0), poleBonus: 0, sessionType };
       }
-      if (!matching.length) return { finishingPoints: [], poleBonus: 0, sessionType: event.session_type };
+      if (!matching.length) return { finishingPoints: [], poleBonus: 0, sessionType };
       const maxPosition = Math.max(...matching.map((rule: any) => Number(rule.finishing_position)));
       const finishingPoints = Array.from({ length: Math.max(0, maxPosition) }, () => 0);
       matching.forEach((rule: any) => {
@@ -350,7 +351,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         }
       });
       const poleBonus = Math.max(0, ...matching.map((rule: any) => Number(rule.pole_bonus ?? 0)));
-      return { finishingPoints, poleBonus, sessionType: event.session_type };
+      return { finishingPoints, poleBonus, sessionType };
     });
     const roundsById = new Map((data.rounds ?? []).map((round: any) => [round.id, round]));
     const raceCountback: Record<string, number[]> = {};
@@ -361,8 +362,9 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       const position = Number(entry.finishing_position);
       const name = String(entry.driver_name_snapshot ?? "").trim();
       if (!name || !Number.isInteger(position) || position < 1) return;
-      const target = round.session_type === "race" ? raceCountback
-        : round.session_type === "qualifying" ? qualifyingCountback : null;
+      const sessionType = String(round.session_type ?? "").toLowerCase();
+      const target = sessionType === "race" ? raceCountback
+        : sessionType === "qualifying" ? qualifyingCountback : null;
       if (!target) return;
       target[name] ??= [];
       target[name][position - 1] = (target[name][position - 1] ?? 0) + 1;
