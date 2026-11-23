@@ -9,6 +9,7 @@ INACTIVITY = (ROOT / "src" / "AdminTeamInactivity.tsx").read_text(encoding="utf-
 ENTITY_LINKS = (ROOT / "src" / "EntityProfileLink.tsx").read_text(encoding="utf-8")
 ENGINE_MARKET = (ROOT / "src" / "TeamEngineMarket.tsx").read_text(encoding="utf-8")
 TEAM_HQ = (ROOT / "src" / "TeamHQ.tsx").read_text(encoding="utf-8")
+ADMIN_OPERATIONS = (ROOT / "src" / "AdminOperations.tsx").read_text(encoding="utf-8")
 
 assert 'import { supabase } from "./lib/supabase";' in PANEL
 assert 'import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";' in PANEL
@@ -31,6 +32,8 @@ assert '<MemberProfileLink memberId={s.member_id}>' not in INACTIVITY
 assert '<TeamProfileLink teamId={engine.seller_team_id}>' in ENGINE_MARKET
 assert '<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in ENGINE_MARKET
 assert '<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in TEAM_HQ
+assert '<TeamProfileLink teamId={t.id}>{t.name}</TeamProfileLink>' in ADMIN_OPERATIONS
+assert '<TeamProfileLink teamId={v.team_id}>{v.team?.name||"Team"}</TeamProfileLink>' in ADMIN_OPERATIONS
 assert 'const PUBLIC_MEMBER_ID=/^[A-Z0-9]{12,16}$/;' in ENTITY_LINKS
 assert 'if(!PUBLIC_MEMBER_ID.test(publicId))return <>{children}</>;' in ENTITY_LINKS
 assert 'const TEAM_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;' in ENTITY_LINKS
