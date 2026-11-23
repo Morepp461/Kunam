@@ -303,3 +303,13 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 02 — shared panel loading copy (2026-11-23)
+- Status: IMPLEMENTED, CI/QA pending.
+- Branch: `fix/caleris-scope-02-loading-copy`.
+- Changed: `src/Stage5Panel.tsx`; shared competition/economy panel loading state now displays “Mempersiapkan Data...” instead of “Memuat data Supabase...”.
+- Scope: the shared Stage5 panel loader, not every page-specific loading state (those use contextual labels and are not the exact Supabase message).
+- Database: no migration required. Testing and Production unchanged.
+- Vercel environment: unchanged.
+- QA remaining: verify all Stage5 tabs using the shared loader and run CI/build.
