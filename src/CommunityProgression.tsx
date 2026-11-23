@@ -42,11 +42,13 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [member, setMember] = useState<any>(null);
   const [teamName, setTeamName] = useState("");
   const [xp, setXp] = useState(0);
-  const [driverStats, setDriverStats] = useState<any>({ race_starts: 0, wins: 0, podiums: 0, points: 0 });
+  const [driverStats, setDriverStats] = useState<any>({ race_starts: 0, wins: 0, podiums: 0, points: 0, championships: 0 });
+  const [teamStats, setTeamStats] = useState<any>(null);
   const [milestones, setMilestones] = useState<any[]>([]);
   const [teamMilestones, setTeamMilestones] = useState<any[]>([]);
   const [feed, setFeed] = useState<any[]>([]);
-  const [feedLimit, setFeedLimit] = useState(30);
+  const [feedHasMore, setFeedHasMore] = useState(false);
+  const [feedLoadingMore, setFeedLoadingMore] = useState(false);
   const [badges, setBadges] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
   const [tab, setTab] = useState("overview");
@@ -79,7 +81,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       db.rpc("caleris_get_community_dashboard"),
       db.from("caleris_milestone_definitions").select("*").eq("active", true),
       db.from("caleris_milestone_progress").select("*").eq("scope", "driver").eq("member_id", memberId),
-      db.from("caleris_activity_feed").select("*").order("created_at", { ascending: false }).order("id", { ascending: false }).limit(feedLimit),
+      db.from("caleris_activity_feed").select("*").order("created_at", { ascending: false }).order("id", { ascending: false }).limit(30),
       db.from("caleris_member_badges").select("*").eq("member_id", memberId),
       db.from("caleris_achievement_badges").select("*").eq("active", true).order("title"),
       db.from("caleris_community_polls").select("*").in("status", ["scheduled", "open", "closed", "published"]).order("ends_at", { ascending: false }).limit(30),
@@ -98,7 +100,8 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     const dashboard = dashboardResult.data ?? {};
     const totalXp = Number(dashboard.total_xp ?? 0);
     setXp(Number.isFinite(totalXp) ? totalXp : 0);
-    setDriverStats(dashboard.driver_stats ?? { race_starts: 0, wins: 0, podiums: 0, points: 0 });
+    setDriverStats(dashboard.driver_stats ?? { race_starts: 0, wins: 0, podiums: 0, points: 0, championships: 0 });
+    setTeamStats(dashboard.team_stats ?? null);
     setIsAdmin(Boolean(adminResult.data?.user_id));
 
     if (currentMember?.team_id) {
@@ -111,12 +114,14 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       setTeamMilestones((teamDefinitions.data ?? []).map((definition: any) => ({
         ...definition,
         current_value: teamProgress.data?.find((row: any) => row.milestone_id === definition.id)?.current_value ?? 0,
+        completed_at: teamProgress.data?.find((row: any) => row.milestone_id === definition.id)?.completed_at ?? null,
       })));
       if (team.error || teamDefinitions.error || teamProgress.error) {
         toast("error", "Milestone tim gagal dimuat", team.error?.message || teamDefinitions.error?.message || teamProgress.error?.message);
       }
     } else {
       setTeamName("");
+      setTeamStats(null);
       setTeamMilestones([]);
     }
 
@@ -131,6 +136,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       })));
 
     setFeed(feedResult.data ?? []);
+    setFeedHasMore((feedResult.data ?? []).length === 30);
     setBadges((badgeDefinitionsResult.data ?? []).map((badge: any) => ({
       ...badge,
       earned: (awardsResult.data ?? []).some((award: any) => award.badge_code === badge.code),
@@ -170,7 +176,25 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     setLoading(false);
   };
 
-  useEffect(() => { void load(); }, [memberId, feedLimit]);
+  useEffect(() => { void load(); }, [memberId]);
+
+  const loadMoreFeed = async () => {
+    if (!db || !feedHasMore || feedLoadingMore || !feed.length) return;
+    const last = feed[feed.length - 1];
+    setFeedLoadingMore(true);
+    const { data, error } = await db.from("caleris_activity_feed").select("*")
+      .or(`created_at.lt.${last.created_at},and(created_at.eq.${last.created_at},id.lt.${last.id})`)
+      .order("created_at", { ascending: false }).order("id", { ascending: false }).limit(30);
+    setFeedLoadingMore(false);
+    if (error) {
+      toast("error", "Aktivitas sebelumnya gagal dimuat", error.message);
+      return;
+    }
+    const currentIds = new Set(feed.map((item) => item.id));
+    const nextRows = (data ?? []).filter((item: any) => !currentIds.has(item.id));
+    setFeed((current) => [...current, ...nextRows]);
+    setFeedHasMore((data ?? []).length === 30);
+  };
 
   const vote = async (pollId: string, optionId: string) => {
     if (!db) return;
@@ -390,8 +414,16 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           <article><span>Wins</span><strong>{formatNumber(driverStats.wins)}</strong><small>Official P1 results</small></article>
           <article><span>Podiums</span><strong>{formatNumber(driverStats.podiums)}</strong><small>Official top-three results</small></article>
           <article><span>Championship Points</span><strong>{formatNumber(driverStats.points)}</strong><small>Completed rounds only</small></article>
+          <article><span>Season Titles</span><strong>{formatNumber(driverStats.championships)}</strong><small>Official final standings</small></article>
           <article><span>Current Team</span><strong>{teamName || "Independent"}</strong><small>{member.role} · {member.license || "Unlicensed"}</small></article>
         </section>
+        {teamStats && <section className="cp-grid cp-stats">
+          <article><span>Team Race Starts</span><strong>{formatNumber(teamStats.race_starts)}</strong></article>
+          <article><span>Team Wins</span><strong>{formatNumber(teamStats.wins)}</strong></article>
+          <article><span>Team Podiums</span><strong>{formatNumber(teamStats.podiums)}</strong></article>
+          <article><span>Team Titles</span><strong>{formatNumber(teamStats.championships)}</strong></article>
+          <article><span>Current Driver Roster</span><strong>{formatNumber(teamStats.drivers)}</strong></article>
+        </section>}
         <section className="cp-grid">
           <article><h2><Target size={18} /> Driver Milestones</h2><p>{milestones.filter((item) => item.completed_at).length} / {milestones.length} completed</p><button onClick={() => setTab("milestones")}>View milestones</button></article>
           <article><h2><Activity size={18} /> Community Activity</h2><p>{feed.length} recent events available</p><button onClick={() => setTab("activity")}>View activity</button></article>
@@ -407,7 +439,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
             {milestones.map((item) => {
               const current = Number(item.current_value ?? 0);
               const target = Number(item.target_value ?? 1);
-              const completed = Boolean(item.completed_at) || current >= target;
+              const completed = Boolean(item.completed_at);
               return <article key={item.id} className={completed ? "earned" : ""}>
                 <div className="cp-card-title"><strong>{item.title}</strong>{completed && <CheckCircle size={17} />}</div>
                 <p>{item.description}</p>
@@ -425,7 +457,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
             {teamMilestones.map((item) => {
               const current = Number(item.current_value ?? 0);
               const target = Number(item.target_value ?? 1);
-              const completed = Boolean(item.completed_at) || current >= target;
+              const completed = Boolean(item.completed_at);
               return <article key={item.id} className={completed ? "earned" : ""}>
                 <div className="cp-card-title"><strong>{item.title}</strong>{completed && <CheckCircle size={17} />}</div>
                 <p>{item.description}</p>
@@ -446,7 +478,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           <p>{item.body}</p>
         </article>)}
         {!feed.length && <article>Belum ada aktivitas yang dapat ditampilkan.</article>}
-        {feed.length >= feedLimit && <button onClick={() => setFeedLimit((value) => value + 30)}>Muat aktivitas sebelumnya</button>}
+        {feedHasMore && <button onClick={() => void loadMoreFeed()} disabled={feedLoadingMore}>{feedLoadingMore ? "Memuat..." : "Muat aktivitas sebelumnya"}</button>}
       </section>}
 
       {tab === "voting" && <section className="cp-section">
@@ -619,9 +651,10 @@ function PollAdmin({
   const metricOptions = scope === "driver"
     ? [
       ["driver_race_starts", "Race starts"], ["driver_wins", "Wins"],
-      ["driver_podiums", "Podiums"], ["driver_points", "Championship points"], ["xp_total", "Cumulative XP"],
+      ["driver_podiums", "Podiums"], ["driver_points", "Championship points"],
+      ["driver_championships", "Season titles"], ["xp_total", "Cumulative XP"],
     ]
-    : [["team_races", "Race starts"], ["team_wins", "Wins"], ["team_podiums", "Podiums"], ["team_drivers", "Active drivers"]];
+    : [["team_races", "Race starts"], ["team_wins", "Wins"], ["team_podiums", "Podiums"], ["team_drivers", "Active drivers"], ["team_xp", "Current roster XP"], ["team_championships", "Season titles"]];
 
   const loadCandidates = async () => {
     if (!db) return;
