@@ -1325,3 +1325,18 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Admin Workflow remains a placeholder because the CRM workflow requirements have not been supplied; no workflow rules have been invented.
 
 **Accurate release status:** repository CI, merge, Testing/Production database routine parity, the two relevant Edge Function deployments, and Vercel Production are verified. The 11-scope program is not marked fully complete while the asset, authenticated-user, device, and remaining manual audit gates above remain open.
+
+
+---
+
+# SCOPE 01 — DIGITAL ID DROPDOWN DUPLICATE FIX — 23 NOVEMBER 2026
+
+**Branch:** `fix/digital-id-single-theme-dropdown-20261123`  
+**Base main:** `bf00263619ecf63b74433912f5a3b883a71d55db`
+
+- Confirmed the affected control is Community Hub → Digital ID theme selector, not the Transfer Market filters.
+- Enforced a single custom theme picker for Classic, Premio, Zwei, and Gold. Native `select` controls are suppressed within the Digital ID editor to prevent the gray browser/Android default picker from appearing alongside the custom dropdown.
+- Added outside-tap and Escape dismissal plus explicit ARIA label/control association.
+- Added a regression test checking one custom trigger and zero native selects in the Digital ID editor.
+- No dependency, database schema, Supabase data, or Vercel environment changes.
+- QA/CI and production deployment are pending; Android physical-device verification remains required.
