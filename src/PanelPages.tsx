@@ -178,7 +178,6 @@ export default function PanelPage() {
     if(detail){
       const selected=cards.find(card=>card[0]===detail);
       const chartPages=["driver-ranking","team-ranking","engine-ranking","statistic","comparison"];
-      const listPages=["driver-list","team-list","rookie-of-the-season"];
       const chartVariant=detail==="engine-ranking"||detail==="team-ranking"?"bar":"line";
       return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><ChartGraphic title={selected?.[1]||"Competition Statistics"} variant={chartVariant}/><EmptyPanel title="Belum ada data statistik" body="Grafik ini akan membaca hasil dan statistik resmi dari database kompetisi. Tidak ada angka simulasi yang ditampilkan."/></>:detail==="driver-list"?<LiveEntityDirectory kind="drivers"/>:detail==="team-list"?<LiveEntityDirectory kind="teams"/>:detail==="rookie-of-the-season"?<EmptyPanel title="Data rookie belum tersedia" body="Rookie of the Season akan menampilkan data resmi setelah sumber klasemen dan status rookie terhubung."/>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
     }
