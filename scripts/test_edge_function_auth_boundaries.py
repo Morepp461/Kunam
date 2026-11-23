@@ -12,7 +12,10 @@ admin = read("supabase/functions/admin-user-management/index.ts")
 economy = read("supabase/functions/economy-engine/index.ts")
 workflows = read("supabase/functions/economy-workflows/index.ts")
 
-assert '.in("account_status", ["public", "active", "admin"]).maybeSingle()' in directory
+assert '.in("account_status", ["public", "active", "admin"])' in directory
+assert '.eq("member_id", memberId).maybeSingle()' in directory
+assert '.eq("public_member_id", memberId.toUpperCase()).maybeSingle()' in directory
+assert 'action === "team_profile"' in directory
 assert 'if (!userId || !isAdmin)' in directory
 assert 'resolveClientIp(req)' in directory
 assert 'cf-connecting-ip' in directory and 'x-forwarded-for' in directory
