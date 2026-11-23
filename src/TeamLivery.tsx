@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { CarFront, Download, ImagePlus, Palette, Plus, RotateCcw, Save, Trash2, Upload } from "lucide-react";
 import { supabase } from "./lib/supabase";
