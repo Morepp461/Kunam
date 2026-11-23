@@ -14,6 +14,10 @@ export default function PublicMemberId() {
     let active = true;
     const load = async () => {
       setLoading(true);
+      if (!supabase) {
+        if (active) { setUnavailable(true); setLoading(false); }
+        return;
+      }
       const { data, error } = await supabase.rpc("caleris_get_public_digital_id", { p_member_code: memberCode });
       if (!active) return;
       if (error || !data?.member || !data?.card) {
