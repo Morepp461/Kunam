@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import CaleMascot from "./CaleMascot";
+import "./cale-account-tutorial.css";
 
 type Step = {
   id: string;
