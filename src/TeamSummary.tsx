@@ -1,6 +1,7 @@
 import {useCallback,useEffect,useState} from "react";
 import {Award,Building2,Flag,RefreshCw,Users} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 
 type Team={id:string;name:string;division_key:string|null};
 type Sponsor={id:string;sponsor_id:string;contract_amount:number;annual_contract_amount:number|null;status:string;sponsor_name?:string};
@@ -10,7 +11,7 @@ const money=(value:number)=>"€"+Number(value||0).toLocaleString("id-ID",{maxim
 export default function TeamSummary(){
  const [team,setTeam]=useState<Team|null>(null),[sponsors,setSponsors]=useState<Sponsor[]>([]);
  const [sponsorNames,setSponsorNames]=useState<Record<string,string>>({}),[reputation,setReputation]=useState<number|null>(null);
- const [engine,setEngine]=useState<Engine|null>(null),[drivers,setDrivers]=useState<string[]>([]);
+ const [engine,setEngine]=useState<Engine|null>(null),[drivers,setDrivers]=useState<{id:string;name:string;public_member_id:string|null}[]>([]);
  const [loading,setLoading]=useState(true),[error,setError]=useState("");
  const load=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setError("");
@@ -26,14 +27,18 @@ export default function TeamSummary(){
    supabase.from("caleris_sponsorship_contracts").select("id,sponsor_id,contract_amount,annual_contract_amount,status").eq("target_kind","team").eq("target_team_id",teamId).eq("status","active"),
    supabase.from("caleris_team_reputation").select("score").eq("team_id",teamId).maybeSingle(),
    supabase.from("license_seasons").select("id").eq("status","active").order("starts_on",{ascending:false}).limit(1).maybeSingle(),
-   supabase.from("economy_driver_contracts").select("members:members(character_name)").eq("team_id",teamId).eq("status","active")
+   supabase.from("economy_driver_contracts").select("member_id,members:members(character_name)").eq("team_id",teamId).eq("status","active")
   ]);
   if(teamQ.error){setError(teamQ.error.message);setLoading(false);return;}
   setTeam(teamQ.data as Team|null);setReputation(repQ.error?null:Number(repQ.data?.score??0));
   const active=(sponsorQ.data||[]) as Sponsor[];setSponsors(active);
   const sponsorIds=[...new Set(active.map(s=>s.sponsor_id).filter(Boolean))];
   if(sponsorIds.length){const {data}=await supabase.from("caleris_sponsors").select("id,name").in("id",sponsorIds);setSponsorNames(Object.fromEntries((data||[]).map((s:any)=>[s.id,s.name])))}else setSponsorNames({});
-  setDrivers((driverQ.data||[]).map((row:any)=>row.members?.character_name).filter(Boolean));
+  const contractRows=(driverQ.data||[]) as {member_id:string;members?:{character_name:string|null}|{character_name:string|null}[]|null}[];
+  const driverIds=[...new Set(contractRows.map(row=>row.member_id).filter(Boolean))];
+  const {data:directoryRows}=driverIds.length?await supabase.from("caleris_member_directory").select("id,public_member_id").in("id",driverIds):{data:[]};
+  const publicIdByMember=new Map((directoryRows||[]).map((row:any)=>[row.id,row.public_member_id]));
+  setDrivers(contractRows.map(row=>({id:row.member_id,name:(Array.isArray(row.members)?row.members[0]?.character_name:row.members?.character_name)||"Driver",public_member_id:publicIdByMember.get(row.member_id)||null})));
   if(seasonQ.data){const {data:a}=await supabase.from("caleris_team_engines").select("engine:caleris_engines(name,race_pace,qualifying_pace,engine_power)").eq("team_id",teamId).eq("season_id",seasonQ.data.id).maybeSingle();setEngine((a?.engine||null) as Engine|null)}else setEngine(null);
   setLoading(false);
  },[]);
@@ -44,9 +49,9 @@ export default function TeamSummary(){
   {error&&<div className="license-notice" role="status">{error}</div>}
   {loading?<div className="workspace-card">Memuat ringkasan tim...</div>:!team?<div className="workspace-card">Data tim belum tersedia.</div>:<>
    <div className="ce-metrics">
-    <article><Building2/><span>TEAM</span><strong>{team.name}</strong><small>{team.division_key||"Division belum ditentukan"}</small></article>
+    <article><Building2/><span>TEAM</span><strong><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink></strong><small>{team.division_key||"Division belum ditentukan"}</small></article>
     <article><Award/><span>TEAM REPUTATION</span><strong>{reputation===null?"—":reputation.toLocaleString("id-ID")}</strong><small>Skor asli database</small></article>
-    <article><Users/><span>ACTIVE DRIVERS</span><strong>{drivers.length}</strong><small>{drivers.join(" · ")||"Belum ada kontrak aktif"}</small></article>
+    <article><Users/><span>ACTIVE DRIVERS</span><strong>{drivers.length}</strong><small>{drivers.length?drivers.map((driver,index)=><span key={driver.id}><MemberProfileLink memberId={driver.public_member_id}>{driver.name}</MemberProfileLink>{index<drivers.length-1?" · ":""}</span>):"Belum ada kontrak aktif"}</small></article>
     <article><Flag/><span>OFFICIAL SPONSORS</span><strong>{sponsors.length}</strong><small>{money(totalCommitment)} annual commitment</small></article>
    </div>
    <div className="ce-columns">
