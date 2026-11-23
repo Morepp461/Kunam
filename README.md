@@ -1219,3 +1219,12 @@ Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 
 - Extended the profile-link regression script to cover these workflow surfaces.
 - All links reuse the existing TeamProfileLink component and existing team IDs; no schema or dependency change is required.
 - Select-option labels and pending registration proposals remain non-links because they are selection/proposed data, not existing public profile entities.
+
+
+### Scope 09 — Admin and Brand Ecosystem profile navigation
+
+- Season Prizepool standings link Team names to public Team Profiles.
+- License Adjustment audit history links Driver names to public Member Profiles using the existing member directory's public IDs; the administrative select remains a form control.
+- Brand Ecosystem links current Team/Driver identity and offer target Teams to their public profiles.
+- Brand Ecosystem Admin links Team names in offers, contracts, and payment history.
+- Regression coverage extended for these surfaces. Reuses existing IDs and profile-link components; no dependency or schema changes.
