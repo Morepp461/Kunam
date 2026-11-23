@@ -922,7 +922,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
               <h2><span onClick={event=>event.stopPropagation()}><MemberProfileLink memberId={driver.public_member_id||driver.id}>{driver.character_name || "Driver"}</MemberProfileLink></span></h2>
             </div>
             <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><div className="driver-graphic-card-team-meta"><strong><span onClick={event=>event.stopPropagation()}><TeamProfileLink teamId={driver.team?.id}>{driver.team?.name || "Independent"}</TeamProfileLink></span></strong><span className="driver-timing-class">CALERIS MASTERS <i/> PADDOCK REGISTER</span></div></div>
-          </button>;
+          </article>;
         })}
       </div>
       {filteredDrivers.length === 0 && <div className="driver-no-results">{drivers.length === 0 ? "Belum ada driver yang terdaftar di divisi ini." : "Tidak ada driver yang cocok dengan pencarian."}</div>}
