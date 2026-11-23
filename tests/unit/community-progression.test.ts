@@ -8,6 +8,7 @@ describe("Caleris account levels", () => {
     expect(getCalerisLevel(50)).toBe(1);
     expect(getCalerisLevel(100)).toBe(2);
     expect(getCalerisLevel(6400)).toBe(8);
+    expect(getCalerisLevel(50 * 2 ** 99)).toBe(100);
   });
 
   it("handles invalid and negative totals safely", () => {
@@ -59,6 +60,13 @@ describe("Championship predictor", () => {
     );
     expect(result.probabilities).toEqual([0, 100]);
     expect(result.maxRemainingPoints).toBe(12);
+  });
+
+  it("rejects negative pole bonus configuration", () => {
+    expect(() => simulateChampionship(
+      [{ name: "A", points: 10 }, { name: "B", points: 9 }],
+      [{ finishingPoints: [10, 5], poleBonus: -1 }],
+    )).toThrow("Aturan poin");
   });
 
   it("rejects incomplete scoring vectors instead of silently dropping a round", () => {
