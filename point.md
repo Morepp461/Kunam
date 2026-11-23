@@ -1393,3 +1393,12 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Final exhaustive visual page-by-page audit remains a manual acceptance item. The reviewed directory, team, admin, race, contract, finance, archive, and Team HQ views have been corrected and regression-tested.
 
 **Release status:** code and changes available from this checkpoint are merged, CI verified, and deployed READY. The complete 11-scope program is not declared 100% accepted until the external asset, authenticated role acceptance, physical Android QA, and Admin Workflow requirements are supplied and verified.
+
+
+# ADMIN WORKFLOW OPERATIONS HUB — 23 NOVEMBER 2026
+
+- Replaced the empty Admin Workflow placeholder with a navigation hub for existing modules: configuration/rules, approvals/lifecycle, audit/intelligence, and platform control.
+- Access remains restricted to the `site_admins` allow-list; FIA does not gain access through this page. Each destination continues to enforce its own route and backend permissions.
+- The hub is navigation-only and read-only. It does not create CRM entities, tasks, notes, statuses, or automated actions. CRM-specific workflow remains inactive pending an explicit specification of statuses, task ownership, approval transitions, and follow-up rules.
+- Added CI regression coverage for the Admin allow-list boundary, existing destination routes, and absence of CRM mutation/RPC actions.
+- No database migration, Supabase function, wallet, production data, or Vercel environment change.
