@@ -1111,3 +1111,8 @@ The follow-up includes the Transfer Market custom dropdown, Job Search search al
 Profile navigation uses `public_member_id` for Driver links and team UUIDs for Team links. The audit correction covers Main Event standings, driver/team directories, career and season archives, Hall of Fame, race results, team summary/roster, scouting, Job Search, Admin User cards, Transfer Market/Take Over, Driver Contracts/Applications, and Race Control roster summaries. Directory queries now select `public_member_id` where required. This avoids accidentally routing with an internal `members.id`.
 
 The follow-up is implemented in a separate branch and awaits CI/review. The production CORS correction from PR #307 is already deployed to both Supabase projects. No database migration or Vercel environment change is required for the profile-link work.
+
+
+### Profile-link follow-up release — 23 November 2026
+
+PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required CI checks passed. Driver profile links now use `public_member_id` across the identified standings, directory, career/archive, contract/application, takeover, Admin User, and Race Control views; Team links use team UUIDs. Both Testing and Production expose `caleris_member_directory.public_member_id`, so no migration was needed. The broader page-by-page audit remains open for any additional unlinked mentions found during manual review.
