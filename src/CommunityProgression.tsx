@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Activity, Award, BookOpen, CheckCircle, Copy, Crown, Flag, Medal, Plus, Printer,
   RefreshCw, Save, Share2, ShieldCheck, Target, TrendingUp, Users, Vote
@@ -62,6 +62,23 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [tab, setTab] = useState("overview");
   const [id, setId] = useState<any>({ theme: "classic", accent_color: "#b99752", tagline: "", public_visible: false });
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const themePickerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!themeMenuOpen) return;
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && !themePickerRef.current?.contains(event.target)) setThemeMenuOpen(false);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setThemeMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [themeMenuOpen]);
   const [seasons, setSeasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -615,7 +632,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         </article>)}
       </section>}
 
-      {tab === "identity" && <section className="cp-section">
+      {tab === "identity" && <section className="cp-section cp-digital-id-editor">
         <h2><ShieldCheck size={20} /> CALERIS MASTERS Digital ID</h2>
         <div className="cp-id" style={{ borderColor: id.accent_color }}>
           <div className="cp-id-top"><span>CALERIS MASTERS</span><span>{id.theme.toUpperCase()}</span></div>
@@ -625,13 +642,13 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           <div className="cp-id-level"><strong>LV {lv}</strong><span>{formatNumber(xp)} XP</span></div>
           <div className="cp-id-bottom">{id.tagline || "Built through every season."}</div>
         </div>
-        <div className="cp-theme-picker">
+        <div className="cp-theme-picker" ref={themePickerRef}>
           <span className="cp-theme-label">Theme</span>
-          <button type="button" className="cp-theme-trigger" aria-haspopup="listbox" aria-expanded={themeMenuOpen} onClick={() => setThemeMenuOpen(open => !open)}>
+          <button type="button" className="cp-theme-trigger" aria-label="Pilih tema Digital ID" aria-haspopup="listbox" aria-expanded={themeMenuOpen} aria-controls="cp-digital-id-theme-options" onClick={() => setThemeMenuOpen(open => !open)}>
             <span>{({classic:"Classic",premio:"Premio",zwei:"Zwei",gold:"Gold"} as Record<string,string>)[id.theme] || "Classic"}</span>
             <span className="cp-theme-chevron" aria-hidden="true">⌄</span>
           </button>
-          {themeMenuOpen && <div className="cp-theme-options" role="listbox" aria-label="Pilih tema Digital ID">
+          {themeMenuOpen && <div id="cp-digital-id-theme-options" className="cp-theme-options" role="listbox" aria-label="Pilih tema Digital ID">
             {(["classic","premio","zwei","gold"] as const).map(theme => <button type="button" role="option" aria-selected={id.theme===theme} className={id.theme===theme?"is-selected":""} key={theme} onClick={() => { setId({ ...id, theme }); setThemeMenuOpen(false); }}>
               <span>{theme[0].toUpperCase()+theme.slice(1)}</span>{id.theme===theme&&<CheckCircle size={15}/>}
             </button>)}
