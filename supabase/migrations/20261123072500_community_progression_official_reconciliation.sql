@@ -14,6 +14,8 @@ declare
   completion_source text;
   award record;
   net_awarded integer;
+  legacy_award_net integer;
+  legacy_badge_exists boolean;
   inserted integer;
 begin
   if p_member is null or not exists(select 1 from public.members where id=p_member) then return; end if;
@@ -86,8 +88,22 @@ begin
     where milestone_id=d.id and member_id=p_member;
 
     if current_completed_at is not null then
-      completion_source:=d.code||':'||p_member::text||':'||
-        to_char(current_completed_at at time zone 'UTC','YYYYMMDDHH24MISSUS');
+      select coalesce(sum(amount),0)::integer into legacy_award_net
+      from public.caleris_xp_ledger
+      where member_id=p_member and (
+        (source_type='milestone' and source_id=d.code)
+        or (source_type='admin_adjustment' and source_id='milestone_reversal:'||d.code)
+      );
+      select exists(
+        select 1 from public.caleris_member_badges
+        where member_id=p_member and source_type='milestone' and source_id=d.code
+      ) into legacy_badge_exists;
+      if previous_completed_at is not null or legacy_award_net>0 or legacy_badge_exists then
+        completion_source:=d.code;
+      else
+        completion_source:=d.code||':'||p_member::text||':'||
+          to_char(current_completed_at at time zone 'UTC','YYYYMMDDHH24MISSUS');
+      end if;
 
       delete from public.caleris_member_badges
       where member_id=p_member and source_type='milestone'
@@ -459,6 +475,23 @@ values
 ('team','team_first_win','First Team Victory','Record an official team race victory.','team_wins',1,0,true),
 ('team','team_first_podium','First Team Podium','Record an official team podium.','team_podiums',1,0,true)
 on conflict(code) do nothing;
+
+-- Reconcile all existing official history once; this does not create fake competition records.
+do $backfill$
+declare m record; t record;
+begin
+  for m in select id from public.members loop
+    perform public.caleris_refresh_driver_milestones(m.id);
+  end loop;
+  for t in
+    select team_id from public.members where team_id is not null
+    union
+    select distinct team_id from public.caleris_race_result_entries where team_id is not null
+  loop
+    perform public.caleris_refresh_team_milestones(t.team_id);
+  end loop;
+end;
+$backfill$;
 
 revoke all on function public.caleris_reverse_round_entry_xp(uuid,uuid,uuid,uuid,text) from public,anon,authenticated;
 revoke all on function public.caleris_reverse_race_entry_xp() from public,anon,authenticated;
