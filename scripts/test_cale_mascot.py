@@ -45,3 +45,16 @@ assert "isWarningNotification(item)" in NOTIFICATIONS
 assert "@keyframes" not in CSS and "animation:" not in CSS
 
 print("Cale mascot checks passed: 57 unique state IDs, 3 wardrobe masters, contextual layout, FIA warning marker.")
+
+
+TUTORIAL = (ROOT / "src" / "CaleAccountTutorial.tsx").read_text(encoding="utf-8")
+TUTORIAL_CSS = (ROOT / "src" / "cale-account-tutorial.css").read_text(encoding="utf-8")
+APP = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
+assert 'import CaleAccountTutorial from "./CaleAccountTutorial";' in APP
+assert '<CaleAccountTutorial userId={session.user.id}/>' in APP
+assert 'aria-modal="true"' in TUTORIAL
+assert 'localStorage.setItem(storageKey, "completed")' in TUTORIAL
+assert 'Panduan Cale' in TUTORIAL
+assert len(re.findall(r'\{ id: "', TUTORIAL)) == 7
+assert ".cale-tutorial-dialog" in TUTORIAL_CSS
+print("Cale onboarding tutorial checks passed: 7 account guidance steps, accessible dialog, per-user completion state.")
