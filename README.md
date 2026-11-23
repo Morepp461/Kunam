@@ -1139,3 +1139,8 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 - Supabase Testing and Production migration ledgers are aligned for the Driver Contract Request, Manage User Moderation, Team Inactivity Freeze/Compensation, Driver First Contract support, and FK-index migrations. The migration SQL was already applied; only generated ledger version/name metadata was normalized. No application data was changed.
 - All 14 FK indexes from `20261123150000_caleris_scope_fk_indexes` are present in both databases.
 - The 11-scope work is not fully accepted yet: real 2025 GLB hosting/loading and mesh integration, Android GPU/memory acceptance, authenticated Driver/Owner and Admin role walkthroughs, full page-by-page profile-link verification, and safe Testing-only compensation scenario QA remain open. See `point.md` for the detailed checkpoint.
+
+
+### Shared Select Controls
+
+- Native HTML select controls across the application are routed through one CALERIS option sheet on pointer and keyboard activation, preventing the browser/Android system picker from appearing underneath or alongside the branded dropdown. Controls explicitly marked `data-native-popup="true"` remain native by design.
