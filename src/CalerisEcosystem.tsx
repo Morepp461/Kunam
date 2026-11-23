@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, Award, BarChart3, Crown, Newspaper, RefreshCw, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import "./caleris-ecosystem.css";
 type Mode = "owner" | "finance" | "news" | "hall";
 type NewsItem = { id:string; title:string; body:string; category:string; date:string; source:string; imageUrl?:string|null; lead?:string; facts?:string[] };
