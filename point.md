@@ -1300,3 +1300,28 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 
 ## Final acceptance status
 All work that can be completed safely with the repository, current connected services, and available artifacts is merged and deployed. The project cannot honestly be called 100% accepted until the owner supplies/hosts the licensed 89 MB GLB asset with its UV mapping, and authorized real-user credentials/device access are available for the specified Driver/Owner and Admin/FIA role walkthroughs plus Android visual/GPU testing. Admin Workflow also remains a placeholder until its actual CRM requirements are defined. These are external prerequisites, not failures hidden by CI.
+
+
+---
+
+# ADDENDUM — FINAL FUNCTION PARITY AND PUBLIC PROFILE STATUS — 23 NOVEMBER 2026
+
+This addendum supersedes older checkpoint sentences above that described Team Profile livery rendering as still open.
+
+## Completed after the previous checkpoint
+- PR #312 merged: public Team Profile now reads the saved team livery and active sponsor identity from the existing Supabase tables and displays them through the existing procedural preview. This is a data/UI integration, **not** a claim that the 2025 GLB mesh has been loaded.
+- Roster entries link to public member profiles only when a real `public_member_id` exists. Internal database UUIDs are not used as public profile route IDs.
+- `member-directory` is deployed and ACTIVE in Testing v8 and Production v14. Both environments have matching source SHA-256 `e452c3f125db50b52423dbe9dab150bebc9b38a9a18da27f5fb711f5ac374e2b`.
+- Found and corrected an additional deployment drift related to the Development cash/token upgrade gateway (legacy open PR #83): the current main source already contained the validated `upgrade_development_attribute` action, but both deployed `economy-workflows` functions were still on older source. Deployed the exact current main source to Testing v7 and Production v6. Both are ACTIVE, retain `verify_jwt=true`, and have matching source SHA-256 `3b6c47df00d14c6d52277aeac674ebe05e35d6ab7b7a5b01d9dae620ea388867`.
+- Verified the existing `member_upgrade_development_attribute(uuid,text,text,numeric,text)` RPC exists in both databases. No migration or wallet/balance mutation was needed for this deployment.
+- PR #313 merged to main; its CI run `45178730099` completed successfully with all 41 steps passing.
+- Latest main commit at the time of this checkpoint has a Vercel Production deployment in **READY** state. No Vercel environment variables or project settings were changed.
+
+## Still genuinely blocked
+- Real 2025 GLB mesh integration: no app-accessible hosted binary and verified production UV mapping are available in this working session. Existing public Team Profile uses the procedural preview and is not a substitute for the requested real vehicle asset.
+- Authenticated Driver/Owner contract acceptance and Admin/FIA/Owner/member role-matrix acceptance require authorized test accounts and live browser sessions.
+- Android touch, layout, WebGL/GPU, and memory acceptance require a physical device run.
+- The last page-by-page profile-link audit requires full manual route/content review beyond the already corrected known directories, standings, archives, contracts, Take Over, Admin, Race Control, and Team Profile roster.
+- Admin Workflow remains a placeholder because the CRM workflow requirements have not been supplied; no workflow rules have been invented.
+
+**Accurate release status:** repository CI, merge, Testing/Production database routine parity, the two relevant Edge Function deployments, and Vercel Production are verified. The 11-scope program is not marked fully complete while the asset, authenticated-user, device, and remaining manual audit gates above remain open.
