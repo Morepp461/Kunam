@@ -32,6 +32,7 @@ const eventTypeLabel = (value: string) => ({
   milestone_reversed: "Milestone recalculated",
   race_result_voided: "Race result voided",
   team_transfer: "Team transfer",
+  member_role_change: "Member role change",
   contract_status: "Driver contract update",
   sponsorship_status: "Sponsorship update",
   payroll_processed: "Payroll processed",
