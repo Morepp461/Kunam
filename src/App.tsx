@@ -110,6 +110,13 @@ function Application(){
   if(adminResult.error)toast("error","Akses akun gagal diperiksa",adminResult.error.message);
   if(ownerResult.error)toast("error","Akses Developer API gagal diperiksa",ownerResult.error.message);
   let account=profileResult.data as AccountProfile|null;
+  if(account?.account_status==="suspended"){
+   const {data:banSync}=await supabase.rpc("member_sync_expired_ban");
+   if(banSync==="restored"){
+    const {data:restored}=await supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",userId).maybeSingle();
+    account=restored as AccountProfile|null;
+   }
+  }
   const admin=Boolean(adminResult.data?.user_id);
   setIsPrimaryOwner(ownerResult.data?.owner_user_id===userId);
   let memberRole:string|null=null;
@@ -213,6 +220,17 @@ function Application(){
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
  </Routes></MainLayout>;
+}
+function SuspendedAccountPage({session}:{session:Session}){
+ const [action,setAction]=useState<{reason:string;expires_at:string|null;action_type:string}|null>(null);
+ useEffect(()=>{if(!supabase)return;supabase.from("caleris_user_moderation_actions").select("reason,expires_at,action_type").eq("target_user_id",session.user.id).in("action_type",["temporary_ban","permanent_ban"]).order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data})=>setAction(data as typeof action));},[session.user.id]);
+ return <main className="auth-loading"><section className="workspace-card" style={{width:"min(520px,calc(100% - 32px))",padding:28,textAlign:"center"}}>
+  <Shield size={34}/><h1>Akses akun ditangguhkan</h1><p>Akun ini sedang dibatasi oleh administrator CALERIS Masters.</p>
+  {action?.reason&&<p><strong>Alasan:</strong> {action.reason}</p>}
+  {action?.expires_at&&<p><strong>Berakhir:</strong> {new Date(action.expires_at).toLocaleString("id-ID")}</p>}
+  {action?.action_type==="permanent_ban"&&<p>Penangguhan ini tidak memiliki tanggal berakhir otomatis.</p>}
+  <button className="action" onClick={()=>void supabase?.auth.signOut({scope:"local"})}>Keluar</button>
+ </section></main>;
 }
 function LegalBlankPage({title}:{title:string}){
  return <main className="legal-blank-page" aria-label={title}/>;
