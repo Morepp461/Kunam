@@ -29,7 +29,8 @@ This feature set adds seven connected CALERIS Masters community systems:
 ## Activity Feed
 - Activity rows contain actor, team, event type, title, body, metadata, visibility, and timestamp.
 - Community events are readable by authenticated users; team/private visibility is restricted to the actor or associated team.
-- XP and voting actions publish feed events.
+- XP, voting, race result, check-in, quest completion, and development purchase actions publish feed events. Race/check-in/quest/shop feed logging is independent of whether an XP reward is configured.
+- Team milestone progress is automatically refreshed from race-result entries and current Driver roster counts; initial metric catalog covers race starts, wins, podiums, and active Driver line-up.
 
 ## Community Voting
 - Each member may vote once per poll.
@@ -38,8 +39,8 @@ This feature set adds seven connected CALERIS Masters community systems:
 - FIA nomination is a nomination workflow only. It never grants FIA role automatically; Admin review and assignment remain separate.
 
 ## Championship Predictor
-- The current UI accepts standings, remaining rounds, and the official per-round scoring vector as explicit inputs.
-- Sprint and bonus scoring must be represented in the configured scoring inputs for the relevant schedule.
+- The Predictor can load current Driver standings, scheduled rounds, and active FIA scoring rules for a selected season. Manual inputs remain available for custom what-if scenarios.
+- Sprint and pole bonus values are read from active scoring-rule rows; the simulation remains an estimate and does not replace the official scoring engine.
 - Monte Carlo runs 15,000 trials.
 - A driver is marked 100% only when the current leader has a strict mathematical lead over every rival's maximum remaining points; eliminated drivers are marked 0%.
 - Tied mathematical boundaries are not treated as locked because the official tiebreaker chain is not currently included in this tool. Results are estimates, not official standings.
@@ -51,8 +52,8 @@ This feature set adds seven connected CALERIS Masters community systems:
 
 ## Season Yearbook
 - Each yearbook is scoped to a member and season.
-- Generation stores a snapshot containing season metadata, profile, level, XP, earned badges, and recent community activity.
-- Export is generated client-side. It is a community/profile yearbook; official race statistics and standings are not inferred when they are not available in the snapshot.
+- Generation stores a snapshot containing season metadata, profile, level, XP, earned badges, recent community activity, official Driver/Team final standings, divisions, scheduled rounds, race result entries, and active FIA scoring rules fetched through a server-side season-data RPC.
+- Export is generated client-side as JSON. It includes the season data returned by the authoritative database snapshot; it does not invent missing historical data.
 
 ## Badges
 - Badge definitions and member awards are stored separately.
