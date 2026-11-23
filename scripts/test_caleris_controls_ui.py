@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 CONTROLS = (ROOT / "src" / "caleris-controls.css").read_text(encoding="utf-8")
 JOB_SEARCH = (ROOT / "src" / "JobSearch.tsx").read_text(encoding="utf-8")
+MARKET_CSS = (ROOT / "src" / "marketplace-directory.css").read_text(encoding="utf-8")
 NAV = (ROOT / "src" / "MainLayout.tsx").read_text(encoding="utf-8")
 MAIN_LAYOUT = NAV
 NOTIFICATIONS = (ROOT / "src" / "NotificationsCenter.tsx").read_text(encoding="utf-8")
@@ -28,6 +29,12 @@ assert 'type="radio" name="minimum-license"' in JOB_SEARCH
 assert ".market-license-options>label.is-selected" in CONTROLS
 assert 'Minimal lisensi <span className="market-filter-hint">Opsional' in JOB_SEARCH
 assert '<label>Minimal lisensi<input' not in JOB_SEARCH
+
+# Job Search search field overrides the generic label column layout and keeps the icon centered.
+assert ".market-filter-grid>label.market-search{flex-direction:row;align-items:center" in MARKET_CSS
+assert "min-height:42px" in MARKET_CSS
+assert "height:40px;padding:0" in MARKET_CSS
+assert ".market-search svg{flex:0 0 auto;align-self:center}" in MARKET_CSS
 
 # Navigation is an exclusive accordion, with the active section following route changes.
 assert 'useState<string|null>(null)' in NAV
