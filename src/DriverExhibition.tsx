@@ -3,6 +3,7 @@ import type * as Three from "three";
 import type { AraCharacter } from "ara3d";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Camera, Crosshair, Gamepad2, Maximize2, Minimize2, Search, UserRound, X } from "lucide-react";
 import "./driver-exhibition.css";
 
@@ -914,13 +915,13 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           const main = /^#[0-9A-Fa-f]{6}$/.test(String(driver.team?.main_color || "")) ? driver.team.main_color : "#7A263A";
           const secondary = /^#[0-9A-Fa-f]{6}$/.test(String(driver.team?.secondary_color || "")) ? driver.team.secondary_color : "#C6A33A";
           const teamLogo = driver.profile?.logo_url || "";
-          return <button type="button" className="driver-graphic-card" key={driver.id || driver.character_name || index} style={{"--driver-card-index":index,"--driver-card-main":main,"--driver-card-secondary":secondary} as any} onClick={() => { setDetailClosing(false); selectedRef.current = driver; setSelected(driver); }}>
+          return <article className="driver-graphic-card" key={driver.id || driver.character_name || index} style={{"--driver-card-index":index,"--driver-card-main":main,"--driver-card-secondary":secondary} as any} role="button" tabIndex={0} onKeyDown={event=>{if(event.target instanceof HTMLElement&&event.target.closest("a"))return;if(event.key==="Enter"||event.key===" "){event.preventDefault();setDetailClosing(false);selectedRef.current=driver;setSelected(driver);}}} onClick={() => { setDetailClosing(false); selectedRef.current = driver; setSelected(driver); }}>
             <div className="driver-graphic-card-top" style={{background:`linear-gradient(118deg, ${main} 0%, ${secondary} 100%)`}}>
               {driver.avatar_url && <img className="driver-graphic-card-portrait" src={driver.avatar_url} alt="" loading="lazy" referrerPolicy="no-referrer"/>}
               <div className="driver-graphic-card-shade"/><span className="driver-graphic-card-index">{String(index+1).padStart(2,"0")} / {String(filteredDrivers.length).padStart(2,"0")}</span><span className="driver-graphic-card-orbit" aria-hidden="true"/><span className="driver-graphic-card-accent" aria-hidden="true"/><span className="driver-race-weekend-label">RACE WEEKEND <i/> DRIVER ENTRY</span><span className="driver-start-lights" aria-hidden="true"><i/><i/><i/><i/><i/></span><span className="driver-grid-line" aria-hidden="true"/>
-              <h2>{driver.character_name || "Driver"}</h2>
+              <h2><span onClick={event=>event.stopPropagation()}><MemberProfileLink memberId={driver.public_member_id||driver.id}>{driver.character_name || "Driver"}</MemberProfileLink></span></h2>
             </div>
-            <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><div className="driver-graphic-card-team-meta"><strong>{driver.team?.name || "Independent"}</strong><span className="driver-timing-class">CALERIS MASTERS <i/> PADDOCK REGISTER</span></div></div>
+            <div className="driver-graphic-card-base"><div className="driver-graphic-card-logo">{teamLogo ? <img src={teamLogo} alt="" loading="lazy"/> : <UserRound size={22}/>}</div><div className="driver-graphic-card-team-meta"><strong><span onClick={event=>event.stopPropagation()}><TeamProfileLink teamId={driver.team?.id}>{driver.team?.name || "Independent"}</TeamProfileLink></span></strong><span className="driver-timing-class">CALERIS MASTERS <i/> PADDOCK REGISTER</span></div></div>
           </button>;
         })}
       </div>
@@ -930,10 +931,10 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           <button type="button" className="driver-card-detail-close" onClick={closeDriverDetail} aria-label="Tutup detail"><X size={18}/></button>
           <div className="driver-card-detail-banner" style={{background:`linear-gradient(118deg, ${selected.team?.main_color || "#7A263A"}, ${selected.team?.secondary_color || "#C6A33A"})`}}>
             {selected.avatar_url && <img src={selected.avatar_url} alt="" referrerPolicy="no-referrer"/>}
-            <div><span>DRIVER PROFILE</span><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"}</p></div>
+            <div><span>DRIVER PROFILE</span><h2><MemberProfileLink memberId={selected.public_member_id||selected.id}>{selected.character_name || "Driver"}</MemberProfileLink></h2><p><TeamProfileLink teamId={selected.team?.id}>{selected.team?.name || "Independent"}</TeamProfileLink></p></div>
           </div>
           <div className="driver-card-detail-body">
-            <div className="driver-card-detail-team">{selected.profile?.logo_url && <img src={selected.profile.logo_url} alt=""/>}<strong>{selected.team?.name || "Independent"}</strong><span>{selected.license || "License belum tersedia"}</span></div>
+            <div className="driver-card-detail-team">{selected.profile?.logo_url && <img src={selected.profile.logo_url} alt=""/>}<strong><TeamProfileLink teamId={selected.team?.id}>{selected.team?.name || "Independent"}</TeamProfileLink></strong><span>{selected.license || "License belum tersedia"}</span></div>
             {([selected.points,selected.wins,selected.poles,selected.finishes,selected.dnf].some(value => Number(value || 0) > 0)) ? <div className="driver-card-detail-stats">
               <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div><div><span>WINS</span><strong>{Number(selected.wins || 0)}</strong></div><div><span>POLES</span><strong>{Number(selected.poles || 0)}</strong></div><div><span>FINISHES</span><strong>{Number(selected.finishes || 0)}</strong></div><div><span>DNF</span><strong>{Number(selected.dnf || 0)}</strong></div>
             </div> : <p className="driver-card-detail-empty">Statistik belum tersedia pada hasil pertandingan yang dipublikasikan.</p>}
@@ -978,7 +979,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
       {selected && <aside className="driver-selected-panel">
         <button className="driver-panel-close" onClick={() => setSelected(null)} aria-label="Close driver information"><X size={17}/></button>
         <span className="driver-panel-eyebrow"><Crosshair size={13}/> SELECTED DRIVER</span>
-        <div className="driver-panel-identity"><div className="driver-panel-avatar">{resolvedAvatar ? <img src={resolvedAvatar} alt={`Foto ${selected.character_name || "driver"}`} loading="eager" referrerPolicy="no-referrer"/> : <UserRound size={27}/>}</div><div><h2>{selected.character_name || "Driver"}</h2><p>{selected.team?.name || "Independent"} · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
+        <div className="driver-panel-identity"><div className="driver-panel-avatar">{resolvedAvatar ? <img src={resolvedAvatar} alt={`Foto ${selected.character_name || "driver"}`} loading="eager" referrerPolicy="no-referrer"/> : <UserRound size={27}/>}</div><div><h2><MemberProfileLink memberId={selected.public_member_id||selected.id}>{selected.character_name || "Driver"}</MemberProfileLink></h2><p><TeamProfileLink teamId={selected.team?.id}>{selected.team?.name || "Independent"}</TeamProfileLink> · {String(selected.team?.division_key || "Unassigned").toUpperCase()}</p></div></div>
         <div className="driver-panel-license"><span>LICENSE</span><strong>{selected.license || "UNASSIGNED"}</strong></div>
         <div className="driver-panel-stats">
           <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div>
