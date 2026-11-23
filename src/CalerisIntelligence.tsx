@@ -30,7 +30,6 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
   const [outflow, setOutflow] = useState(0);
   const [offers, setOffers] = useState<Row[]>([]);
   const [requests, setRequests] = useState<Row[]>([]);
-  const [requestContract, setRequestContract] = useState<Row | null>(null);
   const [requestSalaryBand, setRequestSalaryBand] = useState<Row | null>(null);
   const [contracts, setContracts] = useState<Row[]>([]);
   const [health, setHealth] = useState<Row | null>(null);
@@ -126,14 +125,11 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
           if (offerError) throw offerError;
           if (requestError) throw requestError;
           setOffers((driverOffers || []) as Row[]); setRequests((driverRequests || []) as Row[]);
-          const [contractResult, bandResult] = await Promise.all([
-            current?.id ? supabase.from("economy_driver_contracts").select("id,annual_salary,season_id").eq("member_id", own.id).eq("team_id", own.team_id).eq("season_id", current.id).eq("status", "active").maybeSingle() : Promise.resolve({ data: null, error: null }),
-            supabase.from("caleris_driver_salary_bands").select("license_label,salary_min_eur,salary_max_eur").ilike("license_label", String(own.license || "").toUpperCase()==="A" ? "Super License" : String(own.license || ""))
-          ]);
-          if (contractResult.error) throw contractResult.error;
-          if (bandResult.error) throw bandResult.error;
-          setRequestContract(contractResult.data as Row | null);
-          setRequestSalaryBand((bandResult.data || [])[0] as Row | null);
+          const { data: salaryBands, error: bandError } = await supabase.from("caleris_driver_salary_bands")
+            .select("license_label,salary_min_eur,salary_max_eur")
+            .ilike("license_label", String(own.license || "").toUpperCase()==="A" ? "Super License" : String(own.license || ""));
+          if (bandError) throw bandError;
+          setRequestSalaryBand((salaryBands || [])[0] as Row | null);
         } else throw new Error("Renewal Center hanya tersedia untuk Driver dan Team Owner.");
       }
     } catch (error: any) {
