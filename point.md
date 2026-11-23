@@ -312,3 +312,15 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 - Database: no migration required; Testing and Production unchanged.
 - Vercel environment: unchanged.
 - QA remaining: Android viewport, desktop viewport, search input usability, CI/build.
+
+
+### Checkpoint Scope 09 — Global driver/team profile links (2026-11-23)
+- Status: IMPLEMENTED IN BRANCH, CI/Edge Function QA pending.
+- Branch: `feat/caleris-scope-09-entity-profile-links`.
+- Added reusable `MemberProfileLink` and `TeamProfileLink` components with consistent underline, hover and keyboard-focus styling.
+- Added public Team Profile route `/team/:teamId` and roster display. Driver names on team profiles link to public Driver profiles.
+- Extended `member-directory` Edge Function: profile lookup accepts either public Member ID or internal member UUID; added rate-limited `team_profile` action returning only public team/roster data.
+- Global Search team results now open the Team Profile. Public Driver Profile links current team to Team Profile.
+- Added links in Job Search, Driver Transfer Market, Team Take Over, My Profile, Stage5 standings/directories/Team Summary, and Caleris Ecosystem team/driver sections.
+- No DB migration required. Edge Function deployment required on Testing and Production after CI/QA. No Vercel environment changes.
+- QA remaining: UUID/public Member ID route, team profile RLS-safe output, search team navigation, all wrapped pages, TypeScript/build, Edge Function deploy to Testing then Production.
