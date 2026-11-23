@@ -251,6 +251,7 @@ describe("Race simulation kernel", () => {
     const simulation = new RaceSimulation(snapshot, { incidentModel, raceControlProfile });
     simulation.advanceOneSegment();
     const checkpoint = simulation.createCheckpoint();
+    expect(checkpoint.simulationClockMs).toBe(Math.max(...simulation.entrantStates.map((state) => state.elapsedMs)));
     const clockBeforePause = checkpoint.simulationClockMs ?? 0;
     const elapsedBeforePause = simulation.entrantStates.reduce((sum, state) => sum + state.elapsedMs, 0);
     const restored = RaceSimulation.restore(
