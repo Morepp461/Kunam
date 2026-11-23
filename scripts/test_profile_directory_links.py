@@ -6,6 +6,8 @@ ADMIN_USERS = (ROOT / "src" / "AdminUsers.tsx").read_text(encoding="utf-8")
 TEAM_SUMMARY = (ROOT / "src" / "TeamSummary.tsx").read_text(encoding="utf-8")
 ECOSYSTEM = (ROOT / "src" / "CalerisEcosystem.tsx").read_text(encoding="utf-8")
 INACTIVITY = (ROOT / "src" / "AdminTeamInactivity.tsx").read_text(encoding="utf-8")
+ENGINE_MARKET = (ROOT / "src" / "TeamEngineMarket.tsx").read_text(encoding="utf-8")
+TEAM_HQ = (ROOT / "src" / "TeamHQ.tsx").read_text(encoding="utf-8")
 
 assert 'import { supabase } from "./lib/supabase";' in PANEL
 assert 'import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";' in PANEL
@@ -25,6 +27,9 @@ assert 'profile?.public_member_id || member?.id' not in ADMIN_USERS
 assert 'from("caleris_member_directory").select("id,character_name,public_member_id")' in INACTIVITY
 assert '<MemberProfileLink memberId={memberMap.get(s.member_id)?.public_member_id}>' in INACTIVITY
 assert '<MemberProfileLink memberId={s.member_id}>' not in INACTIVITY
+assert '<TeamProfileLink teamId={engine.seller_team_id}>' in ENGINE_MARKET
+assert '<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in ENGINE_MARKET
+assert '<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in TEAM_HQ
 assert 'TeamProfileLink teamId={team.id}' in TEAM_SUMMARY
 assert 'MemberProfileLink memberId={driver.public_member_id}' in TEAM_SUMMARY
 assert 'from("caleris_member_directory").select("id,character_name,public_member_id")' in ECOSYSTEM
