@@ -28,5 +28,7 @@ export function validateTeamLiveryDesign(value: unknown): value is TeamLiveryDes
     Array.isArray(row.sponsors) && row.sponsors.length === 3 &&
     row.sponsors.every(item => typeof item === "string" && item.length <= 24) &&
     (row.logoDataUrl === null || (typeof row.logoDataUrl === "string" &&
-      /^data:image\/(png|jpeg|webp);base64,/i.test(row.logoDataUrl) && row.logoDataUrl.length <= 140000));
+      /^data:image\/(png|jpeg|webp);base64,/i.test(row.logoDataUrl) && row.logoDataUrl.length <= 140000)) &&
+    typeof row.decalId === "string" && TEAM_LIVERY_DECALS.some(item => item.id === row.decalId) &&
+    typeof row.decalColor === "string" && HEX.test(row.decalColor);
 }
