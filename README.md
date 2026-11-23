@@ -1229,3 +1229,14 @@ Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 
 - Master artwork currently ships as three optimized transparent WebP wardrobe assets under `public/assets/cale/`.
 - The 57 IDs are registered and callable, but dedicated per-ID pose artwork is still a separate asset-delivery gate. The current component intentionally falls back to the selected wardrobe master instead of pretending each ID has its own pose image.
 - No database schema, Supabase function, runtime dependency, or Vercel setting is changed by this UI-only integration.
+
+
+### Cale Mascot — account onboarding integration
+
+- Added a seven-step Indonesian Paddock Access guide presented by the locked Cale formal master asset.
+- The guide covers welcome, avatar upload, basic identity, nationality/hometown, Caleris nickname, role preference, and privacy/review.
+- First-visit completion is stored per authenticated user in browser local storage; the guide can be reopened from the Paddock Access page.
+- The guide is a functional UI walkthrough and does not submit, modify, or infer profile data. Existing form validation and the `complete-paddock-access` Edge Function remain authoritative.
+- FIA outfit routing is limited to warning/punishment/appeal contexts; FIA panel navigation alone does not force warning attire.
+- Cale still ships three transparent wardrobe master assets. The 57 IDs are a stable manifest contract, not 57 individually illustrated images; no new artwork was generated in this implementation pass.
+- Added regression assertions for the tutorial, per-user completion state, and accessible dialog. No schema, migration, dependency, or runtime configuration change.
