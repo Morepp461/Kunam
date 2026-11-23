@@ -440,12 +440,13 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <p>Satu suara per member. Identitas pemilih tidak dipublikasikan; hasil hanya berupa rekap setelah voting berakhir.</p>
         {isAdmin && <PollAdmin toast={toast} onCreated={() => void load()} />}
         {polls.map((poll) => {
-          const scheduled = poll.status === "scheduled" && new Date(poll.starts_at).getTime() > Date.now();
-          const canVote = poll.status === "open" && !isExpired(poll);
+          const startsNow = new Date(poll.starts_at).getTime() <= Date.now();
+          const scheduled = poll.status === "scheduled" && !startsNow;
+          const canVote = ["open", "scheduled"].includes(poll.status) && startsNow && !isExpired(poll);
           const ended = ["closed", "published"].includes(poll.status) || isExpired(poll);
           const result = poll.result;
           return <article key={poll.id} className="cp-poll">
-            <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : scheduled ? "Scheduled" : ended ? "Ended" : "Open"}</span></div>
+            <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : scheduled ? "Scheduled" : ended ? "Ended" : canVote ? "Open" : "Pending"}</span></div>
             <p>{poll.description}</p>
             <small>Ends: {new Date(poll.ends_at).toLocaleString("id-ID")}</small>
             {scheduled && <p className="cp-muted">Voting dimulai {new Date(poll.starts_at).toLocaleString("id-ID")}.</p>}
