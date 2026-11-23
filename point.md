@@ -303,3 +303,19 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 11 — Team inactivity freeze and compensation (2026-11-23)
+- Status: IMPLEMENTED IN BRANCH, CI/Testing DB QA pending.
+- Branch: `feat/caleris-scope-11-team-inactivity-freeze`.
+- Activity definition: one completed season with zero completed team Quest assignments and zero actual Team Development part-history entries. Evaluation is effective only for seasons ending on/after the migration's effective date; no historical season is retroactively frozen.
+- Freeze lifecycle: states are Active, Awaiting Compensation, Frozen. Frozen/awaiting teams are excluded from the next season's effective roster, team snapshots and team standings.
+- Compensation formula: `remaining_seasons = duration_seasons - count(seasons from contract first season through freeze season)`; `compensation = annual_salary × remaining_seasons`. The user's example (contract starts Season 2, duration 4, freeze after Season 2, €10m/year) resolves to 3 × €10m = €30m per Driver.
+- Funding: full compensation is paid from the frozen Team Wallet to each Driver Wallet through the existing economy ledger using a dedicated `contract_compensation` transaction type and per-driver idempotency key. The system prechecks the total and driver wallets before posting; it never pays only part of the group. If funds are insufficient, the team remains Awaiting Compensation, is excluded from competition, and the lifecycle worker retries after the Team Wallet is funded.
+- Contract lifecycle: after full settlement, future season contracts and active contract terms are ended/cancelled. Drivers are released to Free Agent only after settlement and after no other active contract remains. Active loans linked to the affected Driver are cancelled when the contract is released.
+- Reactivation: three new activities after freeze, combined across completed team quests and Team Development upgrades, automatically restore the team to Active. The already-locked roster of a running season is not rewritten; reactivation becomes eligible for the next roster snapshot.
+- Replacement slot: Admin-only Team Inactivity Control page can open a replacement slot for the next draft season and assign an eligible replacement team to the frozen team's division.
+- New migration: `20261123130000_team_inactivity_freeze_and_compensation.sql`.
+- New UI: `src/AdminTeamInactivity.tsx`, `src/admin-team-inactivity.css`; registered at `/admin/team-inactivity`.
+- Database changes not applied yet. Testing first, then Production after CI and QA. Vercel environment unchanged.
+- QA remaining: migration syntax on Testing; verify contract-term formula and exact €30m example; wallet insufficient/complete settlement; idempotency; loan release; roster exclusion; 3-activity reactivation; replacement slot open/fill; existing season lifecycle and standings regression.
