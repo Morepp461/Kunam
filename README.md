@@ -1191,3 +1191,14 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 ### Profile-link audit addendum — 24 November 2026
 
 The extended Scope 09 source review found two additional groups of visible entity names that were not linked. FIA Operations now links Driver and Team names in transfer approvals, takeover approvals, and fine history. Community Hub now links predictor Driver results and the current Team in the overview and Digital ID. The profile-link regression script covers these surfaces. The changes are subject to the full branch CI before merge.
+
+
+### Final release verification — 24 November 2026
+
+- Scope 09 profile-link changes merged in PR #329 after the complete Caleris CI workflow passed: run `45225638925`, 43/43 steps successful.
+- Merged main commit: `c60a6e4d0819d43a3eac360bb1ca28935a9e198e`.
+- Vercel Production deployment: `dpl_4dmNHfbmbdfg6saNrNQxiytyQLnF`, state **READY**, built from that exact main commit.
+- Production aliases `calerismasters.com` and `www.calerismasters.com` are attached and verified. Live domain returned HTTP 200.
+- No Production schema or wallet changes were made during the Scope 05 / Scope 11 rollback-only behavioral QA.
+
+Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 08; Android visual/GPU/memory acceptance requires the physical handset; Scope 09 still needs exhaustive page-by-page and manual route verification; Scope 10 still needs authenticated browser role walkthroughs; Scope 06 CRM requires the actual business workflow specification.
