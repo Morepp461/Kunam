@@ -205,7 +205,7 @@ export default function AdminUsers() {
             <div className="admin-user-main">
               <div className="admin-user-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt=""/> : <UserRound size={22}/>}</div>
               <div className="admin-user-identity">
-                <MemberProfileLink memberId={profile?.public_member_id || member?.id} className="admin-user-name">{displayName}<ExternalLink size={13}/></MemberProfileLink>
+                <MemberProfileLink memberId={profile?.public_member_id} className="admin-user-name">{displayName}<ExternalLink size={13}/></MemberProfileLink>
                 <span>{user.email || "Email tidak tersedia"}</span>
                 <small>{profile?.public_member_id ? `Member ID · ${profile.public_member_id}` : "Belum memiliki Member ID"}</small>
               </div>
