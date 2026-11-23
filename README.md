@@ -1221,14 +1221,27 @@ Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 
 - Select-option labels and pending registration proposals remain non-links because they are selection/proposed data, not existing public profile entities.
 
 
-## Cale Mascot
+### Scope 09 — Admin and Brand Ecosystem profile navigation
 
-- Cale is integrated as a static, transparent-background assistant in the authenticated application layout.
-- Wardrobe routing is context-based: formal outfit for onboarding/general guidance, FIA outfit for warning and moderation notifications, and racing suit for motorsport pages.
-- The visual-state manifest contains the 57 stable IDs from the approved Cale list.
-- Master artwork currently ships as three optimized transparent WebP wardrobe assets under `public/assets/cale/`.
-- The 57 IDs are registered and callable, but dedicated per-ID pose artwork is still a separate asset-delivery gate. The current component intentionally falls back to the selected wardrobe master instead of pretending each ID has its own pose image.
-- No database schema, Supabase function, runtime dependency, or Vercel setting is changed by this UI-only integration.
+- Season Prizepool standings link Team names to public Team Profiles.
+- License Adjustment audit history links Driver names to public Member Profiles using the existing member directory's public IDs; the administrative select remains a form control.
+- Brand Ecosystem links current Team/Driver identity and offer target Teams to their public profiles.
+- Brand Ecosystem Admin links Team names in offers, contracts, and payment history.
+- Regression coverage extended for these surfaces. Reuses existing IDs and profile-link components; no dependency or schema changes.
+
+
+### Scope 09 release verification — 24 November 2026
+
+The additional public profile-link coverage from PRs #329, #332, #333, and #334 is merged. Each corresponding Caleris CI run passed all 43 steps:
+
+- PR #329 — FIA Operations and Community Hub profile links; CI run `45225638925`.
+- PR #332 — Driver Exhibition card/3D panels and Community Hub Team Milestones; CI run `45227793407`.
+- PR #333 — Driver Contracts, Driver Registration, Affiliate Team, and Take Over team references; CI run `45228597986`.
+- PR #334 — Season Prizepool, License Adjustment audit, Brand Ecosystem, and Brand Ecosystem Admin references; CI run `45229285743`.
+
+Latest Production release: commit `be7ecefa29b06576ae01b91fd752c55e0930ce68`, deployment `dpl_BkJSYcQdqDiawFEhDMEdfE7YHwhf`, state **READY**. The deployment is attached to `calerismasters.com` and `www.calerismasters.com`; the live apex domain returned HTTP 200.
+
+This confirms the code and automated regression coverage, not the remaining manual acceptance gates: the original 2025 GLB, physical Android visual/GPU/memory checks, authenticated role-matrix walkthrough, and full manual page-by-page profile route review. CRM Workflow remains inactive pending its business specification.
 
 
 ### Cale Mascot — account onboarding integration

@@ -1505,19 +1505,37 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Pending proposed Team names and dropdown option labels are intentionally not links because they are not navigable existing public entities.
 
 
-## Cale Mascot — implementation checkpoint (24 November 2026)
+## Scope 09 — Admin and Brand Ecosystem profile-link coverage
 
-- Branch: `feat/cale-mascot-system-20261124`, created from main SHA `c60a6e4d0819d43a3eac360bb1ca28935a9e198e` and synchronized with latest main SHA `2777f140f63e9cce7171580a9bf1d28d9e1bdf73` before review.
-- Master character identity remains locked to the approved Cale reference. No redesign or GLB runtime was introduced.
-- Added transparent WebP wardrobe masters: racing suit, formal suit, and FIA warning suit under `public/assets/cale/`.
-- Added `CaleMascot`, a reusable static asset component, and `CaleAssistant` in the authenticated layout.
-- Onboarding/general context resolves to formal attire; FIA warning/moderation notification context resolves to FIA attire; race and circuit contexts resolve to racing attire.
-- Registered all 57 stable design IDs in `src/cale/manifest.ts`; warning notifications now use the FIA Cale outfit.
-- Added `scripts/test_cale_mascot.py` and a CI step. No new dependencies, Supabase migrations, database writes, Edge Function changes, or Vercel configuration changes.
-- **Open visual acceptance gate:** the 57 IDs currently resolve to their wardrobe master art. They are not yet 57 individually illustrated pose/expression assets. Do not mark the 57-artwork deliverable complete until each ID has its own approved transparent image and visual QA.
-- GitHub Actions run `45229605292`: **success** for commit `65852b76a67c99f452b7dbec76c471c5dd5b378f`.
-- Vercel Preview deployment `dpl_2P9WJLCR6v6cXpVQHBegPuaPGGha`: **READY** at https://calerismastersnewgen-dy6xeyeyr-morepp.vercel.app for application-code commit `65852b76a67c99f452b7dbec76c471c5dd5b378f`. Production deployment and production aliases remain unchanged.
-- PR #335 is mergeable and remains **Draft**. Do not merge until the 57 individually illustrated transparent pose assets are completed and visually accepted.
+- Season Prizepool: final-standing Team names are public Team Profile links.
+- License & Wallet Adjustments: Driver names in license audit history link to public Member Profiles via `caleris_member_directory.public_member_id`.
+- Brand Ecosystem: current Team/Driver identity and offer target Team names link to public profiles.
+- Brand Ecosystem Admin: offer, contract, and payment-history Team names link to public Team Profiles.
+- Regression script covers each surface. No dependency or database migration.
+
+
+## RELEASE CHECKPOINT — 24 NOVEMBER 2026 (SCOPE 09)
+
+Merged Scope 09 follow-up PRs and successful Caleris CI:
+
+| PR | Coverage | CI run |
+|---|---|---|
+| #329 | FIA Operations, Community Hub profile links | `45225638925` — 43/43 |
+| #332 | Driver Exhibition cards/3D panel, Team Milestones | `45227793407` — 43/43 |
+| #333 | Driver Contracts, Driver Registration, Affiliate Team, Take Over | `45228597986` — 43/43 |
+| #334 | Season Prizepool, License Adjustment audit, Brand Ecosystem, Brand Ecosystem Admin | `45229285743` — 43/43 |
+
+**Production:** main SHA `be7ecefa29b06576ae01b91fd752c55e0930ce68`; Vercel deployment `dpl_BkJSYcQdqDiawFEhDMEdfE7YHwhf` is **READY**. Apex and www domains are attached; apex returned HTTP 200.
+
+### Remaining external acceptance gates
+
+1. Scope 08: original 2025 GLB (89,383,844 bytes) remains unavailable in repo, Supabase Storage, or accessible Library; real mesh/UV/sponsor integration cannot be validated without that exact asset.
+2. Scope 01/08: physical Android touch/layout/WebGL/GPU/memory acceptance still needs the handset.
+3. Scope 09: multiple additional missed surfaces have been corrected and regression-tested; exhaustive page-by-page visual review and manual profile-route verification remain open.
+4. Scope 05/10: database workflow QA is automated in Testing, but authorized live Driver/Owner and Admin/FIA/Owner/Member browser walkthroughs remain open.
+5. Scope 06: CRM Workflow remains inactive pending explicit statuses, owners, transitions, and permissions.
+
+No Production schema, wallet data, or Edge Function was modified by these profile-link changes.
 
 
 ### Cale Mascot — account onboarding integration

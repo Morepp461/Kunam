@@ -3,6 +3,7 @@ import {Activity,Coins,Handshake,RefreshCw,ShieldCheck,Users} from "lucide-react
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import {TeamProfileLink} from "./EntityProfileLink";
 
 type Sponsor={id:string;name:string;tier_key:string|null;available_budget:number|null;is_active:boolean};
 type Team={id:string;name:string};
@@ -68,7 +69,7 @@ export default function BrandEcosystemAdmin({session}:{session:Session}){
 
  useEffect(()=>{void refresh()},[refresh]);
  const sponsorName=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
- const teamName=(id:string|null)=>teams.find(t=>t.id===id)?.name||"Team";
+ const teamName=(id:string|null)=><TeamProfileLink teamId={id||undefined}>{teams.find(t=>t.id===id)?.name||"Team"}</TeamProfileLink>;
  const history=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));
  const latest=(id:string)=>history(id).at(-1);
  const awaitingOwner=offers.filter(o=>o.status==="offered"&&latest(o.id)?.actor_kind==="admin");

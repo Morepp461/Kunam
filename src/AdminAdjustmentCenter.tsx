@@ -3,8 +3,9 @@ import {ArrowLeft,RefreshCw,ShieldCheck,Wallet,Medal,CheckCircle2,AlertCircle} f
 import type {Session} from "@supabase/supabase-js";
 import {Link} from "react-router-dom";
 import {supabase} from "./lib/supabase";
+import {MemberProfileLink} from "./EntityProfileLink";
 
-type Driver={id:string;member_code:string|null;character_name:string|null;license:string|null;role:string};
+type Driver={id:string;member_code:string|null;character_name:string|null;license:string|null;role:string;public_member_id?:string|null};
 type Band={license_label:string;license_tier:string;sort_order:number};
 type WalletRow={id:string;account_kind:string;member_id:string|null;team_id:string|null;balance:number;display_name:string;is_active:boolean};
 type Audit={id:string;member_id:string;previous_license:string|null;new_license:string;reason:string;created_at:string};
@@ -16,15 +17,17 @@ export default function AdminAdjustmentCenter(_props:{session:Session}){
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState<{kind:"success"|"error";text:string}|null>(null);
  const load=useCallback(async()=>{
   if(!supabase){setLoading(false);return} setLoading(true);
-  const [d,b,w,h]=await Promise.all([
+  const [d,b,w,h,dir]=await Promise.all([
    supabase.from("members").select("id,member_code,character_name,license,role").eq("role","Driver").order("character_name"),
    supabase.from("caleris_driver_salary_bands").select("license_label,license_tier,sort_order").order("sort_order"),
    supabase.from("economy_wallet_directory").select("id,account_kind,member_id,team_id,balance,display_name,is_active").in("account_kind",["driver","team_owner","team"]).eq("is_active",true).order("display_name"),
-   supabase.from("caleris_admin_license_assignments").select("id,member_id,previous_license,new_license,reason,created_at").order("created_at",{ascending:false}).limit(30)
+   supabase.from("caleris_admin_license_assignments").select("id,member_id,previous_license,new_license,reason,created_at").order("created_at",{ascending:false}).limit(30),
+   supabase.from("caleris_member_directory").select("id,public_member_id").eq("role","Driver")
   ]);
-  const error=d.error||b.error||w.error||h.error;
+  const error=d.error||b.error||w.error||h.error||dir.error;
   if(error)setNotice({kind:"error",text:error.message});
-  setDrivers((d.data||[]) as Driver[]);setBands((b.data||[]) as Band[]);setWallets((w.data||[]) as WalletRow[]);setAudit((h.data||[]) as Audit[]);
+  const publicIds=new Map((dir.data||[]).map((row:any)=>[row.id,row.public_member_id]));
+  setDrivers((d.data||[]).map((driver:any)=>({...driver,public_member_id:publicIds.get(driver.id)||null})) as Driver[]);setBands((b.data||[]) as Band[]);setWallets((w.data||[]) as WalletRow[]);setAudit((h.data||[]) as Audit[]);
   if(b.data?.length&&!license)setLicense(b.data[0].license_label);
   setLoading(false);
  },[]);
@@ -77,7 +80,7 @@ export default function AdminAdjustmentCenter(_props:{session:Session}){
   </div>
   <div className="workspace-card">
    <div className="section-title-row"><div><span className="section-eyebrow">AUDIT TRAIL</span><h2>Riwayat penetapan lisensi</h2></div><button className="license-small-button" type="button" onClick={()=>void load()} disabled={loading}><RefreshCw size={14}/> Refresh</button></div>
-   {loading?<p className="license-muted">Memuat data...</p>:audit.length===0?<p className="license-muted">Belum ada penetapan lisensi manual.</p>:<div className="table-wrap"><table><thead><tr><th>Driver</th><th>Sebelumnya</th><th>Lisensi baru</th><th>Alasan</th><th>Waktu</th></tr></thead><tbody>{audit.map(a=><tr key={a.id}><td>{drivers.find(d=>d.id===a.member_id)?.character_name||a.member_id.slice(0,8)}</td><td>{a.previous_license||"—"}</td><td>{a.new_license}</td><td>{a.reason}</td><td>{new Date(a.created_at).toLocaleString("id-ID")}</td></tr>)}</tbody></table></div>}
+   {loading?<p className="license-muted">Memuat data...</p>:audit.length===0?<p className="license-muted">Belum ada penetapan lisensi manual.</p>:<div className="table-wrap"><table><thead><tr><th>Driver</th><th>Sebelumnya</th><th>Lisensi baru</th><th>Alasan</th><th>Waktu</th></tr></thead><tbody>{audit.map(a=><tr key={a.id}><td><MemberProfileLink memberId={drivers.find(d=>d.id===a.member_id)?.public_member_id}>{drivers.find(d=>d.id===a.member_id)?.character_name||a.member_id.slice(0,8)}</MemberProfileLink></td><td>{a.previous_license||"—"}</td><td>{a.new_license}</td><td>{a.reason}</td><td>{new Date(a.created_at).toLocaleString("id-ID")}</td></tr>)}</tbody></table></div>}
   </div>
   <div className="license-notice"><ShieldCheck size={16}/> Semua aksi dibatasi di server untuk akun pada <code>site_admins</code>. Tidak ada perubahan saldo langsung dari frontend.</div>
  </section>;
