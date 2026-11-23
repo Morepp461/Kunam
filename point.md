@@ -357,3 +357,11 @@ Example confirmed by user:
 - Drivers become Free Agents after successful full compensation settlement.
 
 The payment source and insufficient-funds recovery must still be grounded in existing team-wallet/payroll rules. A freeze must not be silently marked fully settled if the team cannot fund the full amount. Settlement must be atomic, auditable and idempotent.
+
+
+### Scope 08 — CI checkpoint update (2026-11-23)
+
+- CI run: [45151093999](https://github.com/Morepp461/Kunam/actions/runs/45151093999) — **SUCCESS**.
+- The CI pipeline completed dependency/security gates, TypeScript check, production build, unit/schema validation, browser smoke tests and the repository validation steps without failure.
+- PR: [#292](https://github.com/Morepp461/Kunam/pull/292) — converted to Draft because asset integration and manual visual QA are not complete.
+- This CI result validates the code currently committed in the PR; it does not validate the missing 3D binary, real UV mapping, sponsor placements, profile integration, or Android touch performance.
