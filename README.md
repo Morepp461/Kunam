@@ -1228,3 +1228,17 @@ Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 
 - Brand Ecosystem links current Team/Driver identity and offer target Teams to their public profiles.
 - Brand Ecosystem Admin links Team names in offers, contracts, and payment history.
 - Regression coverage extended for these surfaces. Reuses existing IDs and profile-link components; no dependency or schema changes.
+
+
+### Scope 09 release verification — 24 November 2026
+
+The additional public profile-link coverage from PRs #329, #332, #333, and #334 is merged. Each corresponding Caleris CI run passed all 43 steps:
+
+- PR #329 — FIA Operations and Community Hub profile links; CI run `45225638925`.
+- PR #332 — Driver Exhibition card/3D panels and Community Hub Team Milestones; CI run `45227793407`.
+- PR #333 — Driver Contracts, Driver Registration, Affiliate Team, and Take Over team references; CI run `45228597986`.
+- PR #334 — Season Prizepool, License Adjustment audit, Brand Ecosystem, and Brand Ecosystem Admin references; CI run `45229285743`.
+
+Latest Production release: commit `be7ecefa29b06576ae01b91fd752c55e0930ce68`, deployment `dpl_BkJSYcQdqDiawFEhDMEdfE7YHwhf`, state **READY**. The deployment is attached to `calerismasters.com` and `www.calerismasters.com`; the live apex domain returned HTTP 200.
+
+This confirms the code and automated regression coverage, not the remaining manual acceptance gates: the original 2025 GLB, physical Android visual/GPU/memory checks, authenticated role-matrix walkthrough, and full manual page-by-page profile route review. CRM Workflow remains inactive pending its business specification.
