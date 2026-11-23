@@ -303,3 +303,18 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 10 — Manage User (2026-11-23)
+- Status: IMPLEMENTED IN BRANCH, CI/DB/Edge Function QA pending.
+- Branch: `feat/caleris-scope-10-manage-user`.
+- Existing baseline: AdminUsers already listed accounts and edited preferred/active roles, but had no team assignment, warnings, ban actions or moderation history.
+- Added Admin UI for role + team assignment, warnings, temporary bans (1–365 days), permanent bans, unban, and account moderation history.
+- Added `caleris_user_moderation_actions` audit table with RLS; users can read only their own moderation history, Admins can read all, direct authenticated writes are revoked.
+- Added `admin_assign_member_team` RPC with Admin authorization, team existence checks, Owner/Driver contract-transfer guards and audit trail.
+- Extended `admin-user-management` Edge Function for team assignment, warning, temporary/permanent Auth ban and unban; ban actions reject self-ban and administrator targets.
+- Added suspended-account UI gate, route-navigation status recheck and automatic account-status restoration after temporary ban expiry.
+- Security caveat recorded from current Supabase docs: Auth `ban_duration` prevents new sign-ins but does not revoke already-issued access JWTs; the app blocks suspended profiles on route rechecks, while existing JWTs remain valid until expiry. This is not represented as instant revocation of every direct API request.
+- Migration: `20261123120000_admin_manage_user_moderation.sql`. Not applied yet.
+- Supabase Testing/Production unchanged. Edge Function not deployed yet. Vercel environment unchanged.
+- QA remaining: CI/build, Edge Function deploy to Testing, team assignment guard cases, warning audit, temporary ban expiry/unban, permanent ban/unban, active-session behavior and RLS.
