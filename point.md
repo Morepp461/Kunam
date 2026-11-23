@@ -305,6 +305,14 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
 
 
+### Checkpoint Scope 03 — Job Search search field (2026-11-23)
+- Status: IMPLEMENTED, CI/QA pending.
+- Branch: `fix/caleris-scope-03-job-search-icon-alignment`.
+- Changed: `src/marketplace-directory.css`; explicitly overrides inherited column flex direction on the search label, establishes consistent minimum height, and vertically centers the icon/input.
+- Database: no migration required; Testing and Production unchanged.
+- Vercel environment: unchanged.
+- QA remaining: Android viewport, desktop viewport, search input usability, CI/build.
+
 ### Checkpoint Scope 02 — shared panel loading copy (2026-11-23)
 - Status: IMPLEMENTED, CI/QA pending.
 - Branch: `fix/caleris-scope-02-loading-copy`.
