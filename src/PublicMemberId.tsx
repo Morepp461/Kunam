@@ -7,7 +7,7 @@ import "./community-progression.css";
 const badgeIcon = (value: string) => ({
   award: Award, medal: Medal, vote: Vote, target: Target, crown: Crown,
   "trending-up": TrendingUp, "shield-check": ShieldCheck,
-}[value] ?? Medal);
+} as Record<string, any>)[value] ?? Medal;
 
 export default function PublicMemberId() {
   const { memberCode = "" } = useParams();
