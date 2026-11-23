@@ -48,6 +48,19 @@ describe("Championship predictor", () => {
     expect(result.probabilities[1]).toBe(0);
   });
 
+  it("awards pole bonus independently from finishing position", () => {
+    const randomValues = [0, 0, 0];
+    let cursor = 0;
+    const result = simulateChampionship(
+      [{ name: "A", points: 0 }, { name: "B", points: 0 }],
+      [{ finishingPoints: [10, 5], poleBonus: 2 }],
+      1,
+      () => randomValues[cursor++] ?? 0,
+    );
+    expect(result.probabilities).toEqual([0, 100]);
+    expect(result.maxRemainingPoints).toBe(12);
+  });
+
   it("rejects incomplete scoring vectors instead of silently dropping a round", () => {
     expect(() => simulateChampionship(
       [{ name: "A", points: 10 }, { name: "B", points: 9 }],
