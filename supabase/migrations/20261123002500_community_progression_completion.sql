@@ -4,7 +4,7 @@ returns void language plpgsql security definer set search_path=public as $$
 begin
  insert into public.caleris_activity_feed(actor_member_id,team_id,event_type,title,body,metadata,visibility)
  values(p_actor,p_team,p_type,left(p_title,160),left(coalesce(p_body,''),500),coalesce(p_meta,'{}'::jsonb),'community');
-end $$;
+end; $;
 
 create or replace function public.caleris_refresh_team_milestones(p_team uuid)
 returns void language plpgsql security definer set search_path=public as $$
@@ -25,7 +25,7 @@ begin
        completed_at=coalesce(caleris_milestone_progress.completed_at,excluded.completed_at),updated_at=now();
    end if;
  end loop;
-end $$;
+end; $;
 
 create or replace function public.caleris_team_result_milestone_trigger()
 returns trigger language plpgsql security definer set search_path=public as $$
@@ -37,7 +37,7 @@ begin
      jsonb_build_object('round_id',new.round_id,'position',new.finishing_position));
  end if;
  return new;
-end $$;
+end; $;
 drop trigger if exists caleris_community_race_activity on public.caleris_race_result_entries;
 create trigger caleris_community_race_activity after insert on public.caleris_race_result_entries
 for each row execute function public.caleris_team_result_milestone_trigger();
@@ -49,7 +49,7 @@ begin select team_id into t from public.members where id=new.member_id;
  perform public.caleris_log_activity(new.member_id,t,'checkin','Race check-in','Member melakukan check-in race.',
  jsonb_build_object('round_id',new.round_id,'date',new.checkin_date));
  return new;
-end $$;
+end; $;
 drop trigger if exists caleris_community_checkin_feed on public.license_daily_checkins;
 create trigger caleris_community_checkin_feed after insert on public.license_daily_checkins
 for each row execute function public.caleris_community_checkin_activity();
@@ -64,7 +64,7 @@ begin
      jsonb_build_object('quest_assignment_id',new.id,'scope',new.assignment_scope));
  end if;
  return new;
-end $$;
+end; $;
 drop trigger if exists caleris_community_quest_feed on public.caleris_quest_assignments;
 create trigger caleris_community_quest_feed after update of completed_at on public.caleris_quest_assignments
 for each row execute function public.caleris_community_quest_activity();
@@ -77,7 +77,7 @@ begin
  perform public.caleris_log_activity(new.member_id,t,'development_purchase','Development dibeli',
    'Pembelian token development tercatat.',jsonb_build_object('purchase_id',new.id,'token_type',new.token_type,'quantity',new.quantity));
  return new;
-end $$;
+end; $;
 drop trigger if exists caleris_community_shop_feed on public.caleris_development_shop_purchases;
 create trigger caleris_community_shop_feed after insert on public.caleris_development_shop_purchases
 for each row execute function public.caleris_community_shop_activity();
@@ -101,7 +101,7 @@ begin
  ) into result
  from public.license_seasons s where s.id=p_season;
  return coalesce(result,'{}'::jsonb);
-end $$;
+end; $;
 grant execute on function public.caleris_get_season_community_data(uuid) to authenticated;
 revoke all on function public.caleris_refresh_team_milestones(uuid) from public,anon,authenticated;
 revoke all on function public.caleris_log_activity(uuid,uuid,text,text,text,jsonb) from public,anon,authenticated;
