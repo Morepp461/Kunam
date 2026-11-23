@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   Activity, Award, BookOpen, CheckCircle, Copy, Crown, Flag, Medal, Plus, Printer,
-  RefreshCw, Save, Share2, ShieldCheck, Target, Users, Vote
+  RefreshCw, Save, Share2, ShieldCheck, Target, TrendingUp, Users, Vote
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import {
@@ -21,6 +21,20 @@ const formatNumber = (value: unknown) => {
 };
 
 const isExpired = (poll: any) => new Date(poll.ends_at).getTime() <= Date.now();
+const eventTypeLabel = (value: string) => ({
+  race_result: "Official race result",
+  checkin: "Race check-in",
+  quest_completion: "Quest completed",
+  shop_purchase: "Development purchase",
+  xp_earned: "XP earned",
+  xp_adjustment: "XP adjustment",
+  milestone_completed: "Milestone achieved",
+  community_vote: "Community voting",
+}[value] ?? value.replace(/_/g, " "));
+const badgeIcon = (value: string) => ({
+  award: Award, medal: Medal, vote: Vote, target: Target, crown: Crown,
+  "trending-up": TrendingUp, "shield-check": ShieldCheck, flag: Flag,
+}[value] ?? Medal);
 
 export default function CommunityProgression({ session, profile, toast }: Props) {
   const db = supabase;
@@ -428,7 +442,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <h2><Activity size={20} /> Member Activity Feed</h2>
         <p>Feed hanya menampilkan event yang diizinkan oleh aturan visibility database.</p>
         {feed.map((item) => <article key={item.id} className="cp-feed-item">
-          <div><strong>{item.title}</strong><small>{item.event_type} · {new Date(item.created_at).toLocaleString("id-ID")}</small></div>
+          <div><strong>{item.title}</strong><small>{eventTypeLabel(item.event_type)} · {new Date(item.created_at).toLocaleString("id-ID")}</small></div>
           <p>{item.body}</p>
         </article>)}
         {!feed.length && <article>Belum ada aktivitas yang dapat ditampilkan.</article>}
@@ -537,12 +551,15 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <h2><Award size={20} /> Achievement Badges</h2>
         <p>Badge hanya ditampilkan sebagai earned setelah award tercatat di database.</p>
         <div className="cp-grid cp-badges">
-          {badges.map((badge) => <article key={badge.code} className={badge.earned ? "earned" : "locked"}>
-            <div className="cp-badge-icon">{badge.icon || <Medal size={22} />}</div>
-            <strong>{badge.title}</strong><p>{badge.description}</p>
-            <small>{badge.earned ? `Earned ${badge.awarded_at ? new Date(badge.awarded_at).toLocaleDateString("id-ID") : ""}` : "Locked"}</small>
-            <small>{badge.rarity || "Standard"}</small>
-          </article>)}
+          {badges.map((badge) => {
+            const Icon = badgeIcon(badge.icon);
+            return <article key={badge.code} className={badge.earned ? "earned" : "locked"}>
+              <div className="cp-badge-icon"><Icon size={22} /></div>
+              <strong>{badge.title}</strong><p>{badge.description}</p>
+              <small>{badge.earned ? `Earned ${badge.awarded_at ? new Date(badge.awarded_at).toLocaleDateString("id-ID") : ""}` : "Locked"}</small>
+              <small>{badge.rarity || "Standard"}</small>
+            </article>;
+          })}
         </div>
         {!badges.length && <article>Belum ada badge yang dikonfigurasi.</article>}
       </section>}
