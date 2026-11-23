@@ -23,6 +23,7 @@
 - Rules page with an admin editor supporting draft and publish states.
 - Admin-managed Discord community invite URL.
 - Team Directory uses responsive team identity cards with main/secondary color gradients, team logos, division, base nation, hometown, driver roster, points, and wins.
+- Public Team Profile displays the official roster with verified public member links and, when configured, the saved team livery plus active sponsor identity through the rate-limited `member-directory` Edge Function.
 
 ### 3D Driver Exhibition
 
