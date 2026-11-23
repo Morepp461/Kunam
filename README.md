@@ -1167,3 +1167,9 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 
 - The Community Hub Digital ID theme picker closes on outside pointer interaction and Escape, exposes explicit accessible label/control associations, and suppresses any legacy native select inside the editor so only the branded picker is shown.
 - CI includes a regression check for a single custom theme trigger and no native select in the Digital ID editor.
+
+
+### Job Search Compact Search Field
+
+- Reduced the Job Search search field from a two-column desktop span to one filter-grid column and reduced its height to 38 px; it expands across the grid only on tablet/mobile layouts. The responsive overrides use matching selector specificity so the compact desktop rule does not leak into mobile breakpoints.
+- CI regression checks enforce the compact desktop geometry and responsive expansion.
