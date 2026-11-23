@@ -1465,3 +1465,21 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Added profile links to Community Hub: predictor results and current Team references in the overview and Digital ID.
 - Extended `scripts/test_profile_directory_links.py` with regression assertions for both pages.
 - Remaining: exhaustive review of all other visible entity-name surfaces and manual route verification. The new changes are not marked complete until CI passes.
+
+
+## FINAL RELEASE VERIFICATION — 24 NOVEMBER 2026
+
+- PR #329 merged after Caleris CI run `45225638925` passed all 43 steps.
+- Main SHA: `c60a6e4d0819d43a3eac360bb1ca28935a9e198e`.
+- Vercel Production: `dpl_4dmNHfbmbdfg6saNrNQxiytyQLnF` — **READY**, built from the exact main SHA above.
+- `calerismasters.com` and `www.calerismasters.com` are verified Production aliases; live apex domain returned HTTP 200.
+- Scope 05 first-contract and renewal request/offer/reject/decline behavioral paths passed in Testing rollback-only transactions. Scope 11 funded and insufficient-balance compensation branches passed in Testing rollback-only transactions. Final rollback audit found zero test rows/transactions and the original Team Wallet balance restored to €17,550,000.
+- Production data, balances, schema, and Edge Functions were not modified by these behavioral tests.
+
+### Outstanding acceptance gates (not falsely marked complete)
+
+1. Scope 08: original 2025 F1 CAR GLB (89,383,844 bytes) is not present in the accessible repository, Supabase Storage, or Project Library. Real mesh/UV/sponsor integration remains blocked on the original file.
+2. Scope 01/08: physical Android visual, WebGL/GPU, and memory acceptance remains outstanding.
+3. Scope 09: FIA Operations and Community Hub omissions are fixed and covered by CI; exhaustive page-by-page review and manual route verification remain outstanding.
+4. Scope 10: authenticated browser walkthrough across Admin/FIA/Owner/Member and Driver/Owner remains outstanding.
+5. Scope 06: CRM Workflow remains blocked on the business specification (statuses, owners, transitions, permissions).
