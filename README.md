@@ -1191,3 +1191,13 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 ### Profile-link audit addendum — 24 November 2026
 
 The extended Scope 09 source review found two additional groups of visible entity names that were not linked. FIA Operations now links Driver and Team names in transfer approvals, takeover approvals, and fine history. Community Hub now links predictor Driver results and the current Team in the overview and Digital ID. The profile-link regression script covers these surfaces. The changes are subject to the full branch CI before merge.
+
+
+## Cale Mascot
+
+- Cale is integrated as a static, transparent-background assistant in the authenticated application layout.
+- Wardrobe routing is context-based: formal outfit for onboarding/general guidance, FIA outfit for warning and moderation notifications, and racing suit for motorsport pages.
+- The visual-state manifest contains the 57 stable IDs from the approved Cale list.
+- Master artwork currently ships as three optimized transparent WebP wardrobe assets under `public/assets/cale/`.
+- The 57 IDs are registered and callable, but dedicated per-ID pose artwork is still a separate production gate. The current component intentionally falls back to the selected wardrobe master instead of pretending each ID has its own pose image.
+- No database schema, Supabase function, runtime dependency, or Vercel setting is changed by this UI-only integration.
