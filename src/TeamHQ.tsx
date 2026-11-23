@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, RefreshCw, Save, ShieldCheck, Wrench } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { TeamProfileLink } from "./EntityProfileLink";
 import TeamMerchandise from "./TeamMerchandise";
 import { parseTeamHqConfigJson, teamHqFacilityConfigSchema } from "./lib/teamHqValidation";
 import "./team-hq.css";
@@ -172,7 +173,7 @@ export default function TeamHQ() {
 
   return <section className="workspace team-hq">
     <div className="team-hq-heading">
-      <div><span className="section-eyebrow">TEAM MANAGEMENT · HEADQUARTERS</span><h1>Team HQ</h1><p>{team ? team.name + " · " + (team.division_key ?? "Division belum ditetapkan") : isFia ? "FIA Configuration Center" : "Akun ini belum terhubung ke tim."}</p></div>
+      <div><span className="section-eyebrow">TEAM MANAGEMENT · HEADQUARTERS</span><h1>Team HQ</h1><p>{team ? <><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>{" · "}{team.division_key ?? "Division belum ditetapkan"}</> : isFia ? "FIA Configuration Center" : "Akun ini belum terhubung ke tim."}</p></div>
       <button className="team-hq-refresh" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button>
     </div>
     {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
