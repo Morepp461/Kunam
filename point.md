@@ -1360,3 +1360,11 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Vercel Production deployment `dpl_3UzYs7MWJjEoH9txoa6vBKi7KnjE` is **READY** for that exact main commit. No Supabase schema/function, wallet, Vercel environment variable, or project setting was changed.
 - Global select handler now intercepts eligible native select pointer activation before the browser/Android native picker opens, and routes it to the shared CALERIS option sheet. Keyboard activation and non-pointer accessibility fallback are retained.
 - Final physical Android acceptance is still required to verify the operating-system picker is absent on the target handset.
+
+
+# PROFILE LINK AUDIT FOLLOW-UP — 23 NOVEMBER 2026
+
+- Extended the audit beyond the Global directories: Team Summary now links the current team and linked driver roster; Team Owner/Finance and recent race views resolve `public_member_id` from the existing `caleris_member_directory` before rendering profile links; Hall of Fame driver/team winners use their persisted member/team IDs and public IDs; Admin Users no longer falls back to an internal member UUID for public profile routes.
+- Added regression assertions covering these route helpers and forbidding internal UUID fallbacks in the reviewed components.
+- Testing and Production schema inspection confirms the required `public_member_id`, standings `member_id`, `team_id`, and team snapshot IDs already exist. No migration is required.
+- Checked `storage.objects` in both Supabase Testing and Production: no `.glb` or `.gltf` asset is present. Repository tree also contains no GLB/GLTF binary. Real vehicle mesh integration remains blocked by the missing asset.
