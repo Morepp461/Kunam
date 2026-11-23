@@ -380,7 +380,7 @@ export default function Stage5Panel({ session, fallback, isAdmin = false }: Prop
     (isDriver && ["character", "career-history", "financial-centre", "appeal"].includes(tab)) ||
     (isTeam && ["team-summary", "driver-registration", "scout", "place-job-advert", "appeal"].includes(tab)) ||
     (isFia && ["event-control", "rules-input", "announcement-input", "appeal-room"].includes(tab)))) return <>{fallback}</>;
-  if (loading) return <section className="workspace s5-workspace">{heading("CALERIS MASTERS", "Memuat panel...", "Menghubungkan panel ke data kompetisi dan ekonomi.")}<div className="s5-loading"><Activity className="s5-pulse"/> Memuat data Supabase...</div></section>;
+  if (loading) return <section className="workspace s5-workspace">{heading("CALERIS MASTERS", "Memuat panel...", "Menghubungkan panel ke data kompetisi dan ekonomi.")}<div className="s5-loading"><Activity className="s5-pulse"/> Mempersiapkan Data...</div></section>;
 
   if (isFia && tab === "event-control") return <section className="workspace s5-workspace">{heading("FIA PANEL · EVENT CONTROL", "Event Control", "Kontrol data kompetisi dan operasional resmi CALERIS MASTERS.")}<FiaDataExport isAdmin={isAdmin} isFia={isFia}/></section>;
 
