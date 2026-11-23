@@ -43,8 +43,10 @@ assert 'border-left:2px solid rgba(214,184,94,.88)' in CONTROLS
 # All native select fields must open the shared CALERIS sheet, avoiding OS-native grey popups.
 assert "function CalerisSelectOverlay()" in APP
 assert "caleris-select-backdrop" in APP
-assert 'document.addEventListener("click",openSelect,true)' in APP
-assert 'document.addEventListener("pointerdown",openSelect,true)' not in APP
+assert 'document.addEventListener("pointerdown",openSelect,true)' in APP
+assert 'document.removeEventListener("pointerdown",openSelect,true)' in APP
+assert 'document.addEventListener("click",openSelect,true)' not in APP
+assert 'event.preventDefault();event.stopPropagation();' in APP
 assert 'suppressNativeClick' not in APP
 assert 'labelText+=node.textContent||""' in APP
 assert 'input value={filter} onChange={event=>setFilter(event.target.value)}' in APP
@@ -92,3 +94,9 @@ assert 'panelAccess.member_role==="Principal"' in MAIN_LAYOUT
 assert '.scene-image{display:block!important;object-fit:cover!important;object-position:50% 50%!important;animation:cinematicCamera' in STYLES
 assert ':where(.workspace-card,.panel-feature-card,.stat-card,.quest-card' in CONTROLS
 assert 'position:absolute;inset:0' in CONTROLS[CONTROLS.find('Gold comet outline'):]
+
+
+# Job Search input keeps the search icon centered in the same row as its text field.
+MARKET_CSS = (ROOT / "src" / "marketplace-directory.css").read_text(encoding="utf-8")
+assert ".market-filter-grid>label.market-search{display:flex;flex-direction:row;align-items:center" in MARKET_CSS
+assert ".market-filter-grid>label.market-search>svg" in MARKET_CSS
