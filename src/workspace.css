@@ -593,6 +593,6 @@ body.light .header-notification-item>a>strong{color:#40351d}
 .admin-workflow-link:hover{border-color:rgba(198,163,58,.5);background:rgba(198,163,58,.07)}
 .admin-workflow-link>span{display:grid;gap:4px;min-width:0}.admin-workflow-link strong{color:#e9dfca;font-size:12px}.admin-workflow-link small{color:#a9a295;font-size:10px;line-height:1.45}.admin-workflow-link>svg{flex:none;color:#d8b957}
 .admin-workflow-notice{margin-top:16px;padding:16px 18px;border:1px solid rgba(198,163,58,.18);border-radius:12px;background:rgba(198,163,58,.035)}.admin-workflow-notice strong{color:#e2c66f;font-size:12px}.admin-workflow-notice p{margin:6px 0 0;color:#aaa396;font-size:11px;line-height:1.65}
-body.light .admin-workflow-intro{background:linear-gradient(120deg,rgba(122,38,58,.09),rgba(255,255,255,.92))}.body.light .admin-workflow-intro h2,body.light .admin-workflow-section .section-title-row h2,body.light .admin-workflow-link strong{color:#30291d}
+body.light .admin-workflow-intro{background:linear-gradient(120deg,rgba(122,38,58,.09),rgba(255,255,255,.92))}body.light .admin-workflow-intro h2,body.light .admin-workflow-section .section-title-row h2,body.light .admin-workflow-link strong{color:#30291d}
 body.light .admin-workflow-link{background:rgba(255,255,255,.65);border-color:rgba(143,108,30,.16)}body.light .admin-workflow-notice{background:rgba(198,163,58,.07)}
 @media(max-width:760px){.admin-workflow-grid{grid-template-columns:1fr}.admin-workflow-intro{flex-direction:column}.admin-workflow-links{grid-template-columns:1fr}}
