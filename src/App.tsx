@@ -381,29 +381,57 @@ function PublicMemberProfile({session}:{session:Session|null}){
 function CalerisSelectOverlay(){
  const [activeSelect,setActiveSelect]=useState<HTMLSelectElement|null>(null),[filter,setFilter]=useState("");
  useEffect(()=>{
-  // Open only after a completed click. pointerdown fires at the start of a touch,
-  // so it incorrectly treats an intended scroll as a request to open the sheet.
-  const openSelect=(event:MouseEvent)=>{
+  const canUseCustomSheet=(select:HTMLSelectElement|null)=>Boolean(
+   select&&!select.disabled&&!select.multiple&&select.dataset.nativePopup!=="true"
+  );
+  const showSelect=(select:HTMLSelectElement)=>{
+   select.focus({preventScroll:true});
+   setFilter("");
+   setActiveSelect(select);
+  };
+  // Android and several mobile browsers launch the native grey picker on
+  // pointerdown, before click capture can cancel it. Intercept the opening
+  // gesture itself so only the CALERIS option sheet is ever presented.
+  const openSelect=(event:PointerEvent)=>{
+   if(event.button!==0||event.isPrimary===false)return;
    const target=event.target;
    if(!(target instanceof Element))return;
    const select=target.closest("select") as HTMLSelectElement|null;
-   if(!select||select.disabled||select.multiple||select.dataset.nativePopup==="true")return;
-   event.preventDefault();event.stopPropagation();
-   select.focus({preventScroll:true});setFilter("");setActiveSelect(select);
+   if(!canUseCustomSheet(select))return;
+   event.preventDefault();
+   event.stopPropagation();
+   showSelect(select);
+  };
+  // Keep a click-only fallback for assistive/programmatic activation that
+  // does not emit pointer events. Pointer activation is already handled above.
+  const clickFallback=(event:MouseEvent)=>{
+   if(event.detail!==0)return;
+   const target=event.target;
+   if(!(target instanceof Element))return;
+   const select=target.closest("select") as HTMLSelectElement|null;
+   if(!canUseCustomSheet(select)||activeSelect===select)return;
+   event.preventDefault();
+   event.stopPropagation();
+   showSelect(select);
   };
   const keyboard=(event:KeyboardEvent)=>{
    const target=event.target;
-   if(!(target instanceof HTMLSelectElement)||target.disabled||target.multiple||target.dataset.nativePopup==="true")return;
+   if(!(target instanceof HTMLSelectElement)||!canUseCustomSheet(target))return;
    if(["Enter"," ","ArrowDown"].includes(event.key)){
-    event.preventDefault();event.stopPropagation();setFilter("");setActiveSelect(target);
+    event.preventDefault();
+    event.stopPropagation();
+    showSelect(target);
    }else if(event.key==="Escape"&&activeSelect){
-    event.preventDefault();setActiveSelect(null);
+    event.preventDefault();
+    setActiveSelect(null);
    }
   };
-  document.addEventListener("click",openSelect,true);
+  document.addEventListener("pointerdown",openSelect,true);
+  document.addEventListener("click",clickFallback,true);
   document.addEventListener("keydown",keyboard,true);
   return()=>{
-   document.removeEventListener("click",openSelect,true);
+   document.removeEventListener("pointerdown",openSelect,true);
+   document.removeEventListener("click",clickFallback,true);
    document.removeEventListener("keydown",keyboard,true);
   };
  },[activeSelect]);
