@@ -404,3 +404,50 @@ The current editor source `src/TeamLivery.tsx` still explicitly labels the previ
 ## Next action
 
 Scope 08 is the only scope not implemented to its requested result. The other scopes are merged, CI passed, both databases have the required migrations, the relevant Edge Functions are deployed to both projects, and the main commit is live on Vercel. Continue with a dedicated feature branch for Scope 08; do not alter Vercel environment settings or run production financial simulations.
+
+
+---
+
+# FOLLOW-UP CHECKPOINT — 23 November 2026, 18:39 WIB
+
+**Branch:** `fix/caleris-followup-ui-cors-livery-20261123`  
+**Base:** `main` at `c31d6ecd1dbe13cea6dcbf5854e93f2fcfb161ce`  
+**Status:** IN PROGRESS — follow-up corrections and partial Scope 08 implementation.
+
+## New evidence and corrections
+
+1. Latest video shows Transfer Market dropdown controls. The native Android picker and custom overlay were not consistently presented. The page's native `<select>` controls have now been replaced with a dedicated custom dropdown component; no native select is rendered for those Transfer Market controls.
+2. Job Search's CSS had a specificity conflict: `.market-filter-grid>label` overrode the flex row declared by `.market-search`. The selector is now explicitly `.market-filter-grid>label.market-search`.
+3. Transfer Market directory Driver names now use `MemberProfileLink`. Job Search already uses `TeamProfileLink` for team names. The global audit of every page is not yet complete.
+4. Manage User was already implemented and Admin-only at `/admin/users`; navigation is under Administration → Platform & Members. The navigation label and page heading are now **Manage User** for discoverability.
+5. Daftar Akun's failure was traced to `admin-user-management` CORS: the allow-list contained localhost and Vercel hosts but omitted the two production custom domains. The function now explicitly allows `https://calerismasters.com` and `https://www.calerismasters.com`, imports CORS headers from its pinned Supabase JS SDK, and rejects unapproved origins before handling preflight. `verify_jwt=true` is retained.
+
+## Implementation checkpoint
+
+- [x] New feature branch created from the verified main SHA.
+- [x] Transfer Market custom dropdown component and CSS added; all eight native selects in that page replaced.
+- [x] Job Search icon/input alignment CSS specificity corrected.
+- [x] Transfer Market Driver directory links added.
+- [x] Manage User navigation and page title clarified.
+- [x] Admin User CORS allow-list and SDK CORS headers updated.
+- [x] CORS Edge Function deployed to Supabase Testing as version 8 with JWT verification enabled.
+- [x] Team livery editor now has 50 vector decal presets, multi-layer decals, RGB color picker, per-decal placement/scale/rotation, atlas repositioning, active sponsor retrieval from `caleris_sponsorship_contracts` + `caleris_sponsors`, sponsor placement controls, and drag-orbit/scroll-zoom camera controls.
+- [x] Livery JSON validator covers decal count, decal colors/transforms/surfaces, and sponsor placement values. No database migration is required because the design is stored in the existing JSONB field.
+- [ ] Run TypeScript build, unit tests, browser smoke tests, and CI; repair failures before merge.
+- [ ] Verify the Testing Edge Function's OPTIONS response from the actual production origin and complete an authenticated Admin account-list request. This runtime browser test is not available from the current network-isolated runner.
+- [ ] Deploy the same verified Edge Function source to Production after merge and verify both domain origins.
+- [ ] Complete global Driver/Team link audit across all pages.
+- [ ] Complete manual Android verification for custom dropdowns, Job Search alignment, Manage User, and decal editing.
+
+## Scope 08 asset status — BLOCKED
+
+The 2025 GLB supplied by the user exists in the working session as `/mnt/data/2025_f1_car.glb` (89,383,844 bytes). Inspection found 143 geometries, 143 geometry nodes, UV coordinates on all inspected geometries, 8 materials, and approximately 3.1 million triangles. Attribution: **“2025 F1 CAR” by Abu Saif, CC BY 4.0**, source https://skfb.ly/pHRJU.
+
+The production repository still cannot load this binary: the current session has no supported path to upload the 89 MB model into the repository or an approved public asset store. Do not add a broken GLB URL, claim the procedural preview is hyper-realistic, or claim GLB integration is complete. The editor enhancements above are partial delivery only. Remaining: publish the actual GLB, load it through Three.js GLTFLoader, apply UV material/decal layers and sponsor logos to the real mesh, render the same saved livery on Public Team Profile, and verify mobile GPU/memory and camera interactions.
+
+## Database / deployment
+
+- Livery editor changes extend the existing `livery_data` JSONB document only; no schema migration is introduced.
+- Sponsor contract and sponsor table columns used by the editor were checked in both Testing and Production; both schemas expose the required fields.
+- CORS Edge Function source has been deployed to Testing only so far. Production deployment must wait until code review/CI and merge.
+- No Vercel environment variables or project settings were changed.
