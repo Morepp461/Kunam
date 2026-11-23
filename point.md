@@ -350,6 +350,7 @@ Branch integrasi aktif: `feat/caleris-11-scope-integration-20261123`. Perubahan 
 - Scope 08: asset Sketchfab `2025 F1 CAR` belum berada di repository. Model halaman Sketchfab tercatat memiliki sekitar 3,1 juta triangle; perlu file yang dapat diproses, pemeriksaan UV/material, optimasi mobile, serta bukti sponsor aktif sebelum integrasi final. Jangan mengganti asset dengan model prosedural lalu menyebutnya hyper-realistic.
 - Scope 10: verifikasi login/session yang sudah terbuka saat ban, expiry, self-lockout, admin protection, dan role FIA vs Admin.
 - Scope 11: simulasi 4-season contract yang dimulai pada season freeze menghasilkan 3 season tersisa. Dengan gaji €10.000.000/season, kompensasi yang diharapkan adalah €30.000.000 per Driver. Pastikan sumber dana Team Wallet tersedia; jika tidak, settlement tetap pending dan tidak boleh menandai tim Frozen sebelum seluruh pembayaran selesai.
-- Database target: Testing `vxwvhyyvoipjwucbrvlu`; Production `asltczqrmoxnayusvjta`. Versi migrasi 20261123110000, 20261123120000, dan 20261123130000 belum tercatat di kedua migration ledger pada pemeriksaan terakhir.
-- Vercel environment tidak diubah. Deployment hanya boleh dilakukan setelah merge, migrasi Testing + QA, migrasi Production, dan verifikasi deployment.
+- Database target: Testing `vxwvhyyvoipjwucbrvlu`; Production `asltczqrmoxnayusvjta`. Testing sudah mencatat ketiga migrasi dengan ledger version `202611230102632` (driver contract request), `202611230102638` (Manage User), dan `202611230102714` (team inactivity freeze). Production belum mencatat ketiganya; migrasi Production menunggu CI, QA Testing, dan merge.
+- RLS aktif pada enam tabel request/moderation/inactivity; pemeriksaan Testing menemukan satu policy per tabel. RPC yang diuji memberi EXECUTE ke authenticated dan menolak anon.
+- Vercel environment tidak diubah. Deployment hanya boleh dilakukan setelah merge, migrasi Production, dan verifikasi deployment.
 
