@@ -354,3 +354,53 @@ Branch integrasi aktif: `feat/caleris-11-scope-integration-20261123`. Perubahan 
 - RLS aktif pada enam tabel request/moderation/inactivity; pemeriksaan Testing menemukan satu policy per tabel. RPC yang diuji memberi EXECUTE ke authenticated dan menolak anon.
 - Vercel environment tidak diubah. Deployment hanya boleh dilakukan setelah merge, migrasi Production, dan verifikasi deployment.
 
+
+
+---
+
+# CURRENT RELEASE CHECKPOINT — 23 November 2026 (supersedes earlier pending notes)
+
+## Release status
+
+- **Integrated PR:** #304, merged to `main`.
+- **Main commit:** `7ca671cd576d8f87445908d62fdf78f6226d52f0`.
+- **CI:** both required `build` checks completed successfully. The integration workflow also completed TypeScript check, production build, unit/schema validation, Browser smoke tests, Edge Function JWT/profile privacy checks, Driver contract workflow checks, Admin Manage User security checks, Team inactivity/freeze/compensation checks, Member Directory rate-limit regression checks, and Supabase schema parity guard successfully.
+- **Vercel Production:** deployment `dpl_32ZtTkedhGnAPsNvAVRkTQ4VdVcy` is `READY`, built from the exact main commit above. Production aliases include `calerismasters.com`, `www.calerismasters.com`, and `calerismastersnewgen-mu.vercel.app`. HTTP check of `https://calerismasters.com` returned 200 OK.
+- **Vercel environment:** no environment variables or project environment settings were changed.
+- **Supabase:** the four new migrations are present in both Testing and Production ledgers. The Testing ledger uses versions `20261123102632`, `20261123102638`, `20261123102714`, and `20261123105811`; Production uses `20261123110101`, `20261123110104`, `20261123110106`, and `20261123110109`. The first three Testing migration names were stored with their timestamp prefixes, but the applied schema is verified.
+- **Schema/security parity:** all six new moderation/inactivity/request tables have RLS enabled and one policy each in both databases. The six checked RPCs grant EXECUTE to `authenticated` and deny it to `anon` in both databases. Both contract request tables have nullable `current_contract_id` in Testing and Production.
+- **Edge Functions:** `admin-user-management` and `member-directory` are ACTIVE in both projects. Their deployed source hashes match across Testing and Production; `admin-user-management` has JWT verification enabled. `member-directory` retains its existing `verify_jwt=false` gateway design and performs its own request/auth checks.
+
+## Per-scope release checkpoint
+
+| Scope | Current result | Release status |
+|---|---|---|
+| 01 Dropdown ganda | Community Hub uses the single custom dropdown path; regression coverage is included in integration validation. | Integrated, CI passed |
+| 02 Loading copy | Shared loading copy updated to “Mempersiapkan Data”; the integration build and smoke checks passed. | Integrated, CI passed |
+| 03 Job Search search box | Search icon/input alignment correction retained from PR #293. | Merged and deployed |
+| 04 Newsroom manga | Newsroom cards and article popup use separated manga-style panels while preserving article data. | Integrated, CI passed |
+| 05 Driver contract request | Driver can request first contract or renewal while assigned to a team; Owner can issue or decline the offer. First-contract migration is applied to both databases. | Integrated, CI passed; runtime acceptance still needs real Driver/Owner account walkthrough |
+| 06 Admin Workflow | Placeholder page is explicitly described as a CRM/operations workspace awaiting specification; no fictitious CRM actions added. | Integrated, CI passed |
+| 07 Duplicate adjustment page | Duplicate migration route redirects to canonical `/admin/adjustments`; duplicate navigation entry removed. | Integrated, CI passed |
+| 08 Team Livery 3D | Existing editor still renders a procedural Three.js placeholder with 3 basic colors/patterns and 3 sponsor labels. The supplied 2025 GLB is inspected and attribution documented, but the binary is not present in the Git tree and is not loaded by the production editor. The 50 interactive decals, free decal placement/transform, team sponsor sync, chassis material/UV integration, and drag camera are not complete. | **BLOCKED / NOT DONE** |
+| 09 Global profile links | Reusable Driver/Team profile links and public Team Profile route are merged; `member-directory` deployed to both DB projects with matching source hash. | Integrated and deployed |
+| 10 Manage User | Admin-only role/team management, warning, temporary/permanent ban, unban, and moderation history are integrated. Edge Function deployed to both DB projects with matching source hash. | Integrated, CI passed; production role-matrix walkthrough remains |
+| 11 Team inactivity freeze | Season activity review, freeze workflow, replacement slots, 3-activity reactivation, and idempotent compensation settlement are integrated. The test asserts the specified example: 4-season contract with 1 season elapsed and €10m annual salary yields 3 seasons remaining and €30m compensation per Driver. RLS and RPC grants are verified in both databases. | Integrated, CI passed; no live financial settlement was run against real wallets |
+
+## Scope 08 release gate (remaining work)
+
+The user supplied the 2025 model file `2025_f1_car.glb` (89,383,844 bytes). Its metadata/UV inspection is documented in `docs/assets/2025-f1-car-attribution.md`. The asset has 143 mesh geometries, 271 nodes, approximately 3.1 million triangles, UVs on all geometries, 8 materials, and no embedded textures. Attribution is “2025 F1 CAR” by Abu Saif, CC BY 4.0.
+
+The current editor source `src/TeamLivery.tsx` still explicitly labels the preview “PROCEDURAL CAR MODEL” and constructs the vehicle from primitive Three.js geometries. Do not call this hyper-realistic or claim the GLB is integrated. The binary must first be placed in an approved project asset location and committed/referenced by the production app; then the GLB loader, material/UV mapping, optimized runtime asset, sponsor logo sources, 50 decal assets, color customization, transform controls, camera drag, and Team Profile rendering must be implemented and visually verified. The supplied 2025 model must be described as a 2025 model, not an exact 2026-regulation chassis.
+
+## Required live acceptance checks (not simulated)
+
+1. Sign in with a real Driver account and submit a first-contract request; sign in as that team's Owner and issue an offer; return as Driver and accept/reject.
+2. Verify Manage User with Admin, FIA, Owner, and regular-member accounts. FIA must not receive Admin-only moderation access.
+3. In Testing only, run a controlled inactive-team scenario with a dedicated test team and wallet fixture. Verify a 4-season contract started in the freeze season pays exactly 3 × annual salary per Driver, does not double-pay on retry, and leaves the team in `awaiting_compensation` if Team Wallet funds are insufficient. Do not use production wallets for simulation.
+4. Verify freeze blocks next-season competition entry, replacement slot assignment works, and reactivation requires 3 committed Quest/Development activities after freeze.
+5. Scope 08 must not be released until the actual GLB is loaded in the editor and Team Profile and passes Android/mobile GPU, memory, UV, sponsor-placement, and decal interaction checks.
+
+## Next action
+
+Scope 08 is the only scope not implemented to its requested result. The other scopes are merged, CI passed, both databases have the required migrations, the relevant Edge Functions are deployed to both projects, and the main commit is live on Vercel. Continue with a dedicated feature branch for Scope 08; do not alter Vercel environment settings or run production financial simulations.
