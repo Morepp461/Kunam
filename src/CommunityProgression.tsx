@@ -91,7 +91,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       db.from("caleris_activity_feed").select("*").order("created_at", { ascending: false }).order("id", { ascending: false }).limit(30),
       db.from("caleris_member_badges").select("*").eq("member_id", memberId),
       db.from("caleris_achievement_badges").select("*").eq("active", true).order("title"),
-      db.from("caleris_community_polls").select("*").in("status", ["scheduled", "open", "closed", "published"]).order("ends_at", { ascending: false }).limit(30),
+      db.from("caleris_community_polls").select("*").in("status", ["scheduled", "open", "closed", "finalized", "published", "cancelled"]).order("ends_at", { ascending: false }).limit(30),
       db.from("caleris_community_poll_options").select("*"),
       db.from("caleris_community_votes").select("poll_id,option_id").eq("voter_member_id", memberId),
       db.from("caleris_digital_id_cards").select("*").eq("member_id", memberId).maybeSingle(),
@@ -158,7 +158,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     setSeasons(seasonsResult.data ?? []);
 
     const pollsNeedingResults = (pollsResult.data ?? []).filter((poll: any) =>
-      poll.status === "closed" || poll.status === "published" || isExpired(poll)
+      poll.status !== "cancelled" && (poll.status === "closed" || poll.status === "finalized" || poll.status === "published" || isExpired(poll))
     );
     if (pollsNeedingResults.length) {
       const results = await Promise.all(pollsNeedingResults.map(async (poll: any) => {
@@ -219,7 +219,20 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     const { error } = await db.rpc("caleris_admin_finalize_poll", { p_poll_id: pollId, p_publish: publish });
     if (error) toast("error", "Voting gagal diperbarui", error.message);
     else {
-      toast("success", publish ? "Hasil voting dipublikasikan" : "Voting ditutup");
+      toast("success", publish ? "Hasil voting dipublikasikan" : "Voting difinalisasi");
+      await load();
+    }
+  };
+
+  const cancelPoll = async (pollId: string) => {
+    if (!db || !window.confirm("Batalkan voting ini? Suara yang sudah masuk tetap tersimpan sebagai arsip.")) return;
+    const { error } = await db.rpc("caleris_admin_cancel_poll", {
+      p_poll_id: pollId,
+      p_reason: "Cancelled by administrator",
+    });
+    if (error) toast("error", "Voting gagal dibatalkan", error.message);
+    else {
+      toast("success", "Voting dibatalkan");
       await load();
     }
   };
@@ -496,29 +509,40 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           const startsNow = new Date(poll.starts_at).getTime() <= Date.now();
           const scheduled = poll.status === "scheduled" && !startsNow;
           const canVote = ["open", "scheduled"].includes(poll.status) && startsNow && !isExpired(poll);
-          const ended = ["closed", "published"].includes(poll.status) || isExpired(poll);
+          const cancelled = poll.status === "cancelled";
+          const ended = ["closed", "finalized", "published", "cancelled"].includes(poll.status) || isExpired(poll);
           const result = poll.result;
           return <article key={poll.id} className="cp-poll">
-            <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : scheduled ? "Scheduled" : ended ? "Ended" : canVote ? "Open" : "Pending"}</span></div>
+            <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : poll.status === "finalized" ? "Finalized" : cancelled ? "Cancelled" : scheduled ? "Scheduled" : ended ? "Ended" : canVote ? "Open" : "Pending"}</span></div>
             <p>{poll.description}</p>
             {poll.period_title_snapshot && <small>Official period: {poll.period_title_snapshot}</small>}
             <small>Ends: {new Date(poll.ends_at).toLocaleString("id-ID")}</small>
             {scheduled && <p className="cp-muted">Voting dimulai {new Date(poll.starts_at).toLocaleString("id-ID")}.</p>}
             {canVote && !poll.voted && poll.options.map((option: any) => <button key={option.id} onClick={() => void vote(poll.id, option.id)}>{option.label}</button>)}
             {canVote && poll.voted && <p className="cp-muted">Suaramu sudah tercatat. Terima kasih sudah berpartisipasi.</p>}
-            {ended && !result && <p className="cp-muted">Voting berakhir. Hasil menunggu finalisasi Admin.</p>}
+            {cancelled && <p className="cp-muted">Voting ini dibatalkan oleh Admin.</p>}
+            {ended && !cancelled && !result && <p className="cp-muted">Voting berakhir. Hasil menunggu finalisasi Admin.</p>}
             {result && <div className="cp-results">
               <strong>{formatNumber(result.total_votes)} total votes</strong>
+              {result.winner_option_ids?.length > 0 && <p><strong>{result.winner_option_ids.length > 1 ? "Shared winners" : "Winner"}:</strong> {poll.options.filter((option: any) => result.winner_option_ids.includes(option.id)).map((option: any) => option.label).join(", ")}</p>}
+              {Number(result.total_votes) === 0 && <p className="cp-muted">No winner: no votes were recorded.</p>}
+              {result.winner_option_ids?.length > 1 && <small>Tie policy: shared winners.</small>}
               {(result.options ?? []).map((option: any) => {
                 const percent = result.total_votes ? Number(option.votes) / Number(result.total_votes) * 100 : 0;
                 return <div key={option.option_id} className="cp-result-row"><span>{option.label}</span><b>{formatNumber(option.votes)} · {percent.toFixed(1)}%</b><div className="cp-bar"><i style={{ width: `${percent}%` }} /></div></div>;
               })}
             </div>}
             {isAdmin && ["open", "scheduled"].includes(poll.status) && <div className="cp-admin-actions">
-              <button onClick={() => void finalizePoll(poll.id, false)}>Tutup voting</button>
-              <button onClick={() => void finalizePoll(poll.id, true)}>Tutup & publikasikan hasil</button>
+              <button onClick={() => void finalizePoll(poll.id, false)}>Finalisasi voting</button>
+              <button onClick={() => void finalizePoll(poll.id, true)}>Finalisasi & publikasikan</button>
+              <button onClick={() => void cancelPoll(poll.id)}>Batalkan voting</button>
             </div>}
-            {isAdmin && poll.status === "closed" && <button onClick={() => void finalizePoll(poll.id, true)}>Publikasikan hasil</button>}
+            {isAdmin && poll.status === "closed" && <div className="cp-admin-actions">
+              <button onClick={() => void finalizePoll(poll.id, false)}>Finalisasi hasil</button>
+              <button onClick={() => void finalizePoll(poll.id, true)}>Publikasikan hasil</button>
+              <button onClick={() => void cancelPoll(poll.id)}>Batalkan voting</button>
+            </div>}
+            {isAdmin && poll.status === "finalized" && <button onClick={() => void finalizePoll(poll.id, true)}>Publikasikan hasil</button>}
           </article>;
         })}
         {!polls.length && <article>Belum ada voting komunitas aktif.</article>}
