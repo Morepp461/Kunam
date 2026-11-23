@@ -201,14 +201,14 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
   {mode==="news"&&<div className="vp-newsroom">
    <div className="vp-masthead"><div className="vp-masthead-side">KABAR PADDOCK<br/>SEJAK CALERIS</div><div className="vp-masthead-title">Vreeo Pedia</div><div className="vp-masthead-side vp-masthead-right">JURNAL RESMI<br/>DUNIA BALAP</div></div>
    <div className="vp-edition"><span>CALERIS MASTERS · BERITA & HASIL RESMI</span><span>{news.length} BERITA EDISI INI</span></div>
-   {news.length? <div className="vp-paper-grid">{news.map((item,index)=><button type="button" className={index===0?"vp-story vp-story-lead":`vp-story ${index%4===1?"vp-story-photo":index%4===2?"vp-story-brief":index%4===3?"vp-story-note":"vp-story-standard"}`} key={item.id} onClick={()=>setSelectedArticle(item)}>
+   {news.length? <div className="vp-paper-grid">{news.map((item,index)=><button type="button" className={index===0?"vp-story vp-manga-panel vp-story-lead":`vp-story vp-manga-panel ${index%4===1?"vp-story-photo":index%4===2?"vp-story-brief":index%4===3?"vp-story-note":"vp-story-standard"}`} key={item.id} onClick={()=>setSelectedArticle(item)}>
     <div className="vp-story-meta"><span>{newsroomSource(item.source)} / {item.category}</span><time>{dateLabel(item.date)}</time></div>
     {item.imageUrl&&<img className="vp-story-image" src={item.imageUrl} alt="" loading="lazy"/>}
     <h2>{item.title}</h2><p className="vp-story-leadtext">{item.lead||item.body.slice(0,220)}</p>
     {item.facts?.length? <div className="vp-story-facts">{item.facts.map((fact,i)=><span key={i}>{fact}</span>)}</div>:null}
     <span className="vp-read">BACA SELENGKAPNYA ↗</span>
    </button>)}</div>:<div className="vp-empty"><Newspaper/><strong>Belum ada berita di edisi ini</strong><span>Berita resmi, hasil balapan, dan kabar paddock akan muncul di sini setelah dipublikasikan.</span></div>}
-   {selectedArticle&&<div className="vp-reader-backdrop" role="presentation" onClick={()=>setSelectedArticle(null)}><article className="vp-reader" role="dialog" aria-modal="true" aria-labelledby="vp-reader-title" onClick={e=>e.stopPropagation()}>
+   {selectedArticle&&<div className="vp-reader-backdrop" role="presentation" onClick={()=>setSelectedArticle(null)}><article className="vp-reader vp-manga-reader" role="dialog" aria-modal="true" aria-labelledby="vp-reader-title" onClick={e=>e.stopPropagation()}>
     <button type="button" className="vp-reader-close" onClick={()=>setSelectedArticle(null)}>TUTUP ✕</button><div className="vp-reader-masthead">VREEO PEDIA <span>KABAR PADDOCK</span></div>
     <div className="vp-reader-meta">{selectedArticle.source} · {selectedArticle.category} · {dateLabel(selectedArticle.date)}</div>
     <h2 id="vp-reader-title">{selectedArticle.title}</h2>
