@@ -57,6 +57,10 @@ assert 'MemberProfileLink memberId={row.member_id}' not in ECOSYSTEM
 FIA_OPERATIONS = (ROOT / "src" / "FIAOperations.tsx").read_text(encoding="utf-8")
 COMMUNITY = (ROOT / "src" / "CommunityProgression.tsx").read_text(encoding="utf-8")
 DRIVER_EXHIBITION = (ROOT / "src" / "DriverExhibition.tsx").read_text(encoding="utf-8")
+TEAM_CONTRACTS = (ROOT / "src" / "TeamDriverContracts.tsx").read_text(encoding="utf-8")
+TEAM_APPLICATIONS = (ROOT / "src" / "TeamDriverApplications.tsx").read_text(encoding="utf-8")
+TEAM_AFFILIATE = (ROOT / "src" / "TeamAffiliate.tsx").read_text(encoding="utf-8")
+TEAM_TAKEOVER = (ROOT / "src" / "TeamTakeoverMarket.tsx").read_text(encoding="utf-8")
 
 assert 'import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";' in FIA_OPERATIONS
 assert 'select("id,public_member_id,character_name,role,team_id")' in FIA_OPERATIONS
@@ -81,5 +85,12 @@ assert '<TeamProfileLink teamId={selected.team?.id}>{selected.team?.name || "Ind
 assert '<strong><TeamProfileLink teamId={selected.team?.id}>{selected.team?.name || "Independent"}</TeamProfileLink></strong>' in DRIVER_EXHIBITION
 assert '<h2><MemberProfileLink memberId={selected.public_member_id}>{selected.character_name || "Driver"}</MemberProfileLink></h2>' in DRIVER_EXHIBITION
 assert '<TeamProfileLink teamId={member.team_id}>{teamName}</TeamProfileLink>' in COMMUNITY
+
+
+assert '<TeamProfileLink teamId={selectedTeam.id}>{selectedTeam.name}</TeamProfileLink>' in TEAM_CONTRACTS
+assert '<TeamProfileLink teamId={team?.id}>{team?.name||"Team"}</TeamProfileLink>' in TEAM_APPLICATIONS
+assert 'const teamName=(id:string)=><TeamProfileLink teamId={id}>' in TEAM_AFFILIATE
+assert '<TeamProfileLink teamId={ownTeam.id}>{ownTeam.name}</TeamProfileLink>' in TEAM_AFFILIATE
+assert '<TeamProfileLink teamId={ownTeam.id}>{ownTeam.name}</TeamProfileLink>' in TEAM_TAKEOVER
 
 print("Live driver/team directories, FIA operations, Community Hub and public profile-link regression checks passed.")

@@ -1211,3 +1211,11 @@ Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 
 - Extended `scripts/test_profile_directory_links.py` to enforce these links in both views.
 - Existing Driver Exhibition data is sourced from the same member directory carrying `public_member_id`; no schema or dependency change is required.
 - Full page-by-page manual review remains open; this addendum records only the surfaces explicitly covered by source inspection and regression assertions.
+
+
+### Scope 09 — Team workflow profile navigation
+
+- Added public Team Profile links to the selected-team summary in Driver Contracts, the current Team heading in Driver Registration, the current Team and both parties in Affiliate Team, and the owner's Team listing in Take Over.
+- Extended the profile-link regression script to cover these workflow surfaces.
+- All links reuse the existing TeamProfileLink component and existing team IDs; no schema or dependency change is required.
+- Select-option labels and pending registration proposals remain non-links because they are selection/proposed data, not existing public profile entities.
