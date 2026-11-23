@@ -77,7 +77,7 @@ This feature set adds seven connected CALERIS Masters community systems:
 - Yearbooks are isolated by member and season.
 - Vote visibility is restricted to the voter's own record; aggregate results are exposed separately after the poll is closed or its end time has passed.
 - Internal trigger helpers are not executable by anon/authenticated roles. The public Digital ID RPC is intentionally callable by anon, but returns only fields guarded by the member's public visibility setting.
-- Activity feed summaries are sourced from authoritative member/team/contract/sponsorship/payroll/merchandise/quest/shop/result events. Financial terms and salary amounts are deliberately excluded from public feed payloads.
+- Activity feed summaries are sourced from authoritative member/team/role/contract/sponsorship/payroll/merchandise/quest/shop/result events. Financial terms and salary amounts are deliberately excluded from public feed payloads.
 
 ## Route
 - Authenticated member route: `/community`.
