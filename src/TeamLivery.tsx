@@ -7,8 +7,8 @@ import { drawTeamLiveryDecal, TEAM_LIVERY_DECAL_CATALOG, type DecalSurface, type
 import "./team-livery.css";
 
 type SponsorPlacement = "title" | "major" | "other";
-type Sponsor = { id:string; name:string; logo_url:string|null; tier_key:string|null };
-type Design = {
+export type Sponsor = { id:string; name:string; logo_url:string|null; tier_key:string|null };
+export type Design = {
   schemaVersion:1; mainColor:string; secondaryColor:string; accentColor:string;
   pattern:"split"|"stripe"|"solid"|"carbon"; carNumber:string; teamWordmark:string;
   sponsors:[string,string,string]; logoDataUrl:string|null; decals:TeamLiveryDecal[];
@@ -30,7 +30,7 @@ const PARTS = [
   {name:"HALO & DETAILS",x:350,y:790,w:324,h:190,surface:"nose" as const}
 ] as const;
 const validSurface=(value:unknown):value is DecalSurface=>["sidepod","nose","frontWing","rearWing"].includes(String(value));
-function normalize(input:unknown):Design{
+export function normalizeTeamLiveryDesign(input:unknown):Design{
   const d=(input&&typeof input==="object"?input:{}) as Partial<Design>;
   const color=(v:unknown,f:string)=>typeof v==="string"&&/^#[0-9a-f]{6}$/i.test(v)?v:f;
   const label=(v:unknown,f:string,n:number)=>typeof v==="string"?v.trim().slice(0,n):f;
@@ -90,7 +90,7 @@ function paintAtlas(canvas:HTMLCanvasElement,d:Design,sponsors:Sponsor[],selecte
   });
   if(d.logoDataUrl){const img=new Image();img.onload=()=>{const c=canvas.getContext("2d");if(!c)return;PARTS.slice(0,4).forEach(p=>c.drawImage(img,p.x+p.w*.38,p.y+p.h*.32,p.w*.24,p.h*.2));};img.src=d.logoDataUrl;}
 }
-function Preview3D({design,sponsors}:{design:Design;sponsors:Sponsor[]}){
+export function Preview3D({design,sponsors}:{design:Design;sponsors:Sponsor[]}){
   const host=useRef<HTMLDivElement>(null);
   useEffect(()=>{
     let disposed=false,renderer:import("three").WebGLRenderer|null=null,frame=0,observer:ResizeObserver|null=null;
@@ -211,7 +211,7 @@ export default function TeamLivery({isAdmin=false}:{isAdmin?:boolean}){
     if(te||!t){setError(te?.message||"Data tim tidak ditemukan.");setLoading(false);return;}
     const {data:v,error:ve}=await supabase.from("caleris_team_liveries").select("livery_data").eq("team_id",t.id).maybeSingle();
     if(ve){setError(ve.message);setLoading(false);return;}
-    setTeamId(t.id);setTeamName(t.name);setDesign(normalize(v?.livery_data??DEFAULT));await loadSponsors(t.id);setLoading(false);
+    setTeamId(t.id);setTeamName(t.name);setDesign(normalizeTeamLiveryDesign(v?.livery_data??DEFAULT));await loadSponsors(t.id);setLoading(false);
   },[isAdmin,loadSponsors]);
   useEffect(()=>{void load()},[load]);
   useEffect(()=>{if(atlas.current)paintAtlas(atlas.current,design,activeSponsors,selectedDecalIndex)},[design,activeSponsors,selectedDecalIndex]);
@@ -219,7 +219,7 @@ export default function TeamLivery({isAdmin=false}:{isAdmin?:boolean}){
     if(!supabase)return;const selected=availableTeams.find(team=>team.id===id);if(!selected)return;
     setLoading(true);setError("");
     const {data:row,error:e}=await supabase.from("caleris_team_liveries").select("livery_data").eq("team_id",id).maybeSingle();
-    if(e)setError(e.message);else{setTeamId(id);setTeamName(selected.name);setDesign(normalize(row?.livery_data??DEFAULT));await loadSponsors(id);}
+    if(e)setError(e.message);else{setTeamId(id);setTeamName(selected.name);setDesign(normalizeTeamLiveryDesign(row?.livery_data??DEFAULT));await loadSponsors(id);}
     setLoading(false);
   };
   const save=async()=>{
