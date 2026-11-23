@@ -1368,3 +1368,6 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Added regression assertions covering these route helpers and forbidding internal UUID fallbacks in the reviewed components.
 - Testing and Production schema inspection confirms the required `public_member_id`, standings `member_id`, `team_id`, and team snapshot IDs already exist. No migration is required.
 - Checked `storage.objects` in both Supabase Testing and Production: no `.glb` or `.gltf` asset is present. Repository tree also contains no GLB/GLTF binary. Real vehicle mesh integration remains blocked by the missing asset.
+
+
+- Additional profile-link audit fixes: Team Summary, Team HQ, Team Engine Market, Team Inactivity settlement, Admin Users, Team Owner/Finance, recent race results, Hall of Fame winners, and all-time driver/team records now use verified public member IDs or team IDs. Internal member UUIDs are no longer passed as public profile route IDs in the reviewed views.
