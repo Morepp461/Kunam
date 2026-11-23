@@ -128,7 +128,7 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
           setOffers((driverOffers || []) as Row[]); setRequests((driverRequests || []) as Row[]);
           const [contractResult, bandResult] = await Promise.all([
             current?.id ? supabase.from("economy_driver_contracts").select("id,annual_salary,season_id").eq("member_id", own.id).eq("team_id", own.team_id).eq("season_id", current.id).eq("status", "active").maybeSingle() : Promise.resolve({ data: null, error: null }),
-            supabase.from("caleris_driver_salary_bands").select("license_label,salary_min_eur,salary_max_eur").ilike("license_label", String(own.license || ""))
+            supabase.from("caleris_driver_salary_bands").select("license_label,salary_min_eur,salary_max_eur").ilike("license_label", String(own.license || "").toUpperCase()==="A" ? "Super License" : String(own.license || ""))
           ]);
           if (contractResult.error) throw contractResult.error;
           if (bandResult.error) throw bandResult.error;
