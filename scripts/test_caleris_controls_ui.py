@@ -4,6 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 CONTROLS = (ROOT / "src" / "caleris-controls.css").read_text(encoding="utf-8")
 JOB_SEARCH = (ROOT / "src" / "JobSearch.tsx").read_text(encoding="utf-8")
+MARKETPLACE = (ROOT / "src" / "marketplace-directory.css").read_text(encoding="utf-8")
 NAV = (ROOT / "src" / "MainLayout.tsx").read_text(encoding="utf-8")
 MAIN_LAYOUT = NAV
 NOTIFICATIONS = (ROOT / "src" / "NotificationsCenter.tsx").read_text(encoding="utf-8")
@@ -28,6 +29,13 @@ assert 'type="radio" name="minimum-license"' in JOB_SEARCH
 assert ".market-license-options>label.is-selected" in CONTROLS
 assert 'Minimal lisensi <span className="market-filter-hint">Opsional' in JOB_SEARCH
 assert '<label>Minimal lisensi<input' not in JOB_SEARCH
+
+# Job Search search field stays compact on desktop and expands only at narrower breakpoints.
+assert ".market-filter-grid>label.market-search{grid-column:span 1" in MARKETPLACE
+assert "min-height:38px" in MARKETPLACE
+assert ".market-filter-grid>label.market-search input{height:100%;min-height:36px" in MARKETPLACE
+assert "@media(max-width:700px)" in MARKETPLACE and ".market-filter-grid>label.market-search{grid-column:span 2}" in MARKETPLACE
+assert "@media(max-width:420px)" in MARKETPLACE and ".market-filter-grid>label.market-search{grid-column:auto}" in MARKETPLACE
 
 # Navigation is an exclusive accordion, with the active section following route changes.
 assert 'useState<string|null>(null)' in NAV
