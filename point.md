@@ -1516,5 +1516,5 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Added `scripts/test_cale_mascot.py` and a CI step. No new dependencies, Supabase migrations, database writes, Edge Function changes, or Vercel configuration changes.
 - **Open visual acceptance gate:** the 57 IDs currently resolve to their wardrobe master art. They are not yet 57 individually illustrated pose/expression assets. Do not mark the 57-artwork deliverable complete until each ID has its own approved transparent image and visual QA.
 - GitHub Actions run `45229605292`: **success** for commit `65852b76a67c99f452b7dbec76c471c5dd5b378f`.
-- Vercel Preview deployment `dpl_2P9WJLCR6v6cXpVQHBegPuaPGGha`: **BUILDING** for the same branch and commit. Production deployment and production aliases remain unchanged.
+- Vercel Preview deployment `dpl_2P9WJLCR6v6cXpVQHBegPuaPGGha`: **READY** at https://calerismastersnewgen-dy6xeyeyr-morepp.vercel.app for application-code commit `65852b76a67c99f452b7dbec76c471c5dd5b378f`. Production deployment and production aliases remain unchanged.
 - PR #335 is mergeable and remains **Draft**. Do not merge until the 57 individually illustrated transparent pose assets are completed and visually accepted.
