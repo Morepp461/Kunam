@@ -462,6 +462,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
           return <article key={poll.id} className="cp-poll">
             <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : scheduled ? "Scheduled" : ended ? "Ended" : canVote ? "Open" : "Pending"}</span></div>
             <p>{poll.description}</p>
+            {poll.period_title_snapshot && <small>Official period: {poll.period_title_snapshot}</small>}
             <small>Ends: {new Date(poll.ends_at).toLocaleString("id-ID")}</small>
             {scheduled && <p className="cp-muted">Voting dimulai {new Date(poll.starts_at).toLocaleString("id-ID")}.</p>}
             {canVote && !poll.voted && poll.options.map((option: any) => <button key={option.id} onClick={() => void vote(poll.id, option.id)}>{option.label}</button>)}
@@ -580,6 +581,8 @@ function PollAdmin({
   const [endsAt, setEndsAt] = useState("");
   const [seasonId, setSeasonId] = useState("");
   const [seasonOptions, setSeasonOptions] = useState<any[]>([]);
+  const [periodOptions, setPeriodOptions] = useState<any[]>([]);
+  const [periodId, setPeriodId] = useState("");
   const [candidates, setCandidates] = useState<any[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
@@ -646,19 +649,21 @@ function PollAdmin({
 
   const loadAdminConfig = async () => {
     if (!db) return;
-    const [definitionResult, badgeResult, seasonResult, rewardResult] = await Promise.all([
+    const [definitionResult, badgeResult, seasonResult, periodResult, rewardResult] = await Promise.all([
       db.from("caleris_milestone_definitions").select("*").order("scope").order("title"),
       db.from("caleris_achievement_badges").select("*").order("title"),
       db.from("license_seasons").select("id,title").order("starts_on", { ascending: false }),
+      db.from("season_calendar_periods").select("id,season_id,title,period_type,period_number").order("sort_order"),
       db.from("caleris_xp_reward_settings").select("*").order("source_type"),
     ]);
-    if (definitionResult.error || badgeResult.error || seasonResult.error || rewardResult.error) {
-      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message || rewardResult.error?.message);
+    if (definitionResult.error || badgeResult.error || seasonResult.error || periodResult.error || rewardResult.error) {
+      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message || periodResult.error?.message || rewardResult.error?.message);
     }
     setDefinitions(definitionResult.data ?? []);
     setBadgeCatalog(badgeResult.data ?? []);
     setBadgeOptions((badgeResult.data ?? []).filter((badge: any) => badge.active));
     setSeasonOptions(seasonResult.data ?? []);
+    setPeriodOptions(periodResult.data ?? []);
     setRewardSettings(rewardResult.data ?? []);
     setRewardInputs(Object.fromEntries((rewardResult.data ?? []).map((item: any) => [item.source_type, String(item.reward_xp)])));
   };
@@ -667,8 +672,10 @@ function PollAdmin({
   useEffect(() => { void loadAdminConfig(); }, []);
 
   const createPoll = async () => {
-    if (!db || selected.length < 2 || !endsAt || (type.endsWith("_of_season") && !seasonId)) {
-      toast("warning", "Voting belum lengkap", "Pilih minimal dua kandidat, musim untuk award season, dan waktu penutupan.");
+    if (!db || selected.length < 2 || !endsAt
+      || ((type.endsWith("_of_season") || type.endsWith("_of_period")) && !seasonId)
+      || (type.endsWith("_of_period") && !periodId)) {
+      toast("warning", "Voting belum lengkap", "Pilih minimal dua kandidat, season/period yang sesuai, dan waktu penutupan.");
       return;
     }
     const startDate = startsAt ? new Date(startsAt) : new Date();
@@ -689,12 +696,13 @@ function PollAdmin({
       p_ends_at: endDate.toISOString(),
       p_options: options,
       p_season_id: seasonId || null,
+      p_period_id: periodId || null,
     });
     setSaving(false);
     if (error) toast("error", "Voting gagal dibuat", error.message);
     else {
       toast("success", startDate.getTime() > Date.now() ? "Voting berhasil dijadwalkan" : "Voting berhasil dibuat");
-      setTitle(""); setDescription(""); setSelected([]); setStartsAt(""); setEndsAt("");
+      setTitle(""); setDescription(""); setSelected([]); setStartsAt(""); setEndsAt(""); setPeriodId("");
       onCreated();
     }
   };
@@ -853,8 +861,11 @@ function PollAdmin({
         <option value="team_of_season">Team of the Season</option>
         <option value="fia_nomination">FIA Nomination</option>
       </select></label>
-      {type.endsWith("_of_season") && <label>Season<select value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>
+      {(type.endsWith("_of_season") || type.endsWith("_of_period")) && <label>Season<select value={seasonId} onChange={(event) => { setSeasonId(event.target.value); setPeriodId(""); }}>
         <option value="">Pilih season</option>{seasonOptions.map((season) => <option key={season.id} value={season.id}>{season.title}</option>)}
+      </select></label>}
+      {type.endsWith("_of_period") && <label>Period<select value={periodId} onChange={(event) => setPeriodId(event.target.value)} disabled={!seasonId}>
+        <option value="">Pilih period</option>{periodOptions.filter((period) => period.season_id === seasonId).map((period) => <option key={period.id} value={period.id}>{period.title}</option>)}
       </select></label>}
       <label>Voting dimulai (opsional, kosong = langsung)<input type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></label>
       <label>Voting berakhir<input type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></label>
