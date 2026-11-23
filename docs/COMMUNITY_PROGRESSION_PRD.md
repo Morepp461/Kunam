@@ -41,6 +41,7 @@ This feature set adds seven connected CALERIS Masters community systems:
 ## Championship Predictor
 - The Predictor can load current Driver standings, scheduled rounds, and active FIA scoring rules for a selected season. Manual inputs remain available for custom what-if scenarios.
 - Sprint scoring and pole bonus values are read from active scoring-rule rows. Pole bonus is simulated independently from finishing position rather than being incorrectly added to the race winner.
+- Championship countback follows the official FIA 2026 General Regulatory Provisions, Article A2.1.4(c): race first places, second places, third places and subsequent positions, then qualifying results when available. If qualifying data is absent and countback remains level, the simulation splits the unresolved tie instead of inventing a winner.
 - The current model assumes equal probability for each finishing order and pole winner. It does not claim to model driver/car pace, circuit effects, reliability, or Race Engine telemetry because those inputs are not yet verified as a complete model.
 - Official career statistics include starts, wins, podiums, points, and finalized season titles. Pole statistics are intentionally omitted until qualifying pole records exist in the authoritative dataset.
 - Monte Carlo runs 15,000 trials.
