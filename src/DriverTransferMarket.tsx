@@ -3,6 +3,7 @@ import {ArrowLeft,RefreshCw,Clock3,Search} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 
 type Member={id:string;character_name:string|null;role:string|null;team_id:string|null;license?:string|null;nationality?:string|null;public_member_id?:string|null;attributes?:Record<string,number>;contract_ends_on?:string|null;market_status?:string};
 type Team={id:string;name:string;division_key:string|null};
@@ -52,8 +53,8 @@ export default function DriverTransferMarket({session}:{session:Session}){
  const teamDriverCount=useMemo(()=>members.filter(m=>m.role==="Driver"&&m.team_id===ownTeamId).length,[members,ownTeamId]);
  const directoryRows=useMemo(()=>members.map(m=>{const remaining=m.contract_ends_on?Math.max(0,Math.ceil((new Date(m.contract_ends_on+"T00:00:00").getTime()-Date.now())/86400000)):null;return {...m,marketStatus:m.market_status||"Under Contract",remaining,attributes:m.attributes||{}}}).filter(m=>(!search||String(m.character_name||"").toLowerCase().includes(search.toLowerCase()))&&(!filterLicense||String(m.license||"").toLowerCase().includes(filterLicense.toLowerCase()))&&(!filterTeam||(filterTeam==="__independent"?!m.team_id:m.team_id===filterTeam))&&(!filterNationality||m.nationality===filterNationality)&&(!filterStatus||m.marketStatus===filterStatus)&&(!contractRemaining||m.remaining!==null&&m.remaining<=Number(contractRemaining)*30)&&(!filterAttribute||Number(m.attributes[filterAttribute]||0)>=Number(minimumAttribute||0))),[members,search,filterLicense,filterTeam,filterNationality,filterStatus,contractRemaining,filterAttribute,minimumAttribute]);
  const eligibleDrivers=useMemo(()=>!transferWindow?.is_open?[]:moveType==="loan"?drivers.filter(d=>affiliations.some(a=>(a.team_a_id===ownTeamId&&a.team_b_id===d.team_id)||(a.team_b_id===ownTeamId&&a.team_a_id===d.team_id))):drivers,[moveType,drivers,affiliations,ownTeamId,transferWindow?.is_open]);
- const driverName=(id:string)=>members.find(m=>m.id===id)?.character_name||"Driver";
- const teamName=(id:string)=>teams.find(t=>t.id===id)?.name||"Team";
+ const driverName=(id:string)=>{const m=members.find(x=>x.id===id);return <MemberProfileLink memberId={m?.public_member_id||id}>{m?.character_name||"Driver"}</MemberProfileLink>};
+ const teamName=(id:string)=>{const t=teams.find(x=>x.id===id);return <TeamProfileLink teamId={id}>{t?.name||"Team"}</TeamProfileLink>};
  const lastOffer=(id:string)=>offers.filter(o=>o.negotiation_id===id).sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime())[0];
  const start=async()=>{
   if(!supabase||!driverId)return;if(!transferWindow?.is_open){setNotice("Transfer Window hanya terbuka pada End Season dan Off Season.");return}const amount=Number(offerAmount);

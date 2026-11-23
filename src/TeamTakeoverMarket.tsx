@@ -3,6 +3,7 @@ import {ArrowLeft,RefreshCw,Send} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 
 type Member={id:string;character_name:string|null;role:string|null;team_id:string|null};
 type Team={id:string;name:string;division_key:string|null;takeover_listed:boolean;latest_valuation:number|null;minimum_offer?:number|null;maximum_offer?:number|null};
@@ -41,8 +42,8 @@ export default function TeamTakeoverMarket({session}:{session:Session}){
  const canBuy=Boolean(member&&(member.role===null||member.role==="Driver"||member.role==="FIA"));
  const targets=useMemo(()=>teams,[teams]);
  const selectedTarget=targets.find(t=>t.id===targetTeamId);const selectedBounds=selectedTarget?offerBounds[selectedTarget.id]:null;
- const teamName=(id:string)=>teams.find(t=>t.id===id)?.name||"Team";
- const memberName=(id:string)=>members.find(m=>m.id===id)?.character_name||"Member";
+ const teamName=(id:string)=>{const t=teams.find(x=>x.id===id);return <TeamProfileLink teamId={id}>{t?.name||"Team"}</TeamProfileLink>};
+ const memberName=(id:string)=>{const m=members.find(x=>x.id===id);return <MemberProfileLink memberId={id}>{m?.character_name||"Member"}</MemberProfileLink>};
  const memberRole=(id:string)=>members.find(m=>m.id===id)?.role||"Public Member";
  const lastOffer=(id:string)=>offers.filter(o=>o.takeover_id===id).sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime())[0];
 

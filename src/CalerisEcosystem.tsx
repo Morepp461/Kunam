@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Activity, Award, BarChart3, Crown, Newspaper, RefreshCw, Trophy, Wallet } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import "./caleris-ecosystem.css";
 type Mode = "owner" | "finance" | "news" | "hall";
 type NewsItem = { id:string; title:string; body:string; category:string; date:string; source:string; imageUrl?:string|null; lead?:string; facts?:string[] };
@@ -28,7 +29,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [wallet,setWallet]=useState(0),[valuation,setValuation]=useState<number|null>(null),[reputation,setReputation]=useState<number|null>(null);
  const [development,setDevelopment]=useState<{part_key:string;current_value:number}[]>([]);
  const [contracts,setContracts]=useState<{id:string;member_id:string;annual_salary:number;status:string;driver_name:string}[]>([]);
- const [raceForm,setRaceForm]=useState<{id:string;round_id:string;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
+ const [raceForm,setRaceForm]=useState<{id:string;round_id:string;member_id:string|null;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
  const [hqFacilities,setHqFacilities]=useState<{facility_key:string;level:number;condition:number;asset_value:number}[]>([]);
  const [loanRisk,setLoanRisk]=useState({active:0,overdue:0});
  const [teamTarget,setTeamTarget]=useState<{vision:string|null;long_term_target:string|null}>({vision:null,long_term_target:null});
@@ -77,7 +78,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
     const {data:publishedRaces}=await supabase.from("caleris_race_results").select("round_id").not("published_at","is",null);
     const publishedRoundIds=[...new Set((publishedRaces??[]).map((row:any)=>row.round_id).filter(Boolean))];
     if(publishedRoundIds.length){
-      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
+      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,member_id,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
       setRaceForm((entries??[]) as any);
     }else setRaceForm([]);
    }else{setWallet(0);setValuation(null);setReputation(null);setDevelopment([]);setSponsors([]);setContracts([]);setRaceForm([]);setHqFacilities([]);setLoanRisk({active:0,overdue:0});setTeamTarget({vision:null,long_term_target:null});}
@@ -169,8 +170,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
     <article><BarChart3/><span>HQ FACILITIES</span><strong>{hqFacilities.length}</strong></article>
    </div>
    <div className="ce-columns">
-    <section className="workspace-card"><div className="ce-title"><h2>Driver Line-up</h2><span>{contracts.length} active contracts</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong>{contract.driver_name}</strong><span>Kontrak aktif</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section>
-    <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong>{entry.driver_name_snapshot??"Driver"}</strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Driver Line-up</h2><span>{contracts.length} active contracts</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong><MemberProfileLink memberId={contract.member_id}>{contract.driver_name}</MemberProfileLink></strong><span>Kontrak aktif</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong><MemberProfileLink memberId={entry.member_id}>{entry.driver_name_snapshot??"Driver"}</MemberProfileLink></strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
    </div>
    <div className="ce-columns">
     <section className="workspace-card"><div className="ce-title"><h2>HQ Facilities</h2><span>{hqFacilities.length} facilities</span></div>{hqFacilities.map(f=><div className="ce-row" key={f.facility_key}><strong>{f.facility_key.replaceAll("_"," ")}</strong><span>Lv. {f.level} · {Number(f.condition).toFixed(0)}%</span></div>)}{!hqFacilities.length&&<p className="ce-empty">Data fasilitas belum tersedia.</p>}</section>
@@ -179,7 +180,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    <section className="workspace-card"><div className="ce-title"><h2>Season Strategy</h2><span>Team direction</span></div><p className="ce-note">{teamTarget.vision||"Visi tim belum ditentukan."}</p><strong>{teamTarget.long_term_target||"Target jangka panjang belum ditentukan."}</strong></section>
   </>}</>}
   {mode==="finance"&&<>{!team?<div className="workspace-card"><p>Akun ini belum terhubung ke tim. Financial Intelligence hanya tersedia untuk anggota tim.</p></div>:<>
-   <div className="ce-finance-intro"><div><span className="section-eyebrow">FINANCIAL POSITION · {team.division_key?.toUpperCase()??"TEAM"}</span><h2>{team.name}</h2><p>Ringkasan finansial berdasarkan wallet, kontrak, pinjaman, sponsorship, dan aset yang tercatat di CALERIS Economy Engine.</p></div><span className="ce-readonly-tag">OFFICIAL DATA · READ ONLY</span></div>
+   <div className="ce-finance-intro"><div><span className="section-eyebrow">FINANCIAL POSITION · {team.division_key?.toUpperCase()??"TEAM"}</span><h2><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink></h2><p>Ringkasan finansial berdasarkan wallet, kontrak, pinjaman, sponsorship, dan aset yang tercatat di CALERIS Economy Engine.</p></div><span className="ce-readonly-tag">OFFICIAL DATA · READ ONLY</span></div>
    <div className="ce-metrics">
     <article><Wallet/><span>AVAILABLE CASH</span><strong>{currency(wallet)}</strong></article>
     <article><BarChart3/><span>TEAM VALUATION</span><strong>{valuation===null?"—":currency(valuation)}</strong></article>
@@ -192,7 +193,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    </div>
    <div className="ce-columns">
     <section className="workspace-card"><div className="ce-title"><h2>Sponsorship Commitments</h2><span>{sponsors.length} active contracts</span></div><div className="ce-finance-summary"><span>Total active commitment</span><strong>{currency(sponsors.reduce((sum,row)=>sum+Number(row.annual_contract_amount??row.contract_amount??0),0))}</strong></div><p className="ce-note">Nilai dihitung dari nominal kontrak aktif; kontrak tahunan memakai annual contract amount jika tersedia.</p>{sponsors.length?sponsors.map(row=><div className="ce-row" key={row.id}><strong>Active sponsorship</strong><span>{currency(Number(row.annual_contract_amount??row.contract_amount??0))}</span></div>):<p className="ce-empty">Belum ada sponsorship aktif.</p>}</section>
-    <section className="workspace-card"><div className="ce-title"><h2>Payroll Obligations</h2><span>{contracts.length} active contracts</span></div><div className="ce-finance-summary"><span>Annual salary commitment</span><strong>{currency(contracts.reduce((sum,row)=>sum+Number(row.annual_salary||0),0))}</strong></div>{contracts.length?contracts.map(row=><div className="ce-row" key={row.id}><strong>{row.driver_name}</strong><span>{currency(Number(row.annual_salary||0))} / season</span></div>):<p className="ce-empty">Belum ada payroll kontrak aktif pada season terbaru.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Payroll Obligations</h2><span>{contracts.length} active contracts</span></div><div className="ce-finance-summary"><span>Annual salary commitment</span><strong>{currency(contracts.reduce((sum,row)=>sum+Number(row.annual_salary||0),0))}</strong></div>{contracts.length?contracts.map(row=><div className="ce-row" key={row.id}><strong><MemberProfileLink memberId={row.member_id}>{row.driver_name}</MemberProfileLink></strong><span>{currency(Number(row.annual_salary||0))} / season</span></div>):<p className="ce-empty">Belum ada payroll kontrak aktif pada season terbaru.</p>}</section>
    </div>
    <section className="workspace-card"><div className="ce-title"><h2>HQ Asset Portfolio</h2><span>{hqFacilities.length} registered facilities</span></div><div className="ce-finance-summary"><span>Total recorded HQ asset value</span><strong>{currency(hqFacilities.reduce((sum,row)=>sum+Number(row.asset_value||0),0))}</strong></div>{hqFacilities.length?hqFacilities.map(row=><div className="ce-row" key={row.facility_key}><strong>{row.facility_key.replaceAll("_"," ")}</strong><span>{currency(Number(row.asset_value||0))} · Lv. {row.level}</span></div>):<p className="ce-empty">Belum ada aset HQ yang tercatat.</p>}</section>
    <p className="ce-finance-footnote">Angka di atas berasal dari data resmi yang dapat dibaca oleh akun tim. Riwayat ledger transaksi tidak ditampilkan di sini karena akses transaksi saat ini dibatasi oleh kebijakan keamanan Economy Engine.</p>
