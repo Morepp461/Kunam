@@ -54,7 +54,7 @@ describe("Championship predictor", () => {
     let cursor = 0;
     const result = simulateChampionship(
       [{ name: "A", points: 0 }, { name: "B", points: 0 }],
-      [{ finishingPoints: [10, 5], poleBonus: 2 }],
+      [{ finishingPoints: [10, 5], poleBonus: 2, sessionType: "race" }],
       1,
       () => randomValues[cursor++] ?? 0,
     );
@@ -62,10 +62,43 @@ describe("Championship predictor", () => {
     expect(result.maxRemainingPoints).toBe(12);
   });
 
+  it("uses race countback before qualifying countback when points are level", () => {
+    const raceResult = simulateChampionship(
+      [{ name: "A", points: 0 }, { name: "B", points: 0 }],
+      [{ finishingPoints: [10, 10], poleBonus: 0, sessionType: "race" }],
+      1,
+      () => 0,
+    );
+    expect(raceResult.probabilities).toEqual([0, 100]);
+    expect(raceResult.unresolvedTiebreakTrials).toBe(0);
+
+    const qualifyingFallback = simulateChampionship(
+      [
+        { name: "A", points: 0, countback: [], qualifyingCountback: [0, 1] },
+        { name: "B", points: 0, countback: [], qualifyingCountback: [1, 0] },
+      ],
+      [{ finishingPoints: [0, 0], poleBonus: 0, sessionType: "qualifying" }],
+      1,
+      () => 0,
+    );
+    expect(qualifyingFallback.probabilities).toEqual([0, 100]);
+  });
+
+  it("does not use sprint finishes for countback and splits unresolved qualifying ties", () => {
+    const result = simulateChampionship(
+      [{ name: "A", points: 0 }, { name: "B", points: 0 }],
+      [{ finishingPoints: [10, 10], poleBonus: 0, sessionType: "sprint" }],
+      1,
+      () => 0,
+    );
+    expect(result.probabilities).toEqual([50, 50]);
+    expect(result.unresolvedTiebreakTrials).toBe(1);
+  });
+
   it("rejects negative pole bonus configuration", () => {
     expect(() => simulateChampionship(
       [{ name: "A", points: 10 }, { name: "B", points: 9 }],
-      [{ finishingPoints: [10, 5], poleBonus: -1 }],
+      [{ finishingPoints: [10, 5], poleBonus: -1, sessionType: "race" }],
     )).toThrow("Aturan poin");
   });
 
