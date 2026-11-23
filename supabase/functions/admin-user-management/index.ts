@@ -3,6 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 
 const allowedOrigin = (origin: string) =>
   origin === "http://localhost:5173" ||
+  origin === "https://calerismasters.com" ||
+  origin === "https://www.calerismasters.com" ||
   origin === "https://calerismastersnewgen-mu.vercel.app" ||
   /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
 const cors = (origin: string) => ({
