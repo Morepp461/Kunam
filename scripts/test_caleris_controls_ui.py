@@ -43,8 +43,12 @@ assert 'border-left:2px solid rgba(214,184,94,.88)' in CONTROLS
 # All native select fields must open the shared CALERIS sheet, avoiding OS-native grey popups.
 assert "function CalerisSelectOverlay()" in APP
 assert "caleris-select-backdrop" in APP
-assert 'document.addEventListener("click",openSelect,true)' in APP
-assert 'document.addEventListener("pointerdown",openSelect,true)' not in APP
+assert 'document.addEventListener("pointerdown",openSelect,true)' in APP
+assert 'document.removeEventListener("pointerdown",openSelect,true)' in APP
+assert 'document.addEventListener("click",clickFallback,true)' in APP
+assert 'if(event.detail!==0)return' in APP
+assert 'event.preventDefault();' in APP[APP.index('const openSelect=(event:PointerEvent)=>'):APP.index('const clickFallback=')]
+assert 'document.addEventListener("click",openSelect,true)' not in APP
 assert 'suppressNativeClick' not in APP
 assert 'labelText+=node.textContent||""' in APP
 assert 'input value={filter} onChange={event=>setFilter(event.target.value)}' in APP

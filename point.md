@@ -1325,3 +1325,16 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Admin Workflow remains a placeholder because the CRM workflow requirements have not been supplied; no workflow rules have been invented.
 
 **Accurate release status:** repository CI, merge, Testing/Production database routine parity, the two relevant Edge Function deployments, and Vercel Production are verified. The 11-scope program is not marked fully complete while the asset, authenticated-user, device, and remaining manual audit gates above remain open.
+
+
+---
+
+# GLOBAL SELECT DOUBLE-POPUP FIX — 23 NOVEMBER 2026
+
+- Reported issue: the native browser/Android grey select picker appeared together with the CALERIS custom option sheet across pages.
+- Root cause: the global `CalerisSelectOverlay` intercepted the `click` event, but mobile browsers can open the native picker on `pointerdown`, before click capture can cancel it.
+- Fix on branch `fix/global-native-select-double-popup-20261123`: intercept eligible native select controls during capture-phase `pointerdown`, call `preventDefault()` before the OS picker launches, and open the shared CALERIS option sheet. Keyboard activation remains supported; a click-only fallback is retained for assistive/programmatic activation without pointer events.
+- The behavior is global because the overlay is mounted once in the authenticated `MainLayout` route tree; it applies to native select controls across all pages, not only Transfer Market.
+- `data-native-popup="true"` remains an explicit opt-out for any control that must intentionally use the native picker.
+- QA gate: run TypeScript, production build, unit/schema/browser smoke tests and verify one dropdown only on Android Chrome and desktop keyboard navigation before merge/deploy. Physical Android acceptance is still required for final confirmation.
+- No dependency, database schema, Supabase function, wallet, or Vercel environment changes are included.
