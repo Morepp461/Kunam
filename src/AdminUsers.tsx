@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import { Search, RefreshCw, UserRound, ShieldCheck, Settings2, X, ExternalLink, Users } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import "./admin-users.css";
@@ -201,19 +201,18 @@ export default function AdminUsers() {
           const profile = user.profile;
           const member = user.member;
           const displayName = profile?.web_nickname || [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || user.user_metadata.full_name || user.email || "Caleris Member";
-          const profileHref = profile?.public_member_id ? `/member/${profile.public_member_id}` : null;
           return <article className="workspace-card admin-user-card" key={user.user_id}>
             <div className="admin-user-main">
               <div className="admin-user-avatar">{profile?.avatar_url ? <img src={profile.avatar_url} alt=""/> : <UserRound size={22}/>}</div>
               <div className="admin-user-identity">
-                {profileHref ? <Link to={profileHref} className="admin-user-name">{displayName}<ExternalLink size={13}/></Link> : <strong className="admin-user-name">{displayName}</strong>}
+                <MemberProfileLink memberId={profile?.public_member_id || member?.id} className="admin-user-name">{displayName}<ExternalLink size={13}/></MemberProfileLink>
                 <span>{user.email || "Email tidak tersedia"}</span>
                 <small>{profile?.public_member_id ? `Member ID · ${profile.public_member_id}` : "Belum memiliki Member ID"}</small>
               </div>
               <div className="admin-user-roles">
                 <span className="admin-user-role-label">Preferensi: <b>{profile?.preferred_role || "Belum memilih"}</b></span>
                 <span className="admin-user-role-label">Role aktif: <b>{member?.role || (member ? "Public" : "Belum terhubung")}</b></span>
-                {member?.team_id && <span className="admin-user-role-label">Tim: <b>{user.team_name || "Tim tidak ditemukan"}</b></span>}
+                {member?.team_id && <span className="admin-user-role-label">Tim: <b><TeamProfileLink teamId={member.team_id}>{user.team_name || "Tim tidak ditemukan"}</TeamProfileLink></b></span>}
               </div>
               <div className="admin-user-actions">
                 {user.is_admin && <span className="admin-user-admin-badge"><ShieldCheck size={13}/> Admin</span>}
@@ -222,7 +221,7 @@ export default function AdminUsers() {
             </div>
             <div className="admin-user-meta">
               <span><b>Status akun</b>{user.is_admin ? "Admin" : profile?.account_status || "Belum onboarding"}</span>
-              <span><b>Karakter</b>{member?.character_name || profile?.driver_nickname || "Belum terhubung"}</span>
+              <span><b>Karakter</b><MemberProfileLink memberId={member?.id}>{member?.character_name || profile?.driver_nickname || "Belum terhubung"}</MemberProfileLink></span>
               <span><b>License</b>{member?.license || "—"}</span>
               <span><b>Login terakhir</b>{dateTime(user.last_sign_in_at)}</span>
               <span><b>Dibuat</b>{dateTime(user.created_at)}</span>
@@ -236,7 +235,7 @@ export default function AdminUsers() {
                 <span><b>Tanggal lahir</b>{dateOnly(profile?.date_of_birth)}</span><span><b>Nationality</b>{profile?.nationality || "—"}</span>
                 <span><b>Hometown</b>{profile?.hometown || "—"}</span><span><b>Provider login</b>{user.provider || user.providers.join(", ") || "—"}</span>
                 <span><b>Nomor telepon</b>{user.phone || "—"}</span><span><b>Member Code</b>{member?.member_code || "—"}</span>
-                <span><b>Tim</b>{user.team_name || "—"}</span><span><b>Member dibuat</b>{dateTime(member?.created_at)}</span>
+                <span><b>Tim</b><TeamProfileLink teamId={member?.team_id}>{user.team_name || "—"}</TeamProfileLink></span><span><b>Member dibuat</b>{dateTime(member?.created_at)}</span>
                 <span><b>Onboarding</b>{profile?.onboarding_completed ? "Selesai" : "Belum selesai"}</span>
                 <span><b>Persetujuan privasi</b>{dateTime(profile?.privacy_accepted_at)}</span>
                 <span><b>Profil diperbarui</b>{dateTime(profile?.updated_at)}</span><span><b>User UUID</b>{user.user_id}</span>
