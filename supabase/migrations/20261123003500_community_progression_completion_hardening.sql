@@ -2,9 +2,6 @@ begin;
 
 -- Restrict internal trigger helpers. SECURITY DEFINER alone is not an authorization boundary.
 revoke all on function public.caleris_log_activity(uuid,uuid,text,text,text,jsonb) from public, anon, authenticated;
-revoke all on function public.caleris_refresh_driver_milestones(uuid) from public, anon, authenticated;
-revoke all on function public.caleris_reverse_race_entry_xp() from public, anon, authenticated;
-revoke all on function public.caleris_team_roster_milestone_trigger() from public, anon, authenticated;
 revoke all on function public.caleris_refresh_team_milestones(uuid) from public, anon, authenticated;
 revoke all on function public.caleris_award_configured_xp(uuid,text,text,text) from public, anon, authenticated;
 revoke all on function public.caleris_sync_xp_milestones() from public, anon, authenticated;
@@ -855,6 +852,9 @@ revoke all on function public.caleris_admin_finalize_poll(uuid,boolean) from pub
 grant execute on function public.caleris_admin_finalize_poll(uuid,boolean) to authenticated;
 revoke all on function public.caleris_get_public_digital_id(text) from public;
 grant execute on function public.caleris_get_public_digital_id(text) to anon,authenticated;
+revoke all on function public.caleris_refresh_driver_milestones(uuid) from public,anon,authenticated;
+revoke all on function public.caleris_reverse_race_entry_xp() from public,anon,authenticated;
+revoke all on function public.caleris_team_roster_milestone_trigger() from public,anon,authenticated;
 
 -- Backfill career and roster milestones without touching wallets or competition records.
 do $backfill$
