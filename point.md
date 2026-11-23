@@ -303,3 +303,12 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 04 — Caleris Newsroom manga redesign (2026-11-23)
+- Status: IMPLEMENTED, CI/visual QA pending.
+- Branch: `feat/caleris-scope-04-newsroom-manga`.
+- News cards are separated into comic panels with bold frames, gutters, halftone texture, varied panel surfaces, action labels and manga typography. Article popup/reader uses the matching manga visual language while preserving existing article content, sort order, and selection behavior.
+- Files: `src/CalerisEcosystem.tsx`, `src/caleris-ecosystem.css`.
+- DB: no schema or content changes. Vercel environment unchanged.
+- QA remaining: responsive grid, long headlines/body, popup scroll/close, CI/build.
