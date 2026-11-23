@@ -568,6 +568,16 @@ function PollAdmin({
   const [saving, setSaving] = useState(false);
   const [definitions, setDefinitions] = useState<any[]>([]);
   const [badgeOptions, setBadgeOptions] = useState<any[]>([]);
+  const [badgeCatalog, setBadgeCatalog] = useState<any[]>([]);
+  const [badgeCodeInput, setBadgeCodeInput] = useState("");
+  const [badgeTitleInput, setBadgeTitleInput] = useState("");
+  const [badgeDescriptionInput, setBadgeDescriptionInput] = useState("");
+  const [badgeIconInput, setBadgeIconInput] = useState("award");
+  const [badgeRarityInput, setBadgeRarityInput] = useState("common");
+  const [badgeActiveInput, setBadgeActiveInput] = useState(true);
+  const [editingBadgeCode, setEditingBadgeCode] = useState("");
+  const [rewardSettings, setRewardSettings] = useState<any[]>([]);
+  const [rewardInputs, setRewardInputs] = useState<Record<string, string>>({});
   const [editingCode, setEditingCode] = useState("");
   const [scope, setScope] = useState("driver");
   const [metricKey, setMetricKey] = useState("driver_race_starts");
@@ -619,17 +629,21 @@ function PollAdmin({
 
   const loadAdminConfig = async () => {
     if (!db) return;
-    const [definitionResult, badgeResult, seasonResult] = await Promise.all([
+    const [definitionResult, badgeResult, seasonResult, rewardResult] = await Promise.all([
       db.from("caleris_milestone_definitions").select("*").order("scope").order("title"),
-      db.from("caleris_achievement_badges").select("code,title").eq("active", true).order("title"),
+      db.from("caleris_achievement_badges").select("*").order("title"),
       db.from("license_seasons").select("id,title").order("starts_on", { ascending: false }),
+      db.from("caleris_xp_reward_settings").select("*").order("source_type"),
     ]);
-    if (definitionResult.error || badgeResult.error || seasonResult.error) {
-      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message);
+    if (definitionResult.error || badgeResult.error || seasonResult.error || rewardResult.error) {
+      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message || rewardResult.error?.message);
     }
     setDefinitions(definitionResult.data ?? []);
-    setBadgeOptions(badgeResult.data ?? []);
+    setBadgeCatalog(badgeResult.data ?? []);
+    setBadgeOptions((badgeResult.data ?? []).filter((badge: any) => badge.active));
     setSeasonOptions(seasonResult.data ?? []);
+    setRewardSettings(rewardResult.data ?? []);
+    setRewardInputs(Object.fromEntries((rewardResult.data ?? []).map((item: any) => [item.source_type, String(item.reward_xp)])));
   };
 
   useEffect(() => { void loadCandidates(); }, [type]);
@@ -664,6 +678,59 @@ function PollAdmin({
     else {
       toast("success", startDate.getTime() > Date.now() ? "Voting berhasil dijadwalkan" : "Voting berhasil dibuat");
       setTitle(""); setDescription(""); setSelected([]); setStartsAt(""); setEndsAt("");
+      onCreated();
+    }
+  };
+
+  const saveReward = async (source: string) => {
+    const value = Number(rewardInputs[source]);
+    if (!db || !Number.isInteger(value) || value < 0 || value > 100000) {
+      toast("warning", "Reward XP tidak valid", "Masukkan angka bulat dari 0 sampai 100.000.");
+      return;
+    }
+    const { error } = await db.rpc("caleris_set_xp_reward", { p_source: source, p_reward: value });
+    if (error) toast("error", "Reward XP gagal disimpan", error.message);
+    else {
+      toast("success", "Reward XP diperbarui", `${source}: ${formatNumber(value)} XP`);
+      await loadAdminConfig();
+    }
+  };
+
+  const editBadge = (badge: any) => {
+    setEditingBadgeCode(badge.code);
+    setBadgeCodeInput(badge.code);
+    setBadgeTitleInput(badge.title);
+    setBadgeDescriptionInput(badge.description ?? "");
+    setBadgeIconInput(badge.icon ?? "award");
+    setBadgeRarityInput(badge.rarity ?? "common");
+    setBadgeActiveInput(Boolean(badge.active));
+  };
+
+  const resetBadge = () => {
+    setEditingBadgeCode("");
+    setBadgeCodeInput("");
+    setBadgeTitleInput("");
+    setBadgeDescriptionInput("");
+    setBadgeIconInput("award");
+    setBadgeRarityInput("common");
+    setBadgeActiveInput(true);
+  };
+
+  const saveBadge = async () => {
+    const code = badgeCodeInput.trim().toLowerCase();
+    if (!db || !/^[a-z0-9_]{3,80}$/.test(code) || !badgeTitleInput.trim() || badgeDescriptionInput.length > 500 || badgeIconInput.length > 60) {
+      toast("warning", "Badge belum valid", "Kode harus 3-80 karakter huruf kecil/angka/underscore; judul wajib diisi.");
+      return;
+    }
+    const { error } = await db.rpc("caleris_admin_save_badge", {
+      p_code: code, p_title: badgeTitleInput.trim(), p_description: badgeDescriptionInput,
+      p_icon: badgeIconInput, p_rarity: badgeRarityInput, p_active: badgeActiveInput,
+    });
+    if (error) toast("error", "Badge gagal disimpan", error.message);
+    else {
+      toast("success", "Badge catalog diperbarui");
+      resetBadge();
+      await loadAdminConfig();
       onCreated();
     }
   };
@@ -813,6 +880,18 @@ function PollAdmin({
     </div>
 
     <div className="cp-admin-config">
+      <h4>XP Reward Configuration</h4>
+      <p>Reward berasal dari konfigurasi server. Nilai 0 menonaktifkan award untuk sumber tersebut.</p>
+      <div className="cp-grid cp-admin-form">
+        {rewardSettings.map((item) => <label key={item.source_type}>
+          {({ race_result: "Official race result", checkin: "Race check-in", quest: "Quest completion", shop_purchase: "Development shop purchase" } as Record<string, string>)[item.source_type] ?? item.source_type}
+          <input type="number" min="0" max="100000" step="1" value={rewardInputs[item.source_type] ?? "0"} onChange={(event) => setRewardInputs((current) => ({ ...current, [item.source_type]: event.target.value }))} />
+          <button onClick={() => void saveReward(item.source_type)}>Save reward</button>
+        </label>)}
+      </div>
+    </div>
+
+    <div className="cp-admin-config">
       <h4>Manual XP Adjustment</h4>
       <p>Setiap penyesuaian dicatat di ledger dengan reference unik dan alasan audit. Total XP tidak boleh menjadi negatif.</p>
       <label>Cari member<input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Nama karakter" /></label>
@@ -823,6 +902,29 @@ function PollAdmin({
       <label>Jumlah XP (+/-)<input type="number" step="1" value={adjustAmount} onChange={(event) => setAdjustAmount(event.target.value)} /></label>
       <label>Alasan<input value={adjustDescription} onChange={(event) => setAdjustDescription(event.target.value)} maxLength={240} /></label>
       <button onClick={() => void adjustXp()}><Save size={15} /> Terapkan penyesuaian</button>
+    </div>
+
+    <div className="cp-admin-config">
+      <h4>Achievement Badge Catalog</h4>
+      <p>Admin dapat mengatur deskripsi, icon key, rarity, dan status badge. Kode badge yang sudah dipakai tidak dapat diganti.</p>
+      <div className="cp-admin-form">
+        <label>Badge code<input value={badgeCodeInput} disabled={Boolean(editingBadgeCode)} onChange={(event) => setBadgeCodeInput(event.target.value.toLowerCase())} maxLength={80} placeholder="season_champion" /></label>
+        <label>Title<input value={badgeTitleInput} onChange={(event) => setBadgeTitleInput(event.target.value)} maxLength={120} /></label>
+        <label>Icon key<input value={badgeIconInput} onChange={(event) => setBadgeIconInput(event.target.value)} maxLength={60} placeholder="award" /></label>
+        <label>Rarity<select value={badgeRarityInput} onChange={(event) => setBadgeRarityInput(event.target.value)}>
+          <option value="common">Common</option><option value="rare">Rare</option><option value="epic">Epic</option><option value="legendary">Legendary</option>
+        </select></label>
+      </div>
+      <label>Description<textarea rows={2} value={badgeDescriptionInput} onChange={(event) => setBadgeDescriptionInput(event.target.value)} maxLength={500} /></label>
+      <label className="cp-checkbox"><input type="checkbox" checked={badgeActiveInput} onChange={(event) => setBadgeActiveInput(event.target.checked)} /> Active in member catalog</label>
+      <button onClick={() => void saveBadge()}><Save size={15} /> {editingBadgeCode ? "Save badge" : "Create badge"}</button>
+      {editingBadgeCode && <button onClick={resetBadge}>Cancel edit</button>}
+      <div className="cp-admin-list">
+        {badgeCatalog.map((badge) => <div key={badge.code}>
+          <span><strong>{badge.title}</strong><small>{badge.code} · {badge.rarity} · {badge.active ? "Active" : "Inactive"}</small></span>
+          <button onClick={() => editBadge(badge)}>Edit</button>
+        </div>)}
+      </div>
     </div>
   </section>;
 }
