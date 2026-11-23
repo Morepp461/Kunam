@@ -8,7 +8,7 @@ LAYOUT = (ROOT / "src" / "MainLayout.tsx").read_text(encoding="utf-8")
 NOTIFICATIONS = (ROOT / "src" / "NotificationsCenter.tsx").read_text(encoding="utf-8")
 CSS = (ROOT / "src" / "cale-mascot.css").read_text(encoding="utf-8")
 
-ids = re.findall(r'^\\s*\\["([a-z0-9_]+)",', MANIFEST, flags=re.MULTILINE)
+ids = re.findall(r'^\s*\["([a-z0-9_]+)",', MANIFEST, flags=re.MULTILINE)
 assert len(ids) == 57, f"Expected 57 Cale design IDs, got {len(ids)}"
 assert len(set(ids)) == 57, "Cale design IDs must be unique"
 
@@ -22,15 +22,15 @@ expected_groups = {
     "navigation": 7,
 }
 for category, expected in expected_groups.items():
-    match = re.search(rf'define\\("{category}"[^\\[]*\\[(.*?)\\]\\)', MANIFEST, flags=re.DOTALL)
+    match = re.search(rf'define\("{category}"[^\[]*\[(.*?)\]\)', MANIFEST, flags=re.DOTALL)
     assert match, f"Missing category group: {category}"
-    count = len(re.findall(r'\\["[a-z0-9_]+",', match.group(1)))
+    count = len(re.findall(r'\["[a-z0-9_]+",', match.group(1)))
     assert count == expected, f"{category} expected {expected} IDs, got {count}"
 
 assert 'artworkStatus: "wardrobe-master"' in MANIFEST
-assert 'case "onboarding":\\n      return "formal"' in MANIFEST
-assert 'case "warning":\\n      return "fia"' in MANIFEST
-assert 'case "race":\\n      return "racing"' in MANIFEST
+assert 'case "onboarding":\n      return "formal"' in MANIFEST
+assert 'case "warning":\n      return "fia"' in MANIFEST
+assert 'case "race":\n      return "racing"' in MANIFEST
 assert 'item.id === "reaction_warning" || item.id === "reaction_error"' in MANIFEST
 
 for asset in ("cale-racing.webp", "cale-formal.webp", "cale-fia.webp"):
