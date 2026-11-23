@@ -381,7 +381,7 @@ function PublicMemberProfile({session}:{session:Session|null}){
 function CalerisSelectOverlay(){
  const [activeSelect,setActiveSelect]=useState<HTMLSelectElement|null>(null),[filter,setFilter]=useState("");
  useEffect(()=>{
-  const canUseCustomSheet=(select:HTMLSelectElement|null)=>Boolean(
+  const canUseCustomSheet=(select:HTMLSelectElement|null):select is HTMLSelectElement=>Boolean(
    select&&!select.disabled&&!select.multiple&&select.dataset.nativePopup!=="true"
   );
   const showSelect=(select:HTMLSelectElement)=>{
