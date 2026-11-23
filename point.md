@@ -324,3 +324,32 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 - Added links in Job Search, Driver Transfer Market, Team Take Over, My Profile, Stage5 standings/directories/Team Summary, and Caleris Ecosystem team/driver sections.
 - No DB migration required. Edge Function deployment required on Testing and Production after CI/QA. No Vercel environment changes.
 - QA remaining: UUID/public Member ID route, team profile RLS-safe output, search team navigation, all wrapped pages, TypeScript/build, Edge Function deploy to Testing then Production.
+
+
+## 7. Checkpoint pengerjaan terintegrasi — 23 November 2026
+
+Branch integrasi aktif: `feat/caleris-11-scope-integration-20261123`. Perubahan pada bagian ini sedang digabungkan dari branch fitur yang telah dibuat terpisah. Belum ada migrasi baru yang diterapkan ke database dan belum ada deployment Vercel.
+
+| Scope | Hasil saat ini | Status release |
+|---|---|---|
+| 01 Dropdown Digital ID | Dropdown custom tunggal dipindahkan ke branch integrasi; komponen dan CSS sudah digabungkan. | QA/CI integrasi pending |
+| 02 Loading copy | Shared Stage5 panel memakai teks `Mempersiapkan Data...`. | QA/CI integrasi pending |
+| 03 Job Search search box | Perbaikan alignment ikon dan tinggi search field sudah masuk melalui PR #293. | MERGED ke main; QA visual mobile/desktop masih perlu |
+| 04 Newsroom manga | Panel berita dipisahkan seperti halaman manga; popup artikel memakai treatment manga. Data/editorial order tidak diubah. | QA/CI integrasi pending |
+| 05 Driver contract request | Driver dapat mengirim permintaan renewal jika memiliki kontrak aktif; Owner dapat menawarkan atau menolak. Salary band dan role checks dipertahankan. | QA/CI integrasi pending; migrasi belum diterapkan |
+| 06 Admin Workflow | Tujuan halaman dijelaskan sebagai workspace CRM/operasional yang saat ini belum aktif; tidak membuat workflow fiktif. | QA/CI integrasi pending |
+| 07 Duplicate adjustment route | `/admin/data-adjustments` diarahkan ke halaman canonical `/admin/adjustments`; item menu duplikat dihapus. | QA/CI integrasi pending |
+| 08 Team Livery 3D | Branch eksperimen menyediakan 50 decal vektor, color picker RGB 24-bit, dan drag orbit. Belum memakai model Sketchfab sebenarnya, belum ada UV validation dan sponsor otomatis dari kontrak tim. | BLOCKED untuk release: file model GLB/GLTF yang dapat diproses belum tersedia di repository |
+| 09 Global profile links | Komponen link Driver/Team, halaman profil tim, route canonical, dan endpoint publik sudah masuk melalui PR #303. | MERGED ke main; Edge Function deployment dan QA runtime pending |
+| 10 Manage User | UI dan Edge Function Admin untuk role, team assignment, warning, temporary/permanent ban, unban, dan audit history telah dipindahkan ke branch integrasi. | QA/CI integrasi pending; migrasi dan Edge Function belum diterapkan |
+| 11 Team inactivity freeze | Evaluasi aktivitas per season, settlement sisa kontrak, idempotency, pending compensation, replacement slot, dan reaktivasi 3 aktivitas sudah dipindahkan. | QA/CI integrasi pending; migrasi belum diterapkan; wajib simulasi Testing |
+
+### Validasi penting yang masih wajib
+
+- Scope 05: form request saat ini khusus renewal untuk Driver yang masih punya kontrak aktif. Driver tanpa kontrak aktif diarahkan ke Job Search; jangan menyebutnya sebagai pengajuan kontrak baru sampai alur kontrak baru benar-benar tersedia.
+- Scope 08: asset Sketchfab `2025 F1 CAR` belum berada di repository. Model halaman Sketchfab tercatat memiliki sekitar 3,1 juta triangle; perlu file yang dapat diproses, pemeriksaan UV/material, optimasi mobile, serta bukti sponsor aktif sebelum integrasi final. Jangan mengganti asset dengan model prosedural lalu menyebutnya hyper-realistic.
+- Scope 10: verifikasi login/session yang sudah terbuka saat ban, expiry, self-lockout, admin protection, dan role FIA vs Admin.
+- Scope 11: simulasi 4-season contract yang dimulai pada season freeze menghasilkan 3 season tersisa. Dengan gaji €10.000.000/season, kompensasi yang diharapkan adalah €30.000.000 per Driver. Pastikan sumber dana Team Wallet tersedia; jika tidak, settlement tetap pending dan tidak boleh menandai tim Frozen sebelum seluruh pembayaran selesai.
+- Database target: Testing `vxwvhyyvoipjwucbrvlu`; Production `asltczqrmoxnayusvjta`. Versi migrasi 20261123110000, 20261123120000, dan 20261123130000 belum tercatat di kedua migration ledger pada pemeriksaan terakhir.
+- Vercel environment tidak diubah. Deployment hanya boleh dilakukan setelah merge, migrasi Testing + QA, migrasi Production, dan verifikasi deployment.
+
