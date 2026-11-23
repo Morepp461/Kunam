@@ -267,7 +267,7 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 |---|---|---|---|---|---|
 | 01 Dropdown ganda | PLANNED | — | — | N/A | N/A |
 | 02 Loading copy | PLANNED | — | — | N/A | N/A |
-| 03 Job Search search box | PLANNED | — | — | N/A | N/A |
+| 03 Job Search search box | IN PROGRESS | `fix/caleris-11-scope-improvements` · `4ed3730` | Awaiting CI + mobile/desktop QA | N/A | N/A |
 | 04 Newsroom manga | PLANNED | — | — | N/A* | N/A* |
 | 05 Contract renewal/application | PLANNED | — | — | — | — |
 | 06 Admin Workflow | PLANNED | — | — | N/A | N/A |
@@ -303,3 +303,16 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Implementation checkpoint — Scope 03 (2026-11-23)
+
+- Status: **IN PROGRESS** (CSS correction committed; not yet QA PASSED).
+- Branch + commit: `fix/caleris-11-scope-improvements` · `4ed37302c4634ad02d788852d6c79d3943a9f8a0`.
+- Implementasi: `src/marketplace-directory.css` memperbaiki specificity yang membuat aturan `.market-filter-grid > label` menimpa flex-row pada `.market-search`. Search control sekarang mempertahankan ikon dan input pada satu baris, tinggi minimum konsisten, dan ikon tetap center-aligned.
+- Migration: N/A.
+- QA: belum dilakukan pada Android Chrome dan desktop; belum ada klaim lolos.
+- CI + build + validation: menunggu workflow branch.
+- Supabase Testing: N/A. Supabase Production: N/A.
+- Vercel: environment tidak diubah; belum ada deployment fitur.
+- Risiko / follow-up: verifikasi layout pada viewport screenshot, zoom, focus, dan filter query. Lanjutkan hanya setelah CI/QA lulus.
