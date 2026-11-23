@@ -1128,3 +1128,13 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 - No Vercel environment settings were changed.
 
 **Open work:** Scope 08 remains partial until the supplied 2025 GLB is hosted and loaded by the production editor; the current preview is procedural. Global profile-link manual acceptance and the authenticated Admin User browser walkthrough also remain outstanding.
+
+
+
+### Infrastructure finalization — 23 November 2026
+
+- Main HEAD `0e61a1c037d7f070297df493b3fc4423bb538de2` passed GitHub Actions run `45174167144`.
+- Vercel Production deployment `dpl_12n9PkiSfPsonvUVAQzYjM16u98y` is **READY** for the exact main SHA. No Vercel environment variables or project settings were changed.
+- Supabase Testing and Production migration ledgers are aligned for the Driver Contract Request, Manage User Moderation, Team Inactivity Freeze/Compensation, Driver First Contract support, and FK-index migrations. The migration SQL was already applied; only generated ledger version/name metadata was normalized. No application data was changed.
+- All 14 FK indexes from `20261123150000_caleris_scope_fk_indexes` are present in both databases.
+- The 11-scope work is not fully accepted yet: real 2025 GLB hosting/loading and mesh integration, Android GPU/memory acceptance, authenticated Driver/Owner and Admin role walkthroughs, full page-by-page profile-link verification, and safe Testing-only compensation scenario QA remain open. See `point.md` for the detailed checkpoint.
