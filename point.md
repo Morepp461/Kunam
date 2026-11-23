@@ -1371,3 +1371,5 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 
 
 - Additional profile-link audit fixes: Team Summary, Team HQ, Team Engine Market, Team Inactivity settlement, Admin Users, Team Owner/Finance, recent race results, Hall of Fame winners, and all-time driver/team records now use verified public member IDs or team IDs. Internal member UUIDs are no longer passed as public profile route IDs in the reviewed views.
+
+- Added a global guard in `EntityProfileLink`: Member Profile links require a valid 12–16 character public ID, and Team Profile links require a valid UUID. This prevents overlooked components from accidentally exposing internal member UUIDs as public profile routes.
