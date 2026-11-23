@@ -1156,3 +1156,50 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 - Admin User CORS Edge Function remains ACTIVE in Testing v8 and Production v7 with matching source hash and `verify_jwt=true`. Production domains are explicitly allowed.
 - Scope 08 remains partial: 50 vector decal presets, RGB color selection, layers, sponsor placement, UV-atlas placement, and camera orbit/zoom are implemented. The supplied 2025 GLB is not hosted in an app-accessible asset location, so the preview remains procedural. Real GLB loading, sponsor logos on the real mesh, Team Profile rendering, and Android GPU/memory acceptance remain open.
 - No Vercel environment settings changed. Verify the latest Vercel production deployment for this main commit before declaring the release complete.
+
+
+---
+
+# FINAL RELEASE CHECKPOINT — 23 November 2026
+
+## Verified repository state
+- PR #307: merged; implementation commit `6c8fbdbe7d3f1adfc8c3314f41079836939ae0f5`.
+- PR #308: merged; implementation commit `c65ceafcb5f768a9d16d6c27f43edc4568c4517d`.
+- Latest main commit at checkpoint: `c28c569476abf5a6a125dd1346ba64b22ac7f022`.
+- Both required GitHub Actions build checks passed for both PRs. TypeScript, production build, unit/schema tests, browser smoke tests, cross-engine regressions, Admin Manage User security, team inactivity/compensation, JWT/profile privacy, and Supabase schema parity checks passed.
+
+## Vercel Production
+- Deployment: `dpl_GqVfJ8zT8hG6bhYNLN7F5gwtbCa5`.
+- State: `READY`.
+- Source SHA: `c28c569476abf5a6a125dd1346ba64b22ac7f022`.
+- Aliases: `calerismasters.com`, `www.calerismasters.com`, `calerismastersnewgen-mu.vercel.app`.
+- Production domain returned HTTP 200.
+- No Vercel environment variables or project settings were changed.
+
+## Supabase
+- `admin-user-management` Edge Function is ACTIVE in Testing v8 and Production v7; both have `verify_jwt=true` and identical source hash `10b32d612208fe1ed681ea5ac93e5f72a215e78654ef724ca689478d509e4d34`.
+- CORS allow-list explicitly includes `https://calerismasters.com` and `https://www.calerismasters.com`.
+- `caleris_member_directory.public_member_id` and sponsorship contract/sponsor columns used by the livery editor were verified in both databases.
+- No new migration was required for this follow-up; livery design additions are stored in the existing JSONB document.
+
+## Scope status
+- Scope 01: Transfer Market native dropdowns replaced with custom dropdown controls; CI passed. Android manual verification still required.
+- Scope 02: “Mempersiapkan Data” shared loading copy remains integrated from previous PR.
+- Scope 03: Job Search search icon/input alignment CSS specificity fixed; CI passed.
+- Scope 04: Manga-style Newsroom work remains integrated from previous PR.
+- Scope 05: Driver first-contract/renewal workflow integrated; real Driver/Owner acceptance still required.
+- Scope 06: Admin Workflow remains a clearly labeled placeholder pending CRM specification.
+- Scope 07: Duplicate page routing remains redirected to canonical page.
+- Scope 08: 50 vector decal presets, 24-bit RGB color picker, multi-layer decal placement/scale/rotation, sponsor retrieval and placement, UV atlas placement, and camera orbit/zoom are implemented. **Actual 2025 GLB integration is NOT complete**: the 89 MB source file is not hosted at an app-accessible public asset path. Current preview remains procedural. GLTFLoader application to the real model, real sponsor logos on mesh, Team Profile rendering, and Android GPU/memory verification remain open. Attribution: “2025 F1 CAR” by Abu Saif, CC BY 4.0, https://skfb.ly/pHRJU.
+- Scope 09: Profile-link corrections cover standings, directories, career/archive, Hall of Fame, race results, Team Summary, Driver Contracts/Applications, Take Over, Admin User, and Race Control. Broader text-by-text audit and manual profile-route verification remain open.
+- Scope 10: Manage User is discoverable under Administration → Platform & Members at `/admin/users`; Admin-only moderation and role/team management remain integrated. Authenticated production browser walkthrough still required.
+- Scope 11: Freeze/compensation/replacement/reactivation implementation remains integrated; real wallet settlement must only be simulated in Testing.
+
+## Outstanding acceptance
+1. Host and integrate the supplied 2025 GLB, then verify actual UV decals, sponsor logo placement, Team Profile rendering, and Android performance.
+2. Run real Driver and Owner account walkthrough for first contract/renewal.
+3. Run Admin/FIA/Owner/member role-matrix walkthrough for Manage User and verify the Admin User list loads from the browser.
+4. Verify production CORS preflight and authenticated Admin User request from the real browser. Edge Function deployments and source hash are verified; this live browser request was not available from the isolated runner.
+5. Complete remaining global profile-link audit and mobile visual acceptance.
+
+**Release statement:** Core follow-up code is merged, CI passed, both Supabase Edge Function deployments are active, and the latest Vercel Production deployment is READY. The 11-scope program is not 100% complete because Scope 08 real GLB integration and the listed manual acceptance checks remain outstanding.
