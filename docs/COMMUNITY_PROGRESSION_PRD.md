@@ -49,7 +49,7 @@ This feature set adds seven connected CALERIS Masters community systems:
 ## Digital ID
 - Member-owned card themes: Classic, Premio, Zwei, and Gold.
 - Accent color and tagline are validated and saved through a member-scoped RPC.
-- Public visibility is stored per member.
+- Public visibility is stored per member and defaults to private; publication requires explicit opt-in.
 - Public verification is available at `/member-id/:memberCode` and returns only the public member identity, cumulative XP/level, completed milestones, and active earned badges when the card is explicitly public.
 - The share URL is canonical and the QR code resolves to that verification page.
 
