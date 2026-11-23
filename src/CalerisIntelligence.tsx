@@ -29,6 +29,8 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
   const [walletBalance, setWalletBalance] = useState(0);
   const [outflow, setOutflow] = useState(0);
   const [offers, setOffers] = useState<Row[]>([]);
+  const [requests, setRequests] = useState<Row[]>([]);
+  const [requestSalaryBand, setRequestSalaryBand] = useState<Row | null>(null);
   const [contracts, setContracts] = useState<Row[]>([]);
   const [health, setHealth] = useState<Row | null>(null);
   const [healthRuns, setHealthRuns] = useState<Row[]>([]);
@@ -103,20 +105,31 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
 
       if (scope === "renewals") {
         if (own.role === "Owner" && own.team_id) {
-          const [{ data: contractRows, error: contractError }, { data: driverRows, error: driverError }] = await Promise.all([
+          const [{ data: contractRows, error: contractError }, { data: driverRows, error: driverError }, { data: ownerOffers, error: offerError }, { data: ownerRequests, error: requestError }] = await Promise.all([
             supabase.from("economy_driver_contracts").select("*,members(character_name,license)").eq("team_id", own.team_id).eq("status", "active").order("created_at", { ascending: false }),
-            supabase.from("members").select("id,character_name,license").eq("team_id", own.team_id).eq("role", "Driver").order("character_name")
+            supabase.from("members").select("id,character_name,license").eq("team_id", own.team_id).eq("role", "Driver").order("character_name"),
+            supabase.from("caleris_driver_renewal_offers").select("*").eq("team_id", own.team_id).order("created_at", { ascending: false }),
+            supabase.from("caleris_driver_contract_requests").select("*").eq("team_id", own.team_id).order("created_at", { ascending: false })
           ]);
           if (contractError) throw contractError;
           if (driverError) throw driverError;
+          if (offerError) throw offerError;
+          if (requestError) throw requestError;
           setContracts((contractRows || []) as Row[]); setDrivers((driverRows || []) as Row[]);
-          const { data: ownerOffers, error: offerError } = await supabase.from("caleris_driver_renewal_offers").select("*").eq("team_id", own.team_id).order("created_at", { ascending: false });
-          if (offerError) throw offerError;
-          setOffers((ownerOffers || []) as Row[]);
+          setOffers((ownerOffers || []) as Row[]); setRequests((ownerRequests || []) as Row[]);
         } else if (own.role === "Driver") {
-          const { data: driverOffers, error: offerError } = await supabase.from("caleris_driver_renewal_offers").select("*,teams(name),license_seasons(title)").eq("member_id", own.id).order("created_at", { ascending: false });
+          const [{ data: driverOffers, error: offerError }, { data: driverRequests, error: requestError }] = await Promise.all([
+            supabase.from("caleris_driver_renewal_offers").select("*,teams(name),license_seasons(title)").eq("member_id", own.id).order("created_at", { ascending: false }),
+            supabase.from("caleris_driver_contract_requests").select("*").eq("member_id", own.id).order("created_at", { ascending: false })
+          ]);
           if (offerError) throw offerError;
-          setOffers((driverOffers || []) as Row[]);
+          if (requestError) throw requestError;
+          setOffers((driverOffers || []) as Row[]); setRequests((driverRequests || []) as Row[]);
+          const { data: salaryBands, error: bandError } = await supabase.from("caleris_driver_salary_bands")
+            .select("license_label,salary_min_eur,salary_max_eur")
+            .ilike("license_label", String(own.license || "").toUpperCase()==="A" ? "Super License" : String(own.license || ""));
+          if (bandError) throw bandError;
+          setRequestSalaryBand((salaryBands || [])[0] as Row | null);
         } else throw new Error("Renewal Center hanya tersedia untuk Driver dan Team Owner.");
       }
     } catch (error: any) {
@@ -184,15 +197,45 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
   };
 
   const sendRenewal = async () => {
-    if (!supabase || !form.contract_id || !form.duration_seasons) return;
+    if (!supabase || (!form.request_id && !form.contract_id) || !form.duration_seasons) return;
     setSaving(true); setNotice("");
-    const { error } = await supabase.rpc("team_owner_offer_driver_renewal", {
-      p_current_contract_id: form.contract_id, p_duration_seasons: Number(form.duration_seasons),
-      p_proposed_salary: Number(form.proposed_salary), p_offer_note: String(form.offer_note || "").trim() || null
+    const requestId = String(form.request_id || "");
+    const { error } = requestId
+      ? await supabase.rpc("team_owner_offer_driver_renewal_from_request", {
+          p_request_id: requestId, p_duration_seasons: Number(form.duration_seasons),
+          p_proposed_salary: Number(form.proposed_salary), p_offer_note: String(form.offer_note || "").trim() || null
+        })
+      : await supabase.rpc("team_owner_offer_driver_renewal", {
+          p_current_contract_id: form.contract_id, p_duration_seasons: Number(form.duration_seasons),
+          p_proposed_salary: Number(form.proposed_salary), p_offer_note: String(form.offer_note || "").trim() || null
+        });
+    setSaving(false);
+    if (error) { setNotice(error.message); return; }
+    setNotice(requestId?"Penawaran kontrak terkirim ke Driver. Keputusan sepenuhnya berada di tangan Driver.":"Penawaran renewal terkirim ke Driver. Keputusan sepenuhnya berada di tangan Driver."); await refresh();
+  };
+
+  const submitContractRequest = async () => {
+    if (!supabase || !member?.team_id || !form.requested_salary || !form.requested_duration_seasons) return;
+    setSaving(true); setNotice("");
+    const { error } = await supabase.rpc("member_submit_driver_contract_request", {
+      p_requested_salary: Number(form.requested_salary),
+      p_duration_seasons: Number(form.requested_duration_seasons),
+      p_request_note: String(form.request_note || "").trim() || null
     });
     setSaving(false);
     if (error) { setNotice(error.message); return; }
-    setNotice("Penawaran renewal terkirim ke Driver. Keputusan sepenuhnya berada di tangan Driver."); await refresh();
+    setNotice("Pengajuan kontrak berhasil dikirim ke Team Owner."); setForm((v: Row) => ({ ...v, requested_salary: "", request_note: "" })); await refresh();
+  };
+
+  const declineContractRequest = async (request: Row) => {
+    if (!supabase) return;
+    setSaving(true); setNotice("");
+    const { error } = await supabase.rpc("team_owner_decline_driver_contract_request", {
+      p_request_id: request.id, p_response_note: String(form.response_note || "").trim() || null
+    });
+    setSaving(false);
+    if (error) { setNotice(error.message); return; }
+    setNotice("Pengajuan kontrak ditolak dan statusnya tercatat."); setForm((v: Row) => ({ ...v, response_note: "" })); await refresh();
   };
 
   const decideRenewal = async (offer: Row, accept: boolean) => {
@@ -235,9 +278,38 @@ export default function CalerisIntelligence({ session, scope }: { session: Sessi
     {scope === "budget" && <><div className="s5-grid s5-grid-3"><div className="s5-stat"><span>TEAM WALLET</span><strong>{cash(walletBalance)}</strong></div><div className="s5-stat"><span>OUTFLOW TERCATAT</span><strong>{cash(outflow)}</strong></div><div className="s5-stat"><span>PLANNED BUDGET</span><strong>{cash(Number(budget?.planned_budget||form.planned_budget||0))}</strong></div></div>
       <Panel title="Budget configuration" eyebrow={activeSeason?.title || "ACTIVE SEASON"}><div className="s5-form"><label className="s5-field"><span>Total budget (€)</span><input type="number" min="0" step="0.01" value={form.planned_budget||""} onChange={e=>set("planned_budget",e.target.value)}/></label><label className="s5-field"><span>Alert threshold (%)</span><input type="number" min="1" max="100" value={form.alert_threshold_percent||80} onChange={e=>set("alert_threshold_percent",e.target.value)}/></label><div className="s5-form-grid">{categories.map(key=><label className="s5-field" key={key}><span>{key.replaceAll("_"," ")} (€)</span><input type="number" min="0" step="0.01" value={form.category_budgets?.[key]||""} onChange={e=>set("category_budgets",{...form.category_budgets,[key]:e.target.value})}/></label>)}</div><label className="s5-field"><span>Catatan Owner</span><textarea rows={2} value={form.owner_notes||""} onChange={e=>set("owner_notes",e.target.value)}/></label><button className="s5-primary" disabled={saving} onClick={()=>void saveBudget()}><Wallet size={15}/> Simpan budget</button></div></Panel>
       <Panel title="Spending monitor" eyebrow="LEDGER-BASED · MONITOR ONLY"><p className="s5-history">Outflow dihitung dari transaksi Economy Engine yang bersumber dari Team Wallet. Data tidak membuat saldo bayangan dan tidak memblokir payroll.</p><div className="s5-stat"><span>ESTIMATED BUDGET CONSUMPTION</span><strong>{progressPercent.toFixed(1)}%</strong><small>{cash(outflow)} / {cash(Number(budget?.planned_budget||0))}</small></div>{budget && progressPercent>=Number(budget.alert_threshold_percent)?<p className="s5-notice">Peringatan: pengeluaran sudah melewati ambang yang ditetapkan Owner.</p>:<p className="s5-footnote">Pengeluaran masih di bawah ambang peringatan Owner.</p>}</Panel></>}
-    {scope === "renewals" && member?.role === "Owner" && <><Panel title="Buat penawaran renewal" eyebrow={team?.name || "TEAM OWNER"}><div className="s5-form"><label className="s5-field"><span>Kontrak Driver</span><select value={form.contract_id||""} onChange={e=>set("contract_id",e.target.value)}><option value="">Pilih kontrak aktif</option>{contracts.map(c=><option key={c.id} value={c.id}>{c.members?.character_name||"Driver"} · {cash(c.annual_salary)}</option>)}</select></label><label className="s5-field"><span>Durasi kontrak</span><select value={form.duration_seasons||"1"} onChange={e=>set("duration_seasons",e.target.value)}>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} Season</option>)}</select></label><label className="s5-field"><span>Gaji tahunan yang ditawarkan (€)</span><input type="number" min="0" step="0.01" value={form.proposed_salary||""} onChange={e=>set("proposed_salary",e.target.value)}/></label><label className="s5-field"><span>Catatan penawaran</span><textarea rows={2} value={form.offer_note||""} onChange={e=>set("offer_note",e.target.value)}/></label><button className="s5-primary" disabled={saving||!form.contract_id||!form.duration_seasons} onClick={()=>void sendRenewal()}><FileSignature size={15}/> Kirim penawaran</button></div></Panel>
+    {scope === "renewals" && member?.role === "Owner" && <>
+      <Panel title="Pengajuan dari Driver" eyebrow={team?.name || "TEAM OWNER"}>
+        {requests.filter(r=>r.status==="pending").length ? requests.filter(r=>r.status==="pending").map(request=><article className="s5-record" key={request.id}>
+          <b>{drivers.find(d=>d.id===request.member_id)?.character_name || "Driver"} · {cash(request.requested_salary)} / season</b>
+          <small>{Number(request.requested_duration_seasons)} Season · {new Date(request.created_at).toLocaleString("id-ID")}</small>
+          <p>{request.request_note || "Tidak ada catatan tambahan."}</p>
+          <div className="s5-actions">
+            <button className="s5-primary" disabled={saving} onClick={()=>setForm((v:Row)=>({...v,request_id:request.id,contract_id:request.current_contract_id,duration_seasons:String(request.requested_duration_seasons),proposed_salary:String(request.requested_salary),offer_note:request.request_note||""}))}>Buat penawaran</button>
+            <button className="s5-secondary" disabled={saving} onClick={()=>void declineContractRequest(request)}>Tolak</button>
+          </div>
+        </article>) : <p className="s5-footnote">Belum ada pengajuan kontrak baru dari Driver.</p>}
+      </Panel>
+      <Panel title="Buat penawaran kontrak" eyebrow={team?.name || "TEAM OWNER"}><div className="s5-form"><label className="s5-field"><span>{form.request_id?"Pengajuan Driver":"Kontrak Driver"}</span><select disabled={Boolean(form.request_id)} value={form.contract_id||""} onChange={e=>set("contract_id",e.target.value)}><option value="">{form.request_id?"Terhubung ke pengajuan":"Pilih kontrak aktif"}</option>{contracts.map(c=><option key={c.id} value={c.id}>{c.members?.character_name||"Driver"} · {cash(c.annual_salary)}</option>)}</select></label><label className="s5-field"><span>Durasi kontrak</span><select value={form.duration_seasons||"1"} onChange={e=>set("duration_seasons",e.target.value)}>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} Season</option>)}</select></label><label className="s5-field"><span>Gaji tahunan yang ditawarkan (€)</span><input type="number" min="0" step="0.01" value={form.proposed_salary||""} onChange={e=>set("proposed_salary",e.target.value)}/></label><label className="s5-field"><span>Catatan penawaran</span><textarea rows={2} value={form.offer_note||""} onChange={e=>set("offer_note",e.target.value)}/></label><button className="s5-primary" disabled={saving||(!form.request_id&&!form.contract_id)||!form.duration_seasons} onClick={()=>void sendRenewal()}><FileSignature size={15}/> {form.request_id?"Kirim penawaran untuk pengajuan":"Kirim penawaran"}</button></div></Panel>
       <Panel title="Status penawaran" eyebrow="RENEWAL HISTORY">{offers.map(o=><article className="s5-record" key={o.id}><b>{drivers.find(d=>d.id===o.member_id)?.character_name||"Driver"} · {cash(o.proposed_salary)}</b><small>{seasons.find(s=>s.id===o.renewal_season_id)?.title||"Season"} · {Number(o.duration_seasons||1)} Season · {o.status.toUpperCase()}</small></article>)}</Panel></>}
-    {scope === "renewals" && member?.role === "Driver" && <Panel title="Penawaran renewal" eyebrow="DRIVER DECISION">{offers.length?offers.map(o=><article className="s5-record" key={o.id}><b>{o.teams?.name||"Team"} · {cash(o.proposed_salary)} / season</b><small>{o.license_seasons?.title||"Season"} · {Number(o.duration_seasons||1)} Season · {o.status.toUpperCase()}</small><p>{o.offer_note||"Tidak ada catatan tambahan."}</p>{o.status==="offered"&&<><label className="s5-field"><span>Catatan keputusan (opsional)</span><textarea rows={2} value={form.driver_note||""} onChange={e=>set("driver_note",e.target.value)}/></label><div className="s5-actions"><button className="s5-primary" disabled={saving} onClick={()=>void decideRenewal(o,true)}>Terima</button><button className="s5-secondary" disabled={saving} onClick={()=>void decideRenewal(o,false)}>Tolak</button></div></>}</article>):<p className="s5-footnote">Belum ada penawaran renewal.</p>}</Panel>}
+    {scope === "renewals" && member?.role === "Driver" && <>
+      <Panel title="Ajukan kontrak baru ke Team Owner" eyebrow={team?.name || "DRIVER CONTRACT REQUEST"}>
+        {member?.team_id ? <div className="s5-form">
+          <p className="s5-footnote">Ajukan perpanjangan jika kontrak aktif, atau pengajuan kontrak pertama jika kamu belum memiliki kontrak aktif. Lamaran ke tim lain tetap dilakukan melalui Job Search.</p>
+          {requestSalaryBand&&<p className="s5-footnote">Salary band lisensi {member.license}: {cash(requestSalaryBand.salary_min_eur)} – {cash(requestSalaryBand.salary_max_eur)} per season.</p>}
+          <label className="s5-field"><span>Gaji tahunan yang diajukan (€)</span><input type="number" min={requestSalaryBand?.salary_min_eur||1} max={requestSalaryBand?.salary_max_eur||undefined} step="0.01" value={form.requested_salary||""} onChange={e=>set("requested_salary",e.target.value)} placeholder="Masukkan nominal dalam salary band lisensi"/></label>
+          <label className="s5-field"><span>Durasi kontrak</span><select value={form.requested_duration_seasons||"1"} onChange={e=>set("requested_duration_seasons",e.target.value)}>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} Season</option>)}</select></label>
+          <label className="s5-field"><span>Catatan untuk Team Owner</span><textarea rows={3} maxLength={1000} value={form.request_note||""} onChange={e=>set("request_note",e.target.value)} placeholder="Sampaikan permintaan dan pertimbangan kontrakmu."/></label>
+          <button className="s5-primary" disabled={saving||requests.some(r=>r.status==="pending")||!form.requested_salary||Number(form.requested_salary)<=0} onClick={()=>void submitContractRequest()}><FileSignature size={15}/> Kirim pengajuan kontrak</button>
+          {requests.some(r=>r.status==="pending")&&<p className="s5-footnote">Pengajuan sebelumnya masih menunggu keputusan Team Owner.</p>}
+        </div> : <p className="s5-footnote">Akun Driver belum terhubung ke tim. Hubungi administrator atau gunakan Job Search untuk mencari tim.</p>}
+      </Panel>
+      <Panel title="Status pengajuan dan penawaran" eyebrow="DRIVER CONTRACTS">
+        {requests.map(r=><article className="s5-record" key={r.id}><b>Pengajuan · {cash(r.requested_salary)} / season</b><small>{Number(r.requested_duration_seasons)} Season · {r.status.toUpperCase()} · {new Date(r.created_at).toLocaleString("id-ID")}</small>{r.owner_response_note&&<p>{r.owner_response_note}</p>}</article>)}
+        {offers.map(o=><article className="s5-record" key={o.id}><b>{o.teams?.name||"Team"} · {cash(o.proposed_salary)} / season</b><small>{o.license_seasons?.title||"Season"} · {Number(o.duration_seasons||1)} Season · {o.status.toUpperCase()}</small><p>{o.offer_note||"Tidak ada catatan tambahan."}</p>{o.status==="offered"&&<><label className="s5-field"><span>Catatan keputusan (opsional)</span><textarea rows={2} value={form.driver_note||""} onChange={e=>set("driver_note",e.target.value)}/></label><div className="s5-actions"><button className="s5-primary" disabled={saving} onClick={()=>void decideRenewal(o,true)}>Terima</button><button className="s5-secondary" disabled={saving} onClick={()=>void decideRenewal(o,false)}>Tolak</button></div></>}</article>)}
+        {!requests.length&&!offers.length&&<p className="s5-footnote">Belum ada pengajuan atau penawaran kontrak.</p>}
+      </Panel>
+    </>}
     {scope === "operations" && <><div className="s5-grid s5-grid-4">{Object.entries(health||{}).filter(([,v])=>typeof v==="number").map(([k,v])=><div className="s5-stat" key={k}><span>{k.replaceAll("_"," ").toUpperCase()}</span><strong>{String(v)}</strong></div>)}</div><Panel title="Latest system health runs" eyebrow="ADMIN ONLY">{healthRuns.length?healthRuns.map(run=><article className="s5-record" key={run.id}><b>{String(run.status||"UNKNOWN").toUpperCase()} · {new Date(run.started_at).toLocaleString("id-ID")}</b><small>Wallet mismatch {run.wallet_mismatches} · Cron failure 24h {run.cron_failures_24h} · Pending payroll {run.pending_payroll} · Race waiting result {run.races_awaiting_result} · Missing calendar {run.seasons_missing_calendar}</small>{run.error&&<p>{run.error}</p>}</article>):<p className="s5-footnote">Belum ada health run yang tercatat.</p>}</Panel></>}
     <div className="s5-actions"><button className="s5-secondary" onClick={()=>void refresh()} disabled={saving}><RefreshCw size={14}/> Refresh</button><span className="s5-footnote">CALERIS · {team?.name || member?.character_name || "Admin"}</span></div>
   </section>;

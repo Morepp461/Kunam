@@ -37,6 +37,7 @@ import DriverTraining from "./DriverTraining";
 import ShopPage from "./ShopPage";
 import AdminTestPersonas from "./AdminTestPersonas";
 import AdminUsers from "./AdminUsers";
+import AdminTeamInactivity from "./AdminTeamInactivity";
 import PublicTeamProfile from "./PublicTeamProfile";
 import { TeamProfileLink } from "./EntityProfileLink";
 import FIAEventControlCenter from "./FIAEventControlCenter";
@@ -112,6 +113,13 @@ function Application(){
   if(adminResult.error)toast("error","Akses akun gagal diperiksa",adminResult.error.message);
   if(ownerResult.error)toast("error","Akses Developer API gagal diperiksa",ownerResult.error.message);
   let account=profileResult.data as AccountProfile|null;
+  if(account?.account_status==="suspended"){
+   const {data:banSync}=await supabase.rpc("member_sync_expired_ban");
+   if(banSync==="restored"){
+    const {data:restored}=await supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",userId).maybeSingle();
+    account=restored as AccountProfile|null;
+   }
+  }
   const admin=Boolean(adminResult.data?.user_id);
   setIsPrimaryOwner(ownerResult.data?.owner_user_id===userId);
   let memberRole:string|null=null;
@@ -140,10 +148,12 @@ function Application(){
  useEffect(()=>{const markBackground=()=>document.body.classList.toggle("app-backgrounded",document.visibilityState==="hidden");const onPageShow=()=>document.body.classList.remove("app-backgrounded");const onPageHide=()=>document.body.classList.add("app-backgrounded");document.addEventListener("visibilitychange",markBackground);window.addEventListener("pageshow",onPageShow);window.addEventListener("pagehide",onPageHide);markBackground();return()=>{document.removeEventListener("visibilitychange",markBackground);window.removeEventListener("pageshow",onPageShow);window.removeEventListener("pagehide",onPageHide);document.body.classList.remove("app-backgrounded")}},[]);
  useEffect(()=>{if(!supabase){setAuthReady(true);return;}supabase.auth.getSession().then(({data,error})=>{if(error)toast("error","Session gagal dimuat",error.message);sessionUserIdRef.current=data.session?.user.id??null;setSession(data.session);setAuthReady(true)});const {data}=supabase.auth.onAuthStateChange((event,s)=>{const nextUserId=s?.user.id??null;const identityChanged=sessionUserIdRef.current!==nextUserId;sessionUserIdRef.current=nextUserId;setSession(s);if(identityChanged||event==="USER_UPDATED")setProfileReady(false);setAuthReady(true)});return()=>data.subscription.unsubscribe()},[toast]);
  useEffect(()=>{if(authReady)void refreshProfile()},[authReady,refreshProfile]);
+ useEffect(()=>{if(!supabase||!session)return;supabase.from("profiles").select("account_status").eq("user_id",session.user.id).maybeSingle().then(({data})=>{if(data?.account_status==="suspended")void refreshProfile()})},[location.pathname,session?.user.id,refreshProfile]);
  useEffect(()=>{window.scrollTo(0,0);loading(true);const timer=window.setTimeout(()=>loading(false),560);return()=>window.clearTimeout(timer)},[location.pathname,loading]);
  if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
+ if(session&&profile?.account_status==="suspended")return <SuspendedAccountPage session={session}/>;
  return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} memberId={profile?.member_id??null} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin} panelAccess={panelAccess}/>} toast={toast} loading={loading}><CalerisSelectOverlay/><AnalyticsTracker/><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
@@ -158,7 +168,7 @@ function Application(){
   <Route path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminLicenseEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/economy-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminEconomyEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/adjustments" element={session&&!needsPaddockAccess&&isAdmin?<AdminAdjustmentCenter session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/admin/data-adjustments" element={session&&!needsPaddockAccess&&isAdmin?<AdminAdjustmentCenter session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/data-adjustments" element={session&&!needsPaddockAccess&&isAdmin?<Navigate to="/admin/adjustments" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/quest-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminQuestEngine/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/pricing" element={session&&!needsPaddockAccess&&isAdmin?<AdminPricingCenter/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/operations" element={session&&!needsPaddockAccess&&isAdmin?<AdminOperations session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -210,12 +220,24 @@ function Application(){
   <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
   <Route path="/admin/test-personas" element={session&&!needsPaddockAccess&&isAdmin?<AdminTestPersonas/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/team-inactivity" element={session&&!needsPaddockAccess&&isAdmin?<AdminTeamInactivity/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/users" element={session&&!needsPaddockAccess&&isAdmin?<AdminUsers/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/developer-api" element={session&&!needsPaddockAccess&&isPrimaryOwner?<DeveloperAPI session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/registered-members" element={session&&!needsPaddockAccess&&isAdmin?<AdminRegisteredMembers/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
  </Routes></MainLayout>;
+}
+function SuspendedAccountPage({session}:{session:Session}){
+ const [action,setAction]=useState<{reason:string;expires_at:string|null;action_type:string}|null>(null);
+ useEffect(()=>{if(!supabase)return;supabase.from("caleris_user_moderation_actions").select("reason,expires_at,action_type").eq("target_user_id",session.user.id).in("action_type",["temporary_ban","permanent_ban"]).order("created_at",{ascending:false}).limit(1).maybeSingle().then(({data})=>setAction(data as typeof action));},[session.user.id]);
+ return <main className="auth-loading"><section className="workspace-card" style={{width:"min(520px,calc(100% - 32px))",padding:28,textAlign:"center"}}>
+  <Shield size={34}/><h1>Akses akun ditangguhkan</h1><p>Akun ini sedang dibatasi oleh administrator CALERIS Masters.</p>
+  {action?.reason&&<p><strong>Alasan:</strong> {action.reason}</p>}
+  {action?.expires_at&&<p><strong>Berakhir:</strong> {new Date(action.expires_at).toLocaleString("id-ID")}</p>}
+  {action?.action_type==="permanent_ban"&&<p>Penangguhan ini tidak memiliki tanggal berakhir otomatis.</p>}
+  <button className="action" onClick={()=>void supabase?.auth.signOut({scope:"local"})}>Keluar</button>
+ </section></main>;
 }
 function LegalBlankPage({title}:{title:string}){
  return <main className="legal-blank-page" aria-label={title}/>;
@@ -321,7 +343,7 @@ function AdminWorkflow({session}:{session:Session}){
  useEffect(()=>{let active=true;async function run(){if(!supabase){setChecking(false);return;}const {data,error}=await supabase.from("site_admins").select("user_id").eq("user_id",session.user.id).maybeSingle();if(!active)return;if(error)toast("error","Pemeriksaan akses gagal",error.message);setAllowed(Boolean(data?.user_id));setChecking(false)}void run();return()=>{active=false}},[session.user.id,toast]);
  if(checking)return <div className="center-state"><LoaderCircle className="spin"/><p>Memeriksa akses administrator...</p></div>;
  if(!allowed)return <section className="workspace"><PageHeading eyebrow="Restricted workspace" title="Admin Workflow" description="Workspace operasional khusus administrator CALERIS MASTERS."/><div className="access-denied"><Shield/><h2>Akses administrator diperlukan</h2><p>Admin Workflow hanya tersedia untuk akun yang terdaftar dalam allow-list administrator. Role FIA tidak memberikan akses ke halaman ini.</p></div></section>;
- return <section className="workspace"><PageHeading eyebrow="Control room · Administration" title="Admin Workflow" description="Workspace untuk tools operasional dan CRM CALERIS MASTERS."/><div className="workflow-placeholder"><div className="workflow-placeholder-icon"><ClipboardList size={27}/></div><span className="section-eyebrow">WORKSPACE READY</span><h2>CRM tools belum ditambahkan</h2><p>Area ini sudah disiapkan untuk tools CRM yang akan kamu berikan. Belum ada workflow, data, atau tindakan administrasi yang dibuat.</p><span className="empty-tag">Awaiting CRM specification</span></div></section>;
+ return <section className="workspace"><PageHeading eyebrow="Control room · Administration" title="Admin Workflow" description="Ruang kerja untuk mengelola workflow CRM dan tindak lanjut operasional CALERIS MASTERS."/><div className="workflow-placeholder"><div className="workflow-placeholder-icon"><ClipboardList size={27}/></div><span className="section-eyebrow">FUNGSI HALAMAN</span><h2>Workspace CRM & operasional</h2><p>Halaman ini disiapkan sebagai pusat workflow administrasi yang menghubungkan tindak lanjut member, koordinasi tim, dan pekerjaan operasional yang nantinya memiliki spesifikasi serta otorisasi tersendiri.</p><div className="workflow-placeholder-status"><strong>Status saat ini: belum aktif</strong><span>Belum ada workflow, data CRM, atau tindakan otomatis yang terpasang. Fitur operasional yang sudah tersedia tetap berada di halaman masing-masing.</span></div><span className="empty-tag">Menunggu spesifikasi CRM</span></div></section>;
 }
 type PublicMemberProfileData={public_member_id:string;display_name:string;first_name:string|null;last_name:string|null;web_nickname:string|null;driver_nickname:string|null;avatar_url:string|null;role?:string|null;character_name?:string|null};
 type PublicCharacterData={character_name:string|null;role:string|null;license:string|null;team_name:string|null;team_id:string|null};
