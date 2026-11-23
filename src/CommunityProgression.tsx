@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  Activity, Award, BookOpen, CalendarDays, CheckCircle, Copy, Crown, ExternalLink,
-  Flag, Medal, Plus, Printer, RefreshCw, Save, Share2, ShieldCheck, Star, Target,
-  TrendingUp, Users, Vote
+  Activity, Award, BookOpen, CheckCircle, Copy, Crown, Flag, Medal, Plus, Printer,
+  RefreshCw, Save, Share2, ShieldCheck, Target, Users, Vote
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import {
@@ -35,7 +34,6 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [feedLimit, setFeedLimit] = useState(30);
   const [badges, setBadges] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
-  const [myVotes, setMyVotes] = useState<any[]>([]);
   const [tab, setTab] = useState("overview");
   const [id, setId] = useState<any>({ theme: "classic", accent_color: "#b99752", tagline: "", public_visible: true });
   const [seasons, setSeasons] = useState<any[]>([]);
@@ -123,7 +121,6 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       earned: (awardsResult.data ?? []).some((award: any) => award.badge_code === badge.code),
       awarded_at: (awardsResult.data ?? []).find((award: any) => award.badge_code === badge.code)?.awarded_at ?? null,
     })));
-    setMyVotes(votesResult.data ?? []);
     setPolls((pollsResult.data ?? []).map((poll: any) => ({
       ...poll,
       options: (optionsResult.data ?? []).filter((option: any) => option.poll_id === poll.id),
@@ -439,7 +436,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       {tab === "voting" && <section className="cp-section">
         <h2><Vote size={20} /> Community Voting</h2>
         <p>Satu suara per member. Identitas pemilih tidak dipublikasikan; hasil hanya berupa rekap setelah voting berakhir.</p>
-        {isAdmin && <PollAdmin session={session} toast={toast} onCreated={() => void load()} polls={polls} onFinalize={finalizePoll} />}
+        {isAdmin && <PollAdmin toast={toast} onCreated={() => void load()} />}
         {polls.map((poll) => {
           const ended = poll.status !== "open" || isExpired(poll);
           const result = poll.result;
@@ -548,10 +545,9 @@ export default function CommunityProgression({ session, profile, toast }: Props)
 }
 
 function PollAdmin({
-  session, toast, onCreated, polls, onFinalize,
+  toast, onCreated,
 }: {
-  session: any; toast: Toast; onCreated: () => void; polls: any[];
-  onFinalize: (pollId: string, publish: boolean) => Promise<void>;
+  toast: Toast; onCreated: () => void;
 }) {
   const db = supabase;
   const [title, setTitle] = useState("");
