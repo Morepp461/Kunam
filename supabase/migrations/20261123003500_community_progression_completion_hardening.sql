@@ -127,30 +127,51 @@ alter table public.caleris_xp_ledger add constraint caleris_xp_ledger_amount_che
 create or replace function public.caleris_reverse_race_entry_xp()
 returns trigger language plpgsql security definer set search_path=public
 as $reverse_race_xp$
-declare awarded integer;
+declare net_awarded integer; reversal_source text;
 begin
-  if old.member_id is not null then
-    select amount into awarded
+  if old.member_id is not null and (
+    tg_op='DELETE' or old.member_id is distinct from new.member_id
+  ) then
+    select coalesce(sum(
+      case
+        when source_type='race_result' then amount
+        when source_type='admin_adjustment' and source_id like 'race_result_reversal:'||old.id::text||':'||old.member_id::text||':%' then amount
+        else 0
+      end
+    ),0)::integer into net_awarded
     from public.caleris_xp_ledger
-    where member_id=old.member_id and source_type='race_result' and source_id=old.id::text;
-    if found and awarded>0 then
+    where member_id=old.member_id
+      and (
+        (source_type='race_result' and (source_id=old.id::text or source_id like old.id::text||':member-change:%'))
+        or (source_type='admin_adjustment' and source_id like 'race_result_reversal:'||old.id::text||':'||old.member_id::text||':%')
+      );
+    if net_awarded>0 then
+      reversal_source:='race_result_reversal:'||old.id::text||':'||old.member_id::text||':'||gen_random_uuid()::text;
       insert into public.caleris_xp_ledger(member_id,amount,source_type,source_id,description)
-      values(old.member_id,-awarded,'admin_adjustment','race_result_reversal:'||old.id,
-        'Reversal: official race result entry removed')
+      values(old.member_id,-net_awarded,'admin_adjustment',reversal_source,
+        'Reversal: official race result entry removed or reassigned')
       on conflict(member_id,source_type,source_id) do nothing;
       perform public.caleris_log_activity(
         old.member_id,old.team_id,'xp_adjustment','Koreksi XP',
-        'XP partisipasi dikoreksi karena entri hasil resmi dihapus.',
-        jsonb_build_object('source_id','race_result_reversal:'||old.id,'source_type','race_result')
+        'XP partisipasi dikoreksi mengikuti perubahan hasil resmi.',
+        jsonb_build_object('source_id',reversal_source,'source_type','race_result')
       );
     end if;
   end if;
-  return old;
+  if tg_op='UPDATE' and old.member_id is distinct from new.member_id and new.member_id is not null then
+    perform public.caleris_award_configured_xp(
+      new.member_id,'race_result',
+      new.id::text||':member-change:'||gen_random_uuid()::text,
+      'Official race result participation'
+    );
+  end if;
+  if tg_op='DELETE' then return old; end if;
+  return new;
 end;
 $reverse_race_xp$;
 drop trigger if exists caleris_xp_race_entry_reversal on public.caleris_race_result_entries;
 create trigger caleris_xp_race_entry_reversal
-after delete on public.caleris_race_result_entries
+after delete or update of member_id on public.caleris_race_result_entries
 for each row execute function public.caleris_reverse_race_entry_xp();
 
 -- Driver career milestones are derived only from completed official rounds.
@@ -342,6 +363,26 @@ drop trigger if exists caleris_team_roster_milestone_sync on public.members;
 create trigger caleris_team_roster_milestone_sync
 after insert or delete or update of team_id,role on public.members
 for each row execute function public.caleris_team_roster_milestone_trigger();
+
+create or replace function public.caleris_round_standings_milestone_trigger()
+returns trigger language plpgsql security definer set search_path=public
+as $round_standings$
+begin
+  if tg_op='DELETE' then
+    perform public.caleris_refresh_driver_milestones(old.member_id);
+    return old;
+  end if;
+  if tg_op='UPDATE' and old.member_id is distinct from new.member_id then
+    perform public.caleris_refresh_driver_milestones(old.member_id);
+  end if;
+  perform public.caleris_refresh_driver_milestones(new.member_id);
+  return new;
+end;
+$round_standings$;
+drop trigger if exists caleris_round_standings_milestone_sync on public.license_round_standings;
+create trigger caleris_round_standings_milestone_sync
+after insert or update or delete on public.license_round_standings
+for each row execute function public.caleris_round_standings_milestone_trigger();
 
 create or replace function public.caleris_community_checkin_activity()
 returns trigger language plpgsql security definer set search_path=public
@@ -710,7 +751,7 @@ begin
     ),'[]'::jsonb)
   );
   insert into public.caleris_season_yearbooks(season_id,member_id,title,content,status,generated_by)
-  values(p_season,member_id,left(coalesce(nullif(trim(p_title),''),(official->'season'->>'title')||' Yearbook'),160),snapshot,'draft',auth.uid())
+  values(p_season,member_id,left(coalesce(nullif(trim(p_title),''),(official->'season'->>'title')||' Yearbook','Season Yearbook'),160),snapshot,'draft',auth.uid())
   on conflict(member_id,season_id) do update
     set title=excluded.title,content=excluded.content,status='draft',generated_at=now(),generated_by=auth.uid();
   return snapshot;
@@ -855,6 +896,7 @@ grant execute on function public.caleris_get_public_digital_id(text) to anon,aut
 revoke all on function public.caleris_refresh_driver_milestones(uuid) from public,anon,authenticated;
 revoke all on function public.caleris_reverse_race_entry_xp() from public,anon,authenticated;
 revoke all on function public.caleris_team_roster_milestone_trigger() from public,anon,authenticated;
+revoke all on function public.caleris_round_standings_milestone_trigger() from public,anon,authenticated;
 
 -- Backfill career and roster milestones without touching wallets or competition records.
 do $backfill$
