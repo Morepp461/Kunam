@@ -6,7 +6,7 @@ import "./caleris-ecosystem.css";
 type Mode = "owner" | "finance" | "news" | "hall";
 type NewsItem = { id:string; title:string; body:string; category:string; date:string; source:string; imageUrl?:string|null; lead?:string; facts?:string[] };
 type TeamInfo = { id:string; name:string; division_key:string|null };
-type Standing = { id:string; final_position:number|null; final_points:number|null; driver_name_snapshot?:string|null; team_name_snapshot?:string|null; season_division_id:string };
+type Standing = { id:string; final_position:number|null; final_points:number|null; driver_name_snapshot?:string|null; team_name_snapshot?:string|null; season_division_id:string; member_id?:string|null; public_member_id?:string|null; team_id?:string|null; team_id_snapshot?:string|null };
 const currency=(v:number)=>"€"+new Intl.NumberFormat("id-ID",{maximumFractionDigits:0}).format(v||0);
 const dateLabel=(v:string)=>new Intl.DateTimeFormat("id-ID",{dateStyle:"medium",timeStyle:"short"}).format(new Date(v));
 const newsroomCategory=(value:string)=>({general:"Umum",sporting:"Olahraga",disciplinary:"Disiplin",schedule:"Jadwal",administrative:"Administrasi",announcement:"Pengumuman",sponsorship:"Sponsorship",sponsor:"Sponsorship",contract_signed:"Kontrak Baru",contract_renewed:"Perpanjangan Kontrak",contract_ended:"Akhir Kerja Sama","Official Classification":"Hasil Balapan"}[value]??value.replaceAll("_"," ").replace(/\b\w/g,letter=>letter.toUpperCase()));
@@ -28,8 +28,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
  const [loading,setLoading]=useState(true),[error,setError]=useState(""),[team,setTeam]=useState<TeamInfo|null>(null);
  const [wallet,setWallet]=useState(0),[valuation,setValuation]=useState<number|null>(null),[reputation,setReputation]=useState<number|null>(null);
  const [development,setDevelopment]=useState<{part_key:string;current_value:number}[]>([]);
- const [contracts,setContracts]=useState<{id:string;member_id:string;annual_salary:number;status:string;driver_name:string}[]>([]);
- const [raceForm,setRaceForm]=useState<{id:string;round_id:string;member_id:string|null;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
+ const [contracts,setContracts]=useState<{id:string;member_id:string;public_member_id:string|null;annual_salary:number;status:string;driver_name:string}[]>([]);
+ const [raceForm,setRaceForm]=useState<{id:string;round_id:string;member_id:string|null;public_member_id:string|null;team_id:string|null;team_name_snapshot:string|null;finishing_position:number|null;finish_status:string;driver_name_snapshot:string|null}[]>([]);
  const [hqFacilities,setHqFacilities]=useState<{facility_key:string;level:number;condition:number;asset_value:number}[]>([]);
  const [loanRisk,setLoanRisk]=useState({active:0,overdue:0});
  const [teamTarget,setTeamTarget]=useState<{vision:string|null;long_term_target:string|null}>({vision:null,long_term_target:null});
@@ -70,16 +70,20 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
     setTeamTarget({vision:profileRes.data?.vision??null,long_term_target:profileRes.data?.long_term_target??null});
     if(seasonRes.data?.id){
       const {data:seasonContracts}=await supabase.from("economy_driver_contracts").select("id,member_id,annual_salary,status").eq("team_id",currentTeam.id).eq("season_id",seasonRes.data.id).eq("status","active");
-      const memberIds=(seasonContracts??[]).map((row:any)=>row.member_id);
-      const {data:memberRows}=memberIds.length?await supabase.from("members").select("id,character_name").in("id",memberIds):{data:[]};
+      const memberIds=[...new Set((seasonContracts??[]).map((row:any)=>row.member_id).filter(Boolean))];
+      const {data:memberRows}=memberIds.length?await supabase.from("caleris_member_directory").select("id,character_name,public_member_id").in("id",memberIds):{data:[]};
       const nameMap=new Map((memberRows??[]).map((m:any)=>[m.id,m.character_name]));
-      setContracts((seasonContracts??[]).map((row:any)=>({...row,driver_name:nameMap.get(row.member_id)??"Driver"})));
+      const publicIdMap=new Map((memberRows??[]).map((m:any)=>[m.id,m.public_member_id]));
+      setContracts((seasonContracts??[]).map((row:any)=>({...row,driver_name:nameMap.get(row.member_id)??"Driver",public_member_id:publicIdMap.get(row.member_id)??null})));
     }else setContracts([]);
     const {data:publishedRaces}=await supabase.from("caleris_race_results").select("round_id").not("published_at","is",null);
     const publishedRoundIds=[...new Set((publishedRaces??[]).map((row:any)=>row.round_id).filter(Boolean))];
     if(publishedRoundIds.length){
-      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,member_id,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
-      setRaceForm((entries??[]) as any);
+      const {data:entries}=await supabase.from("caleris_race_result_entries").select("id,round_id,member_id,team_id,team_name_snapshot,finishing_position,finish_status,driver_name_snapshot").eq("team_id",currentTeam.id).in("round_id",publishedRoundIds).order("recorded_at",{ascending:false}).limit(8);
+      const raceMemberIds=[...new Set((entries??[]).map((row:any)=>row.member_id).filter(Boolean))];
+      const {data:raceMembers}=raceMemberIds.length?await supabase.from("caleris_member_directory").select("id,public_member_id").in("id",raceMemberIds):{data:[]};
+      const racePublicIds=new Map((raceMembers??[]).map((row:any)=>[row.id,row.public_member_id]));
+      setRaceForm((entries??[]).map((row:any)=>({...row,public_member_id:row.member_id?racePublicIds.get(row.member_id)??null:null})));
     }else setRaceForm([]);
    }else{setWallet(0);setValuation(null);setReputation(null);setDevelopment([]);setSponsors([]);setContracts([]);setRaceForm([]);setHqFacilities([]);setLoanRisk({active:0,overdue:0});setTeamTarget({vision:null,long_term_target:null});}
    if(mode==="news"){
@@ -170,8 +174,8 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
     <article><BarChart3/><span>HQ FACILITIES</span><strong>{hqFacilities.length}</strong></article>
    </div>
    <div className="ce-columns">
-    <section className="workspace-card"><div className="ce-title"><h2>Driver Line-up</h2><span>{contracts.length} active contracts</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong><MemberProfileLink memberId={contract.member_id}>{contract.driver_name}</MemberProfileLink></strong><span>Kontrak aktif</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section>
-    <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong><MemberProfileLink memberId={entry.member_id}>{entry.driver_name_snapshot??"Driver"}</MemberProfileLink></strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Driver Line-up</h2><span>{contracts.length} active contracts</span></div>{contracts.length?contracts.map(contract=><div className="ce-row" key={contract.id}><strong><MemberProfileLink memberId={contract.public_member_id}>{contract.driver_name}</MemberProfileLink></strong><span>Kontrak aktif</span></div>):<p className="ce-empty">Belum ada kontrak driver aktif pada season terbaru.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Recent Race Performance</h2><span>Published official results</span></div>{raceForm.length?raceForm.map(entry=><div className="ce-row" key={entry.id}><strong><MemberProfileLink memberId={entry.public_member_id}>{entry.driver_name_snapshot??"Driver"}</MemberProfileLink> <span>·</span> <TeamProfileLink teamId={entry.team_id}>{entry.team_name_snapshot??"Team"}</TeamProfileLink></strong><span>{entry.finishing_position?"P"+entry.finishing_position:entry.finish_status}</span></div>):<p className="ce-empty">Belum ada hasil balapan resmi yang dipublikasikan untuk tim ini.</p>}</section>
    </div>
    <div className="ce-columns">
     <section className="workspace-card"><div className="ce-title"><h2>HQ Facilities</h2><span>{hqFacilities.length} facilities</span></div>{hqFacilities.map(f=><div className="ce-row" key={f.facility_key}><strong>{f.facility_key.replaceAll("_"," ")}</strong><span>Lv. {f.level} · {Number(f.condition).toFixed(0)}%</span></div>)}{!hqFacilities.length&&<p className="ce-empty">Data fasilitas belum tersedia.</p>}</section>
@@ -193,7 +197,7 @@ export default function CalerisEcosystem({mode}:{mode:Mode}){
    </div>
    <div className="ce-columns">
     <section className="workspace-card"><div className="ce-title"><h2>Sponsorship Commitments</h2><span>{sponsors.length} active contracts</span></div><div className="ce-finance-summary"><span>Total active commitment</span><strong>{currency(sponsors.reduce((sum,row)=>sum+Number(row.annual_contract_amount??row.contract_amount??0),0))}</strong></div><p className="ce-note">Nilai dihitung dari nominal kontrak aktif; kontrak tahunan memakai annual contract amount jika tersedia.</p>{sponsors.length?sponsors.map(row=><div className="ce-row" key={row.id}><strong>Active sponsorship</strong><span>{currency(Number(row.annual_contract_amount??row.contract_amount??0))}</span></div>):<p className="ce-empty">Belum ada sponsorship aktif.</p>}</section>
-    <section className="workspace-card"><div className="ce-title"><h2>Payroll Obligations</h2><span>{contracts.length} active contracts</span></div><div className="ce-finance-summary"><span>Annual salary commitment</span><strong>{currency(contracts.reduce((sum,row)=>sum+Number(row.annual_salary||0),0))}</strong></div>{contracts.length?contracts.map(row=><div className="ce-row" key={row.id}><strong><MemberProfileLink memberId={row.member_id}>{row.driver_name}</MemberProfileLink></strong><span>{currency(Number(row.annual_salary||0))} / season</span></div>):<p className="ce-empty">Belum ada payroll kontrak aktif pada season terbaru.</p>}</section>
+    <section className="workspace-card"><div className="ce-title"><h2>Payroll Obligations</h2><span>{contracts.length} active contracts</span></div><div className="ce-finance-summary"><span>Annual salary commitment</span><strong>{currency(contracts.reduce((sum,row)=>sum+Number(row.annual_salary||0),0))}</strong></div>{contracts.length?contracts.map(row=><div className="ce-row" key={row.id}><strong><MemberProfileLink memberId={row.public_member_id}>{row.driver_name}</MemberProfileLink></strong><span>{currency(Number(row.annual_salary||0))} / season</span></div>):<p className="ce-empty">Belum ada payroll kontrak aktif pada season terbaru.</p>}</section>
    </div>
    <section className="workspace-card"><div className="ce-title"><h2>HQ Asset Portfolio</h2><span>{hqFacilities.length} registered facilities</span></div><div className="ce-finance-summary"><span>Total recorded HQ asset value</span><strong>{currency(hqFacilities.reduce((sum,row)=>sum+Number(row.asset_value||0),0))}</strong></div>{hqFacilities.length?hqFacilities.map(row=><div className="ce-row" key={row.facility_key}><strong>{row.facility_key.replaceAll("_"," ")}</strong><span>{currency(Number(row.asset_value||0))} · Lv. {row.level}</span></div>):<p className="ce-empty">Belum ada aset HQ yang tercatat.</p>}</section>
    <p className="ce-finance-footnote">Angka di atas berasal dari data resmi yang dapat dibaca oleh akun tim. Riwayat ledger transaksi tidak ditampilkan di sini karena akses transaksi saat ini dibatasi oleh kebijakan keamanan Economy Engine.</p>
