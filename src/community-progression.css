@@ -112,3 +112,8 @@
 }
 
 .cp-theme-picker{position:relative;display:grid;gap:7px;margin:12px 0;color:var(--text-primary,#fff);font-size:.85rem}.cp-theme-label{color:var(--text-secondary,#bdb7aa)}.cp-theme-trigger{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-height:42px;padding:10px 12px;border:1px solid rgba(185,151,82,.45);border-radius:8px;background:rgba(10,10,10,.72);color:inherit;text-align:left;cursor:pointer}.cp-theme-chevron{color:#c6a33a;font-size:18px;line-height:1}.cp-theme-options{position:absolute;z-index:30;top:calc(100% + 5px);left:0;right:0;display:grid;padding:5px;border:1px solid rgba(185,151,82,.5);border-radius:9px;background:#17151a;box-shadow:0 14px 36px rgba(0,0,0,.5)}.cp-theme-options button{display:flex;align-items:center;justify-content:space-between;min-height:40px;padding:9px 11px;border:0;border-radius:6px;background:transparent;color:#eee8dc;text-align:left;cursor:pointer}.cp-theme-options button:hover,.cp-theme-options button.is-selected{background:rgba(145,37,51,.32);color:#f3d98c}.cp-theme-options button svg{color:#d7b75c}
+
+
+/* Digital ID theme uses one custom picker only; suppress any legacy native select in this editor. */
+.cp-digital-id-editor select{display:none!important;visibility:hidden!important;pointer-events:none!important}
+.cp-theme-trigger{appearance:none;-webkit-appearance:none}
