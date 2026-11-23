@@ -82,26 +82,3 @@ drop trigger if exists caleris_community_shop_feed on public.caleris_development
 create trigger caleris_community_shop_feed after insert on public.caleris_development_shop_purchases
 for each row execute function public.caleris_community_shop_activity();
 
--- Authoritative season payload for Predictor and Yearbook; scoring is read from live FIA point rules.
-create or replace function public.caleris_get_season_community_data(p_season uuid)
-returns jsonb language plpgsql stable security definer set search_path=public as $func$
-declare result jsonb;
-begin
- if auth.uid() is null then raise exception 'authentication_required'; end if;
- select jsonb_build_object(
-   'season',to_jsonb(s),
-   'divisions',coalesce((select jsonb_agg(jsonb_build_object(
-     'division_id',sd.id,'division',sd.division_name,
-     'drivers',(select coalesce(jsonb_agg(jsonb_build_object('member_id',fs.member_id,'name',fs.driver_name_snapshot,'team',fs.team_name_snapshot,'points',fs.final_points,'position',fs.final_position) order by fs.final_position nulls last,fs.final_points desc),'[]'::jsonb) from public.license_final_standings fs where fs.season_division_id=sd.id),
-     'teams',(select coalesce(jsonb_agg(jsonb_build_object('team_id',ts.team_id,'name',ts.team_name_snapshot,'points',ts.final_points,'position',ts.final_position) order by ts.final_position nulls last,ts.final_points desc),'[]'::jsonb) from public.license_team_final_standings ts where ts.season_division_id=sd.id),
-     'rounds',(select coalesce(jsonb_agg(jsonb_build_object('round_id',r.id,'round_number',r.round_number,'title',r.title,'session_type',r.session_type,'status',r.status,'race_lifecycle_status',r.race_lifecycle_status) order by r.round_number),'[]'::jsonb) from public.license_rounds r where r.season_division_id=sd.id),
-     'race_results',(select coalesce(jsonb_agg(jsonb_build_object('member_id',e.member_id,'team_id',e.team_id,'driver',e.driver_name_snapshot,'team',e.team_name_snapshot,'round_id',e.round_id,'position',e.finishing_position,'status',e.finish_status) order by e.round_id,e.finishing_position),'[]'::jsonb) from public.license_rounds r join public.caleris_race_result_entries e on e.round_id=r.id where r.season_division_id=sd.id)
-   ) order by sd.division_name),'[]'::jsonb),
-   'scoring_rules',(select coalesce(jsonb_agg(jsonb_build_object('session_type',pr.session_type,'position',pr.finishing_position,'points',pr.points,'pole_bonus',pr.pole_bonus) order by pr.session_type,pr.finishing_position),'[]'::jsonb) from public.caleris_race_points_rules pr where pr.is_active)
- ) into result
- from public.license_seasons s where s.id=p_season;
- return coalesce(result,'{}'::jsonb);
-end; $func$;
-grant execute on function public.caleris_get_season_community_data(uuid) to authenticated;
-revoke all on function public.caleris_refresh_team_milestones(uuid) from public,anon,authenticated;
-revoke all on function public.caleris_log_activity(uuid,uuid,text,text,text,jsonb) from public,anon,authenticated;
