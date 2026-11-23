@@ -54,7 +54,7 @@ export default function CaleMascot({
       data-cale-design={design?.id ?? "idle_default"}
       data-cale-category={design?.category ?? "idle"}
       data-cale-outfit={outfit}
-      style={{ "--cale-size": typeof size === "number" ? `${size}px` : size } as React.CSSProperties}
+      style={{ width: size }}
     >
       <div className="cale-mascot__art">
         <img
@@ -64,7 +64,6 @@ export default function CaleMascot({
           height="384"
           loading={eager ? "eager" : "lazy"}
           decoding="async"
-          fetchPriority={eager ? "high" : "auto"}
           onError={handleImageError}
           draggable={false}
         />
