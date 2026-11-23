@@ -1104,3 +1104,10 @@ PR #307 has been merged to `main` at `6c8fbdbe7d3f1adfc8c3314f41079836939ae0f5`.
 The follow-up includes the Transfer Market custom dropdown, Job Search search alignment, Driver profile link in the Transfer Market directory, Manage User navigation label, Admin User CORS allow-list correction, and the expanded livery decal/sponsor editor. The Admin User Edge Function is active in Testing (v8) and Production (v7), with identical source hash and JWT verification enabled. The Vercel production deployment for this commit is being verified separately; no Vercel environment settings were changed.
 
 **Scope 08 remains partial:** 50 vector decal presets, RGB color selection, multiple decal layers, sponsor retrieval/placement, UV-atlas placement, and drag-orbit/zoom controls are implemented. The uploaded 2025 GLB is not yet published to an app-accessible asset path, so the current 3D preview remains procedural. Do not represent the model integration as complete.
+
+
+### Global profile-link audit — 23 November 2026
+
+Profile navigation uses `public_member_id` for Driver links and team UUIDs for Team links. The audit correction covers Main Event standings, driver/team directories, career and season archives, Hall of Fame, race results, team summary/roster, scouting, Job Search, Admin User cards, Transfer Market/Take Over, Driver Contracts/Applications, and Race Control roster summaries. Directory queries now select `public_member_id` where required. This avoids accidentally routing with an internal `members.id`.
+
+The follow-up is implemented in a separate branch and awaits CI/review. The production CORS correction from PR #307 is already deployed to both Supabase projects. No database migration or Vercel environment change is required for the profile-link work.
