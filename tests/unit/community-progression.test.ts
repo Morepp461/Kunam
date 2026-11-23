@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { buildYearbookPrintHtml, escapeHtml, getCalerisLevel, simulateChampionship } from "../../src/lib/community-progression";
 
 describe("Caleris account levels", () => {
@@ -127,5 +128,19 @@ describe("Yearbook output", () => {
     expect(html).toContain("Official Driver Standings");
     expect(html).toContain("Driver One");
     expect(html).toContain("window.print()");
+  });
+});
+
+
+describe("Digital ID theme dropdown", () => {
+  it("renders one custom theme picker and no native select in the Digital ID editor", () => {
+    const source = readFileSync(new URL("../../src/CommunityProgression.tsx", import.meta.url), "utf8");
+    const identitySection = source.split('{tab === "identity" && <section')[1]?.split('{tab === "yearbook"')[0] ?? "";
+    expect(identitySection).toContain('className="cp-section cp-digital-id-editor"');
+    expect(identitySection).not.toMatch(/<select\\b/);
+    expect(identitySection.match(/className="cp-theme-trigger"/g)).toHaveLength(1);
+    expect(identitySection).toContain('["classic","premio","zwei","gold"]');
+    const css = readFileSync(new URL("../../src/community-progression.css", import.meta.url), "utf8");
+    expect(css).toContain(".cp-digital-id-editor select{display:none!important");
   });
 });
