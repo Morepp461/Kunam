@@ -1338,3 +1338,14 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - `data-native-popup="true"` remains an explicit opt-out for any control that must intentionally use the native picker.
 - QA gate: run TypeScript, production build, unit/schema/browser smoke tests and verify one dropdown only on Android Chrome and desktop keyboard navigation before merge/deploy. Physical Android acceptance is still required for final confirmation.
 - No dependency, database schema, Supabase function, wallet, or Vercel environment changes are included.
+
+
+---
+
+# LIVE PROFILE DIRECTORY FOLLOW-UP — 23 NOVEMBER 2026
+
+- Follow-up scope from the page-by-page profile-link audit: the Global Driver List and Team List were still generic empty placeholders despite existing authenticated directory read models.
+- Added live read-only directory rendering using `caleris_driver_market_directory` and `caleris_team_directory`, both already used by the authenticated marketplace/read model.
+- Driver names link to `/member/:public_member_id` only when the public ID is present. Team names link to `/team/:team_id`.
+- Added CI regression coverage for source read models, role filter, route link helpers, and page routing.
+- No schema, RLS, grant, Supabase Edge Function, wallet, or production data changes. Other pages still require separate route/content audit; authenticated acceptance and physical Android QA remain external gates.
