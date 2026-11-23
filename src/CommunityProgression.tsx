@@ -50,7 +50,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [badges, setBadges] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
   const [tab, setTab] = useState("overview");
-  const [id, setId] = useState<any>({ theme: "classic", accent_color: "#b99752", tagline: "", public_visible: true });
+  const [id, setId] = useState<any>({ theme: "classic", accent_color: "#b99752", tagline: "", public_visible: false });
   const [seasons, setSeasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
