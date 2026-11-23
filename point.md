@@ -1465,3 +1465,16 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Added profile links to Community Hub: predictor results and current Team references in the overview and Digital ID.
 - Extended `scripts/test_profile_directory_links.py` with regression assertions for both pages.
 - Remaining: exhaustive review of all other visible entity-name surfaces and manual route verification. The new changes are not marked complete until CI passes.
+
+
+## Cale Mascot — implementation checkpoint (24 November 2026)
+
+- Branch: `feat/cale-mascot-system-20261124` (created from `main`, base SHA `c60a6e4d0819d43a3eac360bb1ca28935a9e198e`).
+- Master character identity remains locked to the approved Cale reference. No redesign or GLB runtime was introduced.
+- Added transparent WebP wardrobe masters: racing suit, formal suit, and FIA warning suit under `public/assets/cale/`.
+- Added `CaleMascot`, a reusable static asset component, and `CaleAssistant` in the authenticated layout.
+- Onboarding/general context resolves to formal attire; FIA warning/moderation notification context resolves to FIA attire; race and circuit contexts resolve to racing attire.
+- Registered all 57 stable design IDs in `src/cale/manifest.ts`; warning notifications now use the FIA Cale outfit.
+- Added `scripts/test_cale_mascot.py` and a CI step. No new dependencies, Supabase migrations, database writes, Edge Function changes, or Vercel configuration changes.
+- **Open visual acceptance gate:** the 57 IDs currently resolve to their wardrobe master art. They are not yet 57 individually illustrated pose/expression assets. Do not mark the 57-artwork deliverable complete until each ID has its own approved transparent image and visual QA.
+- CI and production deployment status: pending after PR creation. Do not merge before all required checks pass.
