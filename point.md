@@ -1241,3 +1241,27 @@ The profile route `/member/:memberId` expects the public member identifier, not 
 - Team inactivity compensation must only be exercised with controlled Testing fixtures; do not trigger real Production wallet settlement as part of QA.
 
 **Status:** latest main CI is green, Supabase migration ledger parity is reconciled, the 14 FK indexes are present in both databases, and the exact main commit is deployed READY on Vercel. The full 11-scope program is not declared 100% complete while the manual acceptance items and real GLB integration above remain open.
+
+
+---
+
+# PUBLIC TEAM PROFILE LIVERY INTEGRATION — 23 November 2026
+
+## Implemented on feature branch
+- Exported the existing validated livery normalizer and procedural preview as reusable components; no second renderer or duplicate livery schema was introduced.
+- Extended the existing rate-limited `member-directory` `team_profile` action to return the saved `caleris_team_liveries.livery_data` and active sponsor identity for the requested team.
+- Public Team Profile now renders the saved team livery and active sponsors when a livery exists.
+- Public Team Profile roster links now render only when `public_member_id` is present. Internal `members.id` is never used as a fallback for the public `/member/:memberId` route.
+- Updated README and the Phase 26 livery implementation document.
+
+## Database and security
+- No schema change or migration is required: this reuses the existing livery and sponsorship tables.
+- Edge Function uses the existing service-role-only server-side data access pattern and existing per-IP rate limit for `team_profile`.
+- Only active team sponsorship contracts and active sponsor records are returned. No contract values, private wallet data, or internal authorization metadata are exposed.
+
+## QA and release gates
+- GitHub CI must pass before merge.
+- After merge, deploy the updated `member-directory` Edge Function to Testing first, verify the public team-profile response and roster privacy, then deploy the same function source to Production.
+- Vercel Production must be READY for the exact merged main SHA.
+- Android visual/performance acceptance remains a real-device check.
+- The supplied 89 MB 2025 GLB is not present in the current repository/session or an app-accessible asset host. Real GLB mesh integration cannot be honestly completed without the binary asset and verified UV mapping; the procedural preview remains explicitly labeled as such.

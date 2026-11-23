@@ -12,7 +12,7 @@
 
 ## Fidelity and integration boundaries
 
-- The repository does not yet contain an original/licensed production vehicle asset with a verified UV map matching this atlas. The current preview is procedural and must not be described as a final Monoposto-compatible GLB/GLTF model.
+- The repository does not yet contain an original/licensed production vehicle asset with a verified UV map matching this atlas. The editor and public Team Profile currently use the procedural preview and must not be described as a final Monoposto-compatible GLB/GLTF model.
 - Current race sessions in the test service use isolated synthetic teams. The existing replay projection is segment-level and does not provide continuous vehicle dynamics.
 - Race-start livery snapshot integration is intentionally gated until real roster-backed race sessions exist. Historical replays must eventually freeze livery revision and UV asset version at race start.
 - No steering, suspension travel, wheel angular velocity, throttle, or brake values are invented.

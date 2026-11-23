@@ -250,7 +250,33 @@ Deno.serve(async (req: Request) => {
           avatar_url: publicProfile?.avatar_url ?? null
         };
       }));
-      return respond(200, { team, roster: publicRoster });
+      const [{ data: liveryRow, error: liveryError }, { data: activeContracts, error: sponsorContractsError }] = await Promise.all([
+        admin.from("caleris_team_liveries").select("livery_data").eq("team_id", teamId).maybeSingle(),
+        admin.from("caleris_sponsorship_contracts").select("sponsor_id")
+          .eq("target_team_id", teamId).eq("target_kind", "team").eq("status", "active"),
+      ]);
+      if (liveryError || sponsorContractsError) {
+        console.error("Public team identity lookup failed:", {
+          livery: liveryError?.message,
+          sponsors: sponsorContractsError?.message,
+        });
+        return respond(500, { error: "Identitas visual tim gagal dimuat." });
+      }
+      const sponsorIds = [...new Set((activeContracts ?? []).map((row) => row.sponsor_id).filter(Boolean))];
+      const { data: sponsors, error: sponsorsError } = sponsorIds.length
+        ? await admin.from("caleris_sponsors").select("id,name,logo_url,tier_key")
+            .in("id", sponsorIds).eq("is_active", true).order("name")
+        : { data: [], error: null };
+      if (sponsorsError) {
+        console.error("Public team sponsor lookup failed:", sponsorsError.message);
+        return respond(500, { error: "Sponsor tim gagal dimuat." });
+      }
+      return respond(200, {
+        team,
+        roster: publicRoster,
+        livery: liveryRow?.livery_data ?? null,
+        sponsors: sponsors ?? [],
+      });
     }
 
     if (action === "search") {
