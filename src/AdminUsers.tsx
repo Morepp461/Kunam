@@ -175,7 +175,7 @@ export default function AdminUsers() {
 
   return <section className="workspace admin-users-page">
     <div className="admin-users-heading">
-      <div><span className="section-eyebrow">ADMIN CONTROL · ACCOUNT DIRECTORY</span><h1>Daftar Akun</h1><p>Kelola identitas akun, profil member, dan preferensi role dalam satu tempat.</p></div>
+      <div><span className="section-eyebrow">ADMIN CONTROL · ACCOUNT DIRECTORY</span><h1>Manage User</h1><p>Daftar akun: kelola role, tim, peringatan, dan sanksi member.</p></div>
       <button type="button" className="economy-secondary-button" onClick={() => void load()} disabled={loading}><RefreshCw size={15} className={loading ? "admin-users-spin" : ""}/> Refresh</button>
     </div>
 

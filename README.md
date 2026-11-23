@@ -1083,3 +1083,15 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 ## Community Progression Suite
 
 Community Hub tersedia di `/community` untuk member terautentikasi. Sistem mencakup Career/Team Milestones, Member Activity Feed, Community Voting, Championship Predictor, Digital ID, Season Yearbook, Achievement Badges, dan XP Leveling kumulatif LV0–LV100. Ambang XP dimulai dari 50 dan berlipat dua setiap level; XP tidak direset saat naik level. Nilai reward XP dikonfigurasi Admin dan event race result, check-in, quest completion, serta development shop purchase tercatat melalui trigger database idempotent. Detail requirement, batasan Predictor, keamanan, dan skema data ada di `docs/COMMUNITY_PROGRESSION_PRD.md`.
+
+
+## Follow-up Fixes — 23 November 2026
+
+- **Transfer Market dropdowns:** replaced native HTML select controls on the Transfer Market page with the shared custom, keyboard-operable dropdown component. This removes the Android/browser native picker from those filters and negotiation fields.
+- **Job Search:** corrected the search-field label specificity so the search icon and input remain horizontally aligned and vertically centered.
+- **Global profile links:** linked Driver names in the Transfer Market directory to their public member profile. Job Search team names and existing Team/Member profile-link components remain in use.
+- **Manage User discoverability:** the Admin-only page remains at `/admin/users`, under Administration → Platform & Members. The navigation and page heading now explicitly say **Manage User**.
+- **Admin User Edge Function CORS:** added `https://calerismasters.com` and `https://www.calerismasters.com` to the exact allowed-origin list and imported the pinned Supabase SDK CORS headers. JWT verification remains enabled. No Vercel environment settings were changed.
+- **Team Livery editor:** added 50 distinct vector decal presets, full 24-bit RGB color selection, multiple decal layers, placement/scale/rotation controls, UV-atlas click/drag placement, team sponsor retrieval from active sponsorship contracts, sponsor placement controls, and drag-orbit/scroll-zoom camera controls. Livery JSON remains backward-compatible (schemaVersion 1); no SQL migration is required for the JSONB payload extension.
+
+**Asset limitation:** the supplied 2025 F1 car GLB is present in the working session at 89,383,844 bytes and has UV coordinates, but this session's available repository/storage upload actions cannot transfer the binary into a public production asset path. The current 3D viewer therefore remains a procedural preview; it must not be represented as the supplied hyper-realistic GLB. Asset attribution: “2025 F1 CAR” by Abu Saif, CC BY 4.0, https://skfb.ly/pHRJU. The GLB integration and Android performance verification remain blocked until the model can be published to an approved asset host.
