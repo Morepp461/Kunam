@@ -109,6 +109,7 @@
 - Digital ID has a public verification route at `/member-id/:memberCode`; only explicitly public cards expose member identity, cumulative XP/level, completed milestones, and earned active badges. QR codes point to the canonical verification URL.
 - Season Yearbook generates a server-side snapshot and a print-ready editorial HTML view that can be saved as PDF from the browser.
 - Official Predictor models pole bonus independently from finishing position. It remains an equal-probability Monte Carlo estimate because no verified driver/car performance model is available.
+- Admin can configure XP rewards per source and maintain the achievement badge catalog, including rarity and activation state.
 - Product requirements and implementation notes: [Community Progression PRD](docs/COMMUNITY_PROGRESSION_PRD.md).
 - Community Progression migrations include the initial suite, authoritative integrations, security hardening, closed-round reconciliation, public Digital ID progression, and scheduled voting lifecycle.
 
