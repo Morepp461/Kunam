@@ -251,7 +251,7 @@ export default function TeamLivery({isAdmin=false}:{isAdmin?:boolean}){
     updateDecal(selectedDecalIndex,{surface:part.surface,x:Math.round((x-part.x)/part.w*100),y:Math.round((y-part.y)/part.h*100)});
   };
   const exportFile=()=>{const url=URL.createObjectURL(new Blob([JSON.stringify(design,null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download="caleris-team-livery.json";a.click();URL.revokeObjectURL(url);};
-  const importFile=async(file?:File)=>{if(!file)return;try{const imported=normalize(JSON.parse(await file.text()));if(!validateTeamLiveryDesign(imported)){setError("File livery berisi data yang tidak valid.");return;}setDesign(imported);setSelectedDecalIndex(null);setNotice("Desain dimuat. Simpan untuk menerapkan ke tim.");setError("");}catch{setError("File livery tidak valid.");}};
+  const importFile=async(file?:File)=>{if(!file)return;try{const imported=normalizeTeamLiveryDesign(JSON.parse(await file.text()));if(!validateTeamLiveryDesign(imported)){setError("File livery berisi data yang tidak valid.");return;}setDesign(imported);setSelectedDecalIndex(null);setNotice("Desain dimuat. Simpan untuk menerapkan ke tim.");setError("");}catch{setError("File livery tidak valid.");}};
   const setSponsorPlacement=(id:string,placement:SponsorPlacement)=>update({sponsorPlacements:{...design.sponsorPlacements,[id]:placement}});
   const selectedDecal=selectedDecalIndex===null?null:design.decals[selectedDecalIndex]??null;
   if(loading)return <section className="workspace team-livery"><p>Mempersiapkan Data...</p></section>;
