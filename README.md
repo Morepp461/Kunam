@@ -1193,11 +1193,39 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 The extended Scope 09 source review found two additional groups of visible entity names that were not linked. FIA Operations now links Driver and Team names in transfer approvals, takeover approvals, and fine history. Community Hub now links predictor Driver results and the current Team in the overview and Digital ID. The profile-link regression script covers these surfaces. The changes are subject to the full branch CI before merge.
 
 
+### Final release verification — 24 November 2026
+
+- Scope 09 profile-link changes merged in PR #329 after the complete Caleris CI workflow passed: run `45225638925`, 43/43 steps successful.
+- Merged main commit: `c60a6e4d0819d43a3eac360bb1ca28935a9e198e`.
+- Vercel Production deployment: `dpl_4dmNHfbmbdfg6saNrNQxiytyQLnF`, state **READY**, built from that exact main commit.
+- Production aliases `calerismasters.com` and `www.calerismasters.com` are attached and verified. Live domain returned HTTP 200.
+- No Production schema or wallet changes were made during the Scope 05 / Scope 11 rollback-only behavioral QA.
+
+Remaining acceptance gates: the approved 89 MB GLB must be accessible for Scope 08; Android visual/GPU/memory acceptance requires the physical handset; Scope 09 still needs exhaustive page-by-page and manual route verification; Scope 10 still needs authenticated browser role walkthroughs; Scope 06 CRM requires the actual business workflow specification.
+
+
+### Scope 09 — Driver Exhibition profile navigation
+
+- Driver Exhibition card-detail and 3D selected-driver panels now link the selected Driver name to the public Member Profile and the current Team name to the public Team Profile.
+- Community Hub Team Milestones now links its team heading to the same public Team Profile.
+- Extended `scripts/test_profile_directory_links.py` to enforce these links in both views.
+- Existing Driver Exhibition data is sourced from the same member directory carrying `public_member_id`; no schema or dependency change is required.
+- Full page-by-page manual review remains open; this addendum records only the surfaces explicitly covered by source inspection and regression assertions.
+
+
+### Scope 09 — Team workflow profile navigation
+
+- Added public Team Profile links to the selected-team summary in Driver Contracts, the current Team heading in Driver Registration, the current Team and both parties in Affiliate Team, and the owner's Team listing in Take Over.
+- Extended the profile-link regression script to cover these workflow surfaces.
+- All links reuse the existing TeamProfileLink component and existing team IDs; no schema or dependency change is required.
+- Select-option labels and pending registration proposals remain non-links because they are selection/proposed data, not existing public profile entities.
+
+
 ## Cale Mascot
 
 - Cale is integrated as a static, transparent-background assistant in the authenticated application layout.
 - Wardrobe routing is context-based: formal outfit for onboarding/general guidance, FIA outfit for warning and moderation notifications, and racing suit for motorsport pages.
 - The visual-state manifest contains the 57 stable IDs from the approved Cale list.
 - Master artwork currently ships as three optimized transparent WebP wardrobe assets under `public/assets/cale/`.
-- The 57 IDs are registered and callable, but dedicated per-ID pose artwork is still a separate production gate. The current component intentionally falls back to the selected wardrobe master instead of pretending each ID has its own pose image.
+- The 57 IDs are registered and callable, but dedicated per-ID pose artwork is still a separate asset-delivery gate. The current component intentionally falls back to the selected wardrobe master instead of pretending each ID has its own pose image.
 - No database schema, Supabase function, runtime dependency, or Vercel setting is changed by this UI-only integration.

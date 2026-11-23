@@ -1467,9 +1467,47 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Remaining: exhaustive review of all other visible entity-name surfaces and manual route verification. The new changes are not marked complete until CI passes.
 
 
+## FINAL RELEASE VERIFICATION — 24 NOVEMBER 2026
+
+- PR #329 merged after Caleris CI run `45225638925` passed all 43 steps.
+- Main SHA: `c60a6e4d0819d43a3eac360bb1ca28935a9e198e`.
+- Vercel Production: `dpl_4dmNHfbmbdfg6saNrNQxiytyQLnF` — **READY**, built from the exact main SHA above.
+- `calerismasters.com` and `www.calerismasters.com` are verified Production aliases; live apex domain returned HTTP 200.
+- Scope 05 first-contract and renewal request/offer/reject/decline behavioral paths passed in Testing rollback-only transactions. Scope 11 funded and insufficient-balance compensation branches passed in Testing rollback-only transactions. Final rollback audit found zero test rows/transactions and the original Team Wallet balance restored to €17,550,000.
+- Production data, balances, schema, and Edge Functions were not modified by these behavioral tests.
+
+### Outstanding acceptance gates (not falsely marked complete)
+
+1. Scope 08: original 2025 F1 CAR GLB (89,383,844 bytes) is not present in the accessible repository, Supabase Storage, or Project Library. Real mesh/UV/sponsor integration remains blocked on the original file.
+2. Scope 01/08: physical Android visual, WebGL/GPU, and memory acceptance remains outstanding.
+3. Scope 09: FIA Operations and Community Hub omissions are fixed and covered by CI; exhaustive page-by-page review and manual route verification remain outstanding.
+4. Scope 10: authenticated browser walkthrough across Admin/FIA/Owner/Member and Driver/Owner remains outstanding.
+5. Scope 06: CRM Workflow remains blocked on the business specification (statuses, owners, transitions, permissions).
+
+
+## Scope 09 — Driver Exhibition and Team Milestones link audit
+
+- Driver Exhibition card detail: Driver name links to public Member Profile; Team name links to public Team Profile.
+- Driver Exhibition 3D selected-driver panel: Driver and Team names link to their public profiles.
+- Community Hub Team Milestones heading links to the member's current Team Profile.
+- Added CI assertions to `scripts/test_profile_directory_links.py` for all above locations.
+- Uses existing `public_member_id` and `team.id` data; no dependency or database migration required.
+- Remaining: continue exhaustive page-by-page review and manual route verification.
+
+
+## Scope 09 — Team workflow profile-link coverage
+
+- Driver Contracts: selected Team summary links to public Team Profile.
+- Driver Registration: current Team heading links to public Team Profile.
+- Affiliate Team: current Team heading and both participating Team names link to public Team Profiles.
+- Take Over: owner's current Team listing heading links to public Team Profile.
+- Regression script extended for these pages. Existing IDs/components reused; no migration or dependency change.
+- Pending proposed Team names and dropdown option labels are intentionally not links because they are not navigable existing public entities.
+
+
 ## Cale Mascot — implementation checkpoint (24 November 2026)
 
-- Branch: `feat/cale-mascot-system-20261124` (created from `main`, base SHA `c60a6e4d0819d43a3eac360bb1ca28935a9e198e`).
+- Branch: `feat/cale-mascot-system-20261124`, created from main SHA `c60a6e4d0819d43a3eac360bb1ca28935a9e198e` and synchronized with latest main SHA `2777f140f63e9cce7171580a9bf1d28d9e1bdf73` before review.
 - Master character identity remains locked to the approved Cale reference. No redesign or GLB runtime was introduced.
 - Added transparent WebP wardrobe masters: racing suit, formal suit, and FIA warning suit under `public/assets/cale/`.
 - Added `CaleMascot`, a reusable static asset component, and `CaleAssistant` in the authenticated layout.
