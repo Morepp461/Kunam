@@ -805,14 +805,5 @@ function PollAdmin({
       <label>Alasan<input value={adjustDescription} onChange={(event) => setAdjustDescription(event.target.value)} maxLength={240} /></label>
       <button onClick={() => void adjustXp()}><Save size={15} /> Terapkan penyesuaian</button>
     </div>
-    <div className="cp-admin-list">
-      <h4>Poll Management</h4>
-      {polls.filter((poll) => poll.status === "open" || poll.status === "closed").map((poll) => <div key={poll.id}>
-        <span><strong>{poll.title}</strong><small>{poll.status} · {new Date(poll.ends_at).toLocaleString("id-ID")}</small></span>
-        {poll.status === "open"
-          ? <><button onClick={() => void onFinalize(poll.id, false)}>Close</button><button onClick={() => void onFinalize(poll.id, true)}>Publish</button></>
-          : <button onClick={() => void onFinalize(poll.id, true)}>Publish result</button>}
-      </div>)}
-    </div>
   </section>;
 }
