@@ -135,7 +135,7 @@ export function resolveCaleOutfit(context: CaleContext): CaleOutfit {
 export function resolveCaleContext(pathname: string): CaleContext {
   const path = pathname.toLowerCase();
   if (path.includes("paddock-access") || path.includes("onboarding")) return "onboarding";
-  if (path.startsWith("/fia-panel") || path.includes("warning") || path.includes("punishment")) return "warning";
+  if (path.includes("warning") || path.includes("punishment") || path.includes("appeal-room")) return "warning";
   if (
     path.includes("race") ||
     path.includes("premio") ||
