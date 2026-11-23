@@ -1112,3 +1112,33 @@ Community Hub tersedia di `/community` untuk member terautentikasi. Sistem menca
 - Scope 10 is now clearly labeled **Manage User** under Administration → Platform & Members at `/admin/users`.
 - Scope 08 now has 50 vector decal presets, 24-bit RGB color picker, multiple decals, per-decal scale/rotation/UV placement, active sponsor retrieval from the existing sponsorship tables, sponsor position assignment, and interactive camera orbit/zoom. The actual 2025 GLB binary is still not hosted by the app, so the viewer remains procedural. Hyper-realistic GLB integration and team-profile rendering remain open.
 - No SQL migration was required for this editor increment; the livery design remains in the existing JSONB payload. The sponsor table columns used by the editor were verified in Testing and Production.
+
+
+---
+
+# GLOBAL PROFILE-LINK AUDIT CHECKPOINT — 23 November 2026
+
+**Branch:** `fix/global-driver-team-profile-links-20261123`  
+**Base main:** `ad0e3b8df38cb2b4b2a971015f985af70f699b7b`
+
+## Findings
+
+The profile route `/member/:memberId` expects the public member identifier, not the internal `members.id`. Several previously linked UI cells passed the internal UUID, and multiple tables rendered names as plain text. Team routes correctly use team UUIDs.
+
+## Changes on this branch
+
+- Added `public_member_id` to directory queries before rendering Driver profile links.
+- Corrected member links in Main Event standings, Driver Directory, Team Directory roster, Career Timeline, Team Summary/Driver History, registrations, scouting, Hall of Fame, season archives, race results, and appeal target headings.
+- Corrected Take Over member links to use `public_member_id`.
+- Corrected Admin User profile links to use the public ID returned by the existing profile payload (no internal-ID fallback).
+- Corrected Driver Contract and Driver Application roster links.
+- Added Driver and Team profile links to Race Control roster summaries.
+- Linked remaining team snapshot names in driver career history.
+- Verified `caleris_member_directory.public_member_id` exists in both Testing and Production.
+- No database migration is required.
+
+## QA / remaining
+
+- TypeScript/build, unit/schema validation, browser smoke, and integration CI are pending for this branch.
+- Manual authenticated account-role walkthrough and full Android visual verification remain required.
+- Continue the remaining repository-wide name/link audit after CI; the list above covers the identified core directory, standings, contract, archive, admin, and race-control views.
