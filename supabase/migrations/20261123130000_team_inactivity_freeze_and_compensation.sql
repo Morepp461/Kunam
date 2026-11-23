@@ -183,7 +183,7 @@ begin
   if exists(select 1 from public.caleris_team_inactivity_states s where s.team_id=old.team_id and s.status='awaiting_compensation') then return new; end if;
   update public.members set role=null,team_id=null where id=new.member_id and role='Driver';
   update public.caleris_driver_move_negotiations set status='cancelled',updated_at=now()
-  where driver_member_id=new.member_id and status in ('offered','negotiating','seller_accepted','pending_fia','approved_waiting_window','approved');
+  where driver_member_id=new.member_id and status in ('offered','negotiating','seller_accepted','pending_fia','approved_waiting_window','approved','loan_active');
   return new;
 end;
 $function$
