@@ -1557,3 +1557,12 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - The asset intake removes the prior missing-source-file blocker, but does not mean the model is deployed or production-ready. The source is approximately 3.1 million triangles and 85.2 MiB; a mobile-safe optimized runtime derivative, UV/material-to-body-zone mapping, sponsor decal validation, asset hosting, and Android GPU/memory acceptance are still required.
 - Preserve this original source and its checksum. Do not overwrite it with an optimized derivative. Record every derivative's tool/version/settings and checksum, and keep the attribution adjacent to the hosted asset and in the application.
 - No production asset path, storage object, application loader, database schema, or race snapshot was changed in this intake-only checkpoint. Do not claim the real model is integrated until a runtime asset can be hosted and loaded in the application.
+
+
+## Race OCR loading optimization — 24 November 2026
+
+- The FIA Race Result Input page now lazy-loads the OCR component and its Tesseract.js dependency only when the Race Control route is opened and the OCR panel is rendered. The main application route no longer statically imports the OCR module.
+- A Suspense status fallback is displayed while the OCR chunk loads; OCR remains draft-only and does not submit race results automatically.
+- Added a Vitest regression guard for the lazy import and fallback boundary.
+- Reused the existing React and Tesseract.js dependencies. No dependency upgrade, database migration, Edge Function, wallet, or production data change.
+- The existing Three.js loads in Driver Exhibition and Team Livery are already dynamic imports. This change does not claim the remaining Vite bundle warnings or 3D asset performance gates are resolved.
