@@ -303,3 +303,13 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 01 — Digital ID theme dropdown (2026-11-23)
+- Status: IMPLEMENTED, CI/QA pending.
+- Branch: `fix/caleris-scope-01-digital-id-theme-dropdown`.
+- Replaced the native HTML select with a single accessible custom menu in the Community Hub Digital ID theme editor. Selecting Classic/Premio/Zwei/Gold updates the existing theme state; the second native Android dropdown is no longer invoked.
+- Files: `src/CommunityProgression.tsx`, `src/community-progression.css`.
+- Database: no schema/data changes. Testing and Production unchanged.
+- Vercel environment: unchanged.
+- QA remaining: Android native menu absence, keyboard/ARIA interaction, desktop layout, CI/build.
