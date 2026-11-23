@@ -1373,3 +1373,23 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Additional profile-link audit fixes: Team Summary, Team HQ, Team Engine Market, Team Inactivity settlement, Admin Users, Team Owner/Finance, recent race results, Hall of Fame winners, and all-time driver/team records now use verified public member IDs or team IDs. Internal member UUIDs are no longer passed as public profile route IDs in the reviewed views.
 
 - Added a global guard in `EntityProfileLink`: Member Profile links require a valid 12–16 character public ID, and Team Profile links require a valid UUID. This prevents overlooked components from accidentally exposing internal member UUIDs as public profile routes.
+
+
+---
+
+# PROFILE DIRECTORY AND LINK AUDIT RELEASE — 23 NOVEMBER 2026
+
+- PR #319 merged to `main`; merge commit `a89d99550919d31474fff4f19e2ff4197a001fd7`.
+- PR CI run `45213664413` completed **success**, 42/42 steps. TypeScript, Vite production build, unit/schema validation, Playwright browser smoke, dropdown/navigation UI, live directory/profile link checks, economy/security regressions, and Supabase schema parity guard all passed.
+- Vercel Production deployment `dpl_DLeCxUW7YWYG6vPd1nabxxSJSYHn` is **READY** for the exact merge commit. Verified production aliases include `https://calerismasters.com` and `https://www.calerismasters.com`. No Vercel environment variables or project settings changed.
+- Global dropdown fix from PR #318 is already in Production; profile directory and public ID validation changes from PR #319 are now in Production.
+- No database migration or data mutation was needed. Both Testing and Production already contain the directory read models and public IDs used by this release.
+
+## Remaining acceptance gates (not hidden by green CI)
+- Real 2025 car GLB mesh/UV integration: repository tree and `storage.objects` in both Supabase projects were checked; no GLB/GLTF binary is present. The asset must be supplied or hosted before mesh/decal integration can be completed.
+- Authenticated Driver/Owner contract acceptance and Admin/FIA/Owner/Member role-matrix walkthrough require authorized test sessions. Existing automated workflow/security regressions pass, but they are not a substitute for live role acceptance.
+- Android physical-device acceptance for the dropdown, touch layout, WebGL/GPU, and memory remains unverified. Browser smoke tests passed on CI Chromium, not the owner's handset.
+- Admin Workflow remains intentionally inactive pending the actual CRM workflow specification; no business process or permissions were invented.
+- Final exhaustive visual page-by-page audit remains a manual acceptance item. The reviewed directory, team, admin, race, contract, finance, archive, and Team HQ views have been corrected and regression-tested.
+
+**Release status:** code and changes available from this checkpoint are merged, CI verified, and deployed READY. The complete 11-scope program is not declared 100% accepted until the external asset, authenticated role acceptance, physical Android QA, and Admin Workflow requirements are supplied and verified.
