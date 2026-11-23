@@ -1,4 +1,5 @@
 export type PredictorDriver = { name: string; points: number };
+export type PredictorEvent = { finishingPoints: number[]; poleBonus: number };
 export type PredictorResult = { probabilities: number[]; lockedChampionIndex: number | null; eliminated: boolean[]; maxRemainingPoints: number };
 
 export function getCalerisLevel(totalXp: number): number {
@@ -23,7 +24,7 @@ function shuffle<T>(items: T[], random: () => number): T[] {
 
 export function simulateChampionship(
   drivers: PredictorDriver[],
-  eventVectors: number[][],
+  eventVectors: Array<number[] | PredictorEvent>,
   trials = 15000,
   random: () => number = Math.random,
 ): PredictorResult {
@@ -31,12 +32,22 @@ export function simulateChampionship(
   if (drivers.some((driver) => !driver.name.trim() || !Number.isFinite(driver.points) || driver.points < 0)) {
     throw new Error("Data driver atau poin tidak valid.");
   }
-  if (eventVectors.some((vector) => !vector.length || vector.some((value) => !Number.isFinite(value) || value < 0))) {
+  const normalizedEvents = eventVectors.map((event) => Array.isArray(event)
+    ? { finishingPoints: event, poleBonus: 0 }
+    : event);
+  if (normalizedEvents.some((event) =>
+    !event.finishingPoints.length
+    || event.finishingPoints.some((value) => !Number.isFinite(value) || value < 0)
+    || !Number.isFinite(event.poleBonus) || event.poleBonus < 0
+  )) {
     throw new Error("Aturan poin untuk salah satu ronde belum tersedia atau tidak valid.");
   }
   if (!Number.isInteger(trials) || trials < 1) throw new Error("Jumlah simulasi tidak valid.");
 
-  const maxRemainingPoints = eventVectors.reduce((sum, vector) => sum + Math.max(0, ...vector), 0);
+  const maxRemainingPoints = normalizedEvents.reduce(
+    (sum, event) => sum + Math.max(0, ...event.finishingPoints) + event.poleBonus,
+    0,
+  );
   const leaderPoints = Math.max(...drivers.map((driver) => driver.points));
   const leaders = drivers.map((driver, index) => driver.points === leaderPoints ? index : -1).filter((index) => index >= 0);
   const lockedChampionIndex = leaders.length === 1 && drivers.every((driver, index) =>
@@ -58,11 +69,15 @@ export function simulateChampionship(
   const wins = drivers.map(() => 0);
   for (let trial = 0; trial < trials; trial += 1) {
     const totals = drivers.map((driver) => driver.points);
-    for (const vector of eventVectors) {
+    for (const event of normalizedEvents) {
       const order = shuffle(drivers.map((_, index) => index), random);
       order.forEach((driverIndex, position) => {
-        totals[driverIndex] += vector[position] ?? 0;
+        totals[driverIndex] += event.finishingPoints[position] ?? 0;
       });
+      if (event.poleBonus > 0) {
+        const poleWinner = Math.min(drivers.length - 1, Math.max(0, Math.floor(random() * drivers.length)));
+        totals[poleWinner] += event.poleBonus;
+      }
     }
     const high = Math.max(...totals);
     const tied = totals.map((value, index) => value === high ? index : -1).filter((index) => index >= 0);
