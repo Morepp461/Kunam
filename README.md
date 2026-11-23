@@ -1095,3 +1095,12 @@ Community Hub tersedia di `/community` untuk member terautentikasi. Sistem menca
 - **Team Livery editor:** added 50 distinct vector decal presets, full 24-bit RGB color selection, multiple decal layers, placement/scale/rotation controls, UV-atlas click/drag placement, team sponsor retrieval from active sponsorship contracts, sponsor placement controls, and drag-orbit/scroll-zoom camera controls. Livery JSON remains backward-compatible (schemaVersion 1); no SQL migration is required for the JSONB payload extension.
 
 **Asset limitation:** the supplied 2025 F1 car GLB is present in the working session at 89,383,844 bytes and has UV coordinates, but this session's available repository/storage upload actions cannot transfer the binary into a public production asset path. The current 3D viewer therefore remains a procedural preview; it must not be represented as the supplied hyper-realistic GLB. Asset attribution: “2025 F1 CAR” by Abu Saif, CC BY 4.0, https://skfb.ly/pHRJU. The GLB integration and Android performance verification remain blocked until the model can be published to an approved asset host.
+
+
+### Release checkpoint — 23 November 2026
+
+PR #307 has been merged to `main` at `6c8fbdbe7d3f1adfc8c3314f41079836939ae0f5`. Both required GitHub Actions build checks passed, including TypeScript, production build, unit/schema validation, browser smoke tests, cross-engine regressions, and security/schema-parity checks.
+
+The follow-up includes the Transfer Market custom dropdown, Job Search search alignment, Driver profile link in the Transfer Market directory, Manage User navigation label, Admin User CORS allow-list correction, and the expanded livery decal/sponsor editor. The Admin User Edge Function is active in Testing (v8) and Production (v7), with identical source hash and JWT verification enabled. The Vercel production deployment for this commit is being verified separately; no Vercel environment settings were changed.
+
+**Scope 08 remains partial:** 50 vector decal presets, RGB color selection, multiple decal layers, sponsor retrieval/placement, UV-atlas placement, and drag-orbit/zoom controls are implemented. The uploaded 2025 GLB is not yet published to an app-accessible asset path, so the current 3D preview remains procedural. Do not represent the model integration as complete.
