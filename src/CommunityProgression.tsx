@@ -854,7 +854,13 @@ function PollAdmin({
     <div className="cp-admin-form">
       <label>Judul voting<input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={160} /></label>
       <label>Deskripsi<textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={1000} rows={3} /></label>
-      <label>Jenis voting<select value={type} onChange={(event) => { setType(event.target.value); setSelected([]); }}>
+      <label>Jenis voting<select value={type} onChange={(event) => {
+        const nextType = event.target.value;
+        setType(nextType);
+        setSelected([]);
+        if (!nextType.endsWith("_of_period")) setPeriodId("");
+        if (!nextType.endsWith("_of_period") && !nextType.endsWith("_of_season")) setSeasonId("");
+      }}>
         <option value="driver_of_period">Driver of the Period</option>
         <option value="team_of_period">Team of the Period</option>
         <option value="driver_of_season">Driver of the Season</option>
