@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, CheckCircle2, RefreshCw } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import "./admin-team-inactivity.css";
 
 type TeamRow={id:string;name:string;division_key:string|null};
@@ -64,7 +65,7 @@ export default function AdminTeamInactivity(){
   {loading?<div className="center-state">Memuat status team...</div>:<div className="workspace-card admin-inactivity-table-wrap">
    <table className="admin-inactivity-table"><thead><tr><th>Team</th><th>Status</th><th>Season review</th><th>Quest</th><th>Development</th><th>Reaktivasi</th><th>Aksi</th></tr></thead><tbody>
     {teams.map(team=>{const state=states.find(s=>s.team_id===team.id);const review=state?.last_reviewed_season_id?reviewMap.get(team.id+":"+state.last_reviewed_season_id):undefined;const status=state?.status||"active";return <tr key={team.id}>
-     <td><strong>{team.name}</strong><small>{team.division_key||"Belum ada divisi"}</small></td>
+     <td><strong><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink></strong><small>{team.division_key||"Belum ada divisi"}</small></td>
      <td><span className={"admin-inactivity-status "+status}>{status==="active"?"ACTIVE":status==="frozen"?"FROZEN":"AWAITING COMPENSATION"}</span></td>
      <td>{seasonMap.get(state?.last_reviewed_season_id||"")?.title||"—"}</td>
      <td>{review?.quest_activity_count??"—"}</td><td>{review?.development_activity_count??"—"}</td>
@@ -77,14 +78,14 @@ export default function AdminTeamInactivity(){
   <div className="admin-inactivity-section-heading"><div><h2>Replacement slots</h2><p>Admin dapat mengisi slot dengan team baru yang belum masuk roster season tujuan.</p></div></div>
   <div className="admin-inactivity-slot-list">
    {slots.map(slot=><article className="workspace-card admin-inactivity-slot" key={slot.id}>
-    <div><span className={"admin-inactivity-status "+slot.status}>{slot.status==="open"?"OPEN":"FILLED"}</span><h3>{slot.division_key} · {seasonMap.get(slot.season_id)?.title||"Season"}</h3><p>Menggantikan: <strong>{teamMap.get(slot.replaced_team_id)?.name||"Team"}</strong></p>{slot.note&&<small>{slot.note}</small>}</div>
-    {slot.status==="open"?<div className="admin-inactivity-fill"><select value={slotTeams[slot.id]||""} onChange={e=>setSlotTeams(v=>({...v,[slot.id]:e.target.value}))}><option value="">Pilih team pengganti</option>{teams.filter(t=>t.id!==slot.replaced_team_id&&!states.some(s=>s.team_id===t.id&&s.status!=="active")).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button className="action primary" disabled={busy||!slotTeams[slot.id]} onClick={()=>void fillSlot(slot.id)}>Tetapkan</button></div>:<p>Pengganti: <strong>{teamMap.get(slot.replacement_team_id||"")?.name||"—"}</strong></p>}
+    <div><span className={"admin-inactivity-status "+slot.status}>{slot.status==="open"?"OPEN":"FILLED"}</span><h3>{slot.division_key} · {seasonMap.get(slot.season_id)?.title||"Season"}</h3><p>Menggantikan: <strong><TeamProfileLink teamId={slot.replaced_team_id}>{teamMap.get(slot.replaced_team_id)?.name||"Team"}</TeamProfileLink></strong></p>{slot.note&&<small>{slot.note}</small>}</div>
+    {slot.status==="open"?<div className="admin-inactivity-fill"><select value={slotTeams[slot.id]||""} onChange={e=>setSlotTeams(v=>({...v,[slot.id]:e.target.value}))}><option value="">Pilih team pengganti</option>{teams.filter(t=>t.id!==slot.replaced_team_id&&!states.some(s=>s.team_id===t.id&&s.status!=="active")).map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select><button className="action primary" disabled={busy||!slotTeams[slot.id]} onClick={()=>void fillSlot(slot.id)}>Tetapkan</button></div>:<p>Pengganti: <strong><TeamProfileLink teamId={slot.replacement_team_id}>{teamMap.get(slot.replacement_team_id||"")?.name||"—"}</TeamProfileLink></strong></p>}
    </article>)}
    {!slots.length&&<div className="workspace-card admin-inactivity-empty">Belum ada slot pengganti yang dibuka.</div>}
   </div>
   <div className="admin-inactivity-section-heading"><div><h2>Compensation ledger</h2><p>Setiap kompensasi menggunakan transaksi resmi Team Wallet → Driver Wallet.</p></div></div>
   <div className="workspace-card admin-inactivity-table-wrap"><table className="admin-inactivity-table"><thead><tr><th>Team / Driver</th><th>Season</th><th>Sisa kontrak</th><th>Gaji tahunan</th><th>Kompensasi</th><th>Status</th><th>Transaction</th></tr></thead><tbody>
-   {settlements.map(s=><tr key={s.id}><td><strong>{teamMap.get(s.team_id)?.name||"Team"}</strong><small>{memberMap.get(s.member_id)?.character_name||"Driver"}</small></td><td>{seasonMap.get(s.season_id)?.title||"Season"}</td><td>{s.remaining_seasons} season</td><td>{s.annual_salary_snapshot?money(Number(s.annual_salary_snapshot)):"—"}</td><td><strong>{money(Number(s.compensation_amount))}</strong></td><td><span className={"admin-inactivity-status "+s.status}>{s.status.toUpperCase()}</span>{s.error_note&&<small className="admin-inactivity-error-note">{s.error_note}</small>}</td><td>{s.transaction_id?<code>{s.transaction_id.slice(0,8)}…</code>:"—"}</td></tr>)}
+   {settlements.map(s=><tr key={s.id}><td><strong><TeamProfileLink teamId={s.team_id}>{teamMap.get(s.team_id)?.name||"Team"}</TeamProfileLink></strong><small><MemberProfileLink memberId={s.member_id}>{memberMap.get(s.member_id)?.character_name||"Driver"}</MemberProfileLink></small></td><td>{seasonMap.get(s.season_id)?.title||"Season"}</td><td>{s.remaining_seasons} season</td><td>{s.annual_salary_snapshot?money(Number(s.annual_salary_snapshot)):"—"}</td><td><strong>{money(Number(s.compensation_amount))}</strong></td><td><span className={"admin-inactivity-status "+s.status}>{s.status.toUpperCase()}</span>{s.error_note&&<small className="admin-inactivity-error-note">{s.error_note}</small>}</td><td>{s.transaction_id?<code>{s.transaction_id.slice(0,8)}…</code>:"—"}</td></tr>)}
   </tbody></table>{!settlements.length&&<p className="admin-inactivity-empty">Belum ada settlement kompensasi.</p>}</div>
   <div className="admin-inactivity-footnote"><Activity size={15}/> Reaktivasi membutuhkan minimal 3 aktivitas baru setelah freeze, gabungan Quest selesai dan upgrade Development. Roster season yang sudah dikunci tidak diubah di tengah season.</div>
  </section>;
