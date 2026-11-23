@@ -1,13 +1,17 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
+import { corsHeaders as supabaseCorsHeaders } from "npm:@supabase/supabase-js@2.119.0/cors";
 
 const allowedOrigin = (origin: string) =>
   origin === "http://localhost:5173" ||
+  origin === "https://calerismasters.com" ||
+  origin === "https://www.calerismasters.com" ||
   origin === "https://calerismastersnewgen-mu.vercel.app" ||
   /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+
 const cors = (origin: string) => ({
-  "Access-Control-Allow-Origin": allowedOrigin(origin) ? origin : "https://calerismastersnewgen-mu.vercel.app",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  ...supabaseCorsHeaders,
+  "Access-Control-Allow-Origin": allowedOrigin(origin) ? origin : "null",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Content-Type": "application/json",
   "Vary": "Origin",
@@ -22,9 +26,9 @@ Deno.serve(async (req: Request) => {
   const respond = (status: number, body: Record<string, unknown>) =>
     new Response(JSON.stringify(body), { status, headers });
 
+  if (!allowedOrigin(origin)) return new Response("Origin not allowed.", { status: 403, headers });
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return respond(405, { error: "Method not allowed." });
-  if (!allowedOrigin(origin)) return respond(403, { error: "Origin not allowed." });
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
