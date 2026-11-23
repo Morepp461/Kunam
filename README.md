@@ -1178,4 +1178,4 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 ### Race Engine Shared Clock Accuracy
 
 - The shared simulation clock now advances by the largest actual entrant elapsed-time delta for each tick, including incident time loss and pit-lane loss, rather than only the nominal segment duration. This keeps weather progression and race-control expiry synchronized with the real staged race timeline.
-- A regression assertion verifies the checkpoint clock matches the maximum entrant elapsed time after the pit-model simulation step.
+- Regression assertions verify the checkpoint clock matches the maximum entrant elapsed time after both pit-loss and incident-loss simulation steps.
