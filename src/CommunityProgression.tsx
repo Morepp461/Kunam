@@ -72,6 +72,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [selectedSeason, setSelectedSeason] = useState("");
   const [selectedDivision, setSelectedDivision] = useState("");
   const [eventVectors, setEventVectors] = useState<PredictorEvent[] | null>(null);
+  const [officialCountback, setOfficialCountback] = useState<{ race: Record<string, number[]>; qualifying: Record<string, number[]> }>({ race: {}, qualifying: {} });
 
   const load = async () => {
     if (!db || !memberId) {
@@ -335,7 +336,10 @@ export default function CommunityProgression({ session, profile, toast }: Props)
     const rules = data.scoring_rules ?? [];
     const vectors = remaining.map((event: any) => {
       const matching = rules.filter((rule: any) => rule.session_type === event.session_type);
-      if (!matching.length) return [];
+      if (event.session_type === "qualifying") {
+        return { finishingPoints: Array.from({ length: rows.length }, () => 0), poleBonus: 0, sessionType: "qualifying" };
+      }
+      if (!matching.length) return { finishingPoints: [], poleBonus: 0, sessionType: event.session_type };
       const maxPosition = Math.max(...matching.map((rule: any) => Number(rule.finishing_position)));
       const finishingPoints = Array.from({ length: Math.max(0, maxPosition) }, () => 0);
       matching.forEach((rule: any) => {
@@ -345,8 +349,24 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         }
       });
       const poleBonus = Math.max(0, ...matching.map((rule: any) => Number(rule.pole_bonus ?? 0)));
-      return { finishingPoints, poleBonus };
+      return { finishingPoints, poleBonus, sessionType: event.session_type };
     });
+    const roundsById = new Map((data.rounds ?? []).map((round: any) => [round.id, round]));
+    const raceCountback: Record<string, number[]> = {};
+    const qualifyingCountback: Record<string, number[]> = {};
+    (data.race_results ?? []).forEach((entry: any) => {
+      const round = roundsById.get(entry.round_id) as any;
+      if (!round || round.season_division_id !== division.id) return;
+      const position = Number(entry.finishing_position);
+      const name = String(entry.driver_name_snapshot ?? "").trim();
+      if (!name || !Number.isInteger(position) || position < 1) return;
+      const target = round.session_type === "race" ? raceCountback
+        : round.session_type === "qualifying" ? qualifyingCountback : null;
+      if (!target) return;
+      target[name] ??= [];
+      target[name][position - 1] = (target[name][position - 1] ?? 0) + 1;
+    });
+    setOfficialCountback({ race: raceCountback, qualifying: qualifyingCountback });
     setRounds(remaining.length);
     setEventVectors(vectors);
     const maxRace = Math.max(0, ...rules.filter((rule: any) => rule.session_type === "race").map((rule: any) => Number(rule.points ?? 0) + Number(rule.pole_bonus ?? 0)));
@@ -380,7 +400,13 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const runPredictor = () => {
     const rows = standing.split("\n").map((line) => {
       const [name, ...pointParts] = line.split(",");
-      return { name: name?.trim() ?? "", points: Number(pointParts.join(",").trim()) };
+      const driverName = name?.trim() ?? "";
+      return {
+        name: driverName,
+        points: Number(pointParts.join(",").trim()),
+        countback: officialCountback.race[driverName] ?? [],
+        qualifyingCountback: officialCountback.qualifying[driverName] ?? [],
+      };
     }).filter((row) => row.name && Number.isFinite(row.points) && row.points >= 0);
     const manualVector = points.split(",").map(Number).filter((value) => Number.isFinite(value) && value >= 0);
     const vectors = eventVectors !== null
@@ -567,7 +593,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <label>Poin per ronde manual (P1,P2,P3...)<input value={points} onChange={(event) => { setEventVectors(null); setPoints(event.target.value); }} placeholder="25,18,15,12,10" /></label>
         <small>{eventVectors !== null ? "Aturan poin resmi per sesi sudah dimuat." : "Mode skenario manual aktif."}</small>
         <button onClick={runPredictor}>Jalankan 15.000 simulasi</button>
-        {predictionMeta && <p className="cp-muted">Maksimal poin tersisa per driver: {formatNumber(predictionMeta.maxRemainingPoints)}. Tie-break resmi belum dimodelkan, sehingga batas seri tidak dikunci.</p>}
+        {predictionMeta && <p className="cp-muted">Maksimal poin tersisa per driver: {formatNumber(predictionMeta.maxRemainingPoints)}. Tie-break memakai countback hasil Race (P1, P2, P3, dan seterusnya), lalu hasil Qualifying jika tersedia. {predictionMeta.unresolvedTiebreakTrials > 0 ? `${formatNumber(predictionMeta.unresolvedTiebreakTrials)} simulasi masih seri karena data countback/qualifying tidak cukup; peluang dibagi rata.` : "Tidak ada seri yang tersisa setelah countback pada simulasi ini."}</p>}
         {prediction.map((row) => <article key={row.name} className="cp-prediction">
           <div><strong>{row.name}</strong><b>{row.probability.toFixed(1)}%</b></div>
           {row.locked && <small><Crown size={14} /> Mathematical champion</small>}
