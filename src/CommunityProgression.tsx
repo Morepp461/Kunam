@@ -68,7 +68,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       db.from("caleris_activity_feed").select("*").order("created_at", { ascending: false }).order("id", { ascending: false }).limit(feedLimit),
       db.from("caleris_member_badges").select("*").eq("member_id", memberId),
       db.from("caleris_achievement_badges").select("*").eq("active", true).order("title"),
-      db.from("caleris_community_polls").select("*").in("status", ["open", "closed", "published"]).order("ends_at", { ascending: false }).limit(30),
+      db.from("caleris_community_polls").select("*").in("status", ["scheduled", "open", "closed", "published"]).order("ends_at", { ascending: false }).limit(30),
       db.from("caleris_community_poll_options").select("*"),
       db.from("caleris_community_votes").select("poll_id,option_id").eq("voter_member_id", memberId),
       db.from("caleris_digital_id_cards").select("*").eq("member_id", memberId).maybeSingle(),
@@ -440,14 +440,17 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <p>Satu suara per member. Identitas pemilih tidak dipublikasikan; hasil hanya berupa rekap setelah voting berakhir.</p>
         {isAdmin && <PollAdmin toast={toast} onCreated={() => void load()} />}
         {polls.map((poll) => {
-          const ended = poll.status !== "open" || isExpired(poll);
+          const scheduled = poll.status === "scheduled" && new Date(poll.starts_at).getTime() > Date.now();
+          const canVote = poll.status === "open" && !isExpired(poll);
+          const ended = ["closed", "published"].includes(poll.status) || isExpired(poll);
           const result = poll.result;
           return <article key={poll.id} className="cp-poll">
-            <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : ended ? "Ended" : "Open"}</span></div>
+            <div className="cp-card-title"><strong>{poll.title}</strong><span className={ended ? "cp-status closed" : "cp-status"}>{poll.status === "published" ? "Published" : scheduled ? "Scheduled" : ended ? "Ended" : "Open"}</span></div>
             <p>{poll.description}</p>
             <small>Ends: {new Date(poll.ends_at).toLocaleString("id-ID")}</small>
-            {!ended && !poll.voted && poll.options.map((option: any) => <button key={option.id} onClick={() => void vote(poll.id, option.id)}>{option.label}</button>)}
-            {!ended && poll.voted && <p className="cp-muted">Suaramu sudah tercatat. Terima kasih sudah berpartisipasi.</p>}
+            {scheduled && <p className="cp-muted">Voting dimulai {new Date(poll.starts_at).toLocaleString("id-ID")}.</p>}
+            {canVote && !poll.voted && poll.options.map((option: any) => <button key={option.id} onClick={() => void vote(poll.id, option.id)}>{option.label}</button>)}
+            {canVote && poll.voted && <p className="cp-muted">Suaramu sudah tercatat. Terima kasih sudah berpartisipasi.</p>}
             {ended && !result && <p className="cp-muted">Voting berakhir. Hasil menunggu finalisasi Admin.</p>}
             {result && <div className="cp-results">
               <strong>{formatNumber(result.total_votes)} total votes</strong>
@@ -456,7 +459,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
                 return <div key={option.option_id} className="cp-result-row"><span>{option.label}</span><b>{formatNumber(option.votes)} · {percent.toFixed(1)}%</b><div className="cp-bar"><i style={{ width: `${percent}%` }} /></div></div>;
               })}
             </div>}
-            {isAdmin && poll.status === "open" && <div className="cp-admin-actions">
+            {isAdmin && ["open", "scheduled"].includes(poll.status) && <div className="cp-admin-actions">
               <button onClick={() => void finalizePoll(poll.id, false)}>Tutup voting</button>
               <button onClick={() => void finalizePoll(poll.id, true)}>Tutup & publikasikan hasil</button>
             </div>}
@@ -555,6 +558,7 @@ function PollAdmin({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState("driver_of_period");
+  const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [seasonId, setSeasonId] = useState("");
   const [seasonOptions, setSeasonOptions] = useState<any[]>([]);
@@ -635,9 +639,12 @@ function PollAdmin({
       toast("warning", "Voting belum lengkap", "Pilih minimal dua kandidat, musim untuk award season, dan waktu penutupan.");
       return;
     }
+    const startDate = startsAt ? new Date(startsAt) : new Date();
     const endDate = new Date(endsAt);
-    if (!Number.isFinite(endDate.getTime()) || endDate.getTime() <= Date.now()) {
-      toast("warning", "Waktu penutupan tidak valid", "Waktu penutupan harus berada di masa depan.");
+    if (!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())
+      || endDate.getTime() <= Date.now() || startDate.getTime() > endDate.getTime()
+      || (startsAt && startDate.getTime() < Date.now())) {
+      toast("warning", "Jadwal voting tidak valid", "Waktu mulai harus sekarang atau masa depan, dan penutupan harus setelah waktu mulai.");
       return;
     }
     const options = selected.map((id) => candidates.find((candidate) => candidate.id === id)).filter(Boolean);
@@ -646,6 +653,7 @@ function PollAdmin({
       p_title: title,
       p_description: description,
       p_type: type,
+      p_starts_at: startDate.toISOString(),
       p_ends_at: endDate.toISOString(),
       p_options: options,
       p_season_id: seasonId || null,
@@ -653,8 +661,8 @@ function PollAdmin({
     setSaving(false);
     if (error) toast("error", "Voting gagal dibuat", error.message);
     else {
-      toast("success", "Voting berhasil dibuat");
-      setTitle(""); setDescription(""); setSelected([]); setEndsAt("");
+      toast("success", startDate.getTime() > Date.now() ? "Voting berhasil dijadwalkan" : "Voting berhasil dibuat");
+      setTitle(""); setDescription(""); setSelected([]); setStartsAt(""); setEndsAt("");
       onCreated();
     }
   };
@@ -763,6 +771,7 @@ function PollAdmin({
       {type.endsWith("_of_season") && <label>Season<select value={seasonId} onChange={(event) => setSeasonId(event.target.value)}>
         <option value="">Pilih season</option>{seasonOptions.map((season) => <option key={season.id} value={season.id}>{season.title}</option>)}
       </select></label>}
+      <label>Voting dimulai (opsional, kosong = langsung)<input type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} /></label>
       <label>Voting berakhir<input type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} /></label>
       <div><strong>Kandidat (pilih minimal dua)</strong><div className="cp-candidate-list">
         {candidates.map((candidate) => <label key={candidate.id}>
