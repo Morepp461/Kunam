@@ -40,7 +40,8 @@ This feature set adds seven connected CALERIS Masters community systems:
 
 ## Championship Predictor
 - The Predictor can load current Driver standings, scheduled rounds, and active FIA scoring rules for a selected season. Manual inputs remain available for custom what-if scenarios.
-- Sprint and pole bonus values are read from active scoring-rule rows; the simulation remains an estimate and does not replace the official scoring engine.
+- Sprint scoring and pole bonus values are read from active scoring-rule rows. Pole bonus is simulated independently from finishing position rather than being incorrectly added to the race winner.
+- The current model assumes equal probability for each finishing order and pole winner. It does not claim to model driver/car pace, circuit effects, reliability, or Race Engine telemetry because those inputs are not yet verified as a complete model.
 - Monte Carlo runs 15,000 trials.
 - A driver is marked 100% only when the current leader has a strict mathematical lead over every rival's maximum remaining points; eliminated drivers are marked 0%.
 - Tied mathematical boundaries are not treated as locked because the official tiebreaker chain is not currently included in this tool. Results are estimates, not official standings.
@@ -49,15 +50,20 @@ This feature set adds seven connected CALERIS Masters community systems:
 - Member-owned card themes: Classic, Premio, Zwei, and Gold.
 - Accent color and tagline are validated and saved through a member-scoped RPC.
 - Public visibility is stored per member.
+- Public verification is available at `/member-id/:memberCode` and returns only the public member identity, cumulative XP/level, completed milestones, and active earned badges when the card is explicitly public.
+- The share URL is canonical and the QR code resolves to that verification page.
 
 ## Season Yearbook
 - Each yearbook is scoped to a member and season.
 - Generation stores a snapshot containing season metadata, profile, level, XP, earned badges, recent community activity, official Driver/Team final standings, divisions, scheduled rounds, race result entries, and active FIA scoring rules fetched through a server-side season-data RPC.
-- Export is generated client-side as JSON. It includes the season data returned by the authoritative database snapshot; it does not invent missing historical data.
+- Export opens a print-ready HTML yearbook from the authoritative server-side snapshot; users can save it as PDF through the browser print dialog.
+- Snapshot data includes a version and generation timestamp; it does not invent missing historical data.
 
 ## Badges
 - Badge definitions and member awards are stored separately.
-- Community voting grants the Community Voice badge.
+- Community voting grants the Community Voice badge once per member and poll.
+- Admin can create an immediately open poll or schedule a future start. Poll records transition from scheduled to open when the first eligible vote arrives after the configured start time; voting is rejected outside the configured window.
+- Admin can close and publish aggregate results; individual vote records remain private.
 - Milestone badges are defined for the configured XP thresholds.
 
 ## Security and Data
@@ -65,7 +71,8 @@ This feature set adds seven connected CALERIS Masters community systems:
 - XP and milestone writes are server/admin restricted.
 - Voting and ID persistence use security-definer RPCs with explicit identity and scope validation.
 - Yearbooks are isolated by member and season.
-- Vote visibility is restricted to the voter's own record; aggregate results can be exposed separately when the product needs public tallying.
+- Vote visibility is restricted to the voter's own record; aggregate results are exposed separately after the poll is closed or its end time has passed.
+- Internal trigger helpers are not executable by anon/authenticated roles. The public Digital ID RPC is intentionally callable by anon, but returns only fields guarded by the member's public visibility setting.
 
 ## Route
 - Authenticated member route: `/community`.
