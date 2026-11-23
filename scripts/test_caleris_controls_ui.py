@@ -47,7 +47,7 @@ assert 'document.addEventListener("pointerdown",openSelect,true)' in APP
 assert 'document.removeEventListener("pointerdown",openSelect,true)' in APP
 assert 'document.addEventListener("click",clickFallback,true)' in APP
 assert 'if(event.detail!==0)return' in APP
-assert 'event.preventDefault();' in APP[APP.indexOf('const openSelect=(event:PointerEvent)=>'):APP.indexOf('const clickFallback=')]
+assert 'event.preventDefault();' in APP[APP.index('const openSelect=(event:PointerEvent)=>'):APP.index('const clickFallback=')]
 assert 'document.addEventListener("click",openSelect,true)' not in APP
 assert 'suppressNativeClick' not in APP
 assert 'labelText+=node.textContent||""' in APP
