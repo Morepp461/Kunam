@@ -94,11 +94,20 @@ Deno.serve(async (req: Request) => {
         return rows;
       };
 
-      const [profiles, members, teams] = await Promise.all([
+      const [profiles, members, teams, moderationResult] = await Promise.all([
         readAll("profiles", "user_id,member_id,public_member_id,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at,updated_at"),
         readAll("members", "id,member_code,character_name,role,license,team_id,created_at"),
         readAll("teams", "id,name"),
+        admin.from("caleris_user_moderation_actions").select("id,target_user_id,action_type,reason,duration_days,expires_at,created_at,created_by").order("created_at",{ascending:false}).limit(1000),
       ]);
+      if (moderationResult.error) throw moderationResult.error;
+      const moderationByUser = new Map<string, Record<string, unknown>[]>();
+      for (const action of moderationResult.data ?? []) {
+        const key = String(action.target_user_id);
+        const rows = moderationByUser.get(key) ?? [];
+        if (rows.length < 10) rows.push(action as Record<string, unknown>);
+        moderationByUser.set(key, rows);
+      }
       const profileByUser = new Map(profiles.map((row) => [String(row.user_id), row]));
       const memberById = new Map(members.map((row) => [String(row.id), row]));
       const teamById = new Map(teams.map((row) => [String(row.id), row]));
@@ -136,10 +145,11 @@ Deno.serve(async (req: Request) => {
           profile: profile ? { ...profile, avatar_url: avatarUrl } : null,
           member,
           team_name: team?.name ?? null,
+          moderation: moderationByUser.get(user.id) ?? [],
         };
       }));
       result.sort((a, b) => String(a.email ?? "").localeCompare(String(b.email ?? "")));
-      return respond(200, { users: result, total: result.length });
+      return respond(200, { users: result, total: result.length, teams });
     }
 
     if (action === "update_roles") {
@@ -166,6 +176,105 @@ Deno.serve(async (req: Request) => {
         return respond(409, { error: updateError.message });
       }
       return respond(200, result ?? { ok: true, targetUserId, preferredRole, assignedRole });
+    }
+
+    if (action === "assign_team") {
+      const targetMemberId = typeof body.targetMemberId === "string" ? body.targetMemberId : "";
+      const teamId = body.teamId === null || body.teamId === "" ? null : String(body.teamId);
+      const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+      if (!/^[0-9a-f-]{36}$/i.test(targetMemberId)) return respond(400, { error: "Member tujuan tidak valid." });
+      if (teamId !== null && !/^[0-9a-f-]{36}$/i.test(teamId)) return respond(400, { error: "Tim tujuan tidak valid." });
+      if (reason.length < 3 || reason.length > 2000) return respond(400, { error: "Alasan wajib diisi (3–2000 karakter)." });
+      const { data, error } = await authClient.rpc("admin_assign_member_team", { p_member_id: targetMemberId, p_team_id: teamId, p_reason: reason });
+      if (error) return respond(409, { error: error.message });
+      return respond(200, data ?? { ok: true });
+    }
+
+    if (action === "warn_user") {
+      const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId : "";
+      const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+      if (!/^[0-9a-f-]{36}$/i.test(targetUserId) || targetUserId === actorId) return respond(400, { error: "Target akun tidak valid." });
+      if (reason.length < 3 || reason.length > 2000) return respond(400, { error: "Alasan peringatan wajib diisi (3–2000 karakter)." });
+      const { data: targetAdmin, error: targetAdminError } = await admin.from("site_admins").select("user_id").eq("user_id",targetUserId).maybeSingle();
+      if (targetAdminError) throw targetAdminError;
+      if (targetAdmin) return respond(403, { error: "Akun administrator tidak dapat dimoderasi melalui Manage User." });
+      const { data: targetProfile, error: targetProfileError } = await admin.from("profiles").select("member_id").eq("user_id",targetUserId).maybeSingle();
+      if (targetProfileError) throw targetProfileError;
+      const { error } = await admin.from("caleris_user_moderation_actions").insert({
+        target_user_id:targetUserId,target_member_id:targetProfile?.member_id??null,
+        action_type:"warning",reason,created_by:actorId
+      });
+      if (error) throw error;
+      return respond(200,{ok:true});
+    }
+
+    if (action === "ban_user") {
+      const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId : "";
+      const banType = body.banType === "permanent" ? "permanent" : "temporary";
+      const reason = typeof body.reason === "string" ? body.reason.trim() : "";
+      const durationDays = Number(body.durationDays);
+      if (!/^[0-9a-f-]{36}$/i.test(targetUserId) || targetUserId === actorId) return respond(400, { error: "Target akun tidak valid." });
+      if (reason.length < 3 || reason.length > 2000) return respond(400, { error: "Alasan ban wajib diisi (3–2000 karakter)." });
+      if (banType === "temporary" && (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 365)) return respond(400, { error: "Durasi ban sementara harus 1–365 hari." });
+      const { data: targetAdmin, error: targetAdminError } = await admin.from("site_admins").select("user_id").eq("user_id",targetUserId).maybeSingle();
+      if (targetAdminError) throw targetAdminError;
+      if (targetAdmin) return respond(403, { error: "Akun administrator tidak dapat diblokir melalui Manage User." });
+      const { data: targetProfile, error: targetProfileError } = await admin.from("profiles").select("member_id,account_status").eq("user_id",targetUserId).maybeSingle();
+      if (targetProfileError) throw targetProfileError;
+      const { data: existingBan, error: existingBanError } = await admin.from("caleris_user_moderation_actions").select("id").eq("target_user_id",targetUserId).in("action_type",["temporary_ban","permanent_ban"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      if (existingBanError) throw existingBanError;
+      const { data: latestAction, error: latestError } = await admin.from("caleris_user_moderation_actions").select("action_type").eq("target_user_id",targetUserId).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      if (latestError) throw latestError;
+      if (latestAction && ["temporary_ban","permanent_ban"].includes(String(latestAction.action_type)) && existingBan) return respond(409,{error:"Akun sudah memiliki sanksi ban aktif. Cabut ban sebelumnya sebelum membuat ban baru."});
+      const expiresAt = banType === "temporary" ? new Date(Date.now()+durationDays*86400000).toISOString() : null;
+      const banDuration = banType === "temporary" ? `${durationDays}d` : "876000h";
+      const { error: authBanError } = await admin.auth.admin.updateUserById(targetUserId,{ban_duration:banDuration});
+      if (authBanError) throw authBanError;
+      if (targetProfile) {
+        const { error: profileError } = await admin.from("profiles").update({account_status:"suspended",updated_at:new Date().toISOString()}).eq("user_id",targetUserId);
+        if (profileError) {
+          await admin.auth.admin.updateUserById(targetUserId,{ban_duration:"none"});
+          throw profileError;
+        }
+      }
+      const { error: logError } = await admin.from("caleris_user_moderation_actions").insert({
+        target_user_id:targetUserId,target_member_id:targetProfile?.member_id??null,
+        action_type:banType==="temporary"?"temporary_ban":"permanent_ban",reason,
+        duration_days:banType==="temporary"?durationDays:null,expires_at:expiresAt,
+        previous_account_status:targetProfile?.account_status??null,created_by:actorId
+      });
+      if (logError) {
+        await admin.auth.admin.updateUserById(targetUserId,{ban_duration:"none"});
+        if (targetProfile) await admin.from("profiles").update({account_status:targetProfile.account_status}).eq("user_id",targetUserId);
+        throw logError;
+      }
+      return respond(200,{ok:true,banType,expiresAt});
+    }
+
+    if (action === "unban_user") {
+      const targetUserId = typeof body.targetUserId === "string" ? body.targetUserId : "";
+      const reason = typeof body.reason === "string" ? body.reason.trim() : "Ban dicabut oleh administrator.";
+      if (!/^[0-9a-f-]{36}$/i.test(targetUserId) || targetUserId === actorId) return respond(400, { error: "Target akun tidak valid." });
+      const { data: targetAdmin, error: targetAdminError } = await admin.from("site_admins").select("user_id").eq("user_id",targetUserId).maybeSingle();
+      if (targetAdminError) throw targetAdminError;
+      if (targetAdmin) return respond(403, { error: "Akun administrator tidak dapat dimoderasi melalui Manage User." });
+      const { data: latestBan, error: banError } = await admin.from("caleris_user_moderation_actions").select("previous_account_status,action_type,created_at").eq("target_user_id",targetUserId).in("action_type",["temporary_ban","permanent_ban"]).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      if (banError) throw banError;
+      const { data: latestAction, error: latestError } = await admin.from("caleris_user_moderation_actions").select("action_type").eq("target_user_id",targetUserId).order("created_at",{ascending:false}).limit(1).maybeSingle();
+      if (latestError) throw latestError;
+      if (!latestBan || !latestAction || !["temporary_ban","permanent_ban"].includes(String(latestAction.action_type))) return respond(409,{error:"Tidak ada ban aktif yang dapat dicabut."});
+      const { error: authUnbanError } = await admin.auth.admin.updateUserById(targetUserId,{ban_duration:"none"});
+      if (authUnbanError) throw authUnbanError;
+      const restoredStatus = ["public","active","admin"].includes(String(latestBan.previous_account_status)) ? latestBan.previous_account_status : "active";
+      const { error: profileError } = await admin.from("profiles").update({account_status:restoredStatus,updated_at:new Date().toISOString()}).eq("user_id",targetUserId);
+      if (profileError) throw profileError;
+      const { data: targetProfile } = await admin.from("profiles").select("member_id").eq("user_id",targetUserId).maybeSingle();
+      const { error: logError } = await admin.from("caleris_user_moderation_actions").insert({
+        target_user_id:targetUserId,target_member_id:targetProfile?.member_id??null,
+        action_type:"unban",reason:reason.slice(0,2000),created_by:actorId
+      });
+      if (logError) throw logError;
+      return respond(200,{ok:true,restoredStatus});
     }
 
     return respond(400, { error: "Unknown action." });
