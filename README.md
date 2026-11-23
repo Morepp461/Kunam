@@ -112,7 +112,7 @@
 - It remains an equal-probability Monte Carlo estimate because no verified driver/car performance model is available.
 - Admin can configure XP rewards per source and maintain the achievement badge catalog, including rarity and activation state.
 - Driver/team career milestones reconcile against official standings and completed race data; correcting or voiding a round recalculates progress and reverses milestone/race XP awards where applicable.
-- Activity feed includes safe summaries for team transfers, driver contract status, sponsorship status, payroll completion, merchandise unit sales, quest/shop activity, race results, and milestone reconciliation. Contract values, salaries, sponsor amounts, and revenue are never exposed in feed text.
+- Activity feed includes safe summaries for team/role changes, driver contract status, sponsorship status, payroll completion, merchandise unit sales, quest/shop activity, race results, and milestone reconciliation. Contract values, salaries, sponsor amounts, and revenue are never exposed in feed text.
 - Career stats include official season titles. Pole counts are not fabricated because the current official result dataset does not contain qualifying pole records.
 - Product requirements and implementation notes: [Community Progression PRD](docs/COMMUNITY_PROGRESSION_PRD.md).
 - Predictor tiebreak reference: [FIA 2026 General Regulatory Provisions, Article A2.1.4(c)](https://api.fia.com/system/files/documents/fia_2026_f1_regulations_-_section_a_general_provisions_-_iss_02_-_2026-02-27.pdf).
