@@ -23,3 +23,8 @@
 .cale-assistant__copy p{margin:7px 0;font-size:12px;line-height:1.55;color:#e9e5dc}
 .cale-assistant__copy small{display:block;font-size:10px;line-height:1.5;color:#aaa49b}
 @media(max-width:560px){.cale-assistant{right:12px;bottom:12px}.cale-assistant__panel{width:min(350px,calc(100vw - 24px))}.cale-assistant__body{grid-template-columns:94px minmax(0,1fr);gap:9px;padding:12px}.cale-assistant__character{--cale-size:94px;width:94px}.cale-assistant__trigger{width:70px;min-height:76px}}
+
+.header-notification-cale{display:inline-flex!important;vertical-align:middle;width:24px!important;height:28px;margin:0 5px 0 0;overflow:hidden}
+.header-notification-cale .cale-mascot__art{width:100%;height:100%;align-items:flex-end}
+.header-notification-cale .cale-mascot__art img{width:100%;height:100%;object-fit:contain;object-position:center bottom}
+.header-notification-cale .cale-mascot__marker{display:none}
