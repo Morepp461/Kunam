@@ -517,7 +517,9 @@ as $save_milestone$
 declare milestone_id uuid;
 begin
   if not exists(select 1 from public.site_admins where user_id=auth.uid()) then raise exception 'not_authorized'; end if;
-  if p_code is null or p_code !~ '^[a-z0-9_]{3,80}
+  if p_code is null or p_code !~ '^[a-z0-9_]{3,80}$' or p_scope is null or p_scope not in('driver','team')
+    or p_metric_key is null or nullif(trim(p_title),'') is null or p_target is null or p_target<=0 or p_target>1000000000000
+    or coalesce(p_xp_reward,0)<0 or coalesce(p_xp_reward,0)>100000 then
     raise exception 'invalid_milestone_definition';
   end if;
   if p_scope='driver' and p_metric_key not in('xp_total','driver_race_starts','driver_wins','driver_podiums','driver_points') then
