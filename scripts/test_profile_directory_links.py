@@ -6,6 +6,7 @@ ADMIN_USERS = (ROOT / "src" / "AdminUsers.tsx").read_text(encoding="utf-8")
 TEAM_SUMMARY = (ROOT / "src" / "TeamSummary.tsx").read_text(encoding="utf-8")
 ECOSYSTEM = (ROOT / "src" / "CalerisEcosystem.tsx").read_text(encoding="utf-8")
 INACTIVITY = (ROOT / "src" / "AdminTeamInactivity.tsx").read_text(encoding="utf-8")
+ENTITY_LINKS = (ROOT / "src" / "EntityProfileLink.tsx").read_text(encoding="utf-8")
 ENGINE_MARKET = (ROOT / "src" / "TeamEngineMarket.tsx").read_text(encoding="utf-8")
 TEAM_HQ = (ROOT / "src" / "TeamHQ.tsx").read_text(encoding="utf-8")
 
@@ -30,6 +31,10 @@ assert '<MemberProfileLink memberId={s.member_id}>' not in INACTIVITY
 assert '<TeamProfileLink teamId={engine.seller_team_id}>' in ENGINE_MARKET
 assert '<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in ENGINE_MARKET
 assert '<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>' in TEAM_HQ
+assert 'const PUBLIC_MEMBER_ID=/^[A-Z0-9]{12,16}$/;' in ENTITY_LINKS
+assert 'if(!PUBLIC_MEMBER_ID.test(publicId))return <>{children}</>;' in ENTITY_LINKS
+assert 'const TEAM_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;' in ENTITY_LINKS
+assert 'if(!TEAM_ID.test(id))return <>{children}</>;' in ENTITY_LINKS
 assert 'TeamProfileLink teamId={team.id}' in TEAM_SUMMARY
 assert 'MemberProfileLink memberId={driver.public_member_id}' in TEAM_SUMMARY
 assert 'from("caleris_member_directory").select("id,character_name,public_member_id")' in ECOSYSTEM
