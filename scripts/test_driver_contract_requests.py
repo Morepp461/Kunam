@@ -5,6 +5,7 @@ migration = (ROOT / "supabase/migrations/20261123110000_driver_contract_request_
 ui = (ROOT / "src/CalerisIntelligence.tsx").read_text()
 app = (ROOT / "src/App.tsx").read_text()
 first_contract = (ROOT / "supabase/migrations/20261123140000_driver_first_contract_request_support.sql").read_text()
+indexes = (ROOT / "supabase/migrations/20261123150000_caleris_scope_fk_indexes.sql").read_text()
 
 for token in [
     "caleris_driver_contract_requests", "one_pending_per_driver",
@@ -27,4 +28,7 @@ assert 'panelAccess.member_role==="Driver"' in app
 assert 'path="/team-panel/contract-renewals"' in app
 assert 'panelAccess.member_role==="Owner"' in app
 
-print("Driver first-contract and renewal requests, owner offers, salary band and role-route checks passed.")
+for token in ["caleris_driver_contract_requests_current_contract_fk_idx","caleris_driver_contract_requests_renewal_offer_fk_idx","caleris_driver_contract_requests_reviewed_by_fk_idx"]:
+    assert token in indexes, f"Missing contract request FK index: {token}"
+
+print("Driver first-contract and renewal requests, owner offers, salary band, routes and FK indexes passed.")
