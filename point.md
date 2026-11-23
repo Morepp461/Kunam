@@ -1349,3 +1349,14 @@ This addendum supersedes older checkpoint sentences above that described Team Pr
 - Driver names link to `/member/:public_member_id` only when the public ID is present. Team names link to `/team/:team_id`.
 - Added CI regression coverage for source read models, role filter, route link helpers, and page routing.
 - No schema, RLS, grant, Supabase Edge Function, wallet, or production data changes. Other pages still require separate route/content audit; authenticated acceptance and physical Android QA remain external gates.
+
+
+---
+
+# GLOBAL SELECT DOUBLE-POPUP RELEASE — 23 NOVEMBER 2026
+
+- PR #318 merged to `main` as `f6674ebba0abb371ab723a9b20c08aa0feeded68`.
+- GitHub Actions run `45210965067` completed **success**. TypeScript, production build, unit/schema checks, Playwright browser smoke test, CALERIS dropdown/navigation regression checks, economy and security regression checks, and Supabase schema parity guard passed.
+- Vercel Production deployment `dpl_3UzYs7MWJjEoH9txoa6vBKi7KnjE` is **READY** for that exact main commit. No Supabase schema/function, wallet, Vercel environment variable, or project setting was changed.
+- Global select handler now intercepts eligible native select pointer activation before the browser/Android native picker opens, and routes it to the shared CALERIS option sheet. Keyboard activation and non-pointer accessibility fallback are retained.
+- Final physical Android acceptance is still required to verify the operating-system picker is absent on the target handset.
