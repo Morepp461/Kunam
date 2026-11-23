@@ -12,6 +12,7 @@ import MainLayout from "./MainLayout";
 import DashboardModule from "./DashboardModule";
 import ProfileModule from "./ProfileModule";
 import CommunityProgression from "./CommunityProgression";
+import PublicMemberId from "./PublicMemberId";
 import Stage5Panel from "./Stage5Panel";
 import AdminConfiguration from "./AdminConfiguration";
 import AdminLicenseEngine from "./AdminLicenseEngine";
@@ -187,6 +188,7 @@ function Application(){
   <Route path="/team-panel/engine-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<TeamEngineMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/profile" element={session&&!needsPaddockAccess?<ProfileModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/member/:memberId" element={<PublicMemberProfile session={session}/>} />
+   <Route path="/member-id/:memberCode" element={<PublicMemberId/>}/>
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/rules" element={<Rules/>}/>
   <Route path="/main-event/circuit-pool" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<CircuitPool/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>

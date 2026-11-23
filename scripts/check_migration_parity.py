@@ -38,29 +38,42 @@ if shutil.which("psql") is None:
     raise SystemExit("psql is required when Supabase DB URL secrets are configured.")
 
 fingerprint_sql = r"""
--- Race Engine test tables/functions are deliberately isolated to the testing project.
--- Exclude them from production schema parity; migration-ledger differences remain reported below.
+-- Race Engine test tables/functions and Circuit Maker revision history are deliberately
+-- isolated to the testing project (see 20261120170000_race_engine_test_circuit_maker_revisions.sql).
+-- Exclude only those test-only schema objects from production parity; migration-ledger differences remain reported below.
 select md5(coalesce(string_agg(item, E'\n' order by item), ''))
 from (
   select 'column|' || table_name || '|' || column_name || '|' || data_type || '|' || is_nullable || '|' || coalesce(column_default,'')
     as item
-  from information_schema.columns where table_schema='public' and table_name not like 'race_engine_test_%'
+  from information_schema.columns
+  where table_schema='public'
+    and table_name not like 'race_engine_test_%'
+    and table_name <> 'caleris_circuit_revisions'
+    and not (table_name in ('caleris_circuits','caleris_circuit_pool')
+      and column_name in ('circuit_geometry','geometry_revision','circuit_kind'))
   union all
   select 'routine|' || n.nspname || '|' || p.proname || '|' || pg_get_function_identity_arguments(p.oid) || '|' || pg_get_function_result(p.oid) || '|' ||
     case when p.proname in ('guard_caleris_job_advert','fia_review_team_takeover','license_apply_standings_milestones') then 'reviewed-benign-drift'
     else md5(regexp_replace(pg_get_functiondef(p.oid), E'\\s+', '', 'g')) end
-  from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','private') and p.proname not like 'race_engine_%_test_%'
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname in ('public','private')
+    and p.proname not like 'race_engine_test_%'
+    and p.proname not like 'race_engine_%_test_%'
+    and p.proname not in ('race_engine_validate_worker_token','save_caleris_circuit_revision')
   union all
   select 'trigger|' || n.nspname || '|' || c.relname || '|' || t.tgname || '|' || pg_get_triggerdef(t.oid)
   from pg_trigger t join pg_class c on c.oid=t.tgrelid join pg_namespace n on n.oid=c.relnamespace
-  where n.nspname='public' and not t.tgisinternal and c.relname not like 'race_engine_test_%'
+  where n.nspname='public' and not t.tgisinternal
+    and c.relname not like 'race_engine_test_%' and c.relname <> 'caleris_circuit_revisions'
   union all
   select 'policy|' || schemaname || '|' || tablename || '|' || policyname || '|' || coalesce(qual,'') || '|' || coalesce(with_check,'')
-  from pg_policies where schemaname='public' and tablename not like 'race_engine_test_%'
+  from pg_policies where schemaname='public'
+    and tablename not like 'race_engine_test_%' and tablename <> 'caleris_circuit_revisions'
   union all
   select 'rls|' || c.relname || '|' || c.relrowsecurity::text || '|' || c.relforcerowsecurity::text
   from pg_class c join pg_namespace n on n.oid=c.relnamespace
-  where n.nspname='public' and c.relkind='r' and c.relname not like 'race_engine_test_%'
+  where n.nspname='public' and c.relkind='r'
+    and c.relname not like 'race_engine_test_%' and c.relname <> 'caleris_circuit_revisions'
   union all
   select 'cron|' || jobname || '|' || schedule || '|' || command from cron.job where jobname like 'caleris-%'
 ) schema_items;
