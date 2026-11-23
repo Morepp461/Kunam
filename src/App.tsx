@@ -381,9 +381,9 @@ function PublicMemberProfile({session}:{session:Session|null}){
 function CalerisSelectOverlay(){
  const [activeSelect,setActiveSelect]=useState<HTMLSelectElement|null>(null),[filter,setFilter]=useState("");
  useEffect(()=>{
-  // Open only after a completed click. pointerdown fires at the start of a touch,
-  // so it incorrectly treats an intended scroll as a request to open the sheet.
-  const openSelect=(event:MouseEvent)=>{
+  // Intercept the pointer before the browser opens its native select popup.
+  // The app renders one consistent custom option sheet on touch and desktop.
+  const openSelect=(event:PointerEvent)=>{
    const target=event.target;
    if(!(target instanceof Element))return;
    const select=target.closest("select") as HTMLSelectElement|null;
@@ -400,10 +400,10 @@ function CalerisSelectOverlay(){
     event.preventDefault();setActiveSelect(null);
    }
   };
-  document.addEventListener("click",openSelect,true);
+  document.addEventListener("pointerdown",openSelect,true);
   document.addEventListener("keydown",keyboard,true);
   return()=>{
-   document.removeEventListener("click",openSelect,true);
+   document.removeEventListener("pointerdown",openSelect,true);
    document.removeEventListener("keydown",keyboard,true);
   };
  },[activeSelect]);
