@@ -105,7 +105,8 @@ export function buildYearbookPrintHtml(snapshot: any): string {
   const member = snapshot?.member ?? {};
   const official = snapshot?.official_season_data ?? {};
   const divisions = Array.isArray(official.divisions) ? official.divisions : [];
-  const drivers = Array.isArray(official.driver_standings) ? official.driver_standings : [];
+  const finalDrivers = Array.isArray(official.driver_standings) ? official.driver_standings : [];
+  const drivers = finalDrivers.length ? finalDrivers : (Array.isArray(official.current_driver_standings) ? official.current_driver_standings : []);
   const teams = Array.isArray(official.team_standings) ? official.team_standings : [];
   const rounds = Array.isArray(official.rounds) ? official.rounds : [];
   const results = Array.isArray(official.race_results) ? official.race_results : [];
