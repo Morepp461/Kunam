@@ -257,7 +257,7 @@ export default function AdminUsers() {
         {selected.member && teamId!==(selected.member.team_id??"") && <label>Alasan perubahan tim<input value={teamReason} onChange={event=>setTeamReason(event.target.value)} maxLength={2000} placeholder="Wajib diisi untuk audit"/></label>}
         {!selected.member && assignedRole && <label>Nama karakter (opsional)<input value={characterName} onChange={(event) => setCharacterName(event.target.value)} maxLength={80} placeholder="Nama karakter member"/><small>Jika dikosongkan, sistem memakai nickname profil yang tersedia.</small></label>}
         {selected.member?.role === "Owner" && selected.member.team_id && assignedRole !== "Owner" && <p className="admin-users-warning">Pemilik tim tidak dapat diturunkan rolenya selama tim masih terhubung.</p>}
-        <div className="admin-users-modal-actions"><button type="button" className="action" onClick={() => setSelected(null)} disabled={saving}>Batal</button><button type="button" className="action primary" onClick={() => void saveRoles()} disabled={saving}>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button></div>
+        <div className="admin-users-modal-actions"><button type="button" className="action" onClick={() => setSelected(null)} disabled={saving}>Batal</button><button type="button" className="action primary" onClick={() => void saveRoles()} disabled={saving||(selected.member&&teamId!==(selected.member.team_id??"")&&teamReason.trim().length<3)}>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button></div>
       </section>
     </div>}
     {moderationTarget && <div className="admin-users-modal-backdrop" role="presentation" onClick={()=>{if(!saving)setModerationTarget(null);}}>
