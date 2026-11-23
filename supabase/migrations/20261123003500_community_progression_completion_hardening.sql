@@ -127,11 +127,15 @@ alter table public.caleris_xp_ledger add constraint caleris_xp_ledger_amount_che
 create or replace function public.caleris_reverse_race_entry_xp()
 returns trigger language plpgsql security definer set search_path=public
 as $reverse_race_xp$
-declare net_awarded integer; reversal_source text;
+declare net_awarded integer; reversal_source text; should_reverse boolean:=false;
 begin
-  if old.member_id is not null and (
-    tg_op='DELETE' or old.member_id is distinct from new.member_id
-  ) then
+  if tg_op='DELETE' then
+    should_reverse:=true;
+  elsif old.member_id is distinct from new.member_id then
+    should_reverse:=true;
+  end if;
+
+  if should_reverse and old.member_id is not null then
     select coalesce(sum(
       case
         when source_type='race_result' then amount
@@ -913,7 +917,7 @@ $backfill$;
 
 commit;
  or p_scope is null or p_scope not in('driver','team')
-    or p_metric_key is null or nullif(trim(p_title),'') is null or p_target is null or p_target<=0
+    or p_metric_key is null or nullif(trim(p_title),'') is null or p_target is null or p_target<=0 or p_target>1000000000000
     or coalesce(p_xp_reward,0)<0 or coalesce(p_xp_reward,0)>100000 then
     raise exception 'invalid_milestone_definition';
   end if;
