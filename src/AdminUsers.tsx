@@ -221,7 +221,7 @@ export default function AdminUsers() {
             </div>
             <div className="admin-user-meta">
               <span><b>Status akun</b>{user.is_admin ? "Admin" : profile?.account_status || "Belum onboarding"}</span>
-              <span><b>Karakter</b><MemberProfileLink memberId={member?.id}>{member?.character_name || profile?.driver_nickname || "Belum terhubung"}</MemberProfileLink></span>
+              <span><b>Karakter</b><MemberProfileLink memberId={profile?.public_member_id || member?.id}>{member?.character_name || profile?.driver_nickname || "Belum terhubung"}</MemberProfileLink></span>
               <span><b>License</b>{member?.license || "—"}</span>
               <span><b>Login terakhir</b>{dateTime(user.last_sign_in_at)}</span>
               <span><b>Dibuat</b>{dateTime(user.created_at)}</span>
