@@ -303,3 +303,14 @@ Satu scope dinyatakan selesai jika seluruh hal yang relevan terpenuhi:
 ---
 
 **Catatan awal:** file ini adalah rencana dan checkpoint, bukan klaim implementasi. Setiap scope tetap PLANNED sampai perubahan benar-benar selesai, lolos QA/CI, dan checkpoint diperbarui dengan bukti.
+
+
+### Checkpoint Scope 05 — Driver contract request workflow (2026-11-23)
+- Status: IMPLEMENTED IN BRANCH, CI/Testing DB QA pending.
+- Branch: `feat/caleris-scope-05-driver-contract-requests`.
+- Existing access design confirmed: `/team-panel/contract-renewals` is Owner-only and `/driver-panel/contract-renewals` is Driver-only. Owner access is intentional; the missing behavior was a Driver request form.
+- Added Driver form to request a renewal for the currently active team contract, with requested salary (validated against the current license salary band), duration 1–5 seasons and a note. Drivers without an active contract are directed to Job Search for joining another team.
+- Added Owner queue to review pending Driver requests, create an official renewal offer from a request, or decline it. Existing Driver accept/reject decision flow remains intact.
+- Migration: `20261123110000_driver_contract_request_workflow.sql` creates an RLS-protected request table and authenticated, role-checked RPCs. Direct table writes are revoked; the RPC creates and updates requests.
+- Migration has NOT yet been applied to either DB. Testing first after CI; Production after Testing QA and merge. No dummy data or Vercel environment changes.
+- QA remaining: Driver/Owner/Admin isolation, no-team/no-active-contract behavior, salary band boundaries and legacy A alias, one-pending-request uniqueness, owner offer/decline atomicity, existing renewal acceptance, CI/build.
