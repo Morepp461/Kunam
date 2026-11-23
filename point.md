@@ -1493,3 +1493,13 @@ No Production data, wallet balance, Supabase schema, Edge Function, or Vercel co
 - Added CI assertions to `scripts/test_profile_directory_links.py` for all above locations.
 - Uses existing `public_member_id` and `team.id` data; no dependency or database migration required.
 - Remaining: continue exhaustive page-by-page review and manual route verification.
+
+
+## Scope 09 — Team workflow profile-link coverage
+
+- Driver Contracts: selected Team summary links to public Team Profile.
+- Driver Registration: current Team heading links to public Team Profile.
+- Affiliate Team: current Team heading and both participating Team names link to public Team Profiles.
+- Take Over: owner's current Team listing heading links to public Team Profile.
+- Regression script extended for these pages. Existing IDs/components reused; no migration or dependency change.
+- Pending proposed Team names and dropdown option labels are intentionally not links because they are not navigable existing public entities.
