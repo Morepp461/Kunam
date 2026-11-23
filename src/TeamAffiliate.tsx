@@ -3,6 +3,7 @@ import {ArrowLeft,RefreshCw,ShieldCheck} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import {TeamProfileLink} from "./EntityProfileLink";
 
 type Member={id:string;role:string|null;team_id:string|null};
 type Team={id:string;name:string;division_key:string|null};
@@ -36,13 +37,13 @@ export default function TeamAffiliate({session}:{session:Session}){
  const terminate=async(id:string)=>{
   if(!supabase||!window.confirm("Akhiri perjanjian affiliate ini?"))return;setSaving(true);const {error}=await supabase.rpc("member_terminate_team_affiliation",{p_affiliation_id:id});setSaving(false);setNotice(error?.message||"Afiliasi diakhiri.");await refresh();
  };
- const teamName=(id:string)=>teams.find(t=>t.id===id)?.name||"Team";
+ const teamName=(id:string)=><TeamProfileLink teamId={id}>{teams.find(t=>t.id===id)?.name||"Team"}</TeamProfileLink>;
  const canManage=Boolean(member?.team_id&&["Owner","Principal"].includes(member.role||""));
  return <section className="workspace affiliate-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
   <header className="page-heading"><span className="section-eyebrow">TEAM PANEL · PARTNERSHIP</span><h1 className="page-title">Affiliate Team</h1><p className="page-description">Satu tim hanya dapat memiliki satu affiliate dan hubungan hanya dapat dibentuk antar-tier berbeda.</p></header>
   {loading?<div className="workspace-card"><p>Memuat data affiliate...</p></div>:!canManage?<div className="workspace-card affiliate-empty"><ShieldCheck/><strong>Akses Team Owner diperlukan</strong><p>Hubungkan akun dengan role Owner atau Principal dan sebuah tim untuk mengelola affiliate.</p></div>:<>
-   <div className="workspace-card affiliate-create"><div><span className="section-eyebrow">YOUR TEAM</span><h2>{ownTeam?.name||"Team belum ditentukan"}</h2><p>Tier: {ownTeam?.division_key||"Belum ditetapkan Admin"}</p></div>
+   <div className="workspace-card affiliate-create"><div><span className="section-eyebrow">YOUR TEAM</span><h2>{ownTeam?<TeamProfileLink teamId={ownTeam.id}>{ownTeam.name}</TeamProfileLink>:"Team belum ditentukan"}</h2><p>Tier: {ownTeam?.division_key||"Belum ditetapkan Admin"}</p></div>
     <div className="affiliate-form"><label>Tim dari tier berbeda<select value={targetId} onChange={e=>setTargetId(e.target.value)}><option value="">Pilih calon affiliate</option>{eligible.map(t=><option key={t.id} value={t.id}>{t.name} · {t.division_key}</option>)}</select></label><label>Catatan perjanjian (opsional)<textarea rows={2} value={note} onChange={e=>setNote(e.target.value)} placeholder="Catatan yang ingin disampaikan ke tim tujuan"/></label><button className="action primary" onClick={()=>void create()} disabled={saving||!targetId}>Kirim permintaan</button></div>
    </div>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">AFFILIATION REGISTER</span><h2>Permintaan & perjanjian</h2></div><button className="economy-secondary-button" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh</button></div>
