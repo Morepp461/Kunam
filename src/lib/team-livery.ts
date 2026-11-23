@@ -1,3 +1,5 @@
+import { TEAM_LIVERY_DECALS } from "./team-livery-decals";
+
 export type TeamLiveryPattern = "split" | "stripe" | "solid" | "carbon";
 export interface TeamLiveryDesign {
   schemaVersion: 1;
@@ -9,6 +11,8 @@ export interface TeamLiveryDesign {
   teamWordmark: string;
   sponsors: [string, string, string];
   logoDataUrl: string | null;
+  decalId: string;
+  decalColor: string;
 }
 const HEX = /^#[0-9a-f]{6}$/i;
 export function validateTeamLiveryDesign(value: unknown): value is TeamLiveryDesign {
