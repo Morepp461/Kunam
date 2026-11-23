@@ -105,7 +105,7 @@
 - Team milestone progress is derived from authoritative race result entries and current Driver roster counts.
 - Yearbook snapshots include official season divisions, final Driver/Team standings, scheduled rounds, recorded race results, and active FIA scoring rules. Championship Predictor can load official standings and active scoring rules; its Monte Carlo probabilities remain estimates and must not be presented as official championship outcomes. Mathematical certainty is not asserted when the official tie-break chain is unavailable.
 - FIA nomination is a community nomination only and never grants FIA permissions or role automatically.
-- Voting supports immediate opening or a scheduled start, official season/period context for awards, one vote per member, private vote records, admin close/finalize, and aggregate results after closure.
+- Voting supports immediate opening or a scheduled start, official season/period context for awards, one vote per member, private vote records, admin finalize/cancel, and aggregate results after closure. Tied options are recorded as shared winners.
 - Digital ID has a public verification route at `/member-id/:memberCode`; only explicitly public cards expose member identity, cumulative XP/level, completed milestones, and earned active badges. New Digital IDs are private by default and require an explicit opt-in to publish. QR codes point to the canonical verification URL.
 - Season Yearbook generates a server-side snapshot and a print-ready editorial HTML view that can be saved as PDF from the browser.
 - Official Predictor models pole bonus independently from finishing position. It remains an equal-probability Monte Carlo estimate because no verified driver/car performance model is available.
