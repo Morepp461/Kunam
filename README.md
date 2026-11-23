@@ -1161,3 +1161,9 @@ PR #308 merged at `c65ceafcb5f768a9d16d6c27f43edc4568c4517d` after both required
 
 - Admin Workflow is an Admin-only operations hub linking to existing configuration, approval, lifecycle, audit, intelligence, and platform modules.
 - It does not create or mutate CRM records, workflows, or automated tasks. The CRM-specific pipeline remains inactive until its statuses, ownership, approvals, and follow-up rules are specified.
+
+
+### Digital ID Theme Picker Accessibility
+
+- The Community Hub Digital ID theme picker closes on outside pointer interaction and Escape, exposes explicit accessible label/control associations, and suppresses any legacy native select inside the editor so only the branded picker is shown.
+- CI includes a regression check for a single custom theme trigger and no native select in the Digital ID editor.
