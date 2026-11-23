@@ -18,7 +18,7 @@ for token in [
 for token in [
     "member_submit_driver_contract_request", "team_owner_offer_driver_renewal_from_request",
     "team_owner_decline_driver_contract_request", "Ajukan kontrak baru ke Team Owner",
-    "Pengajuan dari Driver", "requestContract", "salary_min_eur", "requests.some(r=>r.status===",
+    "Pengajuan dari Driver", "member?.team_id", "salary_min_eur", "requests.some(r=>r.status===",
 ]:
     assert token in ui, f"Missing driver/owner contract UI: {token}"
 
