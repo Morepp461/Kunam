@@ -97,6 +97,16 @@
 - The Admin Economy Engine includes an Economy Audit Center for pending items and retry history.
 - Payroll is prepared after the final round mapped to each Race Period. Annual salary is divided across the five Race Periods, with the final period reconciling any rounding remainder. Pending payroll claims are retried automatically every five minutes through the existing idempotent Economy Engine claim processor; the worker never creates a second claim or pays salary before the period's final round.
 
+
+### Community Progression Suite
+
+- Community Hub at `/community` includes cumulative XP and account levels, driver/team milestones, activity feed, community voting, Championship Predictor, custom Digital ID, season yearbooks, and achievement badges.
+- XP rewards are configured by Admin and default to zero; XP events are idempotent and server-awarded. Race result, check-in, quest completion, and development purchases publish activity events independently of configured XP rewards.
+- Team milestone progress is derived from authoritative race result entries and current Driver roster counts.
+- Yearbook snapshots include official season divisions, final Driver/Team standings, scheduled rounds, recorded race results, and active FIA scoring rules. Championship Predictor can load official standings and active scoring rules; its Monte Carlo probabilities remain estimates and must not be presented as official championship outcomes. Mathematical certainty is not asserted when the official tie-break chain is unavailable.
+- FIA nomination is a community nomination only and never grants FIA permissions or role automatically.
+- Product requirements and implementation notes: [Community Progression PRD](docs/COMMUNITY_PROGRESSION_PRD.md).
+
 ## Supabase
 
 Supabase project schema is managed by the versioned SQL files in `supabase/migrations/`. Keep migrations in sync with the `main` branch and the connected Supabase project.
