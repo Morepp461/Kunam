@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
+import "./custom-select.css";
 
 export type SelectOption = { value: string; label: string };
 type Props = {
