@@ -98,6 +98,7 @@ const panelGuides: Record<string, CalePageGuide> = {
   "affiliate-team": guide("Affiliate Team", "Kelola permintaan dan perjanjian afiliasi antartim.", "Periksa tim mitra, status permintaan, dan ketentuan afiliasi.", "Konfirmasi atau tanggapi permintaan sesuai kewenangan Owner."),
   "engine-market": guide("Engine Market", "Kelola listing engine dan hak penggunaan engine tim.", "Periksa spesifikasi, harga, dan status listing.", "Pembelian penggunaan engine membuat kontrak sesuai season aktif."),
   "event-control": guides["/fia-panel/event-control"],
+  "license-engine": guide("FIA License Engine", "Kelola struktur lisensi, season, divisi, dan konfigurasi scoring resmi.", "Periksa season dan divisi aktif sebelum mengubah aturan.", "Validasi aturan scoring dan dampaknya pada standings sebelum publikasi."),
   "rules-input": guide("Rules Input", "Kelola regulasi global dan aturan khusus divisi.", "Pilih cakupan regulasi dan edit ketentuan yang relevan.", "Periksa draft dan publikasi sebelum aturan diberlakukan."),
   "season-calendar": guides["/fia-panel/season-calendar"],
   "announcement-input": guide("Announcement Input", "Susun dan publikasikan pengumuman resmi FIA.", "Lengkapi judul, isi, dan target publikasi.", "Periksa preview sebelum menerbitkan pengumuman."),
