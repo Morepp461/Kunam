@@ -113,3 +113,21 @@ assert "array_agg(rs.team_id_snapshot order by r.round_number desc)" in SEASON_S
 assert "select d.id as season_division_id" in SEASON_SNAPSHOT_SQL
 assert "max(rs.team_id_snapshot)" not in SEASON_SNAPSHOT_SQL
 print("Community season snapshot UUID aggregation regression checks passed.")
+
+# Verify every concrete Driver, Team and FIA panel route has a page-specific guide.
+APP_ROUTES = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
+for route in (
+    "/driver-panel/daily-checkin", "/driver-panel/quest",
+    "/team-panel/quest", "/fia-panel/license-engine",
+    "/team-panel/driver-contracts", "/team-panel/budget-guard",
+    "/team-panel/contract-renewals", "/team-panel/roadmap-suggestions",
+    "/team-panel/custom-livery", "/team-panel/development",
+    "/team-panel/sponsorship", "/driver-panel/development",
+    "/driver-panel/training", "/team-panel/affiliate-team",
+    "/team-panel/engine-market", "/fia-panel/appeal-room",
+):
+    assert f'path="{route}"' in APP_ROUTES, f"Expected route missing from App: {route}"
+    slug = route.split("/")[2]
+    assert f'"{slug}": guide(' in GUIDES or f'{slug}: guide(' in GUIDES, f"Missing Cale page guide for route: {route}"
+assert '"/auth/callback": guide("Authentication Callback"' in GUIDES
+print("Cale page-guide route coverage passed for all concrete Driver, Team and FIA panel routes.")
