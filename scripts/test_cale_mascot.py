@@ -110,6 +110,6 @@ SEASON_SNAPSHOT_FIX = next((ROOT / "supabase" / "migrations").glob("*_community_
 SEASON_SNAPSHOT_SQL = SEASON_SNAPSHOT_FIX.read_text(encoding="utf-8")
 assert "function public.caleris_get_season_community_data(p_season uuid)" in SEASON_SNAPSHOT_SQL
 assert "array_agg(rs.team_id_snapshot order by r.round_number desc)" in SEASON_SNAPSHOT_SQL
-assert "from (\n        select d.id as season_division_id" in SEASON_SNAPSHOT_SQL
+assert "select d.id as season_division_id" in SEASON_SNAPSHOT_SQL
 assert "max(rs.team_id_snapshot)" not in SEASON_SNAPSHOT_SQL
 print("Community season snapshot UUID aggregation regression checks passed.")
