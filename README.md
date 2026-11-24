@@ -1272,3 +1272,12 @@ This confirms the code and automated regression coverage, not the remaining manu
 - Added a Vitest regression guard for the lazy import and fallback boundary.
 - Reused the existing React and Tesseract.js dependencies. No dependency upgrade, database migration, Edge Function, wallet, or production data change.
 - The existing Three.js loads in Driver Exhibition and Team Livery are already dynamic imports. This change does not claim the remaining Vite bundle warnings or 3D asset performance gates are resolved.
+
+
+## Route-level application code splitting — 24 November 2026
+
+- Converted 46 page/component import boundaries in the application router to React `lazy()`, including dashboard, community, admin workspaces, FIA race control, team livery, public profiles, and registration form modules.
+- Wrapped the route tree in an accessible React `Suspense` fallback. The shared shell, authentication bootstrap, global search, and analytics tracker remain eager so navigation and session handling stay available.
+- Named exports from Circuit Pool use explicit lazy module adapters; existing route paths, authorization predicates, page props, and business workflows are unchanged.
+- Added a Vitest regression test for lazy boundaries and the router fallback. Uses the existing React 19 dependency; no package/lockfile, database migration, Edge Function, wallet, or production-data changes.
+- Bundle-size improvement must be confirmed from the CI production build; this checkpoint does not invent a measured percentage or claim that all large-chunk warnings are resolved.
