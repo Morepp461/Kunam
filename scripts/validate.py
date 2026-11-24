@@ -88,7 +88,7 @@ def main():
     assert 'const characterWallet=wallets.public_member' in profile_module, "Account and character balance must use the same aggregate"
     assert 'const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0)' in dashboard_module, "Dashboard must display the same aggregate character balance"
     assert 'path="/profile"' in app
-    assert 'import Stage5Panel from "./Stage5Panel";' in app
+    assert 'const Stage5Panel = lazy(() => import("./Stage5Panel"));' in app, "Stage 5 must remain available through its lazy route boundary"
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app
     assert 'path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?' in app
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
@@ -196,7 +196,7 @@ def main():
         assert rpc in edge_source, f"Economy Edge gateway missing RPC: {rpc}"
     app = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
     assert 'path="/admin/economy-engine"' in app and 'label:"Economy Engine"' in layout_module
-    assert 'from "./AdminEconomyEngine"' in app and 'from("economy_wallet_directory")' in profile_module
+    assert 'const AdminEconomyEngine = lazy(() => import("./AdminEconomyEngine"));' in app and 'from("economy_wallet_directory")' in profile_module
     assert 'select("id,member_code,character_name,role,license,team_id,balance")' not in profile_module
     calendar_migration = ROOT / "supabase/migrations/20261112160305_season_calendar_and_payroll.sql"
     calendar_component = ROOT / "src/AdminSeasonCalendar.tsx"
@@ -232,7 +232,7 @@ def main():
     assert "Quest Engine" in (ROOT / "README.md").read_text(encoding="utf-8")
     assert "payroll" in edge_source and "process_payroll_pending" in edge_source
     assert 'path="/fia-panel/season-calendar"' in app and 'path="/fia-panel/license-engine"' in app and 'path="/team-panel/driver-contracts"' in app
-    assert 'import FIAEventControlCenter from "./FIAEventControlCenter"' in app and 'import TeamDriverContracts from "./TeamDriverContracts"' in app
+    assert 'const FIAEventControlCenter = lazy(() => import("./FIAEventControlCenter"));' in app and 'const TeamDriverContracts = lazy(() => import("./TeamDriverContracts"));' in app
     license_engine_source = (ROOT / "src/AdminLicenseEngine.tsx").read_text(encoding="utf-8")
     assert "CALERIS MASTERS · FIA AUTOMATION" in license_engine_source and "fia_create_caleris_season" in license_engine_source
     assert 'fia_panel:admin||memberRole==="FIA"' in app, "FIA panel access must remain available to FIA and Admin"
@@ -255,7 +255,7 @@ def main():
         assert fragment in cash_loan_source, f"Cash Loan UI missing: {fragment}"
     cash_loan_gateway = cash_loan_edge.read_text(encoding="utf-8")
     assert "auth.getUser(jwt)" in cash_loan_gateway and 'rpc("member_cash_loan_preview"' in cash_loan_gateway and 'rpc("member_apply_cash_loan"' in cash_loan_gateway
-    assert 'path="/financial-centre"' in app and 'import CashLoanCentre from "./CashLoanCentre"' in app
+    assert 'path="/financial-centre"' in app and 'const CashLoanCentre = lazy(() => import("./CashLoanCentre"));' in app
     race_control = ROOT / "src/RaceControl.tsx"
     race_styles = ROOT / "src/race-control.css"
     race_migration = ROOT / "supabase/migrations/20261116160000_automated_race_control_economy.sql"

@@ -1566,3 +1566,14 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - Added a Vitest regression guard for the lazy import and fallback boundary.
 - Reused the existing React and Tesseract.js dependencies. No dependency upgrade, database migration, Edge Function, wallet, or production data change.
 - The existing Three.js loads in Driver Exhibition and Team Livery are already dynamic imports. This change does not claim the remaining Vite bundle warnings or 3D asset performance gates are resolved.
+
+
+## Route-level application code splitting — 24 November 2026
+
+- Base: `main` commit `f6fb1677d31de876360e2c5bcac84cd200a835e5` (PR #339 merged after Caleris CI passed all 43 steps).
+- Branch: `perf/route-level-code-splitting-20261124`.
+- Converted 46 page/component import boundaries in `src/App.tsx` to React `lazy()`, including dashboard, community, admin workspaces, FIA race control, team livery, public profiles, and registration form modules.
+- Wrapped the route tree in an accessible `Suspense` loading fallback. Shared shell, authentication bootstrap, global search, and analytics tracker remain eager; route paths, permission checks, props, and business workflows are unchanged.
+- Added `tests/unit/app-route-lazy-loading.test.ts` to guard lazy boundaries and fallback behavior.
+- Dependency review: uses the existing React 19 `lazy` / `Suspense` APIs; no package or lockfile change. No database migration, Edge Function, wallet, or production-data change.
+- **QA gate:** run the complete Caleris CI and inspect the production bundle output before merge. Do not claim a specific bundle-size reduction until the build reports it. This branch is not merged or deployed at this checkpoint.
