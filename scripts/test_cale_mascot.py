@@ -119,7 +119,7 @@ APP_ROUTES = (ROOT / "src" / "App.tsx").read_text(encoding="utf-8")
 for route in (
     "/driver-panel/daily-checkin", "/driver-panel/quest",
     "/team-panel/quest", "/fia-panel/license-engine",
-    "/team-panel/driver-contracts", "/team-panel/budget-guard",
+    "/team-panel/driver-contracts", "/team-panel/driver-registration", "/fia-panel/appeal-room", "/team-panel/budget-guard",
     "/team-panel/contract-renewals", "/team-panel/roadmap-suggestions",
     "/team-panel/custom-livery", "/team-panel/development",
     "/team-panel/sponsorship", "/driver-panel/development",
