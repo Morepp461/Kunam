@@ -88,7 +88,7 @@ def main():
     assert 'const characterWallet=wallets.public_member' in profile_module, "Account and character balance must use the same aggregate"
     assert 'const balance=(roleWallets||[]).reduce((sum:number,row:any)=>sum+Number(row.balance||0),0)+Number(publicWallet?.balance||0)' in dashboard_module, "Dashboard must display the same aggregate character balance"
     assert 'path="/profile"' in app
-    assert 'import Stage5Panel from "./Stage5Panel";' in app
+    assert 'const Stage5Panel = lazy(() => import("./Stage5Panel"));' in app, "Stage 5 must remain available through its lazy route boundary"
     assert 'path="/fia-panel/license-engine" element={isAdmin?' in app
     assert 'path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?' in app
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
