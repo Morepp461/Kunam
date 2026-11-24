@@ -50,7 +50,7 @@
   filter:drop-shadow(0 0 2px rgba(241,233,0,.16));
   stroke-dasharray:25 75;
   stroke-dashoffset:100;
-  animation:cale-heartbeat-trace 2.15s linear infinite;
+  animation:cale-heartbeat-trace 1s linear infinite;
 }
 .cale-loading__message{
   display:flex;
@@ -71,7 +71,7 @@
   height:1.05em;
   margin-left:2px;
   background:#f1e900;
-  animation:cale-loading-cursor .8s steps(2,end) infinite;
+  animation:cale-loading-cursor .45s steps(2,end) infinite;
 }
 .cale-loading__sr-only{
   position:absolute;
