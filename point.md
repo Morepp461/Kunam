@@ -1591,3 +1591,12 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 
 - Per the project owner's latest instruction, Admin Workflow CRM is explicitly deferred and excluded from the active completion scope until later notice.
 - Do not invent CRM statuses, task owners, transitions, or permissions. Existing Admin-only Operations Hub remains unchanged.
+
+
+## Manage User dropdown and Cale page guidance — 24 November 2026
+
+- Manage User (`/admin/users`) now uses the existing CALERIS `CustomSelect` component for status filter, preferred role, active member role, team assignment, and moderation type. The team picker no longer relies on the native Android `<select>` / global native-select interception path; the selected team is controlled by the explicit `teamId` state and is only saved through the existing audited `assign_team` action.
+- Kept existing server-side role/team validation, contract restrictions, Owner Take Over restriction, and required audit reason. No authorization or business rule was relaxed.
+- Cale Assistant now provides page-purpose guidance on Manage User: account summary, search/filter, account-card details, Role & Team controls, moderation actions, and the high-level workflow. Removed the irrelevant wardrobe/outfit explanation from user-facing assistant copy.
+- Added regression assertions for the Manage User custom selects and Cale contextual guidance. No new dependency, database migration, Supabase data/function, or Vercel environment change.
+- QA and deployment status: pending CI and production verification.

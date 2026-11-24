@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import { Search, RefreshCw, UserRound, ShieldCheck, Settings2, X, ExternalLink, Users } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import CustomSelect from "./CustomSelect";
 import "./admin-users.css";
 
 type UserRow = {
@@ -188,9 +189,7 @@ export default function AdminUsers() {
 
     <div className="workspace-card admin-users-toolbar">
       <label className="admin-users-search"><Search size={17}/><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari email, nama, Member ID, karakter, atau tim..."/></label>
-      <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} aria-label="Filter status akun">
-        <option value="all">Semua status</option><option value="active">Active</option><option value="public">Public</option><option value="admin">Admin</option><option value="suspended">Suspended</option><option value="unlinked">Belum memiliki profil</option>
-      </select>
+      <CustomSelect value={statusFilter} onChange={setStatusFilter} ariaLabel="Filter status akun" options={[{value:"all",label:"Semua status"},{value:"active",label:"Active"},{value:"public",label:"Public"},{value:"admin",label:"Admin"},{value:"suspended",label:"Suspended"},{value:"unlinked",label:"Belum memiliki profil"}]} className="admin-users-status-select"/>
       <span>{filtered.length} dari {users.length} akun</span>
     </div>
 
@@ -250,9 +249,9 @@ export default function AdminUsers() {
     {selected && <div className="admin-users-modal-backdrop" role="presentation" onClick={() => { if (!saving) setSelected(null); }}>
       <section className="workspace-card admin-users-modal" role="dialog" aria-modal="true" aria-labelledby="admin-role-title" onClick={(event) => event.stopPropagation()}>
         <div className="admin-users-modal-heading"><div><span className="section-eyebrow">ROLE MANAGEMENT</span><h2 id="admin-role-title">Konfigurasi Role</h2><p>{selected.email || selected.user_id}</p></div><button type="button" className="admin-users-close" onClick={() => setSelected(null)} disabled={saving} aria-label="Tutup"><X size={19}/></button></div>
-        <label>Preferensi role akun<select value={preferredRole} onChange={(event) => setPreferredRole(event.target.value)}>{preferredOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><small>Preferensi ini mencatat pilihan user saat onboarding. Tidak memberikan akses panel.</small></label>
-        <label>Role aktif member<select value={assignedRole} onChange={(event) => setAssignedRole(event.target.value)}><option value="">Public / Tidak ada role aktif</option>{assignedOptions.filter((option) => option.value).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><small>{selected.member ? "Role ini menentukan akses panel dan kapabilitas member." : "Saat role disimpan, sistem akan membuat record member dan menghubungkannya ke akun ini secara otomatis."}</small></label>
-        {selected.member && <label>Tim user<select value={teamId} disabled={selected.member.role==="Owner"} onChange={event=>setTeamId(event.target.value)}><option value="">Tanpa tim</option>{teams.map(team=><option key={team.id} value={team.id}>{team.name}</option>)}</select><small>Penempatan Driver dengan kontrak aktif tidak dapat dipindah langsung. Perpindahan Team Owner wajib melalui Take Over.</small></label>}
+        <label>Preferensi role akun<CustomSelect value={preferredRole} onChange={setPreferredRole} options={preferredOptions} ariaLabel="Preferensi role akun"/><small>Preferensi ini mencatat pilihan user saat onboarding. Tidak memberikan akses panel.</small></label>
+        <label>Role aktif member<CustomSelect value={assignedRole} onChange={setAssignedRole} options={assignedOptions} ariaLabel="Role aktif member"/><small>{selected.member ? "Role ini menentukan akses panel dan kapabilitas member." : "Saat role disimpan, sistem akan membuat record member dan menghubungkannya ke akun ini secara otomatis."}</small></label>
+        {selected.member && <label>Tim user<CustomSelect value={teamId} onChange={setTeamId} disabled={selected.member.role==="Owner"} ariaLabel="Tim user" options={[{value:"",label:"Tanpa tim"},...teams.map(team=>({value:team.id,label:team.name}))]} className="admin-users-team-select"/><small>Penempatan Driver dengan kontrak aktif tidak dapat dipindah langsung. Perpindahan Team Owner wajib melalui Take Over.</small></label>}
         {selected.member && teamId!==(selected.member.team_id??"") && <label>Alasan perubahan tim<input value={teamReason} onChange={event=>setTeamReason(event.target.value)} maxLength={2000} placeholder="Wajib diisi untuk audit"/></label>}
         {!selected.member && assignedRole && <label>Nama karakter (opsional)<input value={characterName} onChange={(event) => setCharacterName(event.target.value)} maxLength={80} placeholder="Nama karakter member"/><small>Jika dikosongkan, sistem memakai nickname profil yang tersedia.</small></label>}
         {selected.member?.role === "Owner" && selected.member.team_id && assignedRole !== "Owner" && <p className="admin-users-warning">Pemilik tim tidak dapat diturunkan rolenya selama tim masih terhubung.</p>}
@@ -262,7 +261,7 @@ export default function AdminUsers() {
     {moderationTarget && <div className="admin-users-modal-backdrop" role="presentation" onClick={()=>{if(!saving)setModerationTarget(null);}}>
       <section className="workspace-card admin-users-modal" role="dialog" aria-modal="true" aria-labelledby="admin-moderation-title" onClick={event=>event.stopPropagation()}>
         <div className="admin-users-modal-heading"><div><span className="section-eyebrow">USER MODERATION</span><h2 id="admin-moderation-title">Tindakan akun</h2><p>{moderationTarget.email||moderationTarget.user_id}</p></div><button type="button" className="admin-users-close" onClick={()=>setModerationTarget(null)} disabled={saving} aria-label="Tutup"><X size={19}/></button></div>
-        <label>Jenis tindakan<select value={moderationType} onChange={event=>setModerationType(event.target.value as typeof moderationType)}><option value="warning">Kirim peringatan</option><option value="temporary">Ban sementara</option><option value="permanent">Ban permanen</option><option value="unban" disabled={moderationTarget.profile?.account_status!=="suspended"}>Cabut ban</option></select></label>
+        <label>Jenis tindakan<CustomSelect value={moderationType} onChange={value=>setModerationType(value as typeof moderationType)} ariaLabel="Jenis tindakan moderasi" options={[{value:"warning",label:"Kirim peringatan"},{value:"temporary",label:"Ban sementara"},{value:"permanent",label:"Ban permanen"},...(moderationTarget.profile?.account_status==="suspended"?[{value:"unban",label:"Cabut ban"}]:[])]} /></label>
         {moderationType==="temporary"&&<label>Durasi ban (hari)<input type="number" min="1" max="365" step="1" value={durationDays} onChange={event=>setDurationDays(event.target.value)}/><small>Ban sementara berlaku 1 sampai 365 hari.</small></label>}
         <label>Alasan / catatan pelanggaran<textarea value={moderationReason} onChange={event=>setModerationReason(event.target.value)} maxLength={2000} rows={4} placeholder="Tulis alasan tindakan secara jelas untuk audit."/></label>
         {moderationType==="permanent"&&<p className="admin-users-warning">Ban permanen memblokir login hingga admin mencabutnya. Tindakan ini tercatat di riwayat akun.</p>}

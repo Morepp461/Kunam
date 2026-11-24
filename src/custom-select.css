@@ -12,3 +12,5 @@
 .caleris-custom-select-option.is-selected{color:#e8ce79}
 .caleris-custom-select-option svg{flex:0 0 auto;color:#d3b75d}
 @media(max-width:520px){.caleris-custom-select-trigger{min-height:44px}.caleris-custom-select-menu{max-height:40vh}}
+
+.caleris-custom-select.is-disabled .caleris-custom-select-trigger{opacity:.48;cursor:not-allowed}

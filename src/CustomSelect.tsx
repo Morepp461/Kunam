@@ -10,9 +10,10 @@ type Props = {
   placeholder?: string;
   ariaLabel: string;
   className?: string;
+  disabled?: boolean;
 };
 
-export default function CustomSelect({ value, options, onChange, placeholder = "Pilih opsi", ariaLabel, className = "" }: Props) {
+export default function CustomSelect({ value, options, onChange, placeholder = "Pilih opsi", ariaLabel, className = "", disabled = false }: Props) {
   const id = useId();
   const root = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -36,7 +37,7 @@ export default function CustomSelect({ value, options, onChange, placeholder = "
     setOpen(false);
   };
 
-  return <div ref={root} className={`caleris-custom-select ${className}`}>
+  return <div ref={root} className={`caleris-custom-select ${className}${disabled ? " is-disabled" : ""}`}>
     <button
       type="button"
       className="caleris-custom-select-trigger"
@@ -45,8 +46,11 @@ export default function CustomSelect({ value, options, onChange, placeholder = "
       aria-haspopup="listbox"
       aria-expanded={open}
       aria-controls={id}
-      onClick={() => setOpen(current => !current)}
+      aria-disabled={disabled}
+      disabled={disabled}
+      onClick={() => { if (!disabled) setOpen(current => !current); }}
       onKeyDown={event => {
+        if (disabled) return;
         if (event.key === "Escape") { setOpen(false); return; }
         if (event.key === "ArrowDown" || event.key === "ArrowUp") {
           event.preventDefault();
