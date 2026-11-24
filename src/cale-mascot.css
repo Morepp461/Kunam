@@ -1,38 +1,5 @@
-.cale-mascot{--cale-size:180px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;width:var(--cale-size);max-width:100%;margin:0;min-width:0;line-height:1}
-.cale-mascot__art{position:relative;display:flex;align-items:flex-end;justify-content:center;width:100%;min-width:0;aspect-ratio:2/3}
-.cale-mascot[data-cale-outfit="formal"] .cale-mascot__art{aspect-ratio:128/298}
-.cale-mascot[data-cale-outfit="fia"] .cale-mascot__art{aspect-ratio:100/240}
-.cale-mascot__art img{display:block;width:100%;height:100%;max-height:100%;object-fit:contain;object-position:center bottom;user-select:none;-webkit-user-drag:none}
-.cale-mascot__marker{position:absolute;top:5%;right:2%;display:grid;place-items:center;min-width:25px;height:25px;padding:0 6px;border:1px solid rgba(214,184,94,.75);border-radius:50%;background:rgba(12,12,14,.94);color:#e2c36a;font-size:14px;font-weight:800;line-height:1}
-.cale-mascot__caption{display:grid;gap:4px;width:100%;padding:8px 0 0;text-align:center;color:var(--text-primary,#f4f0e7)}
-.cale-mascot__caption strong{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
-.cale-mascot__caption span{font-size:11px;line-height:1.45;color:var(--text-secondary,#a9a39a)}
-.cale-assistant{position:fixed;right:18px;bottom:18px;z-index:90;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
-.cale-assistant__trigger{pointer-events:auto;display:flex;align-items:center;gap:7px;width:76px;min-height:82px;padding:5px 7px 6px;border:1px solid rgba(214,184,94,.62);border-radius:18px;background:linear-gradient(145deg,rgba(22,22,24,.98),rgba(8,8,9,.98));box-shadow:0 8px 26px rgba(0,0,0,.38);color:#e6c76d;cursor:pointer}
-.cale-assistant__trigger-art{width:43px;--cale-size:43px;flex:0 0 43px}
-.cale-assistant__trigger-art .cale-mascot__marker{display:none}
-.cale-assistant__trigger-label{font-size:10px;font-weight:900;letter-spacing:.1em;writing-mode:vertical-rl;transform:rotate(180deg)}
-.cale-assistant__panel{pointer-events:auto;width:min(370px,calc(100vw - 28px));overflow:hidden;border:1px solid rgba(214,184,94,.55);border-radius:18px;background:linear-gradient(145deg,rgba(23,23,25,.99),rgba(9,9,10,.99));box-shadow:0 18px 48px rgba(0,0,0,.48);color:#f4f0e7}
-.cale-assistant__header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(214,184,94,.2)}
-.cale-assistant__eyebrow{color:#d8b95c;font-size:9px;font-weight:800;letter-spacing:.16em}
-.cale-assistant__header h2{margin:4px 0 0;font-size:17px;font-weight:800;letter-spacing:.01em}
-.cale-assistant__close{display:grid;place-items:center;width:32px;height:32px;border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(255,255,255,.04);color:#f4f0e7;cursor:pointer}
-.cale-assistant__body{display:grid;grid-template-columns:112px minmax(0,1fr);align-items:center;gap:12px;padding:14px 16px 16px}
-.cale-assistant__character{--cale-size:112px;width:112px;max-height:190px;align-self:end}
-.cale-assistant__character .cale-mascot__art{height:180px;aspect-ratio:auto}
-.cale-assistant__character .cale-mascot__marker{display:none}
-.cale-assistant__copy{min-width:0}
-.cale-assistant__copy strong{font-size:13px;color:#e8cb72}
-.cale-assistant__copy p{margin:7px 0;font-size:12px;line-height:1.55;color:#e9e5dc}
-.cale-assistant__copy small{display:block;font-size:10px;line-height:1.5;color:#aaa49b}
-@media(max-width:560px){.cale-assistant{right:12px;bottom:12px}.cale-assistant__panel{width:min(350px,calc(100vw - 24px))}.cale-assistant__body{grid-template-columns:94px minmax(0,1fr);gap:9px;padding:12px}.cale-assistant__character{--cale-size:94px;width:94px}.cale-assistant__trigger{width:70px;min-height:76px}}
 
-.header-notification-cale{display:inline-flex!important;vertical-align:middle;width:24px!important;height:28px;margin:0 5px 0 0;overflow:hidden}
-.header-notification-cale .cale-mascot__art{width:100%;height:100%;align-items:flex-end}
-.header-notification-cale .cale-mascot__art img{width:100%;height:100%;object-fit:contain;object-position:center bottom}
-.header-notification-cale .cale-mascot__marker{display:none}
-
-.cale-assistant__guide-list{display:grid;gap:6px;max-height:260px;overflow-y:auto;margin:8px 0 0;padding:0 4px 0 15px;color:#c7c1b7;font-size:10px;line-height:1.45}
+.cale-assistant__guide-list{display:grid;gap:7px;max-height:270px;overflow-y:auto;margin:9px 0 0;padding:0 5px 0 16px;color:#c7c1b7;font-size:11px;line-height:1.5}
 .cale-assistant__guide-list li{padding-left:1px}
-.cale-assistant__guide-list b{color:#e6cf83;font-weight:700}
-@media(max-width:560px){.cale-assistant__guide-list{max-height:220px;font-size:9.5px;gap:5px}}
+.cale-assistant__guide-list li::marker{color:#d8b95c}
+@media(max-width:560px){.cale-assistant__guide-list{max-height:230px;font-size:10px;gap:6px}}
