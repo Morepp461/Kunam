@@ -26,6 +26,8 @@ for token in [
 assert 'supabase.functions.invoke("admin-user-management"' in ui
 assert 'import CustomSelect from "./CustomSelect";' in ui
 assert 'ariaLabel="Tim user"' in ui and 'className="admin-users-team-select"' in ui
+assert 'disabled={selected.member.role==="Owner"}' in ui
+assert 'moderationTarget.profile?.account_status==="suspended"' in ui
 assert 'value={teamId} onChange={setTeamId}' in ui
 assert '<select value={teamId}' not in ui
 assert '<select value={preferredRole}' not in ui and '<select value={assignedRole}' not in ui
