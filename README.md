@@ -1281,3 +1281,15 @@ This confirms the code and automated regression coverage, not the remaining manu
 - Named exports from Circuit Pool use explicit lazy module adapters; existing route paths, authorization predicates, page props, and business workflows are unchanged.
 - Added a Vitest regression test for lazy boundaries and the router fallback. Uses the existing React 19 dependency; no package/lockfile, database migration, Edge Function, wallet, or production-data changes.
 - Bundle-size improvement must be confirmed from the CI production build; this checkpoint does not invent a measured percentage or claim that all large-chunk warnings are resolved.
+
+
+## Cale 57-pose artwork source received — 24 November 2026
+
+- Validated the supplied archive: 57 unique transparent 1024×1024 RGBA pose artworks, each with PNG and WebP variants (114 files total).
+- 49 formal-suit poses plus 8 racing-suit poses correspond to the existing manifest category counts. Artwork source is complete; runtime repository integration remains pending binary asset transfer and ID mapping. Existing three wardrobe master assets remain the active runtime sources until that integration is committed.
+- CRM/Admin Workflow expansion is deferred by the project owner and is not part of the current implementation scope.
+
+## Route-level code splitting release — 24 November 2026
+
+- PR #340 merged to `main` at `4cfc6da4dcc33ffafb19c71dbe704da27bf0f757` after all CI checks passed. The route-level `lazy()` imports and accessible `Suspense` fallback are now part of the main branch.
+- Uses existing React 19 APIs only; no dependency or database migration changes.
