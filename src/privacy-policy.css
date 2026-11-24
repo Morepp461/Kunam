@@ -1,29 +1,33 @@
-.privacy-page{width:min(1180px,calc(100% - 36px));margin:0 auto;padding:44px 0 84px;color:var(--text-primary,#f4f4f4)}
-.privacy-hero{padding:30px 0 34px;border-bottom:1px solid rgba(255,255,255,.12)}
-.privacy-eyebrow{display:flex;align-items:center;gap:9px;color:#d6b45b;font:700 11px/1.4 Inter,sans-serif;letter-spacing:.17em}
+.privacy-page{position:relative;isolation:isolate;width:min(1180px,calc(100% - 36px));margin:0 auto;padding:44px 0 84px;color:var(--text-primary,#f4f4f4)}
+.privacy-page::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:rgba(5,6,8,.62);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.privacy-hero{padding:30px 0 34px;border-bottom:1px solid rgba(255,255,255,.16)}
+.privacy-eyebrow{display:flex;align-items:center;gap:9px;color:#e0c16b;font:700 11px/1.4 Inter,sans-serif;letter-spacing:.17em}
 .privacy-hero h1{margin:17px 0 10px;font:800 clamp(38px,6vw,66px)/.98 'Barlow Condensed',sans-serif;letter-spacing:-.025em;text-transform:uppercase}
-.privacy-hero h1 span{color:#d5ad4d}
-.privacy-hero>p{max-width:700px;color:var(--text-secondary,#a7a7a7);font:400 15px/1.8 Inter,sans-serif;margin:0}
-.privacy-updated{display:flex;align-items:center;gap:8px;margin-top:20px;color:#aaa;font:500 12px Inter,sans-serif}
-.privacy-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:42px;padding-top:32px;align-items:start}
-.privacy-aside{position:sticky;top:22px;padding:18px;border:1px solid rgba(214,180,91,.2);border-radius:14px;background:rgba(20,21,23,.72)}
-.privacy-aside>strong{display:block;color:#d6b45b;font:700 10px Inter,sans-serif;letter-spacing:.16em;margin-bottom:13px}
+.privacy-hero h1 span{color:#e0b94f}
+.privacy-hero>p{max-width:700px;color:#e0e0e0;font:400 15px/1.8 Inter,sans-serif;margin:0}
+.privacy-updated{display:flex;align-items:center;gap:8px;margin-top:20px;color:#c2c2c2;font:500 12px Inter,sans-serif}
+.privacy-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:30px;padding-top:32px;align-items:start}
+.privacy-aside{position:sticky;top:22px;padding:18px;border:1px solid rgba(214,180,91,.3);border-radius:14px;background:rgba(8,9,11,.94);box-shadow:0 12px 36px rgba(0,0,0,.28);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.privacy-aside>strong{display:block;color:#e0c16b;font:700 10px Inter,sans-serif;letter-spacing:.16em;margin-bottom:13px}
 .privacy-aside nav{display:grid;gap:3px}
-.privacy-aside a{color:var(--text-secondary,#aaa);text-decoration:none;font:500 12px/1.5 Inter,sans-serif;padding:7px 8px;border-radius:7px}
-.privacy-aside a:hover{color:#f3d37f;background:rgba(214,180,91,.08)}
-.privacy-content{min-width:0}
-.privacy-intro{display:flex;gap:13px;padding:18px 20px;border:1px solid rgba(214,180,91,.24);border-radius:13px;background:linear-gradient(110deg,rgba(214,180,91,.09),rgba(255,255,255,.025));color:#d8bd79}
+.privacy-aside a{color:#d0d0d0;text-decoration:none;font:500 12px/1.5 Inter,sans-serif;padding:7px 8px;border-radius:7px}
+.privacy-aside a:hover{color:#ffe39a;background:rgba(214,180,91,.12)}
+.privacy-content{min-width:0;padding:22px 26px 26px;border:1px solid rgba(255,255,255,.13);border-radius:16px;background:rgba(7,8,10,.93);box-shadow:0 18px 48px rgba(0,0,0,.34);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.privacy-intro{display:flex;gap:13px;padding:18px 20px;border:1px solid rgba(214,180,91,.3);border-radius:13px;background:rgba(214,180,91,.09);color:#e5ca82}
 .privacy-intro svg{flex:none;margin-top:2px}
-.privacy-intro p{margin:0;color:var(--text-secondary,#c0c0c0);font:400 13px/1.8 Inter,sans-serif}
-.privacy-section{padding:27px 0;border-bottom:1px solid rgba(255,255,255,.09);scroll-margin-top:24px}
-.privacy-section h2,.privacy-contact h2{margin:0 0 16px;color:var(--text-primary,#f4f4f4);font:700 23px/1.2 'Barlow Condensed',sans-serif;letter-spacing:.015em}
-.privacy-subsection{margin:0 0 17px}
+.privacy-intro p{margin:0;color:#e0e0e0;font:400 14px/1.85 Inter,sans-serif}
+.privacy-section{padding:27px 0;border-bottom:1px solid rgba(255,255,255,.12);scroll-margin-top:24px}
+.privacy-section h2,.privacy-contact h2{margin:0 0 16px;color:#fff;font:700 24px/1.25 'Barlow Condensed',sans-serif;letter-spacing:.015em}
+.privacy-subsection{margin:0 0 18px}
 .privacy-subsection:last-child{margin-bottom:0}
-.privacy-subsection h3{margin:0 0 5px;color:#d6b45b;font:700 13px/1.5 Inter,sans-serif}
-.privacy-section p,.privacy-contact p{margin:0;color:var(--text-secondary,#b1b1b1);font:400 13px/1.85 Inter,sans-serif}
-.privacy-contact{display:flex;gap:15px;margin-top:28px;padding:21px;border:1px solid rgba(214,180,91,.25);border-radius:13px;background:rgba(214,180,91,.055)}
-.privacy-contact>svg{flex:none;color:#d6b45b}
+.privacy-subsection h3{margin:0 0 6px;color:#e3c36d;font:700 13px/1.55 Inter,sans-serif}
+.privacy-section p,.privacy-contact p{margin:0;color:#dedede;font:400 14px/1.9 Inter,sans-serif}
+.privacy-section .terms-rule{margin:0 0 13px}
+.privacy-section .terms-rule:last-child{margin-bottom:0}
+.privacy-contact{display:flex;gap:15px;margin-top:28px;padding:21px;border:1px solid rgba(214,180,91,.3);border-radius:13px;background:rgba(214,180,91,.09)}
+.privacy-contact>svg{flex:none;color:#e0c16b}
 .privacy-contact h2{margin-bottom:8px}
-.privacy-footnote{margin-top:24px;color:#858585;font:400 11px/1.8 Inter,sans-serif}
-@media(max-width:760px){.privacy-page{width:min(100% - 28px,680px);padding:28px 0 58px}.privacy-layout{grid-template-columns:1fr;gap:20px;padding-top:22px}.privacy-aside{position:static;padding:14px}.privacy-aside nav{grid-template-columns:repeat(2,minmax(0,1fr))}.privacy-aside a{font-size:11px}.privacy-hero{padding:20px 0 26px}.privacy-section{padding:22px 0}.privacy-section h2,.privacy-contact h2{font-size:21px}}
+.privacy-footnote{margin-top:24px;color:#b8b8b8;font:400 12px/1.8 Inter,sans-serif}
+@media(max-width:760px){.privacy-page{width:min(100% - 28px,680px);padding:28px 0 58px}.privacy-page::before{background:rgba(5,6,8,.68);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}.privacy-layout{grid-template-columns:1fr;gap:16px;padding-top:22px}.privacy-aside{position:static;padding:14px}.privacy-aside nav{grid-template-columns:repeat(2,minmax(0,1fr))}.privacy-aside a{font-size:12px}.privacy-content{padding:18px 16px 22px}.privacy-hero{padding:20px 0 26px}.privacy-hero>p{font-size:14px}.privacy-section{padding:23px 0}.privacy-section h2,.privacy-contact h2{font-size:22px}.privacy-section p,.privacy-contact p,.privacy-intro p{font-size:14px;line-height:1.9}.privacy-intro{padding:15px}.privacy-subsection h3{font-size:13px}}
 @media(prefers-reduced-motion:no-preference){.privacy-aside a{transition:background .18s ease,color .18s ease}}
+@media(prefers-reduced-transparency:reduce){.privacy-page::before{backdrop-filter:none;-webkit-backdrop-filter:none}.privacy-content,.privacy-aside{background:#08090b}}
