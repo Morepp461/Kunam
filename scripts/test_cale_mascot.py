@@ -62,7 +62,7 @@ print("Cale onboarding tutorial checks passed: 7 account guidance steps, accessi
 ASSISTANT = (ROOT / "src" / "CaleAssistant.tsx").read_text(encoding="utf-8")
 assert "Tampilan pakaian menyesuaikan konteks" not in ASSISTANT
 for guide in ("Ringkasan akun:", "Pencarian & filter:", "Kartu akun:", "Role & Tim:", "Moderasi:"):
-    assert guide in ASSISTANT, f"Missing Manage User guidance: {guide}"
+    assert guide in (ROOT / "src" / "cale" / "pageGuides.ts").read_text(encoding="utf-8"), f"Missing Manage User guidance: {guide}"
 assert "cale-assistant__guide-list" in ASSISTANT
 print("Cale Assistant page-purpose guidance checks passed: Manage User purpose, cards, role/team and moderation workflow.")
 
