@@ -58,6 +58,14 @@ const guides: Record<string, CalePageGuide> = {
 
 const panelGuides: Record<string, CalePageGuide> = {
   global: guide("Global Overview", "Ringkasan kompetisi lintas divisi dan pintasan ke statistik utama.", "Kartu ranking, statistik, direktori, dan perbandingan membuka halaman rincian masing-masing."),
+  "driver-ranking": guide("Driver Ranking", "Lihat peringkat Driver berdasarkan poin kompetisi resmi.", "Pilih season dan divisi untuk membandingkan posisi serta poin.", "Buka profil Driver dari nama yang tersedia."),
+  "rookie-of-the-season": guide("Rookie of the Season", "Lihat kandidat dan statistik rookie terbaik pada season terkait.", "Periksa kriteria rookie dan hasil kompetisi yang ditampilkan.", "Gunakan profil Driver untuk membuka rincian peserta."),
+  "team-ranking": guide("Team Ranking", "Lihat peringkat tim berdasarkan hasil konstruktor resmi.", "Bandingkan poin, posisi, dan performa tim.", "Buka profil tim dari nama yang tersedia."),
+  "engine-ranking": guide("Engine Ranking", "Bandingkan paket engine berdasarkan atribut dan data kompetisi yang tersedia.", "Periksa atribut dan cakupan data sebelum membandingkan performa."),
+  statistic: guide("Competition Statistics", "Jelajahi statistik keseluruhan kompetisi CALERIS MASTERS.", "Gunakan kategori statistik untuk membaca ringkasan hasil dan partisipasi."),
+  comparison: guide("Driver & Team Comparison", "Bandingkan data Driver atau tim pada kompetisi.", "Pilih entitas yang ingin dibandingkan dan periksa metrik yang tersedia."),
+  "driver-list": guide("Driver Directory", "Jelajahi direktori Driver dan buka profil publik peserta.", "Gunakan pencarian dan filter untuk menemukan Driver.", "Pilih nama Driver untuk membuka profil dan informasi tim."),
+  "team-list": guide("Team Directory", "Jelajahi direktori tim dan buka profil publik masing-masing tim.", "Gunakan pencarian dan filter untuk menemukan tim.", "Pilih nama tim untuk melihat roster serta informasi kompetisi."),
   "caleris-premio": guide("Caleris Premio", "Ringkasan kompetisi divisi Premio.", "Gunakan kartu kalender, hasil, klasemen, dan statistik untuk membuka data divisi."),
   "caleris-zwei": guide("Caleris Zwei", "Ringkasan kompetisi divisi Zwei.", "Gunakan kartu kalender, hasil, klasemen, dan statistik untuk membuka data divisi."),
   "transfer-market": guides["/main-event/transfer-market"],
