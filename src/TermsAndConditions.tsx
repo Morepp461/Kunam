@@ -1,4 +1,4 @@
-import {FileText,ShieldCheck,Scale,Users,Flag,AlertTriangle,Mail,CalendarDays} from "lucide-react";
+import {FileText,ShieldCheck,Scale,CalendarDays} from "lucide-react";
 import "./privacy-policy.css";
 
 const sections=[
