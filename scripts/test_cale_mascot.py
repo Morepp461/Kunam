@@ -69,3 +69,33 @@ print("Cale Assistant page-purpose guidance checks passed: Manage User purpose, 
 
 GUIDE_CSS = (ROOT / "src" / "cale-mascot.css").read_text(encoding="utf-8")
 assert ".cale-assistant__guide-list" in GUIDE_CSS
+
+
+# Page-aware Cale guide and Community Hub RPC ambiguity regression.
+GUIDES = (ROOT / "src" / "cale" / "pageGuides.ts").read_text(encoding="utf-8")
+for route in (
+    '"/community"', '"/admin/users"', '"/admin/license-engine"',
+    '"/fia-panel/event-control"', '"/team-panel/development"',
+    '"/driver-panel/development"', '"/main-event/transfer-market"',
+):
+    assert route in GUIDES, f"Missing page-specific Cale guide route: {route}"
+for fragment in ("purpose:", "sections:", "resolveCalePageGuide", "panelGuides", "adminGuides"):
+    assert fragment in GUIDES, f"Page guide resolver missing: {fragment}"
+assert "resolveCalePageGuide(pathname)" in ASSISTANT
+assert "pageGuide.purpose" in ASSISTANT and "pageGuide.sections.map" in ASSISTANT
+assert "Tampilan pakaian menyesuaikan konteks" not in ASSISTANT
+
+COMMUNITY_FIX = next((ROOT / "supabase" / "migrations").glob("*_community_member_id_ambiguity_fix.sql"))
+COMMUNITY_SQL = COMMUNITY_FIX.read_text(encoding="utf-8")
+for fragment in (
+    "function public.caleris_get_community_dashboard()",
+    "function public.caleris_generate_yearbook(p_season uuid, p_title text",
+    "function public.caleris_cast_community_vote(p_poll_id uuid, p_option_id uuid)",
+    "v_member_id",
+    "e.member_id = v_member_id",
+    "fs.member_id = v_member_id",
+    "mb.member_id = v_member_id",
+):
+    assert fragment in COMMUNITY_SQL, f"Community RPC ambiguity migration missing: {fragment}"
+assert "declare member_id uuid" not in COMMUNITY_SQL
+print("Page-aware Cale guidance and Community Hub SQL ambiguity regression checks passed.")
