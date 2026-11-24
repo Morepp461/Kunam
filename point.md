@@ -1649,3 +1649,16 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - Service-role read access for the member-directory endpoint is limited to the exact livery and sponsorship columns used by the endpoint.
 - No new Edge Function runtime errors were found in the inspected post-fix log window. No Vercel environment variables were read or modified.
 - Follow-up route coverage audit found the dedicated Team Driver Contracts and Authentication Callback pages; their Cale guides are being added in a small follow-up PR.
+
+
+## RELEASE VERIFICATION ADDENDUM — Cale route coverage — 24 November 2026
+
+- PR #344 merged to main: 7f4ba0fbc89b8cd12370ce37cd5b8f654131c573.
+- Added dedicated Cale guidance for Team Driver Contracts, Team Driver Registration, FIA Appeal Room, and Authentication Callback. Existing page-guide aliases remain supported.
+- Extended `scripts/test_cale_mascot.py` to assert coverage for concrete Driver, Team, and FIA panel routes and shared page-guide aliases.
+- Full CI run #4791 passed on the exact PR #344 head commit 5ad61b38a431269195618768ce923ea664421b06, including build, browser smoke, Cale regression, all engine regression suites, Edge Function JWT/privacy checks, and Supabase schema parity.
+- A duplicate pull_request-triggered CI run #4792 remained in progress after the push-triggered run passed; merge was based on the successful full CI run for the exact same head SHA.
+- Vercel production deployment for main commit 7f4ba0fbc89b8cd12370ce37cd5b8f654131c573: `dpl_DZXqjD3mQZkvdGZahXo9iJ4QJ6Dw`; observed state BUILDING at the last check. Do not claim deployment is complete until READY.
+- No database schema changes were included in PR #344. Production and Testing remain aligned at migration versions 20261124090000, 20261124091000, and 20261124092000.
+- Latest inspected Edge Function error logs (from 07:54 UTC onward) returned no matching failed/error/exception entries in either Production or Testing. Earlier isolated HTTP 400 responses documented above remain request-validation responses, not confirmed server-side crashes.
+- No Vercel environment variables were read or modified.
