@@ -24,6 +24,11 @@ for token in [
     assert token in edge, f"Missing server-side moderation guard: {token}"
 
 assert 'supabase.functions.invoke("admin-user-management"' in ui
+assert 'import CustomSelect from "./CustomSelect";' in ui
+assert 'ariaLabel="Tim user"' in ui and 'className="admin-users-team-select"' in ui
+assert 'value={teamId} onChange={setTeamId}' in ui
+assert '<select value={teamId}' not in ui
+assert '<select value={preferredRole}' not in ui and '<select value={assignedRole}' not in ui
 assert "Kirim peringatan" in ui or "Peringatan" in ui
 assert "Ban permanen" in ui or "Permanen" in ui
 assert "assign_team" in ui and "warn_user" in ui and "ban_user" in ui
