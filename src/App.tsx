@@ -5,6 +5,7 @@ import {Link,Navigate,Route,Routes,useLocation,useNavigate,useParams} from "reac
 import {ArrowUpRight,BookOpen,Check,ChevronDown,ChevronLeft,ChevronRight,ExternalLink,Flag,LoaderCircle,LogIn,Moon,Shield,Sun,UserCircle,Users,X,Camera,CalendarDays,Search} from "lucide-react";
 import type {Session} from "@supabase/supabase-js";
 import {missingSupabaseMessage,supabase} from "./lib/supabase";
+import GlobalLoading from "./GlobalLoading";
 import "./workspace.css";
 import "./stage5-panel.css";
 import PanelPage,{panelGroups} from "./PanelPages";
@@ -99,7 +100,7 @@ function GlobalUI({children}:{children:ReactNode}){
  const toast=useCallback((kind:Kind,title:string,message?:string)=>{const id=Date.now()+Math.random();setItems(v=>[...v,{id,kind,title,message}].slice(-4));window.setTimeout(()=>setItems(v=>v.filter(x=>x.id!==id)),4500);},[]);
  useEffect(()=>{const mark=(e:Event)=>{const el=(e.target as HTMLElement|null)?.closest("button,a,[role=button]") as HTMLElement|null;if(!el||el.matches(":disabled,[aria-disabled=true]"))return;const r=el.getBoundingClientRect(),p=e as PointerEvent,x=e instanceof PointerEvent?p.clientX:r.left+r.width/2,y=e instanceof PointerEvent?p.clientY:r.top+r.height/2;const t=document.createElement("i");t.className="tire-trace";t.style.left=x+"px";t.style.top=y+"px";document.body.append(t);window.setTimeout(()=>t.remove(),850);};document.addEventListener("pointerdown",mark,{passive:true});return()=>document.removeEventListener("pointerdown",mark);},[]);
  const value=useMemo(()=>({toast,loading:setBusy}),[toast]);
- return <UI.Provider value={value}>{busy&&<div className="global-progress comet-transition" aria-hidden="true"><span/><i/></div>}{children}<div className="toast-stack" aria-live="polite">{items.map(n=><div className={"toast toast-"+n.kind} key={n.id}><span className="toast-icon">{n.kind==="success"?<Check/>:n.kind==="error"?<X/>:<Flag/>}</span><span className="toast-copy"><strong>{n.title}</strong>{n.message&&<small>{n.message}</small>}</span><button className="toast-close" aria-label="Tutup" onClick={()=>setItems(v=>v.filter(x=>x.id!==n.id))}><X size={15}/></button></div>)}</div></UI.Provider>;
+ return <UI.Provider value={value}>{busy&&<GlobalLoading />}{children}<div className="toast-stack" aria-live="polite">{items.map(n=><div className={"toast toast-"+n.kind} key={n.id}><span className="toast-icon">{n.kind==="success"?<Check/>:n.kind==="error"?<X/>:<Flag/>}</span><span className="toast-copy"><strong>{n.title}</strong>{n.message&&<small>{n.message}</small>}</span><button className="toast-close" aria-label="Tutup" onClick={()=>setItems(v=>v.filter(x=>x.id!==n.id))}><X size={15}/></button></div>)}</div></UI.Provider>;
 }
 export default function App(){return <GlobalUI><Application/></GlobalUI>}
 function Application(){
@@ -158,11 +159,11 @@ function Application(){
  useEffect(()=>{if(authReady)void refreshProfile()},[authReady,refreshProfile]);
  useEffect(()=>{if(!supabase||!session)return;supabase.from("profiles").select("account_status").eq("user_id",session.user.id).maybeSingle().then(({data})=>{if(data?.account_status==="suspended")void refreshProfile()})},[location.pathname,session?.user.id,refreshProfile]);
  useEffect(()=>{window.scrollTo(0,0);loading(true);const timer=window.setTimeout(()=>loading(false),560);return()=>window.clearTimeout(timer)},[location.pathname,loading]);
- if(!authReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memeriksa sesi...</span></div>;
- if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
+ if(!authReady)return <GlobalLoading />;
+ if(session&&!profileReady)return <GlobalLoading />;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
  if(session&&profile?.account_status==="suspended")return <SuspendedAccountPage session={session}/>;
- return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} memberId={profile?.member_id??null} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin} panelAccess={panelAccess}/>} toast={toast} loading={loading}><CalerisSelectOverlay/><AnalyticsTracker/><Suspense fallback={<div className="auth-loading" role="status" aria-live="polite"><LoaderCircle className="spin"/><span>Memuat halaman...</span></div>}><Routes>
+ return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} memberId={profile?.member_id??null} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin} panelAccess={panelAccess}/>} toast={toast} loading={loading}><CalerisSelectOverlay/><AnalyticsTracker/><Suspense fallback={<GlobalLoading />}><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
