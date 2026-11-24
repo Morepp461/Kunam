@@ -116,7 +116,7 @@ export default function MainLayout({children,theme,setTheme,session,profile,memb
   {session&&<div className="app-navigation-shell">{renderSidebar(false)}<main className="page-content">{children}</main></div>}
   {!session&&<main className="page-content">{children}</main>}
   {session&&navOpen&&<><button className="drawer-dismiss" aria-label="Tutup navigasi" onClick={()=>setNavOpen(false)}/>{renderSidebar(true)}</>}
-  {session&&<CaleAssistant/>}
+  <CaleAssistant/>
   <SiteFooter/>
  </div>;
 }

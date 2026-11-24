@@ -39,7 +39,7 @@ for asset in ("cale-racing.webp", "cale-formal.webp", "cale-fia.webp"):
 assert 'data-cale-design=' in MASCOT
 assert 'data-cale-outfit=' in MASCOT
 assert 'import CaleAssistant from "./CaleAssistant";' in LAYOUT
-assert '{session&&<CaleAssistant/>}' in LAYOUT
+assert "<CaleAssistant/>" in LAYOUT
 assert 'designId="reaction_warning"' in NOTIFICATIONS
 assert "isWarningNotification(item)" in NOTIFICATIONS
 assert "@keyframes" not in CSS and "animation:" not in CSS
@@ -131,3 +131,11 @@ for route in (
     assert f'"{slug}": guide(' in GUIDES or f'{slug}: guide(' in GUIDES or f'"{slug}": guides[' in GUIDES, f"Missing Cale page guide for route: {route}"
 assert '"/auth/callback": guide("Authentication Callback"' in GUIDES
 print("Cale page-guide route coverage passed for all concrete Driver, Team and FIA panel routes.")
+
+
+# Cale is mounted by the shared layout for authenticated and public routes.
+assert "<CaleAssistant/>" in LAYOUT, "Cale Assistant must be globally mounted by MainLayout"
+assert "{session&&<CaleAssistant/>}" not in LAYOUT, "Cale must not disappear on public/new pages"
+assert '"/shop": guide("Shop"' in GUIDES, "Shop must use general marketplace guidance"
+assert "Marketplace CALERIS MASTERS" in GUIDES
+print("Global Cale mounting and general Shop guidance checks passed.")
