@@ -31,3 +31,8 @@
 .header-notification-cale .cale-mascot__art{width:100%;height:100%;align-items:flex-end}
 .header-notification-cale .cale-mascot__art img{width:100%;height:100%;object-fit:contain;object-position:center bottom}
 .header-notification-cale .cale-mascot__marker{display:none}
+
+.cale-assistant__guide-list{display:grid;gap:6px;max-height:260px;overflow-y:auto;margin:8px 0 0;padding:0 4px 0 15px;color:#c7c1b7;font-size:10px;line-height:1.45}
+.cale-assistant__guide-list li{padding-left:1px}
+.cale-assistant__guide-list b{color:#e6cf83;font-weight:700}
+@media(max-width:560px){.cale-assistant__guide-list{max-height:220px;font-size:9.5px;gap:5px}}
