@@ -7,6 +7,7 @@ import {supabase} from "./lib/supabase";
 import {panelGroups} from "./PanelPages";
 import NotificationsCenter from "./NotificationsCenter";
 import CaleAssistant from "./CaleAssistant";
+import CookieNotice from "./CookieNotice";
 import "./cale-mascot.css";
 
 type Toast=(kind:"success"|"error"|"warning"|"info",title:string,message?:string)=>void;
@@ -117,6 +118,7 @@ export default function MainLayout({children,theme,setTheme,session,profile,memb
   {!session&&<main className="page-content">{children}</main>}
   {session&&navOpen&&<><button className="drawer-dismiss" aria-label="Tutup navigasi" onClick={()=>setNavOpen(false)}/>{renderSidebar(true)}</>}
   <CaleAssistant/>
+  <CookieNotice/>
   <SiteFooter/>
  </div>;
 }

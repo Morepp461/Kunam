@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /account/
+Disallow: /admin
+Disallow: /admin/
+Disallow: /driver-panel/
+Disallow: /team-panel/
+Disallow: /fia-panel/
+Disallow: /main-event/
+Disallow: /shop
+Disallow: /paddock-access
+
+Sitemap: https://calerismasters.com/sitemap.xml

@@ -1,4 +1,4 @@
-export type ImageOptimizationPreset = "avatar" | "team-logo";
+export type ImageOptimizationPreset = "avatar" | "team-logo" | "circuit-layout" | "livery-logo";
 
 export type OptimizedImage = {
   file: File;
@@ -12,6 +12,8 @@ type PresetConfig = { maxDimension: number; targetBytes: number; hardLimitBytes:
 const PRESETS: Record<ImageOptimizationPreset, PresetConfig> = {
   avatar: { maxDimension: 1440, targetBytes: 420 * 1024, hardLimitBytes: 900 * 1024 },
   "team-logo": { maxDimension: 1200, targetBytes: 260 * 1024, hardLimitBytes: 650 * 1024 },
+  "circuit-layout": { maxDimension: 2400, targetBytes: 700 * 1024, hardLimitBytes: 1_500 * 1024 },
+  "livery-logo": { maxDimension: 1024, targetBytes: 72 * 1024, hardLimitBytes: 100 * 1024 },
 };
 const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 const MAX_SOURCE_PIXELS = 40_000_000;
@@ -52,9 +54,9 @@ function canvasToWebp(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
 }
 
 export async function optimizeImageToWebp(file: File, preset: ImageOptimizationPreset): Promise<OptimizedImage> {
-  const supportedTypes = ["image/png", "image/jpeg", "image/webp"];
+  const supportedTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
   const extension = file.name.split(".").pop()?.toLowerCase();
-  const supportedExtensions = ["png", "jpg", "jpeg", "webp"];
+  const supportedExtensions = ["png", "jpg", "jpeg", "webp", "gif"];
   if (!supportedTypes.includes(file.type) && !(file.type === "" && supportedExtensions.includes(extension ?? ""))) {
     throw new Error("Gunakan gambar PNG, JPG, atau WebP.");
   }
