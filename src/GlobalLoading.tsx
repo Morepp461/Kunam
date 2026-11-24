@@ -3,6 +3,8 @@ import CaleMascot from "./CaleMascot";
 import "./global-loading.css";
 
 const MESSAGE = "Cale sedang memproses...";
+const TYPE_INTERVAL_MS = 30;
+const RESTART_DELAY_MS = 300;
 
 export default function GlobalLoading() {
   const [typedMessage, setTypedMessage] = useState("");
@@ -20,7 +22,7 @@ export default function GlobalLoading() {
       setTypedMessage(MESSAGE.slice(0, cursor));
       if (cursor < MESSAGE.length) {
         cursor += 1;
-        timeoutId = window.setTimeout(typeNextCharacter, 68);
+        timeoutId = window.setTimeout(typeNextCharacter, TYPE_INTERVAL_MS);
         return;
       }
 
@@ -28,7 +30,7 @@ export default function GlobalLoading() {
         cursor = 0;
         setTypedMessage("");
         typeNextCharacter();
-      }, 900);
+      }, RESTART_DELAY_MS);
     };
 
     typeNextCharacter();
