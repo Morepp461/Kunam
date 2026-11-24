@@ -21,8 +21,10 @@ export default function CaleAssistant() {
     setOpen(false);
   }, [pathname]);
 
-  const message =
-    context === "onboarding"
+  const isManageUsers = pathname === "/admin/users";
+  const message = isManageUsers
+    ? "Halaman Admin untuk memantau akun, mengatur role dan tim member, serta menangani moderasi akun."
+    : context === "onboarding"
       ? "Saya akan menemani proses pengaturan akun dan menjelaskan setiap langkah."
       : context === "warning"
         ? "Periksa informasi dan ketentuan yang ditampilkan sebelum melanjutkan."
@@ -57,12 +59,15 @@ export default function CaleAssistant() {
               eager
             />
             <div className="cale-assistant__copy">
-              <strong>Halo, saya Cale.</strong>
+              <strong>{isManageUsers ? "Manage User" : "Halo, saya Cale."}</strong>
               <p>{message}</p>
-              <small>
-                Tampilan pakaian menyesuaikan konteks: formal untuk onboarding,
-                seragam FIA untuk peringatan, dan racing suit untuk aktivitas balap.
-              </small>
+              {isManageUsers && <ul className="cale-assistant__guide-list">
+                <li><b>Ringkasan akun:</b> total akun, profil terhubung, administrator, dan akun yang belum onboarding.</li>
+                <li><b>Pencarian & filter:</b> temukan akun lewat email, nama, Member ID, karakter, tim, atau status.</li>
+                <li><b>Kartu akun:</b> lihat identitas, role aktif, tim, status, karakter, lisensi, dan aktivitas login. Buka detail untuk data profil dan riwayat moderasi.</li>
+                <li><b>Role & Tim:</b> atur preferensi, role aktif, nama karakter, atau penempatan tim. Perubahan tim memerlukan alasan audit dan tetap mengikuti aturan kontrak.</li>
+                <li><b>Moderasi:</b> kirim peringatan, ban sementara/permanen, atau cabut ban. Semua tindakan tercatat dalam riwayat.</li>
+              </ul>}
             </div>
           </div>
         </section>
