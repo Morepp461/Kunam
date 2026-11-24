@@ -58,3 +58,11 @@ assert 'Panduan Cale' in TUTORIAL
 assert len(re.findall(r'\{ id: "', TUTORIAL)) == 7
 assert ".cale-tutorial-dialog" in TUTORIAL_CSS
 print("Cale onboarding tutorial checks passed: 7 account guidance steps, accessible dialog, per-user completion state.")
+
+ASSISTANT = (ROOT / "src" / "CaleAssistant.tsx").read_text(encoding="utf-8")
+assert "Tampilan pakaian menyesuaikan konteks" not in ASSISTANT
+assert 'pathname === "/admin/users"' in ASSISTANT
+for guide in ("Ringkasan akun:", "Pencarian & filter:", "Kartu akun:", "Role & Tim:", "Moderasi:"):
+    assert guide in ASSISTANT, f"Missing Manage User guidance: {guide}"
+assert "cale-assistant__guide-list" in ASSISTANT
+print("Cale Assistant page-purpose guidance checks passed: Manage User purpose, cards, role/team and moderation workflow.")
