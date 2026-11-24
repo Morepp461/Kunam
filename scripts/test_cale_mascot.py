@@ -66,3 +66,6 @@ for guide in ("Ringkasan akun:", "Pencarian & filter:", "Kartu akun:", "Role & T
     assert guide in ASSISTANT, f"Missing Manage User guidance: {guide}"
 assert "cale-assistant__guide-list" in ASSISTANT
 print("Cale Assistant page-purpose guidance checks passed: Manage User purpose, cards, role/team and moderation workflow.")
+
+GUIDE_CSS = (ROOT / "src" / "cale-mascot.css").read_text(encoding="utf-8")
+assert ".cale-assistant__guide-list" in GUIDE_CSS
