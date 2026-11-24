@@ -1600,3 +1600,40 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - Cale Assistant now provides page-purpose guidance on Manage User: account summary, search/filter, account-card details, Role & Team controls, moderation actions, and the high-level workflow. Removed the irrelevant wardrobe/outfit explanation from user-facing assistant copy.
 - Added regression assertions for the Manage User custom selects and Cale contextual guidance. No new dependency, database migration, Supabase data/function, or Vercel environment change.
 - QA and deployment status: pending CI and production verification.
+
+
+## Community Hub, Cale Assistant, and Edge Function reliability — 24 November 2026
+
+### Cale Assistant page-aware guidance
+- Replaced the Manage User-only explanation with route-aware page guidance for public pages, Community Hub, Main Event directories, Driver/Team/FIA panels, Admin modules, account settings, and public member/team profiles.
+- Each mapped page explains its purpose and the role of its main sections or controls; unknown nested routes receive a route-derived fallback rather than outfit/mascot metadata.
+- Removed the irrelevant outfit explanation from the user-facing assistant.
+- Added Main Event ranking, statistics, comparison, Driver Directory, and Team Directory guides, plus FIA License Engine guidance.
+- Source: src/CaleAssistant.tsx, src/cale/pageGuides.ts, src/cale-mascot.css.
+
+### Community Hub database fixes
+- Root cause of column reference "member_id" is ambiguous: PL/pgSQL local variables named member_id collided with unqualified table columns in Community Hub RPC queries.
+- Renamed local identifiers to v_member_id / v_team_id and qualified column references in:
+  - caleris_get_community_dashboard()
+  - caleris_generate_yearbook(uuid,text)
+  - caleris_cast_community_vote(uuid,uuid)
+- Yearbook testing exposed a separate invalid max(uuid) aggregation in caleris_get_season_community_data(uuid). Reworked the current Driver standings aggregation to select the latest non-null team snapshot from the latest round in a grouped subquery.
+- Added migrations:
+  - 20261124090000_community_member_id_ambiguity_fix.sql
+  - 20261124091000_community_season_snapshot_uuid_aggregate_fix.sql
+  - 20261124092000_community_season_snapshot_uuid_aggregate_fix_v2.sql
+- All three migrations have been applied to both caleris-masters-testing and caleris-masters-newgen. No member, wallet, race, or competition data was modified by the QA transactions.
+
+### Member Directory Edge Function audit
+- Testing logs contained one HTTP 500 for member-directory; the function log identified denied SELECT access on caleris_team_liveries and caleris_sponsorship_contracts.
+- Added column-level SELECT grants to service_role only for the exact livery and sponsorship fields used by the public team-profile endpoint. No public/anon grants were added and no contract amount/financial columns were exposed.
+- Verified the service-role queries against both databases after applying the migration.
+- The 24-hour Testing Edge Function status sample also contained two HTTP 400 responses from member-directory and race-engine-test-service; these are request-validation responses and were not treated as server crashes without request context.
+- No new runtime error entries appeared after the database grants were applied in the inspected log window. Edge Function source and deployment were unchanged.
+
+### QA status
+- Testing DB: caleris_get_community_dashboard() returned a valid dashboard object under an authenticated test persona.
+- Testing DB: Yearbook generation returned a JSON object inside a transaction that was rolled back.
+- Production and Testing: function definitions and required service-role column privileges verified.
+- CI for PR #343 is being run; do not mark release complete until the latest branch-head CI passes and the production deployment is READY.
+- Vercel environment variables were not read or modified.
