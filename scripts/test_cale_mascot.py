@@ -74,10 +74,10 @@ assert ".cale-assistant__guide-list" in GUIDE_CSS
 GUIDES = (ROOT / "src" / "cale" / "pageGuides.ts").read_text(encoding="utf-8")
 for route in (
     '"/community"', '"/admin/users"', '"/admin/license-engine"',
-    '"/fia-panel/event-control"', '"/team-panel/development"',
-    '"/driver-panel/development"', '"/main-event/transfer-market"',
+    '"/fia-panel/event-control"', '"/main-event/transfer-market"',
 ):
     assert route in GUIDES, f"Missing page-specific Cale guide route: {route}"
+assert '"development": guide("Development"' in GUIDES, "Missing shared Driver/Team Development page guide"
 for fragment in ("purpose:", "sections:", "resolveCalePageGuide", "panelGuides", "adminGuides"):
     assert fragment in GUIDES, f"Page guide resolver missing: {fragment}"
 assert "resolveCalePageGuide(pathname)" in ASSISTANT
