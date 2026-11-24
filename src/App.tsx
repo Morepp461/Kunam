@@ -38,6 +38,7 @@ import "./team-contracts.css";
 import "./admin-users.css";
 import "./caleris-controls.css";
 
+const PrivacyPolicy = lazy(() => import("./PrivacyPolicy"));
 const DashboardModule = lazy(() => import("./DashboardModule"));
 const ProfileModule = lazy(() => import("./ProfileModule"));
 const CommunityProgression = lazy(() => import("./CommunityProgression"));
@@ -221,7 +222,7 @@ function Application(){
   <Route path="/team-panel/*" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.team_panel)?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/appeal-room" element={session&&!needsPaddockAccess&&isAdmin?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/fia-panel/*" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<Stage5Panel session={session} isAdmin={isAdmin} fallback={<PanelPage/>}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/privacy-policy" element={<LegalBlankPage title="Kebijakan Privasi"/>}/>
+  <Route path="/privacy-policy" element={<PrivacyPolicy/>}/>
   <Route path="/terms-and-conditions" element={<LegalBlankPage title="Syarat & Ketentuan"/>}/>
   <Route path="/auth/callback" element={<AuthCallback/>}/>
   <Route path="/admin/test-personas" element={session&&!needsPaddockAccess&&isAdmin?<AdminTestPersonas/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
