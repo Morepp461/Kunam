@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { CarFront, Download, ImagePlus, Palette, Plus, RotateCcw, Save, Trash2, Upload } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { optimizeImageToWebp } from "./lib/imageOptimization";
 import { validateTeamLiveryDesign } from "./lib/team-livery";
 import { drawTeamLiveryDecal, TEAM_LIVERY_DECAL_CATALOG, type DecalSurface, type TeamLiveryDecal } from "./lib/team-livery-decals";
 import "./team-livery.css";
@@ -234,9 +235,11 @@ export default function TeamLivery({isAdmin=false}:{isAdmin?:boolean}){
   const upload=async(file?:File)=>{
     if(!file)return;
     if(!["image/png","image/jpeg","image/webp"].includes(file.type)){setError("Logo harus PNG, JPG, atau WebP.");return;}
-    if(file.size>100*1024){setError("Ukuran logo maksimal 100 KB.");return;}
-    const data=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Logo gagal dibaca."));reader.readAsDataURL(file);});
-    update({logoDataUrl:data});setError("");setNotice("Logo dimuat. Simpan livery untuk menyimpan perubahan.");
+    try{
+      const optimized=await optimizeImageToWebp(file,"livery-logo");
+      const data=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result));reader.onerror=()=>reject(new Error("Logo gagal dibaca."));reader.readAsDataURL(optimized.file);});
+      update({logoDataUrl:data});setError("");setNotice("Logo dikompres menjadi "+Math.round(optimized.compressedSize/1024)+" KB. Simpan livery untuk menyimpan perubahan.");
+    }catch(error){setError(error instanceof Error?error.message:"Logo gagal diproses.");}
   };
   const addDecal=()=>{
     if(design.decals.length>=50){setError("Maksimal 50 decal per livery.");return;}
