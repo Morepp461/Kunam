@@ -1637,3 +1637,15 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - Production and Testing: function definitions and required service-role column privileges verified.
 - CI for PR #343 is being run; do not mark release complete until the latest branch-head CI passes and the production deployment is READY.
 - Vercel environment variables were not read or modified.
+
+
+## RELEASE VERIFICATION — Cale, Community Hub, and Edge Functions — 24 November 2026
+
+- PR #343 merged to main: 7c1877cc6e21ed4cf85a16b96e7ca2a57219468c.
+- CI run #4780 passed on branch head c80f9c933126d1722a78637d28ac89b9528f4623: dependency security gate, TypeScript check, production build, unit/schema tests, browser smoke tests, Cale regression tests, all engine regression suites, Edge Function JWT/privacy tests, and Supabase schema parity guard.
+- Production Vercel deployment dpl_9KCzVb4p4qGTDcUcE3YwmYFeprpp is READY for main commit 7c1877cc6e21ed4cf85a16b96e7ca2a57219468c.
+- Production and Testing have the same canonical migration versions for the three Community Hub/member-directory migrations: 20261124090000, 20261124091000, and 20261124092000.
+- Dashboard RPC returned a valid JSON object under an authenticated Testing persona. Yearbook generation returned a JSON object in a transaction rolled back after QA. No QA records were committed.
+- Service-role read access for the member-directory endpoint is limited to the exact livery and sponsorship columns used by the endpoint.
+- No new Edge Function runtime errors were found in the inspected post-fix log window. No Vercel environment variables were read or modified.
+- Follow-up route coverage audit found the dedicated Team Driver Contracts and Authentication Callback pages; their Cale guides are being added in a small follow-up PR.
