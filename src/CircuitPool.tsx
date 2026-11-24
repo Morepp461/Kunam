@@ -2,6 +2,7 @@ import {useCallback,useEffect,useRef,useState} from "react";
 import type {FormEvent} from "react";
 import {X,RefreshCw,Pencil} from "lucide-react";
 import {supabase} from "./lib/supabase";
+import {optimizeImageToWebp} from "./lib/imageOptimization";
 import {CountryCodeSelect} from "./LocationSelectors";
 import {importCircuitGeoJsonDraft} from "./lib/race-engine/circuit-import";
 import type {CircuitGeoJsonImportDraft,CircuitGeoJsonSourceMetadata} from "./lib/race-engine/circuit-import";
@@ -56,23 +57,11 @@ async function waitForPreviewImage(image:HTMLImageElement){
 }
 async function convertAndUpload(file:File,previewImage:HTMLImageElement|null){
  if(!file.type.startsWith("image/"))throw new Error("Pilih file gambar yang valid.");
- if(file.size>15*1024*1024)throw new Error("Ukuran gambar sumber maksimal 15 MB.");
  if(!previewImage)throw new Error("Preview gambar belum siap. Tunggu sampai gambar tampil lalu simpan kembali.");
- // Reuse the exact image element already decoded for the visible preview. This avoids
- // decoding the same Android-selected file a second time through another Blob URL.
  await waitForPreviewImage(previewImage);
- const width=previewImage.naturalWidth,height=previewImage.naturalHeight;
- if(width>5000||height>5000)throw new Error("Resolusi gambar maksimal 5000 × 5000.");
- const canvas=document.createElement("canvas");
- canvas.width=width;canvas.height=height;
- const ctx=canvas.getContext("2d");
- if(!ctx)throw new Error("Konversi gambar tidak didukung browser.");
- ctx.drawImage(previewImage,0,0,width,height);
- const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(new Error("Konversi WEBP gagal.")),"image/webp",0.86));
- if(blob.type!=="image/webp")throw new Error("Browser tidak mendukung konversi WEBP. Gunakan browser yang lebih baru atau unggah gambar WEBP.");
- if(blob.size>4*1024*1024)throw new Error("Ukuran WEBP maksimal 4 MB.");
+ const optimized=await optimizeImageToWebp(file,"circuit-layout");
  const path=crypto.randomUUID()+".webp";
- const uploaded=await supabase!.storage.from("circuit-layouts").upload(path,blob,{contentType:"image/webp",upsert:false});
+ const uploaded=await supabase!.storage.from("circuit-layouts").upload(path,optimized.file,{contentType:"image/webp",upsert:false});
  if(uploaded.error)throw uploaded.error;
  return {path,url:supabase!.storage.from("circuit-layouts").getPublicUrl(path).data.publicUrl};
 }
