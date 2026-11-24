@@ -99,3 +99,10 @@ for fragment in (
     assert fragment in COMMUNITY_SQL, f"Community RPC ambiguity migration missing: {fragment}"
 assert "declare member_id uuid" not in COMMUNITY_SQL
 print("Page-aware Cale guidance and Community Hub SQL ambiguity regression checks passed.")
+
+for fragment in (
+    "grant select (team_id, livery_data)",
+    "grant select (sponsor_id, target_team_id, target_kind, status)",
+    "to service_role",
+):
+    assert fragment in COMMUNITY_SQL, f"Member Directory least-privilege grant missing: {fragment}"
