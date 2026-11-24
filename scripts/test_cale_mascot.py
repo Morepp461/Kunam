@@ -128,6 +128,6 @@ for route in (
 ):
     assert f'path="{route}"' in APP_ROUTES, f"Expected route missing from App: {route}"
     slug = route.split("/")[2]
-    assert f'"{slug}": guide(' in GUIDES or f'{slug}: guide(' in GUIDES, f"Missing Cale page guide for route: {route}"
+    assert f'"{slug}": guide(' in GUIDES or f'{slug}: guide(' in GUIDES or f'"{slug}": guides[' in GUIDES, f"Missing Cale page guide for route: {route}"
 assert '"/auth/callback": guide("Authentication Callback"' in GUIDES
 print("Cale page-guide route coverage passed for all concrete Driver, Team and FIA panel routes.")
