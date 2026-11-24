@@ -1,0 +1,105 @@
+.cale-loading{
+  position:fixed;
+  inset:0;
+  z-index:1050;
+  display:grid;
+  place-items:center;
+  min-height:100svh;
+  padding:24px;
+  overflow:hidden;
+  background:rgba(7,8,10,.88);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  color:#f4f3ef;
+}
+.cale-loading__content{
+  display:flex;
+  width:min(100%,380px);
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:15px;
+  text-align:center;
+}
+.cale-loading__mascot{
+  --cale-size:76px;
+  width:76px;
+  flex:0 0 auto;
+  margin:0 0 -3px;
+}
+.cale-loading__mascot .cale-mascot__art{
+  aspect-ratio:2/3;
+}
+.cale-loading__heartbeat{
+  display:block;
+  width:min(100%,340px);
+  height:auto;
+  overflow:visible;
+}
+.cale-loading__heartbeat-base,
+.cale-loading__heartbeat-trace{
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  stroke-width:4.5;
+}
+.cale-loading__heartbeat-base{
+  stroke:rgba(145,148,151,.32);
+}
+.cale-loading__heartbeat-trace{
+  stroke:#f1e900;
+  filter:drop-shadow(0 0 2px rgba(241,233,0,.16));
+  stroke-dasharray:25 75;
+  stroke-dashoffset:100;
+  animation:cale-heartbeat-trace 2.15s linear infinite;
+}
+.cale-loading__message{
+  display:flex;
+  min-height:25px;
+  align-items:center;
+  justify-content:center;
+  gap:2px;
+  margin:0;
+  color:#f4f3ef;
+  font-family:Inter,Arial,sans-serif;
+  font-size:clamp(13px,3.5vw,15px);
+  font-weight:500;
+  letter-spacing:.015em;
+}
+.cale-loading__cursor{
+  display:inline-block;
+  width:2px;
+  height:1.05em;
+  margin-left:2px;
+  background:#f1e900;
+  animation:cale-loading-cursor .8s steps(2,end) infinite;
+}
+.cale-loading__sr-only{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+@keyframes cale-heartbeat-trace{
+  from{stroke-dashoffset:100}
+  to{stroke-dashoffset:0}
+}
+@keyframes cale-loading-cursor{
+  0%,49%{opacity:1}
+  50%,100%{opacity:0}
+}
+@media(max-width:560px){
+  .cale-loading__content{gap:13px}
+  .cale-loading__mascot{--cale-size:68px;width:68px}
+  .cale-loading__heartbeat{width:min(100%,310px)}
+}
+@media(prefers-reduced-motion:reduce){
+  .cale-loading__heartbeat-trace,
+  .cale-loading__cursor{animation:none}
+  .cale-loading__heartbeat-trace{stroke-dasharray:none;stroke-dashoffset:0}
+  .cale-loading__cursor{opacity:0}
+}

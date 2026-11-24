@@ -21,7 +21,8 @@ describe("application route loading boundary", () => {
 
   it("wraps the router in an accessible Suspense fallback", () => {
     expect(source).toContain('<Suspense fallback={');
-    expect(source).toContain('role="status" aria-live="polite"');
+    const loadingComponent = readFileSync(resolve(process.cwd(), "src/GlobalLoading.tsx"), "utf8");
+    expect(loadingComponent).toContain('role="status" aria-live="polite"');
     expect(source).toContain('</Routes></Suspense>');
   });
 
