@@ -61,11 +61,55 @@ print("Cale onboarding tutorial checks passed: 7 account guidance steps, accessi
 
 ASSISTANT = (ROOT / "src" / "CaleAssistant.tsx").read_text(encoding="utf-8")
 assert "Tampilan pakaian menyesuaikan konteks" not in ASSISTANT
-assert 'pathname === "/admin/users"' in ASSISTANT
 for guide in ("Ringkasan akun:", "Pencarian & filter:", "Kartu akun:", "Role & Tim:", "Moderasi:"):
-    assert guide in ASSISTANT, f"Missing Manage User guidance: {guide}"
+    assert guide in (ROOT / "src" / "cale" / "pageGuides.ts").read_text(encoding="utf-8"), f"Missing Manage User guidance: {guide}"
 assert "cale-assistant__guide-list" in ASSISTANT
 print("Cale Assistant page-purpose guidance checks passed: Manage User purpose, cards, role/team and moderation workflow.")
 
 GUIDE_CSS = (ROOT / "src" / "cale-mascot.css").read_text(encoding="utf-8")
 assert ".cale-assistant__guide-list" in GUIDE_CSS
+
+
+# Page-aware Cale guide and Community Hub RPC ambiguity regression.
+GUIDES = (ROOT / "src" / "cale" / "pageGuides.ts").read_text(encoding="utf-8")
+for route in (
+    '"/community"', '"/admin/users"', '"/admin/license-engine"',
+    '"/fia-panel/event-control"', '"/main-event/transfer-market"',
+):
+    assert route in GUIDES, f"Missing page-specific Cale guide route: {route}"
+assert 'development: guide("Development"' in GUIDES, "Missing shared Driver/Team Development page guide"
+for fragment in ("purpose:", "sections:", "resolveCalePageGuide", "panelGuides", "adminGuides"):
+    assert fragment in GUIDES, f"Page guide resolver missing: {fragment}"
+assert "resolveCalePageGuide(pathname)" in ASSISTANT
+assert "pageGuide.purpose" in ASSISTANT and "pageGuide.sections.map" in ASSISTANT
+assert "Tampilan pakaian menyesuaikan konteks" not in ASSISTANT
+
+COMMUNITY_FIX = next((ROOT / "supabase" / "migrations").glob("*_community_member_id_ambiguity_fix.sql"))
+COMMUNITY_SQL = COMMUNITY_FIX.read_text(encoding="utf-8")
+for fragment in (
+    "function public.caleris_get_community_dashboard()",
+    "function public.caleris_generate_yearbook(p_season uuid, p_title text",
+    "function public.caleris_cast_community_vote(p_poll_id uuid, p_option_id uuid)",
+    "v_member_id",
+    "e.member_id = v_member_id",
+    "fs.member_id = v_member_id",
+    "mb.member_id = v_member_id",
+):
+    assert fragment in COMMUNITY_SQL, f"Community RPC ambiguity migration missing: {fragment}"
+assert "declare member_id uuid" not in COMMUNITY_SQL
+print("Page-aware Cale guidance and Community Hub SQL ambiguity regression checks passed.")
+
+for fragment in (
+    "grant select (team_id, livery_data)",
+    "grant select (sponsor_id, target_team_id, target_kind, status)",
+    "to service_role",
+):
+    assert fragment in COMMUNITY_SQL, f"Member Directory least-privilege grant missing: {fragment}"
+
+SEASON_SNAPSHOT_FIX = next((ROOT / "supabase" / "migrations").glob("*_community_season_snapshot_uuid_aggregate_fix_v2.sql"))
+SEASON_SNAPSHOT_SQL = SEASON_SNAPSHOT_FIX.read_text(encoding="utf-8")
+assert "function public.caleris_get_season_community_data(p_season uuid)" in SEASON_SNAPSHOT_SQL
+assert "array_agg(rs.team_id_snapshot order by r.round_number desc)" in SEASON_SNAPSHOT_SQL
+assert "select d.id as season_division_id" in SEASON_SNAPSHOT_SQL
+assert "max(rs.team_id_snapshot)" not in SEASON_SNAPSHOT_SQL
+print("Community season snapshot UUID aggregation regression checks passed.")

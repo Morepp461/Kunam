@@ -3,11 +3,13 @@ import { X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import CaleMascot from "./CaleMascot";
 import { resolveCaleContext } from "./cale/manifest";
+import { resolveCalePageGuide } from "./cale/pageGuides";
 
 export default function CaleAssistant() {
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
   const context = useMemo(() => resolveCaleContext(pathname), [pathname]);
+  const pageGuide = useMemo(() => resolveCalePageGuide(pathname), [pathname]);
   const designId =
     context === "onboarding"
       ? "welcome_wave"
@@ -15,27 +17,16 @@ export default function CaleAssistant() {
         ? "reaction_warning"
         : context === "race"
           ? "motorsport_ready"
-          : "idle_default";
+          : "tutorial_explain";
 
   useEffect(() => {
     setOpen(false);
   }, [pathname]);
 
-  const isManageUsers = pathname === "/admin/users";
-  const message = isManageUsers
-    ? "Halaman Admin untuk memantau akun, mengatur role dan tim member, serta menangani moderasi akun."
-    : context === "onboarding"
-      ? "Saya akan menemani proses pengaturan akun dan menjelaskan setiap langkah."
-      : context === "warning"
-        ? "Periksa informasi dan ketentuan yang ditampilkan sebelum melanjutkan."
-        : context === "race"
-          ? "Fokus pada persiapan, jadwal, dan informasi kompetisi."
-          : "Saya siap membantu navigasi di CALERIS MASTERS.";
-
   return (
     <aside className="cale-assistant" aria-label="Asisten Cale">
       {open && (
-        <section className="cale-assistant__panel" aria-label="Panel asisten Cale">
+        <section className="cale-assistant__panel" aria-label={`Panduan halaman ${pageGuide.title}`}>
           <header className="cale-assistant__header">
             <div>
               <span className="cale-assistant__eyebrow">CALERIS MASTERS</span>
@@ -59,15 +50,11 @@ export default function CaleAssistant() {
               eager
             />
             <div className="cale-assistant__copy">
-              <strong>{isManageUsers ? "Manage User" : "Halo, saya Cale."}</strong>
-              <p>{message}</p>
-              {isManageUsers && <ul className="cale-assistant__guide-list">
-                <li><b>Ringkasan akun:</b> total akun, profil terhubung, administrator, dan akun yang belum onboarding.</li>
-                <li><b>Pencarian & filter:</b> temukan akun lewat email, nama, Member ID, karakter, tim, atau status.</li>
-                <li><b>Kartu akun:</b> lihat identitas, role aktif, tim, status, karakter, lisensi, dan aktivitas login. Buka detail untuk data profil dan riwayat moderasi.</li>
-                <li><b>Role & Tim:</b> atur preferensi, role aktif, nama karakter, atau penempatan tim. Perubahan tim memerlukan alasan audit dan tetap mengikuti aturan kontrak.</li>
-                <li><b>Moderasi:</b> kirim peringatan, ban sementara/permanen, atau cabut ban. Semua tindakan tercatat dalam riwayat.</li>
-              </ul>}
+              <strong>{pageGuide.title}</strong>
+              <p>{pageGuide.purpose}</p>
+              <ul className="cale-assistant__guide-list">
+                {pageGuide.sections.map((section) => <li key={section}>{section}</li>)}
+              </ul>
             </div>
           </div>
         </section>

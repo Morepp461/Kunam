@@ -1293,3 +1293,12 @@ This confirms the code and automated regression coverage, not the remaining manu
 
 - PR #340 merged to `main` at `4cfc6da4dcc33ffafb19c71dbe704da27bf0f757` after all CI checks passed. The route-level `lazy()` imports and accessible `Suspense` fallback are now part of the main branch.
 - Uses existing React 19 APIs only; no dependency or database migration changes.
+
+
+## Cale Assistant and Community Hub reliability
+
+- Cale Assistant provides route-aware guidance across public pages, Community Hub, Main Event, Driver/Team/FIA panels, Admin modules, account settings, and public profiles. Guides explain each page's purpose and its main sections or workflows.
+- Community Hub dashboard, yearbook, and voting RPCs use unambiguous member identifiers and qualified SQL column references.
+- Community season snapshots select the latest team identity snapshot without attempting unsupported UUID aggregation.
+- The member-directory Edge Function's public team-profile path has least-privilege, column-level service_role reads for team livery and active sponsor lookup. No public or anonymous access to those underlying tables is granted.
+- Database changes are tracked in timestamped migrations and applied to both Production and Testing.
