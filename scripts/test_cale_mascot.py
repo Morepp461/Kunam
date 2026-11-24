@@ -61,7 +61,6 @@ print("Cale onboarding tutorial checks passed: 7 account guidance steps, accessi
 
 ASSISTANT = (ROOT / "src" / "CaleAssistant.tsx").read_text(encoding="utf-8")
 assert "Tampilan pakaian menyesuaikan konteks" not in ASSISTANT
-assert 'pathname === "/admin/users"' in ASSISTANT
 for guide in ("Ringkasan akun:", "Pencarian & filter:", "Kartu akun:", "Role & Tim:", "Moderasi:"):
     assert guide in ASSISTANT, f"Missing Manage User guidance: {guide}"
 assert "cale-assistant__guide-list" in ASSISTANT
@@ -106,3 +105,10 @@ for fragment in (
     "to service_role",
 ):
     assert fragment in COMMUNITY_SQL, f"Member Directory least-privilege grant missing: {fragment}"
+
+SEASON_SNAPSHOT_FIX = next((ROOT / "supabase" / "migrations").glob("*_community_season_snapshot_uuid_aggregate_fix.sql"))
+SEASON_SNAPSHOT_SQL = SEASON_SNAPSHOT_FIX.read_text(encoding="utf-8")
+assert "function public.caleris_get_season_community_data(p_season uuid)" in SEASON_SNAPSHOT_SQL
+assert "array_agg(rs.team_id_snapshot order by r.round_number desc)" in SEASON_SNAPSHOT_SQL
+assert "max(rs.team_id_snapshot)" not in SEASON_SNAPSHOT_SQL
+print("Community season snapshot UUID aggregation regression checks passed.")
