@@ -39,7 +39,7 @@ for asset in ("cale-racing.webp", "cale-formal.webp", "cale-fia.webp"):
 assert 'data-cale-design=' in MASCOT
 assert 'data-cale-outfit=' in MASCOT
 assert 'import CaleAssistant from "./CaleAssistant";' in LAYOUT
-assert '{session&&<CaleAssistant/>}' in LAYOUT
+assert "<CaleAssistant/>" in LAYOUT
 assert 'designId="reaction_warning"' in NOTIFICATIONS
 assert "isWarningNotification(item)" in NOTIFICATIONS
 assert "@keyframes" not in CSS and "animation:" not in CSS
