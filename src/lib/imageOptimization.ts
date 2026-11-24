@@ -54,9 +54,9 @@ function canvasToWebp(canvas: HTMLCanvasElement, quality: number): Promise<Blob>
 }
 
 export async function optimizeImageToWebp(file: File, preset: ImageOptimizationPreset): Promise<OptimizedImage> {
-  const supportedTypes = ["image/png", "image/jpeg", "image/webp"];
+  const supportedTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
   const extension = file.name.split(".").pop()?.toLowerCase();
-  const supportedExtensions = ["png", "jpg", "jpeg", "webp"];
+  const supportedExtensions = ["png", "jpg", "jpeg", "webp", "gif"];
   if (!supportedTypes.includes(file.type) && !(file.type === "" && supportedExtensions.includes(extension ?? ""))) {
     throw new Error("Gunakan gambar PNG, JPG, atau WebP.");
   }
