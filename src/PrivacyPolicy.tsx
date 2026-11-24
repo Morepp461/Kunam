@@ -1,4 +1,4 @@
-import {ArrowUpRight,ShieldCheck,Database,Cookie,UserRound,Globe,Lock,Mail,CalendarDays} from "lucide-react";
+import {ShieldCheck,Lock,Mail,CalendarDays} from "lucide-react";
 import "./privacy-policy.css";
 
 const sections=[
