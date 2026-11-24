@@ -117,7 +117,13 @@ def main():
     for director in ["Muhammad Ovella", "Agung Pradana", "Muhammad Alfarel", "Liam Amir", "Suhanda Arbawi"]:
         assert director in layout_module
     assert 'footer-directors nav' in styles
-    assert 'legal-blank-page' in app
+    assert 'path="/privacy-policy" element={<PrivacyPolicy/>}' in app
+    assert 'path="/terms-and-conditions" element={<TermsAndConditions/>}' in app
+    privacy_page = (ROOT / "src/PrivacyPolicy.tsx").read_text(encoding="utf-8")
+    terms_page = (ROOT / "src/TermsAndConditions.tsx").read_text(encoding="utf-8")
+    assert "Kebijakan Privasi" in privacy_page and "Data yang Kami Kumpulkan" in privacy_page
+    assert "Syarat & Ketentuan" in terms_page and "Persetujuan dan Ruang Lingkup" in terms_page
+    assert 'legal-blank-page' not in app
     assert "site_admins" in app and "site_content" in app and "site_settings" in app
     assert "if(term.length<1)" in app
     assert "query.trim().length>=1" in app
