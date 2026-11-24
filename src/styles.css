@@ -645,3 +645,14 @@ body.app-backgrounded .scene-depth{backdrop-filter:none;-webkit-backdrop-filter:
     animation:cinematicCamera 18s cubic-bezier(.42,0,.58,1) infinite!important;
   }
 }
+
+
+/* Shared readable backdrop for every page except the sign-in landing page. */
+body.readable-site-backdrop .scene:after{
+ background:linear-gradient(90deg,rgba(3,5,7,.62),rgba(3,5,7,.34) 65%,rgba(3,5,7,.48)),linear-gradient(0deg,rgba(3,5,7,.58),transparent 48%);
+ backdrop-filter:blur(8px);
+ -webkit-backdrop-filter:blur(8px);
+}
+@media(prefers-reduced-transparency:reduce){
+ body.readable-site-backdrop .scene:after{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(3,5,7,.68)}
+}
