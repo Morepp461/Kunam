@@ -1,10 +1,10 @@
-import {useCallback,useEffect,useMemo,useState} from "react";
+import {lazy,Suspense,useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
 import {AlertTriangle,CheckCircle2,Flag,Plus,RefreshCw,Save,ShieldCheck,Timer,Trash2,Trophy} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
-import RaceOCR from "./RaceOCR";
+const RaceOCR = lazy(() => import("./RaceOCR"));
 
 type Round={id:string;round_number:number;title:string;season_division_id:string;status:string;session_type:"race"|"sprint";checkin_closes_at:string;circuit_name:string|null;circuit_country_code:string|null;season_division?:{division_name:string;license_seasons?:{title:string}}};
 type Member={id:string;public_member_id:string;character_name:string|null;role:string|null;team_id:string|null;nationality:string|null};
@@ -92,7 +92,7 @@ export default function RaceControl(){
   </section>
   {round&&<form onSubmit={submit} className="race-submit-form">
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">02 · CLASSIFICATION</span><h2>Driver race result</h2></div><Trophy size={21}/></div>
-    <p className="page-description">Grid P1 otomatis menjadi Pole Position. Masukkan race time, gap, status, fastest lap, dan semua stint ban.</p><RaceOCR entries={entries} drivers={participants} teams={teams} onDraft={setEntries}/>
+    <p className="page-description">Grid P1 otomatis menjadi Pole Position. Masukkan race time, gap, status, fastest lap, dan semua stint ban.</p><Suspense fallback={<div className="race-control-hint" role="status">Memuat modul OCR…</div>}><RaceOCR entries={entries} drivers={participants} teams={teams} onDraft={setEntries}/></Suspense>
     <div className="race-input-table-wrap"><table className="race-input-table race-complete-table"><thead><tr><th>Driver / Team</th><th>No.</th><th>Country / Flag</th><th>Grid</th><th>Status</th><th>Pos</th><th>Time / Laps Behind</th><th>Gap</th><th>Fastest Lap</th><th>Tyre Stints</th></tr></thead><tbody>
      {entries.map(x=><tr key={x.memberId}>
       <td><select aria-label={`Pilih Driver ${x.driverName}`} value={x.memberId} onChange={e=>{const target=participants.find(m=>m.id===e.target.value);if(!target||entries.some(y=>y.memberId===target.id&&y.memberId!==x.memberId))return;const team=teams.find(t=>t.id===target.team_id);setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,memberId:target.id,driverName:target.character_name||"Driver",teamName:team?.name||"Unassigned",country:target.nationality||y.country}:y))}}>{participants.map(m=><option key={m.id} value={m.id}>{m.character_name||"Driver"} · {teams.find(t=>t.id===m.team_id)?.name||"Unassigned"}</option>)}</select><small><MemberProfileLink memberId={participants.find(m=>m.id===x.memberId)?.public_member_id}>{x.driverName}</MemberProfileLink> · <TeamProfileLink teamId={participants.find(m=>m.id===x.memberId)?.team_id||undefined}>{x.teamName}</TeamProfileLink></small></td>
