@@ -246,9 +246,6 @@ function SuspendedAccountPage({session}:{session:Session}){
   <button className="action" onClick={()=>void supabase?.auth.signOut({scope:"local"})}>Keluar</button>
  </section></main>;
 }
-function LegalBlankPage({title}:{title:string}){
- return <main className="legal-blank-page" aria-label={title}/>;
-}
 function Home(){
  const {toast,loading}=useUI();const [invite,setInvite]=useState("");
  useEffect(()=>{if(!supabase)return;supabase.from("site_settings").select("value").eq("key","community_invite_url").maybeSingle().then(({data,error})=>{if(error)toast("error","Link komunitas gagal dimuat",error.message);else if(typeof data?.value==="string")setInvite(data.value)})},[toast]);
