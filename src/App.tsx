@@ -1,4 +1,4 @@
-import {createContext,useCallback,useContext,useEffect,useMemo,useRef,useState,Fragment} from "react";
+import {createContext,lazy,Suspense,useCallback,useContext,useEffect,useMemo,useRef,useState,Fragment} from "react";
 import {createPortal} from "react-dom";
 import type {ChangeEvent,PointerEvent as ReactPointerEvent,ReactNode} from "react";
 import {Link,Navigate,Route,Routes,useLocation,useNavigate,useParams} from "react-router-dom";
@@ -9,56 +9,13 @@ import "./workspace.css";
 import "./stage5-panel.css";
 import PanelPage,{panelGroups} from "./PanelPages";
 import MainLayout from "./MainLayout";
-import DashboardModule from "./DashboardModule";
-import ProfileModule from "./ProfileModule";
-import CommunityProgression from "./CommunityProgression";
-import PublicMemberId from "./PublicMemberId";
-import Stage5Panel from "./Stage5Panel";
-import AdminConfiguration from "./AdminConfiguration";
-import AdminLicenseEngine from "./AdminLicenseEngine";
-import AdminPrizepool from "./AdminPrizepool";
-import AdminEconomyEngine from "./AdminEconomyEngine";
-import AdminAdjustmentCenter from "./AdminAdjustmentCenter";
-import AdminQuestEngine from "./AdminQuestEngine";
-import QuestPage from "./QuestPage";
-import AdminPricingCenter from "./AdminPricingCenter";
-import AdminOperations from "./AdminOperations";
-import MemberRaceCheckIn from "./MemberRaceCheckIn";
-import TeamAffiliate from "./TeamAffiliate";
-import TeamEngineMarket from "./TeamEngineMarket";
-import DriverTransferMarket from "./DriverTransferMarket";
-import TeamTakeoverMarket from "./TeamTakeoverMarket";
-import BrandEcosystem from "./BrandEcosystem";
-import BrandEcosystemAdmin from "./BrandEcosystemAdmin";
-import SponsorshipCentre from "./SponsorshipCentre";
-import DevelopmentTokens from "./DevelopmentTokens";
-import CalerisIntelligence from "./CalerisIntelligence";
-import DriverTraining from "./DriverTraining";
-import ShopPage from "./ShopPage";
-import AdminTestPersonas from "./AdminTestPersonas";
-import AdminUsers from "./AdminUsers";
-import AdminTeamInactivity from "./AdminTeamInactivity";
-import PublicTeamProfile from "./PublicTeamProfile";
+
 import { TeamProfileLink } from "./EntityProfileLink";
-import FIAEventControlCenter from "./FIAEventControlCenter";
-import AdminSeasonCalendar from "./AdminSeasonCalendar";
-import RaceControl from "./RaceControl";
-import LocationSelectors from "./LocationSelectors";
-import TeamDriverContracts from "./TeamDriverContracts";
-import {CircuitPool,CircuitPoolInput} from "./CircuitPool";
+
 import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 
-import JobSearch from "./JobSearch";
-import PaddockRoleDetails from "./PaddockRoleDetails";
 import { optimizeImageToWebp } from "./lib/imageOptimization";
-import AdminRegisteredMembers from "./AdminRegisteredMembers";
-import DeveloperAPI from "./DeveloperAPI";
-import TeamDriverApplications from "./TeamDriverApplications";
-import LiveRace from "./LiveRace";
-import TeamLivery from "./TeamLivery";
-import CaleAccountTutorial from "./CaleAccountTutorial";
 
-import CashLoanCentre from "./CashLoanCentre";
 import "./license-engine.css";
 import "./admin-configuration.css";
 import "./economy-engine.css";
@@ -80,6 +37,53 @@ import "./season-calendar.css";
 import "./team-contracts.css";
 import "./admin-users.css";
 import "./caleris-controls.css";
+
+const DashboardModule = lazy(() => import("./DashboardModule"));
+const ProfileModule = lazy(() => import("./ProfileModule"));
+const CommunityProgression = lazy(() => import("./CommunityProgression"));
+const PublicMemberId = lazy(() => import("./PublicMemberId"));
+const Stage5Panel = lazy(() => import("./Stage5Panel"));
+const AdminConfiguration = lazy(() => import("./AdminConfiguration"));
+const AdminLicenseEngine = lazy(() => import("./AdminLicenseEngine"));
+const AdminPrizepool = lazy(() => import("./AdminPrizepool"));
+const AdminEconomyEngine = lazy(() => import("./AdminEconomyEngine"));
+const AdminAdjustmentCenter = lazy(() => import("./AdminAdjustmentCenter"));
+const AdminQuestEngine = lazy(() => import("./AdminQuestEngine"));
+const QuestPage = lazy(() => import("./QuestPage"));
+const AdminPricingCenter = lazy(() => import("./AdminPricingCenter"));
+const AdminOperations = lazy(() => import("./AdminOperations"));
+const MemberRaceCheckIn = lazy(() => import("./MemberRaceCheckIn"));
+const TeamAffiliate = lazy(() => import("./TeamAffiliate"));
+const TeamEngineMarket = lazy(() => import("./TeamEngineMarket"));
+const DriverTransferMarket = lazy(() => import("./DriverTransferMarket"));
+const TeamTakeoverMarket = lazy(() => import("./TeamTakeoverMarket"));
+const BrandEcosystem = lazy(() => import("./BrandEcosystem"));
+const BrandEcosystemAdmin = lazy(() => import("./BrandEcosystemAdmin"));
+const SponsorshipCentre = lazy(() => import("./SponsorshipCentre"));
+const DevelopmentTokens = lazy(() => import("./DevelopmentTokens"));
+const CalerisIntelligence = lazy(() => import("./CalerisIntelligence"));
+const DriverTraining = lazy(() => import("./DriverTraining"));
+const ShopPage = lazy(() => import("./ShopPage"));
+const AdminTestPersonas = lazy(() => import("./AdminTestPersonas"));
+const AdminUsers = lazy(() => import("./AdminUsers"));
+const AdminTeamInactivity = lazy(() => import("./AdminTeamInactivity"));
+const PublicTeamProfile = lazy(() => import("./PublicTeamProfile"));
+const FIAEventControlCenter = lazy(() => import("./FIAEventControlCenter"));
+const AdminSeasonCalendar = lazy(() => import("./AdminSeasonCalendar"));
+const RaceControl = lazy(() => import("./RaceControl"));
+const LocationSelectors = lazy(() => import("./LocationSelectors"));
+const TeamDriverContracts = lazy(() => import("./TeamDriverContracts"));
+const JobSearch = lazy(() => import("./JobSearch"));
+const PaddockRoleDetails = lazy(() => import("./PaddockRoleDetails"));
+const AdminRegisteredMembers = lazy(() => import("./AdminRegisteredMembers"));
+const DeveloperAPI = lazy(() => import("./DeveloperAPI"));
+const TeamDriverApplications = lazy(() => import("./TeamDriverApplications"));
+const LiveRace = lazy(() => import("./LiveRace"));
+const TeamLivery = lazy(() => import("./TeamLivery"));
+const CaleAccountTutorial = lazy(() => import("./CaleAccountTutorial"));
+const CashLoanCentre = lazy(() => import("./CashLoanCentre"));
+const CircuitPool = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPool })));
+const CircuitPoolInput = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPoolInput })));
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
@@ -155,7 +159,7 @@ function Application(){
  if(session&&!profileReady)return <div className="auth-loading"><LoaderCircle className="spin"/><span>Memuat akses paddock...</span></div>;
  const needsPaddockAccess=Boolean(session&&!isAdmin&&profile?.onboarding_completed!==true);
  if(session&&profile?.account_status==="suspended")return <SuspendedAccountPage session={session}/>;
- return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} memberId={profile?.member_id??null} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin} panelAccess={panelAccess}/>} toast={toast} loading={loading}><CalerisSelectOverlay/><AnalyticsTracker/><Routes>
+ return <MainLayout theme={theme} setTheme={setTheme} session={session} profile={profile} memberId={profile?.member_id??null} isAdmin={isAdmin} isPrimaryOwner={isPrimaryOwner} panelAccess={panelAccess} globalSearch={<GlobalSearch isAdmin={isAdmin} panelAccess={panelAccess}/>} toast={toast} loading={loading}><CalerisSelectOverlay/><AnalyticsTracker/><Suspense fallback={<div className="auth-loading" role="status" aria-live="polite"><LoaderCircle className="spin"/><span>Memuat halaman...</span></div>}><Routes>
   <Route path="/" element={session?<Navigate to={needsPaddockAccess?"/paddock-access":"/dashboard"} replace/>:<Home/>}/>
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
@@ -227,7 +231,7 @@ function Application(){
   <Route path="/admin/registered-members" element={session&&!needsPaddockAccess&&isAdmin?<AdminRegisteredMembers/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin" element={session&&!needsPaddockAccess&&isAdmin?<Admin session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="*" element={<NotFound/>}/>
- </Routes></MainLayout>;
+ </Routes></Suspense></MainLayout>;
 }
 function SuspendedAccountPage({session}:{session:Session}){
  const [action,setAction]=useState<{reason:string;expires_at:string|null;action_type:string}|null>(null);
