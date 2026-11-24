@@ -291,4 +291,10 @@ begin
 end;
 $function$;
 
+-- The member-directory Edge Function uses its server-only service_role client.
+-- Grant only the columns used for public team identity; do not expose contract values.
+grant select (team_id, livery_data) on table public.caleris_team_liveries to service_role;
+grant select (sponsor_id, target_team_id, target_kind, status)
+  on table public.caleris_sponsorship_contracts to service_role;
+
 commit;
