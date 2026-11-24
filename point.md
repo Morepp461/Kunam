@@ -1576,4 +1576,18 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - Wrapped the route tree in an accessible `Suspense` loading fallback. Shared shell, authentication bootstrap, global search, and analytics tracker remain eager; route paths, permission checks, props, and business workflows are unchanged.
 - Added `tests/unit/app-route-lazy-loading.test.ts` to guard lazy boundaries and fallback behavior.
 - Dependency review: uses the existing React 19 `lazy` / `Suspense` APIs; no package or lockfile change. No database migration, Edge Function, wallet, or production-data change.
-- **QA gate:** run the complete Caleris CI and inspect the production bundle output before merge. Do not claim a specific bundle-size reduction until the build reports it. This branch is not merged or deployed at this checkpoint.
+- **Release:** PR #340 merged to `main` as `4cfc6da4dcc33ffafb19c71dbe704da27bf0f757` after all Caleris CI checks passed, including type-check, production build, unit/schema tests, browser smoke, dropdown/navigation regression, Cale regression, and remaining suite checks. Vercel Production deployment was triggered from this commit; verify READY before calling it live. No measured bundle-size percentage is claimed.
+
+
+## Cale 57-pose artwork source received — 24 November 2026
+
+- Received the user-provided `Cale Fiks.zip` and inspected both nested archives directly.
+- Verified **57 unique pose artworks**, each supplied as a matching PNG and WebP pair: 114 image files total. All are 1024×1024 RGBA with transparent alpha; both formats are present for every pose.
+- The archive contains 8 specifically named racing-suit poses and 49 formal-suit poses across the batch sheets. The 49+8 split matches the existing 57-state manifest categories (49 formal states and 8 motorsport states).
+- The supplied source files are valid and no artwork regeneration is needed. However, the 114 binary files have not yet been committed to `public/assets/cale/poses/` or connected to `CaleMascot`; the deployed app still uses its three existing wardrobe master assets. Do not mark 57-pose runtime integration complete until the binary assets are transferred into the repository, mapped to the 57 IDs, and verified in Production.
+- This environment can inspect the uploaded ZIP but the available GitHub repository write action accepts UTF-8 text, not the local binary attachment. No false claim of repository upload or live integration is made.
+
+## CRM scope deferral — 24 November 2026
+
+- Per the project owner's latest instruction, Admin Workflow CRM is explicitly deferred and excluded from the active completion scope until later notice.
+- Do not invent CRM statuses, task owners, transitions, or permissions. Existing Admin-only Operations Hub remains unchanged.
