@@ -5,7 +5,27 @@ import { describe, expect, it } from "vitest";
 const source = readFileSync(resolve(process.cwd(), "src/App.tsx"), "utf8");
 
 describe("application route loading boundary", () => {
-  it("uses React lazy imports for large route modules", () => {
+  it("loads large route modules only when their routes are visited", () => {
+    for (const declaration of [
+      'const DashboardModule = lazy(() => import("./DashboardModule"));',
+      'const CommunityProgression = lazy(() => import("./CommunityProgression"));',
+      'const AdminEconomyEngine = lazy(() => import("./AdminEconomyEngine"));',
+      'const RaceControl = lazy(() => import("./RaceControl"));',
+      'const LiveRace = lazy(() => import("./LiveRace"));',
+      'const TeamLivery = lazy(() => import("./TeamLivery"));',
+      'const PublicTeamProfile = lazy(() => import("./PublicTeamProfile"));',
+    ]) {
+      expect(source).toContain(declaration);
+    }
+  });
+
+  it("wraps the router in an accessible Suspense fallback", () => {
+    expect(source).toContain('<Suspense fallback={');
+    expect(source).toContain('role="status" aria-live="polite"');
+    expect(source).toContain('</Routes></Suspense>');
+  });
+
+  it("does not keep split route modules as eager static imports", () => {
     for (const component of [
       "DashboardModule",
       "CommunityProgression",
@@ -15,16 +35,7 @@ describe("application route loading boundary", () => {
       "TeamLivery",
       "PublicTeamProfile",
     ]) {
-      expect(source).toMatch(new RegExp(`const ${component} = lazy\\(\\(\\) => import\\(`));
+      expect(source).not.toContain(`import ${component} from`);
     }
-  });
-
-  it("keeps route-level Suspense around the router", () => {
-    expect(source).toMatch(/<Suspense fallback=\{<div className="auth-loading"/);
-    expect(source).toMatch(/<Suspense[\\s\\S]*?<Routes>[\\s\\S]*?<\\/Routes><\\/Suspense>/);
-  });
-
-  it("does not eagerly import the route modules it splits", () => {
-    expect(source).not.toMatch(/import (?:DashboardModule|CommunityProgression|AdminEconomyEngine|RaceControl|LiveRace|TeamLivery|PublicTeamProfile) from/);
   });
 });
