@@ -30,7 +30,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check browser-facing Caleris Edge Functions
-        run: deno check supabase/functions/caleris-data-export/index.ts supabase/functions/caleris-integrations/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/caleris-data-export/index.ts supabase/functions/caleris-integrations/index.ts
       - name: Type-check Race Engine Edge Function and persistent worker
         run: deno check supabase/functions/race-engine-test-service/index.ts workers/race-engine-worker/main.ts
       - run: npm run check
