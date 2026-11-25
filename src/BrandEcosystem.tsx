@@ -8,14 +8,14 @@ import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
 import "./brand-ecosystem.css";
 
 type Member={id:string;role:string|null;team_id:string|null;character_name:string|null;public_member_id?:string|null};
-type Sponsor={id:string;name:string;industry:string|null;tier_key:string|null;source_code?:string|null;logo_url?:string|null;available_budget:number|null;flexibility_percent:number;is_active:boolean;target_audience?:Record<string,unknown>|null};
+type Sponsor={id:string;name:string;industry:string|null;tier_key:string|null;source_code?:string|null;logo_url?:string|null;flexibility_percent:number;is_active:boolean;target_audience?:Record<string,unknown>|null};
 type Season={id:string;title:string;starts_on:string;status:string};
 type Team={id:string;name:string};
 type Offer={id:string;sponsor_id:string;target_team_id:string|null;target_kind:string;season_id:string;proposed_amount:number;status:string;terms:Record<string,unknown>;expires_at:string|null;counter_count:number;generated_by_engine:boolean};
 type Revision={id:string;offer_id:string;actor_kind:string;amount:number;terms:Record<string,unknown>;response:string;created_at:string};
 type Contract={id:string;sponsor_id:string;target_team_id:string|null;target_kind:string;season_id:string;contract_amount:number;annual_contract_amount:number|null;bonus_pool_total:number;bonus_pool_paid:number;status:string;renewal_status:string;duration_seasons:number};
 type Target={id:string;contract_id:string;title:string;metric_key:string;target_value:number;current_value:number;bonus_amount:number;status:string};
-type Tier={tier_key:string;label:string;minimum_team_reputation:number;minimum_fan_population:number;minimum_season_performance:number;minimum_budget:number;maximum_budget:number|null;is_active:boolean};
+type Tier={tier_key:string;label:string;minimum_team_reputation:number;minimum_fan_population:number;minimum_season_performance:number;is_active:boolean};
 type Reputation={team_id?:string;member_id?:string;score:number;band:string;metrics:Record<string,number>};
 type Fan={entity_kind:string;team_id:string|null;member_id:string|null;region_key:string;population:number;loyalty:number;engagement:number;sentiment:number};
 const money=(v:number|null|undefined)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
@@ -29,7 +29,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const [counterId,setCounterId]=useState(""),[counterAmount,setCounterAmount]=useState(""),[counterTerms,setCounterTerms]=useState("");
  const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState(""),[logoFile,setLogoFile]=useState<File|null>(null),[editingSponsorId,setEditingSponsorId]=useState(""),[editingSponsorLogo,setEditingSponsorLogo]=useState("");
- const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",budget:"0",maxBudget:"",active:true});
+ const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",active:true});
  const 
  const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState<Record<string,string>>({championship:"0",race_performance:"0",consistency:"0",driver_reputation:"0",fanbase:"0",commercial_credibility:"0"}),[repDriver,setRepDriver]=useState(""),[driverMetrics,setDriverMetrics]=useState<Record<string,string>>({championship:"0",race_performance:"0",consistency:"0",experience:"0",fan_popularity:"0",professional_record:"0"}),[trustMetrics,setTrustMetrics]=useState<Record<string,string>>({target_achievement:"0",consistency:"0",fanbase_growth:"0",commercial_exposure:"0",partnership_conduct:"0"}),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
  const [targetContract,setTargetContract]=useState(""),[targetTitle,setTargetTitle]=useState(""),[targetMetric,setTargetMetric]=useState(""),[targetValue,setTargetValue]=useState(""),[targetBonus,setTargetBonus]=useState("");
