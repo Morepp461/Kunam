@@ -413,7 +413,9 @@ if __name__ == "__main__":
     merchandise_ui = merchandise_source.read_text(encoding="utf-8")
     for fragment in ["team_merchandise_production", "stock_quantity", "price_elasticity", "member_produce_merchandise", "calculate_merchandise_price_factor", "'world'", "'national'", "'local'", "'junior'"]:
         assert fragment in migration_sql, f"Reputation/Merchandise migration missing: {fragment}"
-    for fragment in ["T-Shirt", "Polo Shirt", "Fan Card", "Jacket", "Sticker", "Flag", "Scarf", "Produce stock", "Unit margin", "Demand factor"]:
+    for fragment in ["T-Shirt", "Polo Shirt", "Cap", "Fan Card", "Jacket", "Sticker", "Flag", "Scarf"]:
+        assert fragment in migration_sql, f"Merchandise catalog missing: {fragment}"
+    for fragment in ["Produce stock", "Unit margin", "Demand factor"]:
         assert fragment in merchandise_ui, f"Merchandise UI missing: {fragment}"
 
 

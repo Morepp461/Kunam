@@ -73,7 +73,7 @@ export default function TeamHQ() {
     setIsAdmin(Boolean(adminResult.data?.user_id));
     setIsOwner(role === "Owner" || role === "Principal");
     setIsMerchOwner(role === "Owner");
-    if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setLoading(false); return; }
+    if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setIsMerchOwner(false); setLoading(false); return; }
     const [teamResult, facilityResult, projectResult] = await Promise.all([
       supabase.from("teams").select("id,name,division_key").eq("id", member.team_id).maybeSingle(),
       supabase.from("caleris_team_hq_facilities").select("*").eq("team_id", member.team_id),
