@@ -6,7 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     required = [
         "package.json", "index.html", "vite.config.ts", "src/main.tsx",
-        "src/App.tsx", "src/MainLayout.tsx", "src/DashboardModule.tsx", "src/ProfileModule.tsx", "src/lib/stage5QueryPlan.ts", "src/styles.css", "src/lib/supabase.ts",
+        "src/App.tsx", "src/MainLayout.tsx", "src/AboutUs.tsx", "src/about-us.css", "src/DashboardModule.tsx", "src/ProfileModule.tsx", "src/lib/stage5QueryPlan.ts", "src/styles.css", "src/lib/supabase.ts",
         "src/vite-env.d.ts", "supabase/SETUP.sql",
         "assets/Background 2.png",
         "assets/Untitled design_20261103_142659_0000.png",
@@ -75,6 +75,7 @@ def main():
     profile_module = (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
     dashboard_module = (ROOT / "src/DashboardModule.tsx").read_text(encoding="utf-8")
     layout_module = (ROOT / "src/MainLayout.tsx").read_text(encoding="utf-8")
+    about_module = (ROOT / "src/AboutUs.tsx").read_text(encoding="utf-8")
     character_identity_migration = ROOT / "supabase/migrations/20261118140000_permanent_character_wallet_and_identity.sql"
     character_balance_migration = ROOT / "supabase/migrations/20261118150000_character_balance_aggregate_preserve_wallet_history.sql"
     assert character_identity_migration.is_file() and character_balance_migration.is_file(), "Missing permanent character identity/balance migrations"
@@ -98,25 +99,23 @@ def main():
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app
-    assert 'COMMUNITY &amp; SUPPORT' in layout_module and 'Dukung Vreeo · Socialbuzz' in layout_module
-    assert 'DIRECTOR OF VREEO.ID' in layout_module
-    for director, instagram in [
-        ("Muhammad Ovella", "lllllaaaaa44444"),
+    assert 'COMMUNITY &amp; SUPPORT' in layout_module and 'Support VREEO' in layout_module
+    assert 'path="/about-us"' in app and 'import("./AboutUs")' in app
+    assert 'Meet VREEO &amp; CALERIS' in layout_module
+    founder_links = [
+        ("Muhammad Ovella Ricky Eka Permata Putra", "lllllaaaaa44444"),
+        ("Muhammad Alfarel Pratama", "alfredo_owenzaus"),
         ("Agung Pradana", "pradana.3"),
-        ("Muhammad Alfarel", "alfredo_owenzaus"),
         ("Liam Amir", "liam_amir26"),
         ("Suhanda Arbawi", "_suhanda08"),
-    ]:
-        assert director in layout_module and instagram in layout_module, f"Missing director link: {director}"
-    assert 'footer-directors nav' in styles
-    assert 'Gabung Discord' in (app + layout_module) and 'Official Partners' not in (app + layout_module)
+    ]
+    for founder, instagram in founder_links:
+        assert founder in about_module and instagram in about_module, f"Missing About Us founder link: {founder}"
+    assert "DIRECTOR OF VREEO.ID" not in layout_module and "instagram.com" not in layout_module, "Founder social links must live on About Us, not in the global footer"
+    assert 'Join our Discord' in layout_module and 'Official Partners' not in (app + layout_module)
     assert 'CALERIS MASTERS · POWERED BY VREEO' in layout_module
     assert 'A Motorsport Roleplay Experience' not in (app + layout_module)
     assert 'footer-main' in styles and 'footer-support nav' in styles
-    assert 'DIRECTOR OF VREEO.ID' in layout_module
-    for director in ["Muhammad Ovella", "Agung Pradana", "Muhammad Alfarel", "Liam Amir", "Suhanda Arbawi"]:
-        assert director in layout_module
-    assert 'footer-directors nav' in styles
     assert 'path="/privacy-policy" element={<PrivacyPolicy/>}' in app
     assert 'path="/terms-and-conditions" element={<TermsAndConditions/>}' in app
     privacy_page = (ROOT / "src/PrivacyPolicy.tsx").read_text(encoding="utf-8")
