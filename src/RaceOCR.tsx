@@ -1,20 +1,36 @@
 import {useState} from "react";
 import {createWorker} from "tesseract.js";
-type Tyre="soft"|"medium"|"hard"|"intermediate"|"wet";
-type Entry={memberId:string;driverName:string;teamName:string;driverNumber:string;country:string;flag:string;gridPosition:string;status:"finished"|"dnf"|"dns"|"dsq";position:string;timeOrLaps:string;gap:string;fastestLap:string;stints:Tyre[]};
-type Driver={id:string;character_name:string|null;team_id:string|null;nationality:string|null};
-type Team={id:string;name:string};
-const norm=(s:string)=>s.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
-const timeTokens=(s:string)=>s.match(/\b\d{1,3}:\d{2}(?::\d{2})?[.,]\d{3}\b/g)||[];
-const tyreFrom=(s:string):Tyre[]=>{const out:Tyre[]=[];for(const [re,t] of [[/\bsoft\b/gi,"soft"],[/\bmedium\b/gi,"medium"],[/\bhard\b/gi,"hard"],[/\binter(?:mediate)?\b/gi,"intermediate"],[/\bwet\b/gi,"wet"]] as [RegExp,Tyre][])if(re.test(s))out.push(t);return out};
-export default function RaceOCR({entries,drivers,teams,onDraft}:{entries:Entry[];drivers:Driver[];teams:Team[];onDraft:(rows:Entry[])=>void}){
- const [busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[raw,setRaw]=useState(""),[message,setMessage]=useState("");
- const run=async(file:File)=>{if(!file.type.startsWith("image/")){setMessage("Pilih file gambar hasil race.");return}if(file.size>12*1024*1024){setMessage("Ukuran gambar maksimal 12 MB.");return}setBusy(true);setMessage("");setRaw("");setProgress(0);let worker:any;
-  try{worker=await createWorker("eng",1,{logger:(m:any)=>{if(m.status==="recognizing text")setProgress(Math.round((m.progress||0)*100))}});const result=await worker.recognize(file);const text=String(result.data.text||"");setRaw(text);const lines=text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);const next=[...entries];let matched=0;
-   for(const line of lines){const n=norm(line);const driver=drivers.map(d=>({d,name:norm(d.character_name||"")})).filter(x=>x.name.length>2&&n.includes(x.name)).sort((a,b)=>b.name.length-a.name.length)[0]?.d;if(!driver)continue;const idx=next.findIndex(x=>x.memberId===driver.id);if(idx<0)continue;const team=teams.find(t=>t.id===driver.team_id);const tokens=timeTokens(line);const tyre=tyreFrom(line);const current=next[idx];const pos=Number((line.match(/^\s*(\d{1,2})\b/)||[])[1]||"");const car=Number((line.match(/#\s*(\d{1,3})/)||[])[1]||"");
-    next[idx]={...current,driverName:driver.character_name||current.driverName,teamName:team?.name||"Unassigned",position:pos>0?String(pos):current.position,driverNumber:car>0?String(car):current.driverNumber,timeOrLaps:tokens[0]||current.timeOrLaps,gap:tokens[1]||current.gap,fastestLap:tokens[2]||current.fastestLap,stints:tyre.length?tyre:current.stints,status:/\bDSQ\b/i.test(line)?"dsq":/\bDNS\b/i.test(line)?"dns":/\bDNF\b/i.test(line)?"dnf":"finished"};matched++}
-   onDraft(next);setMessage(matched?"OCR selesai. "+matched+" baris Driver berhasil dicocokkan ke database. Periksa dan koreksi seluruh kolom sebelum submit.":"Teks berhasil dibaca, tetapi belum ada nama Driver yang cocok dengan database. Gunakan hasil OCR sebagai referensi dan pilih Driver secara manual di tabel.");
-  }catch(e){setMessage(e instanceof Error?e.message:"OCR gagal membaca gambar.")}finally{if(worker)await worker.terminate();setBusy(false)}
+import {parseRaceResultOCR,type RaceOCREntry,type RaceOCRDriver,type RaceOCRTeam} from "./lib/race-result-ocr";
+type Entry=RaceOCREntry;
+type Driver=RaceOCRDriver;
+type Team=RaceOCRTeam;
+type OCRMeta={rawText:string;sourceImageName:string;confidence:number};
+export default function RaceOCR({entries,drivers,teams,onDraft}:{entries:Entry[];drivers:Driver[];teams:Team[];onDraft:(rows:Entry[],meta:OCRMeta)=>void}){
+ const [busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[raw,setRaw]=useState(""),[message,setMessage]=useState(""),[confidence,setConfidence]=useState<number|null>(null);
+ const run=async(file:File)=>{
+  if(!["image/png","image/jpeg","image/webp"].includes(file.type)){setMessage("Pilih gambar PNG, JPG, atau WEBP.");return}
+  if(file.size>12*1024*1024){setMessage("Ukuran gambar maksimal 12 MB.");return}
+  setBusy(true);setMessage("");setRaw("");setProgress(0);setConfidence(null);let worker:Awaited<ReturnType<typeof createWorker>>|null=null;
+  try{
+   worker=await createWorker("eng",1,{logger:(event)=>{if(event.status==="recognizing text")setProgress(Math.round((event.progress||0)*100))}});
+   const result=await worker.recognize(file);
+   const rawText=String(result.data.text||"");
+   const parsed=parseRaceResultOCR(rawText,entries,drivers,teams,Number(result.data.confidence||0));
+   setRaw(rawText);setConfidence(parsed.confidence);
+   onDraft(parsed.rows,{rawText,sourceImageName:file.name,confidence:parsed.confidence});
+   setMessage(parsed.matchedDriverCount
+    ?`OCR membaca ${parsed.matchedDriverCount} Driver. Confidence ${parsed.confidence.toFixed(0)}%. Draft tersimpan untuk direvisi sebelum konfirmasi.`
+    :"Teks berhasil dibaca, tetapi nama Driver belum cocok dengan database. Draft tetap dibuat; pilih Driver dan koreksi data secara manual.");
+  }catch(error){setMessage(error instanceof Error?error.message:"OCR gagal membaca gambar. Coba screenshot dengan resolusi lebih tinggi.")}
+  finally{if(worker)await worker.terminate();setBusy(false)}
  };
- return <section className="workspace-card race-ocr-card"><div className="section-title-row"><div><span className="section-eyebrow">OCR · IMAGE RESULT READER</span><h2>Import race screenshot</h2></div><span className="race-ocr-status">{busy?"Membaca "+progress+"%":"Draft only"}</span></div><p className="page-description">Upload screenshot klasifikasi. OCR akan mencocokkan nama Driver dari database, lalu mengisi draft tabel. Hasilnya tidak pernah dikirim otomatis.</p><label className="race-ocr-upload"><span>{busy?"Sedang membaca gambar...":"Pilih gambar hasil race"}</span><input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={e=>{const f=e.target.files?.[0];if(f)void run(f);e.currentTarget.value=""}}/></label>{busy&&<div className="race-ocr-progress"><span style={{width:progress+"%"}}/></div>}{message&&<p className="race-control-hint" role="status">{message}</p>}{raw&&<details className="race-ocr-raw"><summary>Periksa teks mentah OCR</summary><pre>{raw}</pre></details>}</section>
+ return <section className="workspace-card race-ocr-card">
+  <div className="section-title-row"><div><span className="section-eyebrow">OCR · IMAGE RESULT READER</span><h2>Import race screenshot</h2></div><span className="race-ocr-status">{busy?"Membaca "+progress+"%":"Draft only"}</span></div>
+  <p className="page-description">Upload screenshot klasifikasi. OCR mencocokkan nama Driver dan membaca posisi, waktu, gap, status, serta informasi ban yang terbaca. Hasil masuk draft, bukan klasemen resmi.</p>
+  <label className="race-ocr-upload"><span>{busy?"Sedang membaca gambar...":"Pilih gambar hasil race"}</span><input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} onChange={event=>{const file=event.target.files?.[0];if(file)void run(file);event.currentTarget.value=""}}/></label>
+  {busy&&<div className="race-ocr-progress"><span style={{width:progress+"%"}}/></div>}
+  {message&&<p className="race-control-hint" role="status">{message}</p>}
+  {confidence!==null&&<p className="race-control-hint">OCR confidence: {confidence.toFixed(1)}% · tetap wajib diperiksa manual.</p>}
+  {raw&&<details className="race-ocr-raw"><summary>Periksa teks mentah OCR</summary><pre>{raw}</pre></details>}
+ </section>;
 }

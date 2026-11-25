@@ -1,6 +1,6 @@
 import {lazy,Suspense,useCallback,useEffect,useMemo,useState} from "react";
 import type {FormEvent} from "react";
-import {AlertTriangle,CheckCircle2,Flag,Plus,RefreshCw,Save,ShieldCheck,Timer,Trash2,Trophy} from "lucide-react";
+import {AlertTriangle,ArrowDown,ArrowUp,CheckCircle2,Flag,Plus,RefreshCw,Save,ShieldCheck,Timer,Trash2,Trophy} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import {MemberProfileLink,TeamProfileLink} from "./EntityProfileLink";
 import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
@@ -22,7 +22,7 @@ const flagFromCode=(code:string|null)=>code&&/^[A-Z]{2}$/.test(code)?String.from
 export default function RaceControl(){
  const [rounds,setRounds]=useState<Round[]>([]),[members,setMembers]=useState<Member[]>([]),[teams,setTeams]=useState<Team[]>([]),[registrations,setRegistrations]=useState<Registration[]>([]),[circuits,setCircuits]=useState<Circuit[]>([]);
  const [roundId,setRoundId]=useState(""),[circuitId,setCircuitId]=useState(""),[poleTime,setPoleTime]=useState(""),[dotdId,setDotdId]=useState(""),[entries,setEntries]=useState<Entry[]>([]);
- const [loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState<{kind:"error"|"success";text:string}|null>(null);
+ const [loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[draftSaving,setDraftSaving]=useState(false),[draftId,setDraftId]=useState<string|null>(null),[draftState,setDraftState]=useState<"unsaved"|"draft"|"confirmed">("unsaved"),[rawOcrText,setRawOcrText]=useState(""),[sourceImageName,setSourceImageName]=useState(""),[notice,setNotice]=useState<{kind:"error"|"success";text:string}|null>(null);
  const refresh=useCallback(async()=>{if(!supabase)return;setLoading(true);setNotice(null);
   const [r,m,t,reg,c]=await Promise.all([
    supabase.from("license_rounds").select("id,round_number,title,season_division_id,status,session_type,checkin_closes_at,circuit_name,circuit_country_code,license_season_divisions(division_name,license_seasons(title))").neq("status","closed").order("round_number"),
@@ -41,7 +41,48 @@ export default function RaceControl(){
  const round=rounds.find(x=>x.id===roundId);
  const participants=useMemo(()=>round?registrations.filter(x=>x.season_division_id===round.season_division_id).map(x=>members.find(m=>m.id===x.member_id)).filter((m):m is Member=>Boolean(m)).sort((a,b)=>(a.character_name||"").localeCompare(b.character_name||"")):[],[round,registrations,members]);
  const circuit=circuits.find(x=>x.id===circuitId);
- useEffect(()=>{if(!round)return;setEntries(participants.map(m=>draft(m,teams.find(t=>t.id===m.team_id)?.name||"Unassigned")));const found=circuits.find(c=>c.name.toLowerCase()===String(round.circuit_name||"").toLowerCase()&&c.country_code===round.circuit_country_code);setCircuitId(found?.id||"");setPoleTime("");setDotdId("")},[round?.id,participants,teams,circuits]);
+ const persistDraft=async(rows:Entry[]=entries,rawText:string=rawOcrText,imageName:string=sourceImageName):Promise<string|null>=>{
+  if(!supabase||!round)return null;
+  setDraftSaving(true);
+  const draftPayload={entries:rows,pole_time:poleTime,driver_of_the_day_member_id:dotdId,circuit_id:circuitId,source:imageName?"ocr":"manual"};
+  const {data,error}=await supabase.rpc("fia_save_race_result_draft",{p_round_id:round.id,p_draft_payload:draftPayload,p_raw_ocr_text:rawText||null,p_source_image_name:imageName||null,p_draft_id:draftId});
+  setDraftSaving(false);
+  if(error){setNotice({kind:"error",text:"Draft gagal disimpan: "+error.message});return null}
+  const savedId=String(data);
+  setDraftId(savedId);setDraftState("draft");
+  setNotice({kind:"success",text:imageName?"OCR berhasil membuat draft. Periksa dan revisi seluruh data sebelum konfirmasi.":"Draft hasil race tersimpan. Hasil belum masuk klasemen."});
+  return savedId;
+ };
+ const handleOcrDraft=async(rows:Entry[],meta:{rawText:string;sourceImageName:string;confidence:number})=>{
+  setEntries(rows);setRawOcrText(meta.rawText);setSourceImageName(meta.sourceImageName);
+  await persistDraft(rows,meta.rawText,meta.sourceImageName);
+ };
+ useEffect(()=>{
+  if(!round)return;
+  const initial=participants.map(m=>draft(m,teams.find(t=>t.id===m.team_id)?.name||"Unassigned"));
+  const found=circuits.find(c=>c.name.toLowerCase()===String(round.circuit_name||"").toLowerCase()&&c.country_code===round.circuit_country_code);
+  setEntries(initial);setCircuitId(found?.id||"");setPoleTime("");setDotdId("");setDraftId(null);setDraftState("unsaved");setRawOcrText("");setSourceImageName("");
+  let active=true;
+  const restore=async()=>{
+   if(!supabase)return;
+   const {data,error}=await supabase.rpc("fia_get_race_result_draft",{p_round_id:round.id});
+   if(!active||error||!data)return;
+   const saved=data as {id?:string;draft_payload?:Record<string,unknown>;raw_ocr_text?:string|null;source_image_name?:string|null};
+   const payload=saved.draft_payload||{};
+   if(Array.isArray(payload.entries))setEntries(payload.entries as Entry[]);
+   if(typeof payload.pole_time==="string")setPoleTime(payload.pole_time);
+   if(typeof payload.driver_of_the_day_member_id==="string")setDotdId(payload.driver_of_the_day_member_id);
+   if(typeof payload.circuit_id==="string"&&payload.circuit_id)setCircuitId(payload.circuit_id);
+   setDraftId(saved.id||null);setDraftState("draft");setRawOcrText(saved.raw_ocr_text||"");setSourceImageName(saved.source_image_name||"");
+   setNotice({kind:"success",text:"Draft tersimpan sebelumnya berhasil dipulihkan. Lanjutkan revisi sebelum konfirmasi."});
+  };
+  void restore();
+  return()=>{active=false};
+ },[round?.id,participants,teams,circuits]);
+ const update=(id:string,patch:Partial<Entry>)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,...patch}:x));
+ const updateStint=(id:string,i:number,value:Tyre)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,stints:x.stints.map((s,j)=>j===i?value:s)}:x));
+ const moveEntry=(index:number,direction:-1|1)=>setEntries(prev=>{const target=index+direction;if(target<0||target>=prev.length)return prev;const next=[...prev];const [item]=next.splice(index,1);next.splice(target,0,item);return next});
+ const pole=entries.find(x=>Number(x.gridPosition)===1),fastest=entries.filter(x=>x.fastestLap.trim()).sort((a,b)=>(parseLap(a.fastestLap)||Infinity)-(parseLap(b.fastestLap)||Infinity))[0];
  const update=(id:string,patch:Partial<Entry>)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,...patch}:x));
  const updateStint=(id:string,i:number,value:Tyre)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,stints:x.stints.map((s,j)=>j===i?value:s)}:x));
  const pole=entries.find(x=>Number(x.gridPosition)===1),fastest=entries.filter(x=>x.fastestLap.trim()).sort((a,b)=>(parseLap(a.fastestLap)||Infinity)-(parseLap(b.fastestLap)||Infinity))[0];
@@ -65,7 +106,11 @@ export default function RaceControl(){
   if(new Set(entries.map(x=>x.driverNumber)).size!==entries.length){fail("Nomor mobil tidak boleh duplikat.");return}
   const payload=entries.map(x=>({member_id:x.memberId,grid_position:+x.gridPosition,finish_status:x.status,finishing_position:x.status==="finished"?+x.position:null,finish_time_ms:x.status==="finished"?parseRaceTime(x.timeOrLaps):null,fastest_lap_ms:x.fastestLap.trim()?parseLap(x.fastestLap):null,stints:x.stints,driver_number:+x.driverNumber,driver_country:x.country.trim(),driver_flag:x.flag.trim(),laps_behind:x.status==="dnf"?parseLaps(x.timeOrLaps):null,gap_ms:x.status==="finished"?parseGap(x.gap):null}));
   setSaving(true);setNotice(null);
-  const {data,error}=await supabase.rpc("fia_submit_race_classification_v2",{p_round_id:round.id,p_entries:payload,p_driver_of_day_member_id:dotdId,p_pole_time_ms:poleMs,p_circuit_name:circuit.name,p_circuit_country_code:circuit.country_code});
+  let activeDraftId=draftId;
+  if(!activeDraftId)activeDraftId=await persistDraft(entries,rawOcrText,sourceImageName);
+  if(!activeDraftId){setSaving(false);fail("Simpan draft terlebih dahulu sebelum mengesahkan hasil.");return}
+  const finalDraftPayload={entries:payload,pole_time:poleTime,driver_of_the_day_member_id:dotdId,circuit_id:circuitId,source:sourceImageName?"ocr":"manual"};
+  const {data,error}=await supabase.rpc("fia_confirm_race_result_draft",{p_draft_id:activeDraftId,p_round_id:round.id,p_draft_payload:finalDraftPayload,p_entries:payload,p_driver_of_day_member_id:dotdId,p_pole_time_ms:poleMs,p_circuit_name:circuit.name,p_circuit_country_code:circuit.country_code});
   setSaving(false);if(error){fail(error.message);return}
   const pending=[] as string[];
   if(data?.prizepool?.status==="pending_configuration")pending.push(`Prizepool pending: ${data.prizepool.detail||"konfigurasi belum lengkap"}`);
@@ -75,7 +120,7 @@ export default function RaceControl(){
    const raceArticle=[round.title+" · "+circuit.name, "Official podium:\n"+podium, "Pole position: "+pole.driverName, "Fastest lap: "+fastest.driverName, "Driver of the Day: "+(entries.find(x=>x.memberId===dotdId)?.driverName||"Not recorded")].join("\n\n");
    const broadcast=await broadcastNewsroomArticle("Race Report · "+round.title+" at "+circuit.name,raceArticle,"official_race_result");
    setNotice({kind:"success",text:"Race resmi disahkan. "+entries.length+" Driver diproses. "+(pending.length?"Settlement: "+pending.join(", ")+". ":"Settlement yang tersedia berhasil diproses. ")+(broadcast.sent?"Laporan otomatis dikirim ke Discord via Vreeo Pedia.":"Laporan terbit, tetapi Discord belum terkirim: "+(broadcast.error?.message||"integrasi belum dikonfigurasi."))});
-  setRoundId("");setCircuitId("");setEntries([]);setDotdId("");setPoleTime("");await refresh();
+  setRoundId("");setCircuitId("");setEntries([]);setDotdId("");setPoleTime("");setDraftId(null);setDraftState("unsaved");setRawOcrText("");setSourceImageName("");await refresh();
  };
  const changeStatus=(x:Entry,status:FinishStatus)=>update(x.memberId,{status,position:"",timeOrLaps:"",gap:""});
  return <section className="workspace race-control" data-grid-field="grid_position" data-finish-time-field="finish_time_ms" data-fastest-lap-field="fastest_lap_ms" data-dotd-field="driver_of_day_member_id" data-stint-ui="race-stint-dots" data-official-submit="fia_submit_race_classification">
@@ -91,11 +136,11 @@ export default function RaceControl(){
    {circuit&&<p className="race-control-hint">Circuit snapshot: {flagFromCode(circuit.country_code)} {circuit.name} · {circuit.country_code}</p>}
   </section>
   {round&&<form onSubmit={submit} className="race-submit-form">
-   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">02 · CLASSIFICATION</span><h2>Driver race result</h2></div><Trophy size={21}/></div>
-    <p className="page-description">Grid P1 otomatis menjadi Pole Position. Masukkan race time, gap, status, fastest lap, dan semua stint ban.</p><Suspense fallback={<div className="race-control-hint" role="status">Memuat modul OCR…</div>}><RaceOCR entries={entries} drivers={participants} teams={teams} onDraft={setEntries}/></Suspense>
+   <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">02 · CLASSIFICATION</span><h2>Driver race result</h2></div><div className="race-ocr-status-pill">{draftState==="draft"?"DRAFT · REVIEW REQUIRED":"INPUT WORKSPACE"}</div></div>
+    <p className="page-description">Grid P1 otomatis menjadi Pole Position. Masukkan race time, gap, status, fastest lap, dan semua stint ban.</p><Suspense fallback={<div className="race-control-hint" role="status">Memuat modul OCR…</div>}><RaceOCR entries={entries} drivers={participants} teams={teams} onDraft={handleOcrDraft}/></Suspense>
     <div className="race-input-table-wrap"><table className="race-input-table race-complete-table"><thead><tr><th>Driver / Team</th><th>No.</th><th>Country / Flag</th><th>Grid</th><th>Status</th><th>Pos</th><th>Time / Laps Behind</th><th>Gap</th><th>Fastest Lap</th><th>Tyre Stints</th></tr></thead><tbody>
      {entries.map(x=><tr key={x.memberId}>
-      <td><select aria-label={`Pilih Driver ${x.driverName}`} value={x.memberId} onChange={e=>{const target=participants.find(m=>m.id===e.target.value);if(!target||entries.some(y=>y.memberId===target.id&&y.memberId!==x.memberId))return;const team=teams.find(t=>t.id===target.team_id);setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,memberId:target.id,driverName:target.character_name||"Driver",teamName:team?.name||"Unassigned",country:target.nationality||y.country}:y))}}>{participants.map(m=><option key={m.id} value={m.id}>{m.character_name||"Driver"} · {teams.find(t=>t.id===m.team_id)?.name||"Unassigned"}</option>)}</select><small><MemberProfileLink memberId={participants.find(m=>m.id===x.memberId)?.public_member_id}>{x.driverName}</MemberProfileLink> · <TeamProfileLink teamId={participants.find(m=>m.id===x.memberId)?.team_id||undefined}>{x.teamName}</TeamProfileLink></small></td>
+      <td><div className="race-driver-cell"><div className="race-order-controls"><button type="button" aria-label={`Pindahkan ${x.driverName} ke atas`} onClick={()=>moveEntry(entries.findIndex(y=>y.memberId===x.memberId),-1)} disabled={entries.findIndex(y=>y.memberId===x.memberId)===0}><ArrowUp size={13}/></button><span>{entries.findIndex(y=>y.memberId===x.memberId)+1}</span><button type="button" aria-label={`Pindahkan ${x.driverName} ke bawah`} onClick={()=>moveEntry(entries.findIndex(y=>y.memberId===x.memberId),1)} disabled={entries.findIndex(y=>y.memberId===x.memberId)===entries.length-1}><ArrowDown size={13}/></button></div><div className="race-driver-fields"><select aria-label={`Pilih Driver ${x.driverName}`} value={x.memberId} onChange={e=>{const target=participants.find(m=>m.id===e.target.value);if(!target||entries.some(y=>y.memberId===target.id&&y.memberId!==x.memberId))return;const team=teams.find(t=>t.id===target.team_id);setEntries(prev=>prev.map(y=>y.memberId===x.memberId?{...y,memberId:target.id,driverName:target.character_name||"Driver",teamName:team?.name||"Unassigned",country:target.nationality||y.country}:y))}}>{participants.map(m=><option key={m.id} value={m.id}>{m.character_name||"Driver"} · {teams.find(t=>t.id===m.team_id)?.name||"Unassigned"}</option>)}</select><small><MemberProfileLink memberId={participants.find(m=>m.id===x.memberId)?.public_member_id}>{x.driverName}</MemberProfileLink> · <TeamProfileLink teamId={participants.find(m=>m.id===x.memberId)?.team_id||undefined}>{x.teamName}</TeamProfileLink></small></div></div></td>
       <td><input aria-label={`Nomor mobil ${x.driverName}`} type="number" min="1" value={x.driverNumber} onChange={e=>update(x.memberId,{driverNumber:e.target.value})} placeholder="No." required/></td>
       <td><div className="race-country-fields"><input aria-label={`Negara ${x.driverName}`} value={x.country} onChange={e=>update(x.memberId,{country:e.target.value})} placeholder="Country" required/><input aria-label={`Flag ${x.driverName}`} value={x.flag} onChange={e=>update(x.memberId,{flag:e.target.value})} placeholder="🇮🇩" maxLength={8} required/></div></td>
       <td><input className="race-pos-input" aria-label={`Grid ${x.driverName}`} type="number" min="1" value={x.gridPosition} onChange={e=>update(x.memberId,{gridPosition:e.target.value})} required/></td>
@@ -120,7 +165,7 @@ export default function RaceControl(){
     </div>
     <p className="race-control-hint"><Timer size={16}/> Pole / fastest lap: m:ss.mmm. Race time: h:mm:ss.mmm atau m:ss.mmm. Gap dalam detik, contoh +3.381; DNF gunakan +11 Laps; DNS dan DSQ tidak memerlukan race time atau gap.</p>
    </section>
-   <section className="race-submit-bar"><div><strong>{entries.length} Driver</strong><small>{entries.filter(x=>x.status==="finished").length} Finished · {entries.filter(x=>x.status==="dnf").length} DNF · {entries.filter(x=>x.status==="dns").length} DNS · {entries.filter(x=>x.status==="dsq").length} DSQ</small></div><button className="economy-primary-button race-submit" type="submit" disabled={saving||loading||!circuit||!entries.length}><Save size={16}/>{saving?"Mengesahkan race...":"Validate & Submit Official Result"}</button></section>
+   <section className="race-submit-bar"><div><strong>{entries.length} Driver</strong><small>{entries.filter(x=>x.status==="finished").length} Finished · {entries.filter(x=>x.status==="dnf").length} DNF · {entries.filter(x=>x.status==="dns").length} DNS · {entries.filter(x=>x.status==="dsq").length} DSQ</small><small className="race-draft-state">Workflow: {draftState==="draft"?"Draft tersimpan · menunggu konfirmasi":draftState==="confirmed"?"Confirmed":"Belum disimpan"}{sourceImageName?" · OCR: "+sourceImageName:""}</small></div><div className="race-submit-actions"><button className="economy-secondary-button race-submit" type="button" onClick={()=>void persistDraft()} disabled={saving||draftSaving||loading||!entries.length}><Save size={16}/>{draftSaving?"Menyimpan draft...":"Save Draft"}</button><button className="economy-primary-button race-submit" type="submit" disabled={saving||draftSaving||loading||!circuit||!entries.length||draftState!=="draft"||!draftId}><ShieldCheck size={16}/>{saving?"Mengonfirmasi...":"Confirm Official Result"}</button></div></section>
   </form>}
   {!round&&<section className="workspace-card race-empty-state"><Trophy size={28}/><h2>{loading?"Memuat round...":"Tidak ada round yang siap diinput"}</h2><p>Round muncul setelah check-in berakhir, belum ditutup, dan round sebelumnya pada divisi yang sama sudah selesai.</p><button className="economy-secondary-button" type="button" onClick={()=>void refresh()} disabled={loading}><RefreshCw size={15}/> Refresh round</button></section>}
   {notice&&<div className={`race-notice ${notice.kind}`} role="status">{notice.kind==="success"?<CheckCircle2 size={17}/>:<AlertTriangle size={17}/>}<span>{notice.text}</span></div>}

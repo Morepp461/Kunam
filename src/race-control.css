@@ -45,3 +45,36 @@
 .race-ocr-card{display:flex;flex-direction:column;gap:12px}.race-ocr-status{font-size:11px;color:var(--accent,#d5b15c)}.race-ocr-upload{display:flex;align-items:center;justify-content:center;min-height:64px;border:1px dashed var(--accent,#d5b15c);border-radius:10px;color:var(--text);cursor:pointer;font-size:13px}.race-ocr-upload input{max-width:220px;margin-left:10px}.race-ocr-progress{height:5px;background:var(--line);border-radius:10px;overflow:hidden}.race-ocr-progress span{display:block;height:100%;background:var(--accent,#d5b15c);transition:width .2s}.race-ocr-raw{border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--muted);font-size:12px}.race-ocr-raw pre{white-space:pre-wrap;max-height:220px;overflow:auto}.race-complete-table td:first-child select{min-width:190px;max-width:220px}
 
 .race-ocr-card{display:flex;flex-direction:column;gap:12px}.race-ocr-status{font-size:11px;color:var(--accent,#d5b15c)}.race-ocr-upload{display:flex;align-items:center;justify-content:center;min-height:64px;border:1px dashed var(--accent,#d5b15c);border-radius:10px;color:var(--text);cursor:pointer;font-size:13px}.race-ocr-upload input{max-width:220px;margin-left:10px}.race-ocr-progress{height:5px;background:var(--line);border-radius:10px;overflow:hidden}.race-ocr-progress span{display:block;height:100%;background:var(--accent,#d5b15c);transition:width .2s}.race-ocr-raw{border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--muted);font-size:12px}.race-ocr-raw pre{white-space:pre-wrap;max-height:220px;overflow:auto}.race-complete-table td:first-child select{min-width:190px;max-width:220px}
+
+/* Race result draft/review workflow */
+.race-submit-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.race-draft-state{display:block;margin-top:4px;color:var(--accent,#d5b15c)!important}
+.race-ocr-status-pill{padding:7px 10px;border:1px solid rgba(213,177,92,.28);border-radius:7px;color:var(--accent,#d5b15c);font-size:10px;font-weight:800;letter-spacing:.08em}
+.race-driver-cell{display:flex;align-items:center;gap:9px;min-width:0}
+.race-driver-fields{display:flex;flex-direction:column;gap:4px;min-width:0}
+.race-order-controls{display:flex;flex-direction:column;align-items:center;gap:2px;flex:0 0 30px}
+.race-order-controls button{display:grid;place-items:center;width:26px;height:24px;border:1px solid var(--line);border-radius:5px;background:transparent;color:var(--muted);cursor:pointer}
+.race-order-controls button:disabled{opacity:.25;cursor:not-allowed}
+.race-order-controls span{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.race-submit-bar{align-items:center}
+@media(max-width:760px){
+ .race-submit-bar{align-items:stretch;flex-direction:column}
+ .race-submit-actions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+ .race-submit-actions button{justify-content:center}
+ .race-input-table-wrap{overflow:visible;border:0}
+ .race-complete-table{display:block;min-width:0}
+ .race-complete-table thead{display:none}
+ .race-complete-table tbody{display:flex;flex-direction:column;gap:10px}
+ .race-complete-table tr{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+ .race-complete-table td{display:flex;flex-direction:column;gap:6px;min-width:0!important;padding:9px 10px;border-top:1px solid var(--line);font-size:11px}
+ .race-complete-table td:first-child{grid-column:1/-1;flex-direction:row;align-items:center;border-top:0;background:rgba(255,255,255,.025)}
+ .race-complete-table td:first-child select{width:100%;min-width:0}
+ .race-complete-table td:first-child small{font-size:10px}
+ .race-complete-table td::before{content:attr(data-label);font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+ .race-complete-table td:first-child::before{display:none}
+ .race-complete-table td:nth-child(2) input{width:100%}
+ .race-country-fields{min-width:0}
+ .race-country-fields input:first-child{width:100%;min-width:0}
+ .race-country-fields input:last-child{width:54px;flex:0 0 54px}
+ .race-complete-table .race-stints{min-width:0}
+}
