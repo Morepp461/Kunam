@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.119.0";
 
-const allowedOrigin=(origin:string)=>origin==="http://localhost:5173"||origin==="https://calerismastersnewgen-mu.vercel.app"||/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
-const cors=(origin:string)=>({"Access-Control-Allow-Origin":allowedOrigin(origin)?origin:"https://calerismastersnewgen-mu.vercel.app","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS","Content-Type":"application/json","Vary":"Origin"});
+const allowedOrigin=(origin:string)=>origin==="http://localhost:5173"||origin==="https://calerismasters.com"||origin==="https://www.calerismasters.com"||origin==="https://calerismastersnewgen-mu.vercel.app"||/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+const cors=(origin:string)=>({"Access-Control-Allow-Origin":allowedOrigin(origin)?origin:"https://calerismastersnewgen-mu.vercel.app","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type, x-supabase-api-version","Access-Control-Allow-Methods":"POST, OPTIONS","Access-Control-Max-Age":"86400","Content-Type":"application/json","Vary":"Origin"});
 function serviceClient(url:string,key:string){
  const secret=key.startsWith("sb_secret_");
  return createClient(url,key,{auth:{autoRefreshToken:false,persistSession:false},...(secret?{global:{fetch:(input:RequestInfo|URL,init?:RequestInit)=>{const req=new Request(input,init);const headers=new Headers(req.headers);headers.delete("Authorization");headers.set("apikey",key);return fetch(new Request(req,{headers}));}}}:{})});

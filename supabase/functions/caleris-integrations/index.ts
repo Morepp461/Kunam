@@ -13,12 +13,24 @@ const tools = [
 ] as const;
 
 const allowedOrigin = (origin: string) =>
-  !origin || origin === "https://calerismastersnewgen-mu.vercel.app";
+  !origin || origin === "http://localhost:5173" ||
+  origin === "https://calerismasters.com" ||
+  origin === "https://www.calerismasters.com" ||
+  origin === "https://calerismastersnewgen-mu.vercel.app" ||
+  /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
 
-function json(body: unknown, status = 200, extra: HeadersInit = {}) {
+const corsHeaders = (origin: string): HeadersInit => ({
+  ...(origin && allowedOrigin(origin) ? { "Access-Control-Allow-Origin": origin } : {}),
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-api-version",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Max-Age": "86400",
+  "Vary": "Origin",
+});
+
+function json(body: unknown, status = 200, origin = "", extra: HeadersInit = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...extra },
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...corsHeaders(origin), ...extra },
   });
 }
 
@@ -112,19 +124,19 @@ async function readTool(db: ReturnType<typeof serviceClient>, name: string, args
 async function rest(req: Request, db: ReturnType<typeof serviceClient>, scopeMap: Record<string, Scope>, path: string) {
   const resource = path.replace(/^\/v1\/?/, "").replace(/\/$/, "");
   const scope = scopeMap[resource];
-  if (!scope) return json({ error: "Endpoint not found." }, 404);
+  if (!scope) return json({ error: "Endpoint not found." }, 404, req.headers.get("Origin") || "");
   const auth = await authenticate(req, scope);
-  if ("error" in auth) return json({ error: auth.error }, auth.status);
+  if ("error" in auth) return json({ error: auth.error }, auth.status, req.headers.get("Origin") || "");
   const url = new URL(req.url);
   const args: Record<string, unknown> = { limit: url.searchParams.get("limit") };
   if (resource === "teams") args.division = url.searchParams.get("division");
   if (resource === "rounds") args.season_division_id = url.searchParams.get("season_division_id");
   const toolName = ({ circuits: "list_circuits", seasons: "list_seasons", teams: "list_teams", drivers: "list_drivers", rounds: "list_rounds" } as Record<string, string>)[resource];
   try {
-    return json({ data: await readTool(auth.db, toolName, args) });
+    return json({ data: await readTool(auth.db, toolName, args) }, 200, req.headers.get("Origin") || "");
   } catch (error) {
     console.error("Caleris API read failed:", error);
-    return json({ error: "Unable to read the requested Caleris resource." }, 500);
+    return json({ error: "Unable to read the requested Caleris resource." }, 500, req.headers.get("Origin") || "");
   }
 }
 
@@ -135,57 +147,57 @@ Deno.serve(async (req: Request) => {
   const path = url.pathname;
   const functionMarker = "/caleris-integrations";
   const endpointPath = path.includes(functionMarker) ? path.slice(path.indexOf(functionMarker) + functionMarker.length) : path;
-  if (req.method === "OPTIONS") return new Response(null, { status: 204 });
-  if (req.method !== "POST" && req.method !== "GET") return json({ error: "Method not allowed." }, 405);
+  if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: corsHeaders(origin) });
+  if (req.method !== "POST" && req.method !== "GET") return json({ error: "Method not allowed." }, 405, origin);
 
   if (endpointPath.endsWith("/mcp")) {
-    if (req.method !== "POST") return json({ error: "MCP endpoint accepts POST only." }, 405);
+    if (req.method !== "POST") return json({ error: "MCP endpoint accepts POST only." }, 405, origin);
     const auth = await authenticate(req);
-    if ("error" in auth) return json({ error: auth.error }, auth.status);
+    if ("error" in auth) return json({ error: auth.error }, auth.status, origin);
     let message: Record<string, unknown>;
-    try { message = await req.json(); } catch { return json({ error: "Invalid JSON-RPC request." }, 400); }
+    try { message = await req.json(); } catch { return json({ error: "Invalid JSON-RPC request." }, 400, origin); }
     const id = message.id ?? null;
     const method = message.method;
     if (typeof method !== "string" || message.jsonrpc !== "2.0") {
-      return json({ jsonrpc: "2.0", id, error: { code: -32600, message: "Invalid Request" } }, 400);
+      return json({ jsonrpc: "2.0", id, error: { code: -32600, message: "Invalid Request" } }, 400, origin);
     }
-    if (method === "notifications/initialized" || method.startsWith("notifications/")) return new Response(null, { status: 202 });
-    if (method === "ping") return json({ jsonrpc: "2.0", id, result: {} });
+    if (method === "notifications/initialized" || method.startsWith("notifications/")) return new Response(null, { status: 202, headers: corsHeaders(origin) });
+    if (method === "ping") return json({ jsonrpc: "2.0", id, result: {} }, 200, origin);
     if (method === "initialize") {
       return json({ jsonrpc: "2.0", id, result: {
         protocolVersion: "2025-11-25",
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "caleris-masters", version: "1.0.0" },
         instructions: "Read-only Caleris Masters integration. Tools expose curated competition data only."
-      } });
+      } }, 200, origin);
     }
     if (method === "tools/list") {
       const scoped = tools.filter((tool) => {
         const scope = ({ list_circuits: "circuits:read", list_seasons: "seasons:read", list_teams: "teams:read", list_drivers: "drivers:read", list_rounds: "rounds:read" } as Record<string, string>)[tool.name];
         return (auth.key.scopes as string[]).includes(scope);
       });
-      return json({ jsonrpc: "2.0", id, result: { tools: scoped } });
+      return json({ jsonrpc: "2.0", id, result: { tools: scoped } }, 200, origin);
     }
     if (method === "tools/call") {
       const params = (message.params || {}) as Record<string, unknown>;
       const name = typeof params.name === "string" ? params.name : "";
       const definition = tools.find((tool) => tool.name === name);
-      if (!definition) return json({ jsonrpc: "2.0", id, error: { code: -32602, message: "Unknown tool." } });
+      if (!definition) return json({ jsonrpc: "2.0", id, error: { code: -32602, message: "Unknown tool." } }, 200, origin);
       const scope = ({ list_circuits: "circuits:read", list_seasons: "seasons:read", list_teams: "teams:read", list_drivers: "drivers:read", list_rounds: "rounds:read" } as Record<string, Scope>)[name];
-      if (!(auth.key.scopes as string[]).includes(scope)) return json({ jsonrpc: "2.0", id, error: { code: -32003, message: "API key scope does not permit this tool." } });
+      if (!(auth.key.scopes as string[]).includes(scope)) return json({ jsonrpc: "2.0", id, error: { code: -32003, message: "API key scope does not permit this tool." } }, 200, origin);
       try {
         const result = await readTool(auth.db, name, (params.arguments || {}) as Record<string, unknown>);
-        return json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: { data: result }, isError: false } });
+        return json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: JSON.stringify(result) }], structuredContent: { data: result }, isError: false } }, 200, origin);
       } catch (error) {
         console.error("Caleris MCP tool failed:", error);
-        return json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: "Unable to read the requested Caleris resource." }], isError: true } });
+        return json({ jsonrpc: "2.0", id, result: { content: [{ type: "text", text: "Unable to read the requested Caleris resource." }], isError: true } }, 200, origin);
       }
     }
-    return json({ jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found." } });
+    return json({ jsonrpc: "2.0", id, error: { code: -32601, message: "Method not found." } }, 200, origin);
   }
 
   if (endpointPath.startsWith("/v1/")) {
-    if (req.method !== "GET") return json({ error: "REST API accepts GET only." }, 405);
+    if (req.method !== "GET") return json({ error: "REST API accepts GET only." }, 405, origin);
     const resource = endpointPath;
     const scopeMap: Record<string, Scope> = {
       "/v1/circuits": "circuits:read",
@@ -196,5 +208,5 @@ Deno.serve(async (req: Request) => {
     };
     return await rest(req, serviceClient(), scopeMap, resource);
   }
-  return json({ error: "Endpoint not found." }, 404);
+  return json({ error: "Endpoint not found." }, 404, origin);
 });

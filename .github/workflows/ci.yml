@@ -29,6 +29,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Type-check browser-facing Caleris Edge Functions
+        run: deno check --node-modules-dir=auto supabase/functions/caleris-data-export/index.ts supabase/functions/caleris-integrations/index.ts
       - name: Type-check Race Engine Edge Function and persistent worker
         run: deno check supabase/functions/race-engine-test-service/index.ts workers/race-engine-worker/main.ts
       - run: npm run check
@@ -42,6 +44,8 @@ jobs:
       - run: python3 -B scripts/validate.py
       - name: Paddock Access CORS regression checks
         run: python3 -B scripts/test_paddock_access_cors.py
+      - name: Pre-launch CORS, privacy consent, and legal sitemap checks
+        run: python3 -B scripts/test_prelaunch_six_blockers.py
       - name: Mobile lifecycle and consent regression checks
         run: python3 -B scripts/test_mobile_lifecycle_and_consent.py
       - name: CALERIS dropdown and navigation UI regression checks
