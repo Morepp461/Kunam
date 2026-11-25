@@ -70,7 +70,7 @@ function groupNavigation(groups:NavCategory[]):NavCategory[]{
 }
 function groupQuickAccess(groups:NavCategory[]):NavItem[]{
  const main=groups.find(g=>g.title==="MAIN");
- return (main?.items||[]).filter(item=>["/dashboard","/community","/shop","/rules"].includes(item.to));
+ return (main?.items||[]).filter(item=>["/dashboard","/community","/shop","/rules","/support"].includes(item.to));
 }
 
 export default function MainLayout({children,theme,setTheme,session,profile,memberId,isAdmin,isPrimaryOwner,panelAccess,globalSearch,toast,loading}:{children:ReactNode;theme:string;setTheme:(v:"dark"|"light")=>void;session:Session|null;profile:LayoutProfile|null;memberId:string|null;isAdmin:boolean;isPrimaryOwner:boolean;panelAccess:PanelAccess;globalSearch:ReactNode;toast:Toast;loading:(value:boolean)=>void}){
