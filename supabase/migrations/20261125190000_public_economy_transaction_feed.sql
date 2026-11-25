@@ -22,7 +22,7 @@ join public.economy_wallet_directory source_wallet
 join public.economy_wallet_directory destination_wallet
   on destination_wallet.id = transaction_row.destination_account_id;
 
-revoke all on public.public_economy_transaction_feed from public, anon;
+revoke all on public.public_economy_transaction_feed from public, anon, authenticated, service_role;
 grant select on public.public_economy_transaction_feed to authenticated;
 
 commit;
