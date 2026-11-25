@@ -441,7 +441,7 @@ if __name__ == "__main__":
         assert fragment in migration_sql, f"Merchandise catalog missing: {fragment}"
     for fragment in ["caleris_merchandise_division_costs", "completes_at", "member_finalize_merchandise_production", "private.finalize_merchandise_production", "caleris_merchandise_review_templates"]:
         assert fragment in hardmode_sql, f"Hard-mode merchandise migration missing: {fragment}"
-    for fragment in ["general_public_market_reach", "v_public_demand", "fanbase_plus_reputation_gated_public_market_v2", "caleris_merchandise_reviews"]:
+    for fragment in ["general_public_market_reach", "v_public_demand", "fanbase_plus_reputation_gated_public_market_v3", "caleris_merchandise_reviews"]:
         assert fragment in public_market_sql, f"Public-market/review migration missing: {fragment}"
     for fragment in ["unit_cost", "reference_price", "price_elasticity", "demand_share", "t_shirt", "jacket"]:
         assert fragment in default_sql, f"Default merchandise economy migration missing: {fragment}"
