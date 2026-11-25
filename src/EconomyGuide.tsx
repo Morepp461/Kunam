@@ -7,12 +7,6 @@ type PrizeRule={division_key:string;recipient_type:"driver"|"team";final_positio
 type DivisionRow={division_key:string;division_name:string;created_at:string};
 const money = (value:number) => "€" + value.toLocaleString("id-ID");
 
-const rewardRows = [
-  { position: "P1", amount: 1_000_000 },
-  { position: "P2", amount: 750_000 },
-  { position: "P3", amount: 500_000 },
-];
-
 export default function EconomyGuide() {
   const [taxRules,setTaxRules]=useState<TaxRule[]>([]);
   const [taxLoading,setTaxLoading]=useState(true); 
