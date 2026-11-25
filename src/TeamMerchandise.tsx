@@ -49,6 +49,7 @@ export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: 
     capacity_per_round: string; production_capacity_per_order: string; is_enabled: boolean
   }>>({});
   const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [productionKeys, setProductionKeys] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState("");
   const [notice, setNotice] = useState("");
@@ -198,12 +199,15 @@ export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: 
     const quantity = Number(quantities[product.id] ?? 1);
     if (!Number.isInteger(quantity) || quantity < 1) { setError("Jumlah produksi harus berupa bilangan bulat positif."); return; }
     setSavingKey("produce:" + product.id); setError(""); setNotice("");
+    const idempotencyKey = productionKeys[product.id] ?? crypto.randomUUID();
+    if (!productionKeys[product.id]) setProductionKeys(v => ({ ...v, [product.id]: idempotencyKey }));
     const { data, error: produceError } = await supabase.rpc("member_produce_merchandise", {
-      p_product_id: product.id, p_quantity: quantity
+      p_product_id: product.id, p_quantity: quantity, p_idempotency_key: idempotencyKey
     });
     setSavingKey("");
     if (produceError) setError(produceError.message);
     else {
+      setProductionKeys(v => { const next = { ...v }; delete next[product.id]; return next; });
       setNotice("Produksi " + Number(data?.units_produced ?? quantity) + " " + product.product_name + " berhasil. Biaya " + money(Number(data?.total_cost ?? product.unit_cost * quantity)) + ". Stok " + Number(data?.stock_quantity ?? product.stock_quantity + quantity) + ".");
       await refresh();
     }
@@ -275,6 +279,7 @@ export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: 
           const margin = calculateUnitMargin(price, Number(product.unit_cost));
           const factor = calculatePriceDemandFactor(Number(product.reference_price), price, Number(product.price_elasticity));
           const configured = Number(product.unit_cost) > 0 && Number(product.reference_price) > 0;
+          const hasUnsavedSettings = draft.is_active !== product.is_active || Number(draft.unit_price) !== Number(product.unit_price);
           const quantity = Number(quantities[product.id] ?? 1);
           return <article className="team-merch-product" key={product.id}>
             <div className="team-merch-product-heading">
@@ -292,10 +297,10 @@ export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: 
             {isOwner && <label className="team-merch-toggle"><input type="checkbox" checked={draft.is_active} disabled={!configured} onChange={e => setDrafts(v => ({ ...v, [product.id]: { ...draft, is_active: e.target.checked } }))}/> Tawarkan produk ini untuk dijual</label>}
             {isOwner && <button className="team-hq-save" disabled={savingKey === "product:" + product.id} onClick={() => void saveProduct(product)}><Save size={13}/> {savingKey === "product:" + product.id ? "Menyimpan..." : "Simpan pengaturan produk"}</button>}
             {isOwner && <div className="team-merch-production">
-              <label>Jumlah produksi<input type="number" min="1" max={product.production_capacity_per_order} step="1" value={quantities[product.id] ?? "1"} onChange={e => setQuantities(v => ({ ...v, [product.id]: e.target.value }))}/></label>
+              <label>Jumlah produksi<input type="number" min="1" max={product.production_capacity_per_order} step="1" value={quantities[product.id] ?? "1"} onChange={e => { setQuantities(v => ({ ...v, [product.id]: e.target.value })); setProductionKeys(v => { const next = { ...v }; delete next[product.id]; return next; }); }}/></label>
               <div><span>Estimasi biaya produksi</span><strong>{money(Number(product.unit_cost) * (Number.isFinite(quantity) ? quantity : 0))}</strong></div>
               <small>Kapasitas batch: {Number(product.production_capacity_per_order).toLocaleString("id-ID")} unit sebelum bonus HQ.</small>
-              <button className="team-hq-save" disabled={!configured || !draft.is_active || savingKey === "produce:" + product.id || !Number.isInteger(quantity) || quantity < 1} onClick={() => void produce(product)}>
+              <button className="team-hq-save" disabled={!configured || !draft.is_active || hasUnsavedSettings || savingKey === "produce:" + product.id || !Number.isInteger(quantity) || quantity < 1} onClick={() => void produce(product)}>
                 {savingKey === "produce:" + product.id ? "Memproduksi..." : "Produce stock"}
               </button>
             </div>}
