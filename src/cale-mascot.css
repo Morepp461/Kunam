@@ -36,3 +36,10 @@
 .cale-assistant__guide-list li{padding-left:1px}
 .cale-assistant__guide-list li::marker{color:#d8b95c}
 @media(max-width:560px){.cale-assistant__guide-list{max-height:230px;font-size:10px;gap:6px}}
+
+.cale-assistant__panel{position:relative;max-width:calc(100vw - 24px);max-height:calc(100dvh - 100px);display:flex;flex-direction:column;overflow:auto;resize:none}
+.cale-assistant__resize{position:absolute;z-index:2;top:7px;left:7px;display:grid;place-items:center;width:27px;height:27px;border:1px solid rgba(214,184,94,.45);border-radius:8px;background:rgba(214,184,94,.12);color:#e6c76d;font-size:16px;font-weight:800;cursor:nwse-resize;touch-action:none}
+.cale-assistant__header{padding-left:42px;flex:0 0 auto}
+.cale-assistant__body{min-height:0;overflow:auto;grid-template-columns:minmax(90px,30%) minmax(0,1fr);align-items:start}
+.cale-assistant__character{max-width:100%}
+@media(min-width:900px){.cale-assistant__panel{box-shadow:0 24px 70px rgba(0,0,0,.58)}.cale-assistant__body{gap:18px;padding:18px 20px 22px}.cale-assistant__copy p{font-size:13px}.cale-assistant__guide-list{font-size:12px;max-height:420px}}

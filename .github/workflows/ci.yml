@@ -16,7 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
       - name: Production dependency security gate
         run: npm audit --omit=dev --audit-level=high
       - name: Report resolved Picomatch dependency paths
