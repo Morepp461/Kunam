@@ -72,7 +72,7 @@ export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | 
     const [productQ, batchQ, runQ, fanQ, repQ] = await Promise.all([
       supabase.from("caleris_merchandise_products").select("id,product_key,product_name,unit_price,unit_cost,demand_share,capacity_per_round,production_capacity_per_order,reference_price,price_elasticity,stock_quantity,catalog_enabled,is_active").eq("team_id", teamId).eq("catalog_enabled", true).order("product_key"),
       supabase.from("caleris_merchandise_production_batches").select("id,product_id,product_name,units_produced,units_remaining,unit_cost,total_cost,status,created_at,completes_at,completed_at").eq("team_id", teamId).order("created_at", { ascending: false }),
-      supabase.from("caleris_merchandise_sales_runs").select("id,round_id,units_sold,gross_revenue,production_cost,net_revenue,created_at").eq("team_id", teamId).order("created_at", { ascending: false }).limit(30),
+      supabase.from("caleris_merchandise_sales_runs").select("id,round_id,units_sold,gross_revenue,production_cost,net_revenue,created_at").eq("team_id", teamId).order("created_at", { ascending: false }).limit(1000),
       supabase.from("caleris_fan_populations").select("population,loyalty,engagement,sentiment").eq("entity_kind", "team").eq("team_id", teamId),
       supabase.from("caleris_team_reputation").select("score").eq("team_id", teamId).maybeSingle()
     ]);
