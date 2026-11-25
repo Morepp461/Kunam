@@ -80,6 +80,9 @@ for each row execute function private.grant_initial_economy_wallet_balance();
 revoke execute on function public.member_apply_cash_loan(uuid,numeric,integer) from public,anon,authenticated;
 revoke execute on function public.member_apply_team_cash_loan(uuid,numeric,integer) from public,anon,authenticated;
 
+-- Legacy DDP/TDP race reward rules are retained for history but deactivated.
+update public.caleris_race_reward_rules set is_active=false,updated_at=now() where is_active=true;
+
 -- Store official race cash rewards and maintenance charges separately from legacy DDP/TDP rules.
 create table if not exists public.caleris_race_cash_rewards (
   id uuid primary key default gen_random_uuid(),
@@ -178,8 +181,11 @@ create or replace function private.sync_official_race_cash_on_round_close()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin perform private.sync_official_race_cash_and_maintenance(new.id); return new; end $$;
 create or replace function private.sync_official_race_cash_on_result_change()
-returns trigger language plpgsql security definer set search_path='' as $$
-begin perform private.sync_official_race_cash_and_maintenance(coalesce(new.round_id,old.round_id)); return coalesce(new,old); end $$;
+returns trigger language plpgsql security definer set search_path='' as $
+begin
+  if tg_op='DELETE' then perform private.sync_official_race_cash_and_maintenance(old.round_id); return old; end if;
+  perform private.sync_official_race_cash_and_maintenance(new.round_id); return new;
+end $;
 drop trigger if exists caleris_official_round_economy_sync on public.license_rounds;
 create trigger caleris_official_round_economy_sync after update of status on public.license_rounds for each row when (new.status='closed' and old.status is distinct from new.status) execute function private.sync_official_race_cash_on_round_close();
 drop trigger if exists caleris_official_result_economy_sync on public.caleris_race_result_entries;
