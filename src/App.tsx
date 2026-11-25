@@ -85,7 +85,6 @@ const TeamDriverApplications = lazy(() => import("./TeamDriverApplications"));
 const LiveRace = lazy(() => import("./LiveRace"));
 const TeamLivery = lazy(() => import("./TeamLivery"));
 const CaleAccountTutorial = lazy(() => import("./CaleAccountTutorial"));
-const CashLoanCentre = lazy(() => import("./CashLoanCentre"));
 const CircuitPool = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPool })));
 const CircuitPoolInput = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPoolInput })));
 const SupportCenter = lazy(() => import("./SupportCenter"));
@@ -171,7 +170,7 @@ function Application(){
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
   <Route path="/community" element={session&&!needsPaddockAccess?<CommunityProgression session={session} profile={profile} toast={toast}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/financial-centre" element={session&&!needsPaddockAccess?<CashLoanCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/financial-centre" element={<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/race-checkin" element={session&&!needsPaddockAccess?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/support" element={session&&!needsPaddockAccess?<SupportCenter session={session} isAdmin={false}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/support" element={session&&!needsPaddockAccess&&isAdmin?<SupportCenter session={session} isAdmin/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>

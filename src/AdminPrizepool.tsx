@@ -15,18 +15,14 @@ type Rule={division_key:string;recipient_type:"driver"|"team";final_position:num
 type Payout={recipient_type:string;recipient_id:string;final_position:number;prize_amount:number;paid_at:string};
 type Notice={kind:"success"|"error";text:string};
 const money=(v:number)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
-const schedules=[
- {key:"premio",type:"team",label:"Premio · Team",count:14},
- {key:"premio",type:"driver",label:"Premio · Driver",count:28},
- {key:"zwei",type:"team",label:"Zwei · Team",count:12},
- {key:"zwei",type:"driver",label:"Zwei · Driver",count:24}
-] as const;
+type PrizeGroup={key:string;type:"team"|"driver";label:string;count:number};
+
 
 export default function AdminPrizepool({session}:{session:Session}){
  const [seasons,setSeasons]=useState<Season[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[teams,setTeams]=useState<Team[]>([]);
  const [rules,setRules]=useState<Rule[]>([]),[standings,setStandings]=useState<Standing[]>([]),[payouts,setPayouts]=useState<Payout[]>([]);
  const [seasonId,setSeasonId]=useState(""),[divisionId,setDivisionId]=useState(""),[teamId,setTeamId]=useState(""),[teamPoints,setTeamPoints]=useState(""),[teamPosition,setTeamPosition]=useState("");
- const [busy,setBusy]=useState(false),[notice,setNotice]=useState<Notice|null>(null);
+ const [busy,setBusy]=useState(false),[notice,setNotice]=useState<Notice|null>(null),[driverSlots,setDriverSlots]=useState(""),[teamSlots,setTeamSlots]=useState("");
  const load=useCallback(async()=>{
   if(!supabase)return;const db=supabase;
   const [s,d,t,r]=await Promise.all([
@@ -45,6 +41,7 @@ export default function AdminPrizepool({session}:{session:Session}){
  useEffect(()=>{void load()},[load]);
  const seasonDivisions=divisions.filter(x=>x.season_id===seasonId);
  const activeDivision=divisions.find(x=>x.id===divisionId);
+ const prizeGroups=useMemo<PrizeGroup[]>(()=>Array.from(new Map(divisions.map(d=>[d.division_key,d])).values()).flatMap(d=>["team","driver"].map(type=>{const count=rules.filter(r=>r.division_key===d.division_key&&r.recipient_type===type).reduce((m,r)=>Math.max(m,r.final_position),0);return {key:d.division_key,type:type as "team"|"driver",label:`${d.division_name} · ${type==="team"?"Team":"Driver"}`,count};})).filter(g=>g.count>0),[divisions,rules]);
  const divisionTeams=useMemo(()=>teams.filter(x=>x.division_key===activeDivision?.division_key),[teams,activeDivision?.division_key]);
  const loadDivision=useCallback(async()=>{
   if(!supabase||!divisionId){setStandings([]);setPayouts([]);return}
@@ -56,6 +53,16 @@ export default function AdminPrizepool({session}:{session:Session}){
   setStandings((s.data||[]) as Standing[]);setPayouts((p.data||[]) as Payout[]);
  },[divisionId]);
  useEffect(()=>{void loadDivision()},[loadDivision]);
+ const generateRules=async()=>{
+  if(!supabase||!activeDivision)return;
+  const drivers=Number(driverSlots),teamsCount=Number(teamSlots);
+  if(!Number.isInteger(drivers)||drivers<1||drivers>100||!Number.isInteger(teamsCount)||teamsCount<1||teamsCount>50){setNotice({kind:"error",text:"Jumlah posisi Driver (1–100) dan Team (1–50) wajib valid."});return}
+  setBusy(true);setNotice(null);
+  const rows=[...Array.from({length:drivers},(_,i)=>({division_key:activeDivision.division_key,recipient_type:"driver",final_position:i+1,prize_amount:0,is_active:true,updated_by:session.user.id})),...Array.from({length:teamsCount},(_,i)=>({division_key:activeDivision.division_key,recipient_type:"team",final_position:i+1,prize_amount:0,is_active:true,updated_by:session.user.id}))];
+  const {error}=await supabase.from("caleris_prizepool_rules").upsert(rows,{onConflict:"division_key,recipient_type,final_position"});
+  setBusy(false);if(error){setNotice({kind:"error",text:error.message});return}
+  setNotice({kind:"success",text:"Slot Prizepool divisi berhasil dibuat. Nominal awal €0, silakan konfigurasi sebelum pembayaran."});setDriverSlots("");setTeamSlots("");await load();
+ };
  const updateRule=async(rule:Rule,value:number)=>{
   if(!supabase||!Number.isFinite(value)||value<0)return;
   setBusy(true);setNotice(null);
@@ -86,8 +93,9 @@ export default function AdminPrizepool({session}:{session:Session}){
   <header className="page-heading"><span className="section-eyebrow">ECONOMY · SEASON SETTLEMENT</span><h1 className="page-title">Season Prizepool</h1><p className="page-description">Hadiah dibayarkan berdasarkan final standings setelah divisi difinalisasi. Ini terpisah dari Race Rewards DDP/TDP.</p></header>
   <section className="workspace-card prizepool-card">
    <div className="section-title-row"><div><span className="section-eyebrow">01 · SCHEDULE</span><h2>Konfigurasi Prizepool</h2></div><Coins size={19}/></div>
-   <p className="license-muted">Nominal hadiah dalam Euro (€). Admin dapat mengubah nilai setiap posisi; nilai bawaan mengikuti daftar Prizepool yang sudah ditetapkan.</p>
-   <div className="prizepool-schedule-grid">{schedules.map(group=><section className="prizepool-schedule" key={group.key+group.type}><h3>{group.label}</h3><div className="prizepool-rank-list">{Array.from({length:group.count},(_,i)=>i+1).map(rank=>{const rule=rules.find(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank);return <label key={rank}><span>P{rank}</span><input aria-label={group.label+" posisi "+rank} type="number" min="0" step="0.01" disabled={!rule||busy} value={rule?.prize_amount??""} onChange={e=>setRules(v=>v.map(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank?{...x,prize_amount:Number(e.target.value)}:x))} onBlur={e=>{if(rule)void updateRule(rule,Number(e.currentTarget.value))}}/><small>€</small></label>})}</div></section>)}</div>
+   <p className="license-muted">Nominal hadiah dalam Euro (€). Setiap divisi memiliki konfigurasi independen. Divisi baru harus dibuatkan slot dan nominal hadiahnya sebelum payout.</p>
+   <div className="prizepool-schedule-grid">{prizeGroups.map(group=><section className="prizepool-schedule" key={group.key+group.type}><h3>{group.label}</h3><div className="prizepool-rank-list">{Array.from({length:group.count},(_,i)=>i+1).map(rank=>{const rule=rules.find(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank);return <label key={rank}><span>P{rank}</span><input aria-label={group.label+" posisi "+rank} type="number" min="0" step="0.01" disabled={!rule||busy} value={rule?.prize_amount??""} onChange={e=>setRules(v=>v.map(x=>x.division_key===group.key&&x.recipient_type===group.type&&x.final_position===rank?{...x,prize_amount:Number(e.target.value)}:x))} onBlur={e=>{if(rule)void updateRule(rule,Number(e.currentTarget.value))}}/><small>€</small></label>})}</div></section>)}</div>
+   {activeDivision&&<div className="prizepool-entry-form"><label>Slot Driver<input type="number" min="1" max="100" value={driverSlots} onChange={e=>setDriverSlots(e.target.value)} placeholder="Jumlah posisi"/></label><label>Slot Team<input type="number" min="1" max="50" value={teamSlots} onChange={e=>setTeamSlots(e.target.value)} placeholder="Jumlah posisi"/></label><button className="action" type="button" disabled={busy} onClick={()=>void generateRules()}>Buat slot Prizepool divisi terpilih</button></div>}
   </section>
   <section className="workspace-card prizepool-card">
    <div className="section-title-row"><div><span className="section-eyebrow">02 · FINAL TEAM STANDINGS</span><h2>Hasil akhir Team</h2></div><Trophy size={19}/></div>

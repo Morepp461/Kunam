@@ -260,8 +260,8 @@ def main():
     for fragment in ["cash_loan_preview", "apply_cash_loan", "interest_rates", "has_open_loan", "race_period_count", "total_interest_rate"]:
         assert fragment in cash_loan_source, f"Cash Loan UI missing: {fragment}"
     cash_loan_gateway = cash_loan_edge.read_text(encoding="utf-8")
-    assert "auth.getUser(jwt)" in cash_loan_gateway and 'rpc("member_cash_loan_preview"' in cash_loan_gateway and 'rpc("member_apply_cash_loan"' in cash_loan_gateway
-    assert 'path="/financial-centre"' in app and 'const CashLoanCentre = lazy(() => import("./CashLoanCentre"));' in app
+    assert "auth.getUser(jwt)" in cash_loan_gateway and '["cash_loan_preview","apply_cash_loan","team_cash_loan_preview","apply_team_cash_loan"].includes(action)' in cash_loan_gateway and "return respond(410" in cash_loan_gateway
+    assert 'path="/financial-centre"' in app and 'const CashLoanCentre = lazy(() => import("./CashLoanCentre"));' not in app
     race_control = ROOT / "src/RaceControl.tsx"
     race_styles = ROOT / "src/race-control.css"
     race_migration = ROOT / "supabase/migrations/20261116160000_automated_race_control_economy.sql"

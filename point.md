@@ -1662,3 +1662,71 @@ No Production schema, wallet data, or Edge Function was modified by these profil
 - No database schema changes were included in PR #344. Production and Testing remain aligned at migration versions 20261124090000, 20261124091000, and 20261124092000.
 - Latest inspected Edge Function error logs (from 07:54 UTC onward) returned no matching failed/error/exception entries in either Production or Testing. Earlier isolated HTTP 400 responses documented above remain request-validation responses, not confirmed server-side crashes.
 - No Vercel environment variables were read or modified.
+
+
+
+## ECONOMY AND COMPETITION RULESET REVISION — 25 November 2026
+
+Scope approved for implementation. Preserve existing systems unless a rule below explicitly replaces them. Do not implement referral yet; its design is deferred for a separate discussion.
+
+1. **New division prize configuration**
+   - Division creation currently collects only division name, tier, schedule, and regulations. Add prize-pool configuration to the division lifecycle so each newly created division receives its own explicit prize rules.
+   - Do not silently reuse Premio/Zwei prize values for a new division. Prize rules must be configurable and validated before the division is activated or its prize settlement is enabled.
+   - Existing configured prize rules are considered mostly final and must be preserved unless the new division requires its own rules.
+
+2. **Remove all loan products and replace the cash top-up path with Shop + Midtrans**
+   - Remove the cash-loan and driver-loan schemes, including application, disbursement, interest, installments, repayment automation, and related UI/workflows. Preserve unrelated team sponsorship, transfer, payroll, and wallet history.
+   - Introduce a real-money balance-purchase Shop using Midtrans as payment gateway. Do not invent or activate package prices, conversion rates, or balance amounts: those values are intentionally undecided.
+   - Keep the purchase flow disabled until the owner supplies the approved balance packages/prices and Midtrans merchant credentials/configuration. Never expose server keys to the browser. Payment confirmation must be server-verified and idempotent before crediting a wallet.
+
+3. **Sponsorship configuration UX**
+   - Redesign the Admin sponsorship configuration UI so the available tiers, offer ranges, contract duration/targets, negotiation limits, bonuses, and replacement/breach rules are understandable and grouped by purpose.
+   - Preserve the existing sponsorship engine and its validated business rules. Do not change configured commercial values as part of a UI clarification unless separately approved.
+
+4. **Remove Driver Transfer Tax**
+   - Remove the Driver Transfer tax rule and its assessment/settlement behavior. Driver transfers must not add a tax debit or tax ledger entry.
+   - Preserve transfer offer negotiation, FIA approval, transfer-window restrictions, wallet settlement, and audit history.
+
+5. **System-calculated Team valuation**
+   - Team valuation is calculated by the system and must not be manually set by Admin.
+   - New team base valuation is determined by division tier: Premio (Tier 1) **€120,000,000**, Zwei (Tier 2) **€100,000,000**, and each subsequent division tier decreases by **€20,000,000**.
+   - The valuation subsequently grows through the existing valuation scheme and authoritative inputs.
+   - The **40%–200%** range is strictly the offer range available to a prospective buyer when negotiating with the Team Owner; it is not a base valuation multiplier or an Admin-set valuation.
+   - Preserve historical valuation snapshots and prevent Admin UI from overriding the calculated base/current valuation.
+
+6. **Race Development rewards replaced by cash Race rewards**
+   - Remove Race Development reward grants (DDP/TDP) from race settlement.
+   - The only race reward is balance:
+     - Driver P1: €1,000,000
+     - Driver P2: €750,000
+     - Driver P3: €500,000
+     - Team: €1,000,000 only when one of its Drivers wins the race (P1).
+   - Reward settlement must use official confirmed race results, be idempotent, and avoid paying from draft/unconfirmed OCR results.
+
+7. **One-time starting balances and manual Admin adjustments**
+   - New Driver starting wallet balance: **€5,000,000**.
+   - New Team starting wallet balance: **€100,000,000**.
+   - These are one-time grants at creation only. Do not repeat them at the start of a new season or on role/season transitions.
+   - Admin must retain an audited website workflow to manually adjust Driver and Team balances, with actor, reason, timestamp, and ledger reconciliation. Do not bypass the wallet ledger.
+
+8. **Legacy video transaction list is not the active specification**
+   - The transaction list in the referenced video belongs to an older CALERIS version. Do not implement every legacy item automatically.
+   - Only the requirements explicitly listed in this revision are in scope. Existing current-version features remain governed by their current source and configuration.
+
+9. **Automatic Car Maintenance charge from official DNF results**
+   - After an Admin/FIA race result is officially confirmed/input, inspect its authoritative result entries and count only Drivers classified as **DNF**.
+   - Charge the affected Driver's Team **€1,000,000 per DNF entry per round**.
+   - Example: one Team has two Drivers; one DNF in Round 1 incurs €1,000,000. If both Drivers DNF in Round 2, that round incurs €2,000,000.
+   - No charge for DNS, DSQ, ordinary classified finishers, draft OCR data, or unconfirmed results.
+   - Settlement must be atomic/idempotent per official result entry and round. Correcting or voiding an official result must reconcile/reverse the corresponding maintenance charge without duplicate debits.
+
+10. **Referral system deferred**
+    - Referral is a future discussion item only. Do not design, implement, seed, or expose a referral feature until its rules are explicitly agreed.
+
+### Implementation and release requirements
+- Inspect existing dependencies, database schema, RPCs, Edge Functions, UI routes, wallet ledger, and race-result confirmation lifecycle before modifying them.
+- Use a dedicated feature branch. Keep all schema changes in versioned Supabase migrations and synchronize Production and Testing intentionally; do not copy test-only data.
+- Preserve existing data and historical ledgers. Prefer additive migrations and compatibility wrappers over destructive table/function removal where existing history or callers depend on them.
+- Run project CI, unit/schema/security checks, build, and relevant race/economy regression tests. Fix failures before merge.
+- Merge to `main` only after QA/CI pass. Verify the resulting Vercel Production deployment is READY for the merged commit.
+- Midtrans real-money purchases must remain disabled until approved pricing and credentials are supplied. Referral remains explicitly out of scope.
