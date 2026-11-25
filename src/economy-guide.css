@@ -21,3 +21,18 @@
 .economy-guide-footnote svg{flex:none;color:#d8c17b}
 @media(max-width:900px){.economy-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.economy-guide-grid{grid-template-columns:1fr}.economy-guide-card>p{min-height:0}}
+
+.economy-guide-prize-section{margin-top:22px}
+.economy-guide-prize-section>header{margin-bottom:12px}
+.economy-guide-prize-section>header h2{margin:5px 0;color:var(--text,#eee);font:700 24px 'Barlow Condensed',sans-serif}
+.economy-guide-prize-section>header p,.economy-guide-muted{margin:4px 0 0;color:var(--muted,rgba(244,243,239,.55));font-size:11px;line-height:1.6}
+.economy-guide-prize-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.economy-guide-view-all{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 10px;border:1px solid rgba(215,190,117,.3);border-radius:7px;background:transparent;color:#e2cb83;font:600 11px Inter,sans-serif;cursor:pointer}
+.economy-guide-error{color:#e99a91;font-size:11px}
+.economy-guide-modal-backdrop{position:fixed;inset:0;z-index:1500;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78);backdrop-filter:blur(8px)}
+.economy-guide-modal{width:min(100%,460px);max-height:85dvh;overflow:auto;padding:20px;border:1px solid rgba(215,190,117,.42);border-radius:14px;background:#101114;box-shadow:0 22px 70px rgba(0,0,0,.6)}
+.economy-guide-modal>header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.economy-guide-modal h2{margin:4px 0;color:var(--text,#eee);font:700 22px 'Barlow Condensed',sans-serif}
+.economy-guide-modal-close{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text)}
+@media(max-width:900px){.economy-guide-prize-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.economy-guide-prize-grid{grid-template-columns:1fr}}

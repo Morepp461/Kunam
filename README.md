@@ -1351,3 +1351,14 @@ Release state: PR #371 merged; Caleris CI run #5045 passed; Vercel Production de
 - Legacy Testing/Production migration version timestamps differ for earlier migrations. The new release migration names exist in both environments and schema parity CI passed. Do not rewrite the legacy ledger manually.
 
 The approved Economy & Competition scope is released. Unrelated backlog work remains outside this release.
+
+
+## Sponsor Capacity, Economy Guide & PWA — 25 November 2026
+
+- Sponsor records no longer use individual budgets. Existing database field retained for compatibility only; all sponsor values are NULL. Offer range and negotiation flexibility remain configurable.
+- Per-season brand capacity: T1 Title Partner = maximum 2 teams; T2–T5 = maximum 3 teams. Active contracts and outstanding offers reserve capacity. Expired/rejected offers release reservations; contract completion releases its team slot.
+- Sponsorship settlement and target bonuses are funded by VreeoBank through the immutable Economy Ledger. Sponsorship payout is the only event allowed to draw VreeoBank below zero; no funding balance/source is displayed in UI.
+- Admin can edit sponsor name, industry, tier, negotiation flexibility, offer minimum/maximum, and replace the logo.
+- Economy Guide reads active tax and Prizepool data from Supabase, previews 3 Prizepool rows per division/recipient with a full-list modal, and documents division-scaled race rewards, salary bands, Driver Loan, sponsorship capacity, and Owner profit share.
+- PWA: web manifest, Android install prompt, service worker shell cache, and offline fallback for the application shell. Supabase auth, REST, Storage, and Edge Function requests are deliberately excluded from service-worker caching.
+- Supabase migration `sponsor_capacity_vreeobank_unlimited` applied to Testing and Production. QA/CI and production deployment are pending.

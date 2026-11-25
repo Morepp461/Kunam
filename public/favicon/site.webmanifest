@@ -1,11 +1,18 @@
 {
+  "id": "/",
   "name": "CALERIS MASTERS",
   "short_name": "CALERIS",
+  "description": "CALERIS MASTERS — Motorsport Roleplay Platform",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "categories": ["games", "sports", "entertainment"],
   "icons": [
-    { "src": "/favicon/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/favicon/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/favicon/android-chrome-192x192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/favicon/android-chrome-512x512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
   ],
   "theme_color": "#08090b",
-  "background_color": "#08090b",
-  "display": "standalone"
+  "background_color": "#08090b"
 }
