@@ -405,22 +405,43 @@ def main():
 if __name__ == "__main__":
     main()
     merchandise_migration = ROOT / "supabase/migrations/20261125110019_reputation_merchandise_inventory_engine.sql"
+    production_idempotency_migration = ROOT / "supabase/migrations/20261125110829_merchandise_production_idempotency.sql"
+    hardmode_migration = ROOT / "supabase/migrations/20261125120141_merchandise_hardmode_division_market_reviews.sql"
+    default_economy_migration = ROOT / "supabase/migrations/20261125120152_merchandise_default_economy_and_product_costs_v2.sql"
+    public_market_migration = ROOT / "supabase/migrations/20261125120757_merchandise_hardmode_public_market_reviews_sync.sql"
     merchandise_source = ROOT / "src/TeamMerchandise.tsx"
     merchandise_pricing = ROOT / "src/lib/merchandisePricing.ts"
-    production_idempotency_migration = ROOT / "supabase/migrations/20261125110829_merchandise_production_idempotency.sql"
-    assert merchandise_migration.is_file(), "Missing reputation and merchandise inventory migration"
-    assert production_idempotency_migration.is_file(), "Missing merchandise production idempotency migration"
-    assert merchandise_source.is_file() and merchandise_pricing.is_file(), "Missing Merchandise Engine UI/pricing logic"
+    cale_source = ROOT / "src/CaleAssistant.tsx"
+    cale_styles = ROOT / "src/cale-mascot.css"
+    app_source = ROOT / "src/App.tsx"
+    for migration in [merchandise_migration, production_idempotency_migration, hardmode_migration, default_economy_migration, public_market_migration]:
+        assert migration.is_file(), f"Missing merchandise migration: {migration.name}"
+    for source in [merchandise_source, merchandise_pricing, cale_source, cale_styles, app_source]:
+        assert source.is_file(), f"Missing merchandise/overlay source: {source.name}"
     migration_sql = merchandise_migration.read_text(encoding="utf-8")
     idempotency_sql = production_idempotency_migration.read_text(encoding="utf-8")
+    hardmode_sql = hardmode_migration.read_text(encoding="utf-8")
+    default_sql = default_economy_migration.read_text(encoding="utf-8")
+    public_market_sql = public_market_migration.read_text(encoding="utf-8")
     merchandise_ui = merchandise_source.read_text(encoding="utf-8")
+    cale_ui = cale_source.read_text(encoding="utf-8")
+    cale_css = cale_styles.read_text(encoding="utf-8")
+    app_ui = app_source.read_text(encoding="utf-8")
     for fragment in ["team_merchandise_production", "stock_quantity", "price_elasticity", "member_produce_merchandise", "calculate_merchandise_price_factor", "'world'", "'national'", "'local'", "'junior'"]:
         assert fragment in migration_sql, f"Reputation/Merchandise migration missing: {fragment}"
     for fragment in ["T-Shirt", "Polo Shirt", "Cap", "Fan Card", "Jacket", "Sticker", "Flag", "Scarf"]:
         assert fragment in migration_sql, f"Merchandise catalog missing: {fragment}"
-    for fragment in ["Produce stock", "Unit margin", "Demand factor", "p_idempotency_key", "crypto.randomUUID()"]:
-        assert fragment in merchandise_ui, f"Merchandise UI missing: {fragment}"
+    for fragment in ["caleris_merchandise_division_costs", "completes_at", "member_finalize_merchandise_production", "private.finalize_merchandise_production", "caleris_merchandise_review_templates"]:
+        assert fragment in hardmode_sql, f"Hard-mode merchandise migration missing: {fragment}"
+    for fragment in ["general_public_market_reach", "v_public_demand", "fanbase_plus_reputation_gated_public_market_v2", "caleris_merchandise_reviews"]:
+        assert fragment in public_market_sql, f"Public-market/review migration missing: {fragment}"
+    for fragment in ["unit_cost", "reference_price", "price_elasticity", "demand_share", "t_shirt", "jacket"]:
+        assert fragment in default_sql, f"Default merchandise economy migration missing: {fragment}"
+    for fragment in ["Tidak Diproduksi", "Sedang Diproduksi", "Dipasarkan", "Habis", "Fan reviews", "Produce again", "member_finalize_merchandise_production", "caleris_merchandise_reviews", "crypto.randomUUID()", "onPointerDown", "team-merch-modal-backdrop"]:
+        assert fragment in merchandise_ui, f"Merchandise storefront missing: {fragment}"
     for fragment in ["idempotency_key", "idx_caleris_merch_production_idempotency", "already_produced"]:
         assert fragment in idempotency_sql, f"Merchandise production idempotency migration missing: {fragment}"
-
-
+    for fragment in ["panelSize", "onPointerDown", "pointerdown", "dismissOutside"]:
+        assert fragment in cale_ui, f"Cale assistant resize/dismissal missing: {fragment}"
+    assert "cale-assistant__resize" in cale_css
+    assert 'closest(".toast")' in app_ui, "Toast outside-click dismissal missing"
