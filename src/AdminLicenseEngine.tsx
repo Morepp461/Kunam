@@ -7,7 +7,7 @@ import {supabase} from "./lib/supabase";
 type Season={id:string;season_key:string;title:string;starts_on:string;ends_on:string;status:"draft"|"active"|"completed"};
 type Division={id:string;season_id:string;division_key:string;division_name:string;status:string};
 type Period={id:string;season_id:string;period_type:string;period_number:number|null;starts_on:string;ends_on:string};
-type Round={id:string;season_division_id:string};
+type Round={id:string;season_division_id:string;round_number:number;circuit_id:string|null;circuit_name:string|null;circuit_country_code:string|null;race_starts_at:string;race_duration_minutes:number};
 type Circuit={id:string;name:string;country_code:string};
 type Config={config_key:string;payload:Record<string,number|string>;is_active:boolean};
 type Notice={kind:"success"|"error";text:string};
@@ -38,19 +38,53 @@ export default function AdminLicenseEngine({session:_session}:{session:Session})
  const load=useCallback(async()=>{
   if(!supabase){setLoading(false);return}
   setLoading(true);
-  const [s,d,p,r,cfg,ct]=await Promise.all([
+  const [s,d,p,r,cfg,ct,links]=await Promise.all([
    supabase.from("license_seasons").select("id,season_key,title,starts_on,ends_on,status").order("created_at",{ascending:false}),
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,status"),
    supabase.from("season_calendar_periods").select("id,season_id,period_type,period_number,starts_on,ends_on").order("sort_order"),
-   supabase.from("license_rounds").select("id,season_division_id"),
+   supabase.from("license_rounds").select("id,season_division_id,round_number,circuit_id,circuit_name,circuit_country_code,race_starts_at,race_duration_minutes"),
    supabase.from("caleris_configurations").select("config_key,payload,is_active").eq("category","license").eq("is_active",true),
-   supabase.from("caleris_circuits").select("id,name,country_code").order("name")
+   supabase.from("caleris_circuits").select("id,name,country_code").order("name"),
+   supabase.from("season_period_rounds").select("period_id,round_id")
   ]);
-  const error=s.error||d.error||p.error||r.error||cfg.error||ct.error;
+  const error=s.error||d.error||p.error||r.error||cfg.error||ct.error||links.error;
   if(error)setNotice({kind:"error",text:error.message});
   setSeasons((s.data||[]) as Season[]);setDivisions((d.data||[]) as Division[]);
   setPeriods((p.data||[]) as Period[]);setRounds((r.data||[]) as Round[]);
   setConfigs((cfg.data||[]) as Config[]);setCircuits((ct.data||[]) as Circuit[]);
+  // Preload the latest season as an editable starting snapshot.
+  const sourceSeason=(s.data||[])[0] as Season|undefined;
+  if(sourceSeason){
+   const sourceDivisions=(d.data||[]).filter(x=>x.season_id===sourceSeason.id);
+   const sourcePeriods=(p.data||[]).filter(x=>x.season_id===sourceSeason.id&&x.period_type==="race_period").sort((a,b)=>(a.period_number||0)-(b.period_number||0));
+   const sourceDivisionIds=new Set(sourceDivisions.map(x=>x.id));
+   const sourceRoundIds=new Set((r.data||[]).filter(x=>sourceDivisionIds.has(x.season_division_id)).map(x=>x.id));
+   const sourceLinks=(links.data||[]).filter(x=>sourceRoundIds.has(x.round_id));
+   if(sourcePeriods.length===5){
+    const nextSchedule=defaultSchedule();const nextTimes:RaceTimes={};const nextDurations:Record<string,string>={};
+    sourcePeriods.forEach((period,index)=>{
+     const roundIds=sourceLinks.filter(link=>link.period_id===period.id).map(link=>link.round_id);
+     (["premio","zwei"] as const).forEach(divisionKey=>{
+      const div=sourceDivisions.find(x=>x.division_key===divisionKey);
+      const periodRounds=(r.data||[]).filter(round=>roundIds.includes(round.id)&&round.season_division_id===div?.id).sort((a,b)=>a.round_number-b.round_number);
+      const selected=periodRounds.map(round=>{
+       if(round.circuit_id)return round.circuit_id;
+       const match=(ct.data||[]).filter(c=>c.name===round.circuit_name&&c.country_code===round.circuit_country_code);
+       return match.length===1?match[0].id:"";
+      });
+      if(selected.length>=3&&selected.length<=5){
+       nextSchedule[index][divisionKey]=selected;
+       periodRounds.forEach((round,slot)=>{
+        const key=`${index}:${divisionKey}:${slot}`;
+        nextTimes[key]=new Date(round.race_starts_at).toLocaleTimeString("en-GB",{timeZone:"Asia/Jakarta",hour:"2-digit",minute:"2-digit"});
+        nextDurations[key]=String(round.race_duration_minutes||90);
+       });
+      }
+     });
+    });
+    setSchedule(nextSchedule);setRaceTimes(nextTimes);setRaceDurations(nextDurations);
+   }
+  }
   const active=(s.data||[]).find(x=>x.status==="active");
   if(active){
    const off=(p.data||[]).find(x=>x.season_id===active.id&&x.period_type==="off_season");
