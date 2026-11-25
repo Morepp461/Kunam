@@ -1,0 +1,17 @@
+name: Inspect Cale Archive
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/inspect-cale-archive.yml"
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: List archive entries
+        run: |
+          test -f "public/assets/cale/Cale webp.zip"
+          unzip -Z1 "public/assets/cale/Cale webp.zip" | tee /tmp/cale-files.txt
+          echo "POSE_FILE_COUNT=$(grep -Eic '\.(webp|png)$' /tmp/cale-files.txt)"
