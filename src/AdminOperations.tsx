@@ -26,7 +26,7 @@ export default function AdminOperations({session}:{session:Session}){
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setNotice("");
   const [tax,division,team,valuation,assessment]=await Promise.all([
-   supabase.from("caleris_tax_rules").select("*").order("tax_type").order("minimum_base",{ascending:true}),
+   supabase.from("caleris_tax_rules").select("*").eq("tax_type","wealth").order("tax_type").order("minimum_base",{ascending:true}),
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,license_seasons(title)").order("created_at",{ascending:false}),
    supabase.from("teams").select("id,name,division_key").order("name"),
    supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100),
