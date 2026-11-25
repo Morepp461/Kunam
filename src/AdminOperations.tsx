@@ -1,6 +1,6 @@
 import {useCallback,useEffect,useState} from "react";
 import type {FormEvent} from "react";
-import {ArrowLeft,Coins,Handshake,RefreshCw,Save,ShieldCheck,Trash2,Trophy,Wallet} from "lucide-react";
+import {ArrowLeft,Coins,Handshake,RefreshCw,Save,ShieldCheck,Trash2,Wallet} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -11,15 +11,14 @@ import AdminEngineMarket from "./AdminEngineMarket";
 type TaxRule={id:string;tax_type:"wealth";tax_scope:"member"|"team";label:string;minimum_base:number;rate_percent:number;is_active:boolean;sort_order:number};
 type WealthAssessment={id:string;season_id:string;target_kind:"member"|"team";member_id:string|null;team_id:string|null;wallet_balance_snapshot:number;applied_rate:number;tax_amount:number;status:string;assessed_at:string};
 type Division={id:string;season_id:string;division_key:string;division_name:string;season?:{title:string}};
-type PrizeRule={id:string;season_division_id:string;driver_win_ddp:number;team_win_tdp:number;driver_pole_ddp:number;team_pole_tdp:number;is_active:boolean};
-type Team={id:string;name:string;division_key:string|null;base_valuation:number|null};
+type Team={id:string;name:string;division_key:string|null};
 type Valuation={id:string;team_id:string;base_valuation:number|null;team_score:number|null;score_breakdown:Record<string,any>|null;debt_penalty:number;overdue_penalty:number;total_valuation:number;assessed_at:string;team?:{name:string}};
 type Tab="tax"|"sponsors"|"valuation";
 const money=(n:number)=>"€ "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const number=(v:string)=>v.trim()===""?0:Number(v);
 export default function AdminOperations({session}:{session:Session}){
  const [tab,setTab]=useState<Tab>("tax"),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
- const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[prizes,setPrizes]=useState<PrizeRule[]>([]),[assessments,setAssessments]=useState<WealthAssessment[]>([]);
+ const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[assessments,setAssessments]=useState<WealthAssessment[]>([]);
  const [teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]);
  const [taxType,setTaxType]=useState<"wealth">("wealth"),[taxScope,setTaxScope]=useState<"member"|"team">("member"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null),[wealthSeasonId,setWealthSeasonId]=useState("");
  const [teamId,setTeamId]=useState("");
@@ -29,7 +28,7 @@ export default function AdminOperations({session}:{session:Session}){
   const [tax,division,team,valuation,assessment]=await Promise.all([
    supabase.from("caleris_tax_rules").select("*").order("tax_type").order("minimum_base",{ascending:true}),
    supabase.from("license_season_divisions").select("id,season_id,division_key,division_name,license_seasons(title)").order("created_at",{ascending:false}),
-   supabase.from("teams").select("id,name,division_key,base_valuation").order("name"),
+   supabase.from("teams").select("id,name,division_key").order("name"),
    supabase.from("caleris_team_valuations").select("*,teams(name)").order("assessed_at",{ascending:false}).limit(100),
    supabase.from("caleris_wealth_tax_assessments_v2").select("*").order("assessed_at",{ascending:false}).limit(100),
   ]);
@@ -84,33 +83,11 @@ export default function AdminOperations({session}:{session:Session}){
   setNotice(message);
  };
 
- const savePrize=async(e:FormEvent)=>{
-  e.preventDefault();if(!supabase||!divisionId)return;
-  const values=[driverWin,teamWin,driverPole,teamPole].map(number);
-  if(values.some(v=>!Number.isFinite(v)||v<0)){setNotice("Nilai token tidak boleh negatif.");return}
-  setSaving(true);
-  const {error}=await supabase.from("caleris_race_reward_rules").upsert({season_division_id:divisionId,driver_win_ddp:values[0],team_win_tdp:values[1],driver_pole_ddp:values[2],team_pole_tdp:values[3],is_active:prizeActive,updated_by:session.user.id,updated_at:new Date().toISOString()},{onConflict:"season_division_id"});
-  setSaving(false);setNotice(error?.message||"Aturan DDP/TDP tersimpan. Tidak ada token yang dibagikan sebelum hasil race dicatat.");await refresh();
- };
- const choosePrize=(id:string)=>{setDivisionId(id);const p=prizes.find(x=>x.season_division_id===id);setDriverWin(String(p?.driver_win_ddp??""));setTeamWin(String(p?.team_win_tdp??""));setDriverPole(String(p?.driver_pole_ddp??""));setTeamPole(String(p?.team_pole_tdp??""));setPrizeActive(p?.is_active??false)};
-
  const divisionOptions=Array.from(new Map(divisions.map(d=>[d.division_key,d.division_name])).entries());
  const assignTeamTier=async(id:string,key:string)=>{if(!supabase)return;setSaving(true);const {error}=await supabase.rpc("admin_set_team_division",{p_team_id:id,p_division_key:key||null});setSaving(false);setNotice(error?.message||"Tier tim diperbarui.");await refresh()};
- const saveValuation=async(e:FormEvent)=>{
-  e.preventDefault();if(!supabase||!teamId)return;
-  const base=number(baseValuation);
-  if(!Number.isFinite(base)||base<0){setNotice("Base valuation harus nol atau lebih.");return}
-  setSaving(true);setNotice("");
-  const {data,error}=await supabase.rpc("admin_assess_team_valuation",{p_team_id:teamId,p_base_valuation:base,p_notes:valuationNote.trim()||null});
-  setSaving(false);
-  if(error){setNotice(error.message);return}
-  const result=data as {team_score?:number;total_valuation?:number};
-  setNotice("Valuasi tersimpan. Team Score "+Number(result.team_score||0).toFixed(2)+"/100 · Final "+money(Number(result.total_valuation||0)));
-  setBaseValuation(String(base));setValuationNote("");await refresh();
- };
  return <section className="workspace ops-workspace">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
-  <header className="economy-heading"><div><span className="section-eyebrow">ADMIN CONTROL · OPERATIONS</span><h1>Operations Suite</h1><p>Konfigurasi pajak, hadiah development, sponsor pool, dan valuasi tim.</p><div className="ops-admin-links"><Link className="text-link" to="/admin/operations-intelligence">Buka Operations Intelligence →</Link><Link className="text-link" to="/fia-panel/appeal-room">Buka Admin Appeal Room →</Link></div></div><span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span></header>
+  <header className="economy-heading"><div><span className="section-eyebrow">ADMIN CONTROL · OPERATIONS</span><h1>Operations Suite</h1><p>Konfigurasi Wealth Tax, sponsorship, dan pemantauan valuasi tim.</p><div className="ops-admin-links"><Link className="text-link" to="/admin/operations-intelligence">Buka Operations Intelligence →</Link><Link className="text-link" to="/fia-panel/appeal-room">Buka Admin Appeal Room →</Link></div></div><span className="economy-admin-mark"><ShieldCheck size={16}/> ADMIN ONLY</span></header>
   <nav className="ops-tabs" aria-label="Operations modules">
    <button className={tab==="tax"?"active":""} onClick={()=>setTab("tax")}><Wallet size={16}/> Tax Rules</button>
    <button className={tab==="sponsors"?"active":""} onClick={()=>setTab("sponsors")}><Handshake size={16}/> Sponsor Pool</button>
@@ -120,7 +97,7 @@ export default function AdminOperations({session}:{session:Session}){
   {tab==="tax"&&<div className="ops-grid">
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">CONFIGURABLE TAX</span><h2>{editingTax?"Edit tax rule":"Tambah tax rule"}</h2></div></div>
     <form className="economy-form" onSubmit={saveTax}>
-     <label>Jenis pajak<select value={taxType} onChange={e=>setTaxType(e.target.value as "wealth"|"driver_transfer")}><option value="wealth">Wealth Tax · saldo wallet</option></select></label>
+     <label>Jenis pajak<select value={taxType} onChange={e=>setTaxType("wealth")}><option value="wealth">Wealth Tax · saldo wallet</option></select></label>
      {taxType==="wealth"&&<label>Kategori Wealth Tax<select value={taxScope} onChange={e=>setTaxScope(e.target.value as "member"|"team")}><option value="member">Member · gabungan wallet personal</option><option value="team">Team · Team Wallet</option></select></label>}
      <label>Nama aturan<input value={taxLabel} onChange={e=>setTaxLabel(e.target.value)} required maxLength={100}/></label>
      <label>Ambang minimum (€)<input type="number" min="0" step="0.01" value={taxMinimum} onChange={e=>setTaxMinimum(e.target.value)} required/></label>
@@ -143,23 +120,6 @@ export default function AdminOperations({session}:{session:Session}){
     {assessments.filter(a=>!wealthSeasonId||a.season_id===wealthSeasonId).length===0?<p className="economy-empty">Belum ada assessment untuk season ini.</p>:<div className="ops-record-list">{assessments.filter(a=>!wealthSeasonId||a.season_id===wealthSeasonId).map(a=><article key={a.id}><div><strong>{a.target_kind==="member"?"Member":"Team"} · {(a.member_id||a.team_id||"").slice(0,8)}</strong><small>Saldo snapshot {money(a.wallet_balance_snapshot)} · Tarif {a.applied_rate}% · Pajak {money(a.tax_amount)} · {a.status.toUpperCase()}</small></div></article>)}</div>}
    </section>
   </div>}
-  {tab==="prizes"&&<div className="ops-grid">
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">DEVELOPMENT TOKEN SETTINGS</span><h2>Race reward rules</h2></div></div>
-    <form className="economy-form" onSubmit={savePrize}>
-     <label>Season division<select value={divisionId} onChange={e=>choosePrize(e.target.value)} required><option value="">Pilih divisi season</option>{divisions.map(d=><option key={d.id} value={d.id}>{d.season?.title||"Season"} · {d.division_name}</option>)}</select></label>
-     <label>Race winner · Driver DDP<input type="number" min="0" step="0.01" value={driverWin} onChange={e=>setDriverWin(e.target.value)} required/></label>
-     <label>Race winner · Team TDP<input type="number" min="0" step="0.01" value={teamWin} onChange={e=>setTeamWin(e.target.value)} required/></label>
-     <label>Pole position · Driver DDP<input type="number" min="0" step="0.01" value={driverPole} onChange={e=>setDriverPole(e.target.value)} required/></label>
-     <label>Pole position · Team TDP<input type="number" min="0" step="0.01" value={teamPole} onChange={e=>setTeamPole(e.target.value)} required/></label>
-     <label className="economy-toggle"><input type="checkbox" checked={prizeActive} onChange={e=>setPrizeActive(e.target.checked)}/> Aktifkan aturan</label>
-     <p className="economy-form-hint">DDP hanya masuk ke driver pemenang atau pole sitter. TDP masuk ke tim masing-masing. Token terpisah dari saldo €.</p>
-     <button className="economy-primary-button" disabled={saving||!divisionId}><Save size={15}/> Simpan aturan hadiah</button>
-    </form>
-   </section>
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">RULE REGISTRY</span><h2>Konfigurasi per divisi</h2></div></div>
-    {prizes.length===0?<p className="economy-empty">Belum ada aturan hadiah development.</p>:<div className="ops-record-list">{prizes.map(p=><article key={p.id}><div><strong>{divisions.find(d=>d.id===p.season_division_id)?.season?.title||"Season"} · {divisions.find(d=>d.id===p.season_division_id)?.division_name||"Division"}</strong><small>Winner: {p.driver_win_ddp} DDP / {p.team_win_tdp} TDP · Pole: {p.driver_pole_ddp} DDP / {p.team_pole_tdp} TDP · {p.is_active?"Aktif":"Nonaktif"}</small></div><button onClick={()=>choosePrize(p.season_division_id)}>Edit</button></article>)}</div>}
-   </section>
-  </div>}
   {tab==="sponsors"&&<div className="ops-grid">
    <section className="economy-panel">
     <div className="economy-panel-heading"><div><span className="section-eyebrow">CANONICAL SPONSOR MANAGEMENT</span><h2>Sponsor Management Center</h2></div></div>
@@ -173,9 +133,7 @@ export default function AdminOperations({session}:{session:Session}){
    </section>
   </div>}
   {tab==="valuation"&&<div className="ops-grid">
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">HYBRID TEAM VALUATION</span><h2>Assess team value</h2></div></div>
-    <p className="economy-form-hint">Base valuation dihitung otomatis berdasarkan tier divisi: Premio €120 juta, Zwei €100 juta, lalu turun €20 juta per tier. Admin tidak dapat mengubah base valuation secara manual. Snapshot historis tetap dipertahankan.</p>
-   </section>
+   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SYSTEM VALUATION</span><h2>Base valuation otomatis</h2></div></div><p className="economy-form-hint">Premio €120 juta, Zwei €100 juta, lalu turun €20 juta per tier. Base valuation dihitung sistem dan tidak dapat diedit Admin. Snapshot historis tetap dipertahankan.</p></section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TEAM TIER MAPPING</span><h2>Penetapan tier tim</h2></div></div><p className="economy-form-hint">Affiliate hanya dapat dibuat antar-tier berbeda. Pilih division key yang sudah dibuat melalui License Scoring Engine. Perubahan tier akan diikuti perhitungan base valuation sistem.</p><div className="ops-record-list">{teams.map(t=><article key={t.id}><div><strong><TeamProfileLink teamId={t.id}>{t.name}</TeamProfileLink></strong><small>Tier saat ini: {t.division_key||"Belum ditetapkan"}</small></div><select value={t.division_key||""} onChange={e=>void assignTeamTier(t.id,e.target.value)} disabled={saving||divisionOptions.length===0}><option value="">Belum ditetapkan</option>{divisionOptions.map(([key,name])=><option key={key} value={key}>{name} · {key}</option>)}</select></article>)}</div></section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">VALUATION HISTORY</span><h2>Snapshot valuasi</h2></div></div>
     {valuations.length===0?<p className="economy-empty">Belum ada penilaian tim.</p>:<div className="ops-record-list">{valuations.map(v=><article key={v.id}><div><strong><TeamProfileLink teamId={v.team_id}>{v.team?.name||"Team"}</TeamProfileLink> · {money(v.total_valuation)}</strong><small>Base {money(Number(v.base_valuation||0))} · Score {Number(v.team_score||0).toFixed(2)}/100 · Penalti hutang {Number(v.debt_penalty||0).toFixed(2)} · Penalti tunggakan {Number(v.overdue_penalty||0).toFixed(2)}</small><small>{v.score_breakdown?"Komponen: "+Object.entries(v.score_breakdown).filter(([k])=>k!=="weights_normalized_from").map(([k,val]:[string,any])=>k.replaceAll("_"," ")+": "+(val?.score!=null?Number(val.score).toFixed(1)+"/100":money(Number(val?.amount||0)))).join(" · "):"Legacy snapshot · data historis dipertahankan"}</small></div><time>{new Date(v.assessed_at).toLocaleDateString("id-ID")}</time></article>)}</div>}
