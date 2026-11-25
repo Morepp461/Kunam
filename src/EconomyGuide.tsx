@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { BadgeDollarSign, Banknote, Building2, Coins, Gauge, ShieldCheck, Trophy, Wallet } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { BadgeDollarSign, Banknote, Building2, Coins, Gauge, ShieldCheck, Trophy, Wallet, Eye, X } from "lucide-react";
 import { supabase } from "./lib/supabase";
 
 type TaxRule = { id:string; tax_scope:"member"|"team"; label:string; minimum_base:number|string; rate_percent:number|string; is_active:boolean; sort_order:number };
+type PrizeRule={division_key:string;recipient_type:"driver"|"team";final_position:number;prize_amount:number|string;is_active:boolean};
 const money = (value:number) => "€" + value.toLocaleString("id-ID");
 
 const rewardRows = [
@@ -13,7 +14,7 @@ const rewardRows = [
 
 export default function EconomyGuide() {
   const [taxRules,setTaxRules]=useState<TaxRule[]>([]);
-  const [taxLoading,setTaxLoading]=useState(true);
+  const [taxLoading,setTaxLoading]=useState(true);\n  const [prizeRules,setPrizeRules]=useState<PrizeRule[]>([]);\n  const [prizeLoading,setPrizeLoading]=useState(true);\n  const [prizeError,setPrizeError]=useState("");\n  const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
   const [taxError,setTaxError]=useState("");
   useEffect(()=>{
     let active=true;
@@ -29,11 +30,23 @@ export default function EconomyGuide() {
       setTaxLoading(false);
     };
     void load();
+    const loadPrizes=async()=>{
+      const {data,error}=await supabase.from("caleris_prizepool_rules").select("division_key,recipient_type,final_position,prize_amount,is_active").eq("is_active",true).order("final_position");
+      if(!active)return;
+      if(error){setPrizeError("Konfigurasi Prizepool gagal dimuat.");setPrizeRules([]);}
+      else{setPrizeRules((data||[]) as PrizeRule[]);setPrizeError("");}
+      setPrizeLoading(false);
+    };
+    void loadPrizes();
     return()=>{active=false;};
   },[]);
   const memberTax=taxRules.filter(x=>x.tax_scope==="member");
   const teamTax=taxRules.filter(x=>x.tax_scope==="team");
   const renderTax=(rows:TaxRule[])=>rows.map(row=><div key={row.id}><span>{row.label} · mulai {money(Number(row.minimum_base))}</span><strong>{Number(row.rate_percent).toLocaleString("id-ID")}%</strong></div>);
+  const prizeGroups=useMemo(()=>[
+    {division:"premio",label:"Premio"},{division:"zwei",label:"Zwei"}
+  ].flatMap(d=>(["driver","team"] as const).map(type=>({ ...d,type,rows:prizeRules.filter(r=>r.division_key===d.division&&r.recipient_type===type).sort((a,b)=>a.final_position-b.final_position)}))).filter(g=>g.rows.length),[prizeRules]);
+  const prizeLabel=(type:"driver"|"team")=>type==="driver"?"Driver":"Team";
   return <section className="workspace economy-guide">
     <header className="economy-guide-heading">
       <span className="section-eyebrow">CALERIS MASTERS · ECONOMY</span>
@@ -96,10 +109,26 @@ export default function EconomyGuide() {
       </article>
     </section>
 
+    <section className="economy-guide-prize-section">
+      <header><div><span className="section-eyebrow">SEASON FINALE · PRIZEPOOL</span><h2>Hadiah Akhir Season</h2><p>Prizepool dibayarkan setelah standings divisi difinalisasi. Nominal mengikuti konfigurasi aktif Admin.</p></div></header>
+      {prizeLoading?<p className="economy-guide-muted">Memuat Prizepool...</p>:prizeError?<p className="economy-guide-error">{prizeError}</p>:<div className="economy-guide-grid economy-guide-prize-grid">
+       {prizeGroups.map(group=><article className="economy-guide-card" key={group.division+"-"+group.type}>
+        <span className="economy-guide-icon"><Trophy size={19}/></span><h2>{group.label} · {prizeLabel(group.type)}</h2>
+        <div className="economy-guide-values">{group.rows.slice(0,3).map(row=><div key={row.final_position}><span>P{row.final_position}</span><strong>{money(Number(row.prize_amount))}</strong></div>)}</div>
+        {group.rows.length>3&&<button className="economy-guide-view-all" onClick={()=>setSelectedPrize({division:group.division,type:group.type})}><Eye size={14}/> Lihat semua {group.rows.length} posisi</button>}
+       </article>)}
+      </div>}
+    </section>
     <section className="economy-guide-note">
       <Banknote size={18}/>
       <div><strong>Alur pengelolaan keuangan</strong><p>Semua nominal menggunakan Euro (€). Saldo awal berasal dari VreeoBank dan hanya diberikan satu kali. Reward race diproses dari hasil resmi terkonfirmasi. Penyesuaian Admin wajib melalui wallet ledger dengan alasan dan jejak audit. Driver Transfer Tax telah dihapus; skema Driver Loan tetap terpisah dari pinjaman saldo ke VreeoBank.</p></div>
     </section>
+    {selectedPrize&&<div className="economy-guide-modal-backdrop" role="presentation" onClick={()=>setSelectedPrize(null)}>
+      <section className="economy-guide-modal" role="dialog" aria-modal="true" aria-label="Detail Prizepool" onClick={e=>e.stopPropagation()}>
+       <header><div><span className="section-eyebrow">FULL PRIZEPOOL</span><h2>{selectedPrize.division==="premio"?"Premio":"Zwei"} · {prizeLabel(selectedPrize.type)}</h2></div><button className="economy-guide-modal-close" onClick={()=>setSelectedPrize(null)} aria-label="Tutup"><X size={18}/></button></header>
+       <div className="economy-guide-values">{prizeRules.filter(r=>r.division_key===selectedPrize.division&&r.recipient_type===selectedPrize.type).sort((a,b)=>a.final_position-b.final_position).map(row=><div key={row.final_position}><span>P{row.final_position}</span><strong>{money(Number(row.prize_amount))}</strong></div>)}</div>
+      </section>
+     </div>}
     <p className="economy-guide-footnote"><BadgeDollarSign size={14}/> Halaman ini menjelaskan aturan, nominal, dan cara kerja ekonomi CALERIS. Halaman ini bukan riwayat transaksi individual.</p>
   </section>;
 }
