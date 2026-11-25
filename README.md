@@ -1336,4 +1336,18 @@ This checkpoint records approved scope and does not itself claim that the implem
 - Admin wallet adjustments remain ledger-backed and audited. Testing currently has zero adjustment records, so no historical rows were available for reconciliation.
 - Both new versioned migrations were applied to Testing and Production: `20261125220000_sponsor_logos_and_division_scaled_race_rewards.sql` and `20261125230000_system_team_valuation_refresh.sql`.
 
-Release state: implementation checkpoint only. QA/CI, merge, and production deployment verification are still pending.
+Release state: PR #371 merged; Caleris CI run #5045 passed; Vercel Production deployment `dpl_3nGeno99tvdmxZimUrNijXWexrUJ` is READY for main commit `496e49f235db266484ebfe52919c844f87638c9b`.
+
+
+## Economy & Competition release — 25 November 2026
+
+- PR #371 merged to `main` at `496e49f235db266484ebfe52919c844f87638c9b`.
+- Caleris CI run #5045 passed, including TypeScript, production build, unit/schema validation, Playwright browser smoke tests, Driver Loan regression, economy regressions, and Supabase schema parity.
+- Vercel Production deployment `dpl_3nGeno99tvdmxZimUrNijXWexrUJ` reached READY and is aliased to `calerismasters.com` and `www.calerismasters.com`.
+- Both new database migrations were applied to Testing and Production.
+- Testing Team Owner wallet grants verified: 13 active wallets, 13 unique initial grants, €130,000,000 total. Production has no Team Owner wallets yet; the creation trigger grants €10,000,000 once for future wallets.
+- No Premio/Zwei base valuation mismatches remain in either database.
+- Admin adjustment audit tables are empty in both environments; no historical adjustment records were available to reconcile.
+- Legacy Testing/Production migration version timestamps differ for earlier migrations. The new release migration names exist in both environments and schema parity CI passed. Do not rewrite the legacy ledger manually.
+
+The approved Economy & Competition scope is released. Unrelated backlog work remains outside this release.
