@@ -39,7 +39,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [bonusPercent,setBonusPercent]=useState("50");
  const [fanGrowth,setFanGrowth]=useState({base:"0.2",win:"2",podium:"1.5",points:"1",finish:"0.5",badFinish:"0.05",dnf:"0.15",streak:"0.05",inactive:"0.03",grace:"2"});
  const [divisionProb,setDivisionProb]=useState({premioT1:"50",premioT2:"40",premioT3:"10",zweiT1:"25",zweiT2:"50",zweiT3:"25"});
- const [focusTier,setFocusTier]=useState("T1");
+ const [focusTier,setFocusTier]=useState("T1"),[sponsorTierFilter,setSponsorTierFilter]=useState("ALL");
  const [focusTargets,setFocusTargets]=useState<Record<string,Record<string,string>>>({T1:{points:"80",podium:"40",win:"25",finish:"92",popularity:"75"},T2:{points:"70",podium:"30",win:"15",finish:"90",popularity:"65"},T3:{points:"60",podium:"20",win:"10",finish:"88",popularity:"55"},T4:{points:"50",podium:"15",win:"5",finish:"85",popularity:"45"},T5:{points:"40",podium:"10",win:"5",finish:"80",popularity:"35"}});
 
  const refresh=useCallback(async()=>{
@@ -97,6 +97,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const sponsor=(id:string)=>sponsors.find(s=>s.id===id)?.name||"Sponsor";
  const lastRevision=(id:string)=>revisions.filter(r=>r.offer_id===id).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id))[0];
  const visibleOffers=mode==="admin"?offers.filter(o=>o.target_kind==="team"):offers.filter(o=>o.target_kind==="team"&&o.target_team_id===member?.team_id);
+ const filteredSponsors=sponsors.filter(s=>sponsorTierFilter==="ALL"?(s.tier_key||"")!=="":s.tier_key===sponsorTierFilter);
  const visibleContracts=mode==="admin"?contracts.filter(c=>c.target_kind==="team"):contracts.filter(c=>c.target_kind==="team"&&c.target_team_id===member?.team_id);
  const teamFans=fans.filter(f=>f.entity_kind==="team"&&f.team_id===(mode==="admin"?repTeam:member?.team_id));
  const driverFans=fans.filter(f=>f.entity_kind==="driver"&&f.member_id===member?.id);
@@ -215,7 +216,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
     <label>Fleksibilitas negosiasi (%)<input type="number" min="0" max="100" value={flex} onChange={e=>setFlex(e.target.value)}/></label>
     <div className="brand-two"><label>Offer minimum (€)<input type="number" min="1" value={offerMin} onChange={e=>setOfferMin(e.target.value)}/></label><label>Offer maksimum (€)<input type="number" min="1" value={offerMax} onChange={e=>setOfferMax(e.target.value)}/></label></div>
     <div className="brand-inline"><button className="action primary" disabled={saving||!sponsorName||!tierKey||!offerMin||!offerMax||(!editingSponsorId&&!logoFile)} onClick={()=>void createSponsor()}><Save size={15}/> {editingSponsorId?"Simpan Perubahan":"Simpan Sponsor"}</button>{editingSponsorId&&<button className="action" disabled={saving} onClick={resetSponsorForm}>Batal Edit</button>}</div>
-    <div className="brand-compact-list">{sponsors.map(s=><div key={s.id} className="brand-sponsor-admin-row">{s.logo_url&&<img src={s.logo_url} alt={"Logo "+s.name}/>}<strong>{s.name}</strong><span>{s.source_code||""} · {s.tier_key||"No tier"}</span><button className="action" disabled={saving} onClick={()=>editSponsor(s)}>Edit</button></div>)}</div>
+    <div className="brand-sponsor-filter"><label>Filter berdasarkan tier<select value={sponsorTierFilter} onChange={e=>setSponsorTierFilter(e.target.value)}><option value="ALL">Semua tier ({sponsors.length})</option>{["T1","T2","T3","T4","T5"].map(tier=><option key={tier} value={tier}>{tier} ({sponsors.filter(s=>s.tier_key===tier).length})</option>)}</select></label><span>{filteredSponsors.length} sponsor ditampilkan</span></div><div className="brand-compact-list">{filteredSponsors.length===0?<p className="brand-note">Tidak ada sponsor pada tier ini.</p>:filteredSponsors.map(s=><div key={s.id} className="brand-sponsor-admin-row">{s.logo_url&&<img src={s.logo_url} alt={"Logo "+s.name}/>}<strong>{s.name}</strong><span>{s.source_code||""} · {s.tier_key||"No tier"}</span><button className="action" disabled={saving} onClick={()=>editSponsor(s)}>Edit</button></div>)}</div>
    </article>
    <article id="sponsor-tiers" className="workspace-card"><span className="section-eyebrow">SPONSOR TIERS</span><h2>Aturan Tier</h2><p className="brand-card-help">Fungsi: menentukan syarat minimum agar tim layak menerima sponsor pada tier ini. Tim yang tidak memenuhi reputasi, fans, atau performa minimum akan dilewati saat matching.</p>
     <div className="brand-two"><label>Tier key<input value={tierForm.key} onChange={e=>setTierForm(v=>({...v,key:e.target.value.toUpperCase()}))}/></label><label>Label<input value={tierForm.label} onChange={e=>setTierForm(v=>({...v,label:e.target.value}))}/></label></div>
