@@ -36,4 +36,4 @@ set reference_price=(select round(c.reference_price*case when lower(coalesce(t.d
   demand_share=(select c.demand_share from public.caleris_merchandise_catalog c where c.product_key=p.product_key),
   capacity_per_round=1000000,production_capacity_per_order=100000
 where exists(select 1 from public.caleris_merchandise_catalog c where c.product_key=p.product_key);
-update public.caleris_merchandise_catalog set is_enabled=true;
+update public.caleris_merchandise_catalog set is_enabled=true,capacity_per_round=1000000,production_capacity_per_order=100000;
