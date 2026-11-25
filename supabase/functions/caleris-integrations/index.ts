@@ -153,7 +153,7 @@ Deno.serve(async (req: Request) => {
   if (endpointPath.endsWith("/mcp")) {
     if (req.method !== "POST") return json({ error: "MCP endpoint accepts POST only." }, 405, origin);
     const auth = await authenticate(req);
-    if ("error" in auth) return json({ error: auth.error }, auth.status);
+    if ("error" in auth) return json({ error: auth.error }, auth.status, origin);
     let message: Record<string, unknown>;
     try { message = await req.json(); } catch { return json({ error: "Invalid JSON-RPC request." }, 400, origin); }
     const id = message.id ?? null;
@@ -161,7 +161,7 @@ Deno.serve(async (req: Request) => {
     if (typeof method !== "string" || message.jsonrpc !== "2.0") {
       return json({ jsonrpc: "2.0", id, error: { code: -32600, message: "Invalid Request" } }, 400, origin);
     }
-    if (method === "notifications/initialized" || method.startsWith("notifications/")) return new Response(null, { status: 202 });
+    if (method === "notifications/initialized" || method.startsWith("notifications/")) return new Response(null, { status: 202, headers: corsHeaders(origin) });
     if (method === "ping") return json({ jsonrpc: "2.0", id, result: {} }, 200, origin);
     if (method === "initialize") {
       return json({ jsonrpc: "2.0", id, result: {
@@ -176,7 +176,7 @@ Deno.serve(async (req: Request) => {
         const scope = ({ list_circuits: "circuits:read", list_seasons: "seasons:read", list_teams: "teams:read", list_drivers: "drivers:read", list_rounds: "rounds:read" } as Record<string, string>)[tool.name];
         return (auth.key.scopes as string[]).includes(scope);
       });
-      return json({ jsonrpc: "2.0", id, result: { tools: scoped } });
+      return json({ jsonrpc: "2.0", id, result: { tools: scoped } }, 200, origin);
     }
     if (method === "tools/call") {
       const params = (message.params || {}) as Record<string, unknown>;
@@ -208,5 +208,5 @@ Deno.serve(async (req: Request) => {
     };
     return await rest(req, serviceClient(), scopeMap, resource);
   }
-  return json({ error: "Endpoint not found." }, 404);
+  return json({ error: "Endpoint not found." }, 404, origin);
 });
