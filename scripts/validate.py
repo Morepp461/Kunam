@@ -447,7 +447,7 @@ if __name__ == "__main__":
         assert fragment in default_sql, f"Default merchandise economy migration missing: {fragment}"
     for fragment in ["Tidak Diproduksi", "Sedang Diproduksi", "Dipasarkan", "Habis", "Fan reviews", "Produce again", "member_finalize_merchandise_production", "caleris_merchandise_reviews", "crypto.randomUUID()", "onPointerDown", "team-merch-modal-backdrop"]:
         assert fragment in merchandise_ui, f"Merchandise storefront missing: {fragment}"
-    for fragment in ["merchandise_costs", "v_existing_divisions", "50::numeric", "0.025", "fanbase_plus_reputation_gated_public_market_v3"]:
+    for fragment in ["caleris_merchandise_division_costs", "v_existing_divisions", "50::numeric", "0.025", "fanbase_plus_reputation_gated_public_market_v3"]:
         assert fragment in dynamic_division_sql, f"Dynamic division/general market migration missing: {fragment}"
     assert "team_merchandise_production_daily" in quest_activation_sql and "is_active=exists" in quest_activation_sql
     assert "member_produce_merchandise" in production_rpc_parity_sql and "member_finalize_merchandise_production" in production_rpc_parity_sql
