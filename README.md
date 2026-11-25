@@ -1371,3 +1371,13 @@ The approved Economy & Competition scope is released. Unrelated backlog work rem
 - Vercel Production deployment `dpl_9ZGKWuHXAMc5QnhtFuRYLZN5g9zF` is READY and assigned to `calerismasters.com` and `www.calerismasters.com`.
 - Supabase Testing and Production both have zero non-null sponsor budgets; sponsor settlement uses VreeoBank.
 - PWA manifest, install prompt, and service worker are included in production. Supabase authenticated/data API routes are excluded from service-worker caching.
+
+
+### Sponsor Database sorting checkpoint — PR #373
+
+- PR #373 merged to main at `1d5f103b27496d809fd038f3c80b6c48d5a1a785`.
+- Sponsor Database in Brand Ecosystem now supports independent tier filtering (All/T1–T5) and sorting by sponsor name A–Z/Z–A, tier T1–T5/T5–T1, configured offer minimum ascending/descending, and configured offer maximum ascending/descending.
+- Offer nominal sorting reads `offer_amount_min` / `offer_amount_max` from each sponsor's existing `target_audience` JSON, falling back to `base_amount` where needed; no schema or data migration was required.
+- Sponsor edit and logo replacement actions remain unchanged. The controls are responsive for mobile.
+- Caleris CI run #5086 passed: dependency gate, Deno parity/type checks, TypeScript, production build, unit/schema tests, Playwright browser smoke tests, economy regressions, and Supabase schema parity.
+- Vercel Production deployment `dpl_DyFZ46HNt1ByZn7ce398v2PcjLQ4` is READY for commit `1d5f103b27496d809fd038f3c80b6c48d5a1a785`, with aliases `calerismasters.com` and `www.calerismasters.com`.
