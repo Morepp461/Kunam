@@ -4,6 +4,7 @@ import { supabase } from "./lib/supabase";
 
 type TaxRule = { id:string; tax_scope:"member"|"team"; label:string; minimum_base:number|string; rate_percent:number|string; is_active:boolean; sort_order:number };
 type PrizeRule={division_key:string;recipient_type:"driver"|"team";final_position:number;prize_amount:number|string;is_active:boolean};
+type DivisionRow={division_key:string;division_name:string;created_at:string};
 const money = (value:number) => "€" + value.toLocaleString("id-ID");
 
 const rewardRows = [
@@ -15,7 +16,8 @@ const rewardRows = [
 export default function EconomyGuide() {
   const [taxRules,setTaxRules]=useState<TaxRule[]>([]);
   const [taxLoading,setTaxLoading]=useState(true); 
-  const [prizeRules,setPrizeRules]=useState<PrizeRule[]>([]); 
+  const [prizeRules,setPrizeRules]=useState<PrizeRule[]>([]);
+  const [divisionRows,setDivisionRows]=useState<DivisionRow[]>([]); 
   const [prizeLoading,setPrizeLoading]=useState(true); 
   const [prizeError,setPrizeError]=useState("");\n  const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
   const [taxError,setTaxError]=useState("");
@@ -41,6 +43,8 @@ export default function EconomyGuide() {
       setPrizeLoading(false);
     };
     void loadPrizes();
+    const loadDivisions=async()=>{const {data,error}=await supabase.from("license_season_divisions").select("division_key,division_name,created_at").order("created_at");if(active&&!error&&data)setDivisionRows(data as DivisionRow[]);};
+    void loadDivisions();
     return()=>{active=false;};
   },[]);
   const memberTax=taxRules.filter(x=>x.tax_scope==="member");
@@ -50,6 +54,16 @@ export default function EconomyGuide() {
     {division:"premio",label:"Premio"},{division:"zwei",label:"Zwei"}
   ].flatMap(d=>(["driver","team"] as const).map(type=>({ ...d,type,rows:prizeRules.filter(r=>r.division_key===d.division&&r.recipient_type===type).sort((a,b)=>a.final_position-b.final_position)}))).filter(g=>g.rows.length),[prizeRules]);
   const prizeLabel=(type:"driver"|"team")=>type==="driver"?"Driver":"Team";
+  const raceRewardDivisions=useMemo(()=>{
+    const byKey=new Map<string,DivisionRow>();
+    [...divisionRows].sort((a,b)=>a.created_at.localeCompare(b.created_at)).forEach(row=>{const key=row.division_key.toLowerCase();if(!byKey.has(key))byKey.set(key,row);});
+    const others=[...byKey.keys()].filter(key=>!["premio","zwei"].includes(key));
+    return ["premio","zwei",...others].filter(key=>byKey.has(key)).map(key=>{
+      const tier=key==="premio"?1:key==="zwei"?2:3+others.indexOf(key);
+      const multiplier=Math.max(0,1-(tier-1)*0.1);
+      return {...byKey.get(key)!,tier,multiplier,driver:[1000000,750000,500000].map(value=>Math.round(value*multiplier)),team:Math.round(1000000*multiplier)};
+    });
+  },[divisionRows]);
   return <section className="workspace economy-guide">
     <header className="economy-guide-heading">
       <span className="section-eyebrow">CALERIS MASTERS · ECONOMY</span>
@@ -68,20 +82,17 @@ export default function EconomyGuide() {
           <div><span>Team Wallet</span><strong>{money(100_000_000)}</strong></div>
         </div>
       </article>
-      <article className="economy-guide-card">
+      {raceRewardDivisions.map(division=><article className="economy-guide-card" key={division.division_key}>
         <span className="economy-guide-icon"><Trophy size={19}/></span>
-        <h2>Race Reward · Driver</h2>
-        <p>Hadiah saldo untuk Driver mengikuti posisi akhir pada hasil balapan resmi yang sudah dikonfirmasi FIA.</p>
+        <h2>Race Reward · {division.division_name}</h2>
+        <p>Reward saldo dari hasil resmi terkonfirmasi. Tier {division.tier} menggunakan {Math.round(division.multiplier*100)}% nominal Premio.</p>
         <div className="economy-guide-values">
-          {rewardRows.map(row=><div key={row.position}><span>{row.position}</span><strong>{money(row.amount)}</strong></div>)}
+          <div><span>Driver P1</span><strong>{money(division.driver[0])}</strong></div>
+          <div><span>Driver P2</span><strong>{money(division.driver[1])}</strong></div>
+          <div><span>Driver P3</span><strong>{money(division.driver[2])}</strong></div>
+          <div><span>Team · Driver P1</span><strong>{money(division.team)}</strong></div>
         </div>
-      </article>
-      <article className="economy-guide-card">
-        <span className="economy-guide-icon"><Building2 size={19}/></span>
-        <h2>Race Reward · Team</h2>
-        <p>Team memperoleh hadiah saldo apabila salah satu Driver yang terdaftar sebagai bagian dari tim memenangkan P1.</p>
-        <div className="economy-guide-highlight"><strong>{money(1_000_000)}</strong><span>Untuk Team pemenang P1</span></div>
-      </article>
+      </article>)}
       <article className="economy-guide-card">
         <span className="economy-guide-icon"><Gauge size={19}/></span>
         <h2>Car Maintenance</h2>
@@ -121,6 +132,14 @@ export default function EconomyGuide() {
         {group.rows.length>3&&<button className="economy-guide-view-all" onClick={()=>setSelectedPrize({division:group.division,type:group.type})}><Eye size={14}/> Lihat semua {group.rows.length} posisi</button>}
        </article>)}
       </div>}
+    </section>
+    <section className="economy-guide-grid economy-guide-detail-grid">
+      <article className="economy-guide-card"><span className="economy-guide-icon"><Wallet size={19}/></span><h2>Gaji Driver per Lisensi</h2><p>Rentang gaji tahunan per season mengikuti lisensi aktif dan divalidasi saat kontrak maupun negosiasi.</p><div className="economy-guide-values">
+       <div><span>Bronze</span><strong>€5.000.000 – €7.500.000</strong></div><div><span>Silver</span><strong>€7.600.000 – €12.000.000</strong></div><div><span>Gold</span><strong>€12.100.000 – €22.500.000</strong></div><div><span>Super License</span><strong>€22.600.000 – €45.000.000</strong></div>
+      </div><small>Gaji tahunan dibayar bertahap pada akhir setiap Race Period.</small></article>
+      <article className="economy-guide-card"><span className="economy-guide-icon"><Building2 size={19}/></span><h2>Driver Loan</h2><p>Driver Loan tetap aktif. Fasilitas ini berbeda dari Cash Loan yang sudah dinonaktifkan.</p><div className="economy-guide-values"><div><span>Durasi</span><strong>1 season penuh</strong></div><div><span>Fee</span><strong>Team peminjam → Team asal</strong></div><div><span>Salary share</span><strong>0–100% · kelipatan 10%</strong></div><div><span>Payroll</span><strong>Dibagi antar kedua Team</strong></div></div><small>Hanya untuk Team affiliate, melalui persetujuan FIA. Driver otomatis kembali setelah masa pinjaman berakhir.</small></article>
+      <article className="economy-guide-card"><span className="economy-guide-icon"><Coins size={19}/></span><h2>Sponsorship</h2><p>Nilai kontrak mengikuti offer dan hasil negosiasi. Pembayaran kontrak serta bonus target masuk ke Team Wallet.</p><div className="economy-guide-values"><div><span>Title Partner · Tier 1</span><strong>Maks. 2 Team / season</strong></div><div><span>Sponsor Tier lain</span><strong>Maks. 3 Team / season</strong></div><div><span>Counter Owner</span><strong>Maks. 3 kali</strong></div><div><span>Bonus target</span><strong>Maks. 50% nilai kontrak</strong></div></div><small>Kapasitas brand tersedia kembali setelah kontrak terkait berakhir. Pembayaran kontrak melalui sistem keuangan pusat.</small></article>
+      <article className="economy-guide-card"><span className="economy-guide-icon"><BadgeDollarSign size={19}/></span><h2>Team Owner Profit Share</h2><p>Di akhir season, sistem menghitung profit bersih positif setiap Team Wallet.</p><div className="economy-guide-highlight"><strong>10%</strong><span>Profit positif Team dibayarkan ke Team Owner Wallet</span></div><small>Jika profit nol atau negatif, tidak ada pembagian. Pencairan setelah seluruh divisi selesai dan Prizepool berhasil dibayarkan.</small></article>
     </section>
     <section className="economy-guide-note">
       <Banknote size={18}/>
