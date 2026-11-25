@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, BadgeCheck, ChevronLeft, ChevronRight, Clock3, Coins, RefreshCw, ShieldCheck } from "lucide-react";
+import { ArrowLeftRight, ArrowUpRight, BadgeCheck, ChevronLeft, ChevronRight, Clock3, Coins, RefreshCw, ShieldCheck } from "lucide-react";
 import { supabase } from "./lib/supabase";
 
 type Transaction = {
