@@ -13,7 +13,8 @@ export default function EconomyGuide() {
   const [prizeRules,setPrizeRules]=useState<PrizeRule[]>([]);
   const [divisionRows,setDivisionRows]=useState<DivisionRow[]>([]); 
   const [prizeLoading,setPrizeLoading]=useState(true); 
-  const [prizeError,setPrizeError]=useState("");\n  const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
+  const [prizeError,setPrizeError]=useState("");
+  const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
   const [taxError,setTaxError]=useState("");
   useEffect(()=>{
     let active=true;
