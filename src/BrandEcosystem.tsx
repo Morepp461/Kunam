@@ -8,7 +8,7 @@ import {broadcastNewsroomArticle} from "./lib/newsroomBroadcast";
 import "./brand-ecosystem.css";
 
 type Member={id:string;role:string|null;team_id:string|null;character_name:string|null;public_member_id?:string|null};
-type Sponsor={id:string;name:string;industry:string|null;tier_key:string|null;source_code?:string|null;available_budget:number|null;flexibility_percent:number;is_active:boolean};
+type Sponsor={id:string;name:string;industry:string|null;tier_key:string|null;source_code?:string|null;logo_url?:string|null;available_budget:number|null;flexibility_percent:number;is_active:boolean};
 type Season={id:string;title:string;starts_on:string;status:string};
 type Team={id:string;name:string};
 type Offer={id:string;sponsor_id:string;target_team_id:string|null;target_kind:string;season_id:string;proposed_amount:number;status:string;terms:Record<string,unknown>;expires_at:string|null;counter_count:number;generated_by_engine:boolean};
@@ -28,7 +28,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [tiers,setTiers]=useState<Tier[]>([]),[teamRep,setTeamRep]=useState<Reputation|null>(null),[driverRep,setDriverRep]=useState<Reputation|null>(null),[fans,setFans]=useState<Fan[]>([]);
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const [counterId,setCounterId]=useState(""),[counterAmount,setCounterAmount]=useState(""),[counterTerms,setCounterTerms]=useState("");
- const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[budget,setBudget]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState("");
+ const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[budget,setBudget]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState(""),[logoFile,setLogoFile]=useState<File|null>(null);
  const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",budget:"0",maxBudget:"",active:true});
  const [selectedSponsorId,setSelectedSponsorId]=useState(""),[sponsorBudgetEdit,setSponsorBudgetEdit]=useState("");
  const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState<Record<string,string>>({championship:"0",race_performance:"0",consistency:"0",driver_reputation:"0",fanbase:"0",commercial_credibility:"0"}),[repDriver,setRepDriver]=useState(""),[driverMetrics,setDriverMetrics]=useState<Record<string,string>>({championship:"0",race_performance:"0",consistency:"0",experience:"0",fan_popularity:"0",professional_record:"0"}),[trustMetrics,setTrustMetrics]=useState<Record<string,string>>({target_achievement:"0",consistency:"0",fanbase_growth:"0",commercial_exposure:"0",partnership_conduct:"0"}),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
@@ -55,7 +55,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    if(mode!=="admin"&&!current){setNotice("Akun belum terhubung ke member.");setLoading(false);return;}
    if(mode==="team"&&current?.role!=="Owner"){setNotice("Halaman sponsorship hanya dapat diakses Team Owner.");setLoading(false);return;}
    const [s,se,t,m,o,r,c,ta,tr,rt,rd,fa,configs]=await Promise.all([
-    supabase.from("caleris_sponsors").select("id,name,industry,tier_key,source_code,available_budget,flexibility_percent,is_active").eq("is_active",true).order("name"),
+    supabase.from("caleris_sponsors").select("id,name,industry,tier_key,source_code,logo_url,available_budget,flexibility_percent,is_active").eq("is_active",true).order("name"),
     supabase.from("license_seasons").select("id,title,starts_on,status").order("starts_on",{ascending:false}),
     supabase.from("teams").select("id,name").order("name"),
     supabase.from("members").select("id,character_name,role,team_id").order("character_name"),
@@ -125,10 +125,20 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   setNotice(action==="counter"?(result?.status==="rejected"?"Sponsor langsung menolak counter di luar batas fleksibilitas.":"Counter diproses otomatis oleh Sponsor Engine.") : action==="accept"?"Kontrak sponsorship diterima.":"Offer ditolak.");
  };
  const createSponsor=async()=>{
-  const result=await run("admin_upsert_brand_sponsor",{p_id:null,p_name:sponsorName,p_industry:industry,p_tier_key:tierKey||null,p_budget:Number(budget),p_flexibility:Number(flex),p_region_scope:"regional",p_logo_url:null,p_description:null},"Sponsor dibuat.");
-  const id=typeof result==="string"?result:(result as {id?:string}|null)?.id;
-  if(id&&offerMin&&offerMax)await run("admin_set_sponsor_offer_band",{p_sponsor_id:id,p_minimum:Number(offerMin),p_maximum:Number(offerMax)},"Rentang penawaran sponsor disimpan.");
-  setSponsorName("");setIndustry("");setBudget("");setOfferMin("");setOfferMax("");
+  if(!supabase)return;
+  if(!logoFile){setNotice("Logo sponsor wajib diunggah.");return;}
+  if(!["image/png","image/jpeg","image/webp"].includes(logoFile.type)||logoFile.size>1024*1024){setNotice("Logo harus PNG, JPG, atau WEBP dengan ukuran maksimal 1 MB.");return;}
+  setSaving(true);setNotice("");
+  const extension=logoFile.type==="image/png"?"png":logoFile.type==="image/webp"?"webp":"jpg";
+  const path="sponsors/"+crypto.randomUUID()+"."+extension;
+  const uploaded=await supabase.storage.from("sponsor-logos").upload(path,logoFile,{contentType:logoFile.type,upsert:false});
+  if(uploaded.error){setSaving(false);setNotice("Upload logo gagal: "+uploaded.error.message);return;}
+  const logoUrl=supabase.storage.from("sponsor-logos").getPublicUrl(path).data.publicUrl;
+  const {data,error}=await supabase.rpc("admin_upsert_brand_sponsor",{p_id:null,p_name:sponsorName,p_industry:industry,p_tier_key:tierKey||null,p_budget:Number(budget),p_flexibility:Number(flex),p_region_scope:"regional",p_logo_url:logoUrl,p_description:null});
+  if(error){await supabase.storage.from("sponsor-logos").remove([path]);setSaving(false);setNotice(error.message);return;}
+  const id=typeof data==="string"?data:(data as {id?:string}|null)?.id;
+  if(id&&offerMin&&offerMax){const band=await supabase.rpc("admin_set_sponsor_offer_band",{p_sponsor_id:id,p_minimum:Number(offerMin),p_maximum:Number(offerMax)});if(band.error){setSaving(false);setNotice("Sponsor tersimpan, tetapi offer band gagal: "+band.error.message);await refresh();return;}}
+  setSaving(false);setNotice("Sponsor dan logo berhasil disimpan.");setSponsorName("");setIndustry("");setBudget("");setOfferMin("");setOfferMax("");setLogoFile(null);await refresh();
  };
  const saveBudget=async()=>{await run("admin_set_sponsor_budget",{p_sponsor_id:selectedSponsorId,p_budget:Number(sponsorBudgetEdit)},"Budget sponsor diperbarui.");setSponsorBudgetEdit("");};
  const saveTier=async()=>{await run("admin_upsert_sponsor_tier_rule",{p_tier_key:tierForm.key,p_label:tierForm.label,p_minimum_team_reputation:Number(tierForm.rep),p_minimum_fan_population:Number(tierForm.fans),p_minimum_season_performance:Number(tierForm.performance),p_minimum_budget:Number(tierForm.budget),p_maximum_budget:tierForm.maxBudget?Number(tierForm.maxBudget):null,p_is_active:tierForm.active},"Aturan tier sponsor disimpan.");};
@@ -193,12 +203,14 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
    <article id="sponsor-database" className="workspace-card"><span className="section-eyebrow">SPONSOR DATABASE</span><h2>Tambah Sponsor</h2><p className="brand-card-help">Fungsi: menyimpan brand yang bisa menjadi sumber penawaran sponsorship. Budget adalah dana sponsor yang tersedia, sedangkan fleksibilitas menentukan seberapa jauh sponsor bisa bernegosiasi.</p>
     <label>Nama sponsor<input value={sponsorName} onChange={e=>setSponsorName(e.target.value)} placeholder="Nama brand"/></label>
     <label>Industri<input value={industry} onChange={e=>setIndustry(e.target.value)} placeholder="Automotive, finance, technology..."/></label>
+    <label>Logo sponsor (PNG/JPG/WEBP · maks. 1 MB)<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>setLogoFile(e.target.files?.[0]||null)}/></label>
+    {logoFile&&<small className="brand-config-hint">File dipilih: {logoFile.name}</small>}
     <label>Tier<select value={tierKey} onChange={e=>setTierKey(e.target.value)}><option value="">Pilih tier</option>{tiers.map(t=><option key={t.tier_key} value={t.tier_key}>{t.label}</option>)}</select></label>
     <label>Budget sponsor (€)<input type="number" min="0" value={budget} onChange={e=>setBudget(e.target.value)}/></label>
     <label>Fleksibilitas negosiasi (%)<input type="number" min="0" max="100" value={flex} onChange={e=>setFlex(e.target.value)}/></label>
     <div className="brand-two"><label>Offer minimum (€)<input type="number" min="1" value={offerMin} onChange={e=>setOfferMin(e.target.value)}/></label><label>Offer maksimum (€)<input type="number" min="1" value={offerMax} onChange={e=>setOfferMax(e.target.value)}/></label></div>
-    <button className="action primary" disabled={saving||!sponsorName||!budget||!tierKey||!offerMin||!offerMax} onClick={()=>void createSponsor()}><Plus size={15}/> Simpan Sponsor</button>
-    <div className="brand-compact-list">{sponsors.map(s=><div key={s.id}><strong>{s.name}</strong><span>{s.source_code||""} · {s.tier_key||"No tier"} · {money(s.available_budget)}</span></div>)}</div>
+    <button className="action primary" disabled={saving||!sponsorName||!budget||!tierKey||!offerMin||!offerMax||!logoFile} onClick={()=>void createSponsor()}><Plus size={15}/> Simpan Sponsor</button>
+    <div className="brand-compact-list">{sponsors.map(s=><div key={s.id} className="brand-sponsor-admin-row">{s.logo_url&&<img src={s.logo_url} alt={"Logo "+s.name}/>}<strong>{s.name}</strong><span>{s.source_code||""} · {s.tier_key||"No tier"} · {money(s.available_budget)}</span></div>)}</div>
     <div className="brand-two"><label>Tambah budget sponsor<select value={selectedSponsorId} onChange={e=>{setSelectedSponsorId(e.target.value);setSponsorBudgetEdit(String(sponsors.find(s=>s.id===e.target.value)?.available_budget||0));}}><option value="">Pilih sponsor</option>{sponsors.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></label><label>Budget baru (€)<input type="number" min="0" value={sponsorBudgetEdit} onChange={e=>setSponsorBudgetEdit(e.target.value)}/></label></div>
     <button className="action" disabled={saving||!selectedSponsorId||!sponsorBudgetEdit} onClick={()=>void saveBudget()}>Update Sponsor Budget</button>
    </article>
@@ -278,9 +290,8 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   </div>
   {mode==="team"&&<>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">SPONSOR OFFERS</span><h2>Penawaran Masuk</h2></div><button className="economy-secondary-button" onClick={()=>void refresh()}><RefreshCw size={15}/> Refresh</button></div>
-    {visibleOffers.length===0?<p className="muted">Belum ada sponsor offer untuk tim ini.</p>:visibleOffers.map(o=>{const latest=lastRevision(o.id);const timeline=revisions.filter(r=>r.offer_id===o.id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));return <article className="brand-list-item" key={o.id}><div><strong>{sponsor(o.sponsor_id)}</strong><span>{money(latest?.amount??o.proposed_amount)} · {o.status} · {o.counter_count||0}/3 counter Owner</span><p>{String(latest?.terms?.summary||o.terms?.summary||"Ketentuan sponsor")}</p><div className="brand-revision-timeline">{timeline.map((r,i)=><span key={o.id+"-"+i}><b>{r.actor_kind==="member"?"Team Owner":"Sponsor"}</b> · {money(Number(r.amount))} · {r.response==="countered"?"Counter":r.response==="accepted"?"Menerima":r.response==="rejected"?"Menolak":"Penawaran"}</span>)}</div>{o.status==="negotiating"&&latest?.actor_kind==="member"&&<small className="brand-config-hint">Sponsor sedang memproses counter secara otomatis.</small>}</div>{o.status==="offered"&&latest?.actor_kind==="admin"&&<div className="brand-inline"><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"accept")}><CheckCircle2 size={14}/> Accept</button><button className="action" disabled={saving} onClick={()=>{setCounterId(o.id);setCounterAmount(String(latest.amount));}}>Counter</button><button className="action" disabled={saving} onClick={()=>void respond(o.id,"reject")}>Reject</button></div>}
-     
-    </article>})}
+    {visibleOffers.length===0?<p className="muted">Belum ada sponsor offer untuk tim ini.</p>:visibleOffers.map(o=>{const latest=lastRevision(o.id);const timeline=revisions.filter(r=>r.offer_id===o.id).sort((a,b)=>a.created_at.localeCompare(b.created_at)||a.id.localeCompare(b.id));const sponsorRecord=sponsors.find(s=>s.id===o.sponsor_id);return <article className="brand-list-item" key={o.id}><div><div className="brand-offer-sponsor">{sponsorRecord?.logo_url&&<img src={sponsorRecord.logo_url} alt={"Logo "+sponsor(o.sponsor_id)}/>}<div><strong>{sponsor(o.sponsor_id)}</strong><span>{money(latest?.amount??o.proposed_amount)} · {o.status} · {o.counter_count||0}/3 counter Owner</span></div></div><p>{String(latest?.terms?.summary||o.terms?.summary||"Ketentuan sponsor")}</p><div className="brand-revision-timeline">{timeline.map((r,i)=><span key={o.id+"-"+i}><b>{r.actor_kind==="member"?"Team Owner":"Sponsor"}</b> · {money(Number(r.amount))} · {r.response==="countered"?"Counter":r.response==="accepted"?"Menerima":r.response==="rejected"?"Menolak":"Penawaran"}</span>)}</div>{o.status==="negotiating"&&latest?.actor_kind==="member"&&<small className="brand-config-hint">Sponsor sedang memproses counter secara otomatis.</small>}</div>{o.status==="offered"&&latest?.actor_kind==="admin"&&<div className="brand-inline"><button className="action primary" disabled={saving} onClick={()=>void respond(o.id,"accept")}><CheckCircle2 size={14}/> Accept</button><button className="action" disabled={saving} onClick={()=>{setCounterId(o.id);setCounterAmount(String(latest.amount));}}>Counter</button><button className="action" disabled={saving} onClick={()=>void respond(o.id,"reject")}>Reject</button></div>}</article>})}
+
    </section>
    <section className="workspace-card"><div className="section-title-row"><div><span className="section-eyebrow">CONTRACTS & TARGETS</span><h2>Partnership Portfolio</h2></div><Handshake size={18}/></div>
     {visibleContracts.length===0?<p className="muted">Belum ada kontrak sponsorship.</p>:visibleContracts.map(c=><article className="brand-contract" key={c.id}><div className="brand-list-item"><div><strong>{sponsor(c.sponsor_id)}</strong><span>{money(c.contract_amount)} per season · {c.duration_seasons} season · {c.status}</span></div><span className="brand-contract-status">{c.renewal_status}</span></div><div className="brand-progress-meta"><span>Bonus pool used</span><strong>{money(c.bonus_pool_paid)} / {money(c.bonus_pool_total)}</strong></div><div className="brand-progress"><i style={{width:Math.min(100,c.bonus_pool_total?c.bonus_pool_paid/c.bonus_pool_total*100:0)+"%"}}/></div>{targets.filter(t=>t.contract_id===c.id).map(t=><div className="brand-target" key={t.id}><div><strong>{t.title}</strong><small>{t.current_value} / {t.target_value} · {t.status}</small></div><span>Bonus {money(t.bonus_amount)}</span></div>)}</article>)}

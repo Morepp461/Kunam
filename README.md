@@ -1302,3 +1302,38 @@ This confirms the code and automated regression coverage, not the remaining manu
 - Community season snapshots select the latest team identity snapshot without attempting unsupported UUID aggregation.
 - The member-directory Edge Function's public team-profile path has least-privilege, column-level service_role reads for team livery and active sponsor lookup. No public or anonymous access to those underlying tables is granted.
 - Database changes are tracked in timestamped migrations and applied to both Production and Testing.
+
+
+## Economy & Competition Scope Checkpoint — 25 November 2026
+
+Owner-approved active scope for the current implementation branch:
+
+- Remove Cash Loan only; preserve Driver Loan and its existing workflows/history.
+- Add an independently configured prize pool to every division. A division cannot activate prize settlement without complete rules.
+- Keep Premio Tier 1 race rewards as the baseline; each lower division tier receives 10 percentage points less per tier (Tier 2 90%, Tier 3 80%, Tier 4 70%, etc.).
+- Remove Driver Transfer Tax assessment/settlement without changing transfer negotiation, FIA approval, transfer windows, settlement, or audit history.
+- Calculate Team base/current valuation from authoritative division tier and existing system inputs. Premio Tier 1 starts at €120m, Zwei Tier 2 at €100m, and each subsequent tier decreases €20m. Admin cannot manually override calculated valuation; 40%–200% applies only to buyer offers.
+- Race settlement pays cash rewards only after official confirmation; remove DDP/TDP race payouts. Apply the division-tier reward scale.
+- Starting balances: Driver €5m, Team €100m, Team Owner €10m, one-time only. Verify Admin adjustments through audited wallet ledger.
+- Charge €1m per official DNF result entry per round to the affected Team; exclude DNS, DSQ, OCR drafts, and unconfirmed results. Reconcile corrections/voids idempotently.
+- Sponsor Admin configuration must be reorganized without changing commercial values and support sponsor-logo upload. Uploaded logos must appear on offers in Team Panel → Sponsorship.
+- Preserve all existing sponsorship engine rules, including the agreed seven-sponsor maximum and negotiation/bonus constraints.
+- Shop + Midtrans remains disabled until approved packages/prices and merchant credentials are supplied.
+- Referral, CRM, 3D car integration, Cale artwork expansion, and unrelated backlog items are excluded from this scope.
+
+This checkpoint records approved scope and does not itself claim that the implementation, database migrations, QA, merge, or production deployment are complete. Versioned Supabase migrations must remain synchronized between Testing and Production. Update this checkpoint again with verified PR, CI, migration, and Vercel deployment identifiers after release.
+
+
+## Economy & Competition implementation checkpoint — 25 November 2026
+
+- Cash Loan origination/preview access is disabled; Driver Loan remains intact and is protected by the existing Driver Loan regression suite.
+- Race Settlement cash rewards now scale by division tier: Premio baseline 100%, Tier 2 90%, Tier 3 80%, then 10 percentage points less per tier. Driver P1/P2/P3 and Team P1 are covered. Legacy DDP/TDP race rules are deactivated.
+- Official DNF entries charge the affected Team €1,000,000 per Driver and round. Closed-round/official-result lifecycle, idempotent ledger posting, and correction reversals are retained.
+- Admin sponsor creation supports required PNG/JPG/WEBP logo upload (max 1 MB) to the Admin-write/public-read `sponsor-logos` bucket. Logos render in Team Panel → Sponsorship offers.
+- Team valuation base is system-derived: Premio €120m, Zwei €100m, each further division tier decreases €20m. Existing team base values are synchronized while historical valuation snapshots remain unchanged. Admin can request a ledger/audit-preserving system recalculation but cannot edit the base value.
+- Driver Transfer Tax is inactive and excluded from approved transfer settlement. Negotiation, FIA approval, and wallet settlement remain.
+- Prize Pool uses independent per-division configuration. New divisions do not inherit another division's rules.
+- Admin wallet adjustments remain ledger-backed and audited. Testing currently has zero adjustment records, so no historical rows were available for reconciliation.
+- Both new versioned migrations were applied to Testing and Production: `20261125220000_sponsor_logos_and_division_scaled_race_rewards.sql` and `20261125230000_system_team_valuation_refresh.sql`.
+
+Release state: implementation checkpoint only. QA/CI, merge, and production deployment verification are still pending.
