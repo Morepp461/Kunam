@@ -7,6 +7,7 @@ def read(path: str) -> str:
 
 race = read("src/RaceControl.tsx")
 ocr = read("src/RaceOCR.tsx")
+ocr_parser = read("src/lib/race-result-ocr.ts")
 schedule = read("src/RaceScheduleDashboard.tsx")
 season = read("src/AdminLicenseEngine.tsx")
 migration = read("supabase/migrations/20261118115643_caleris_race_payroll_atomic_automation.sql")
@@ -19,9 +20,9 @@ team_development_notifications = read("supabase/migrations/20261118121500_team_d
 
 assert 'type FinishStatus="finished"|"dnf"|"dns"|"dsq"' in race
 assert 'value="dns"' in race and 'value="dsq"' in race
-assert 'status:"finished"|"dnf"|"dns"|"dsq"' in ocr
-assert 'status:/\\bDSQ\\b/i.test(line)' in ocr
-assert '/\\bDNS\\b/i.test(line)' in ocr
+assert 'export type RaceOCRStatus="finished"|"dnf"|"dns"|"dsq"' in ocr_parser
+assert 'const status:RaceOCRStatus=/\\bDSQ\\b/i.test(line)' in ocr_parser
+assert '/\\bDNS\\b/i.test(line)' in ocr_parser
 
 assert 'getRaceState' in schedule
 assert '"in_progress"' in schedule and '"awaiting_result"' in schedule
