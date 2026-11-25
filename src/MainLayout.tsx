@@ -2,7 +2,7 @@ import {useEffect,useMemo,useState} from "react";
 import type {ReactNode} from "react";
 import {Link,NavLink,useLocation,useNavigate} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
-import {Activity,ShoppingBag,BookOpen,Palette,ChevronDown,Flag,LogOut,Moon,Settings,Sun,UserCircle,Users,X,Menu,Trophy,Medal,ArrowLeftRight,Megaphone,Briefcase,Handshake,Map,UserRound,Gauge,BadgeDollarSign,ListChecks,History,Dumbbell,CalendarCheck,Wallet,Scale,Building2,Wrench,FileSignature,UserPlus,ScanSearch,ClipboardPenLine,Network,Cog,BookMarked,RadioTower,FlagTriangleRight,Gavel,ShieldAlert,MapPinned,Send,Globe,FileText,CalendarDays,SlidersHorizontal,ClipboardList,Coins,Shield,Search,PanelLeftClose,PanelLeftOpen,LifeBuoy} from "lucide-react";
+import {ArrowUpRight,Activity,ShoppingBag,BookOpen,Palette,ChevronDown,Flag,LogOut,Moon,Settings,Sun,UserCircle,Users,X,Menu,Trophy,Medal,ArrowLeftRight,Megaphone,Briefcase,Handshake,Map,UserRound,Gauge,BadgeDollarSign,ListChecks,History,Dumbbell,CalendarCheck,Wallet,Scale,Building2,Wrench,FileSignature,UserPlus,ScanSearch,ClipboardPenLine,Network,Cog,BookMarked,RadioTower,FlagTriangleRight,Gavel,ShieldAlert,MapPinned,Send,Globe,FileText,CalendarDays,SlidersHorizontal,ClipboardList,Coins,Shield,Search,PanelLeftClose,PanelLeftOpen,LifeBuoy} from "lucide-react";
 import {supabase} from "./lib/supabase";
 import {panelGroups} from "./PanelPages";
 import NotificationsCenter from "./NotificationsCenter";
