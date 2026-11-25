@@ -14,7 +14,7 @@ function serviceClient() {
   return createClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
 }
 function parseSender(value: string) {
-  const match = value.match(/^(.*?)\\s*<([^<>]+)>$/);
+  const match = value.match(/^(.*?)\s*<([^<>]+)>$/);
   return match ? { name: match[1].replace(/^["']|["']$/g, "").trim() || null, email: match[2].trim().toLowerCase() } : { name: null, email: value.trim().toLowerCase() };
 }
 
