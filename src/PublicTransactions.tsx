@@ -49,7 +49,7 @@ export default function PublicTransactions() {
     else {
       const result = (data||[]) as Transaction[];
       setRows(result);
-      setTotal(Number(result[0]?.total_count||0));
+      setTotal(Number(count||0));
       setError(null);
     }
     setLoading(false);
