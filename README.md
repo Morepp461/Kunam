@@ -1361,4 +1361,13 @@ The approved Economy & Competition scope is released. Unrelated backlog work rem
 - Admin can edit sponsor name, industry, tier, negotiation flexibility, offer minimum/maximum, and replace the logo.
 - Economy Guide reads active tax and Prizepool data from Supabase, previews 3 Prizepool rows per division/recipient with a full-list modal, and documents division-scaled race rewards, salary bands, Driver Loan, sponsorship capacity, and Owner profit share.
 - PWA: web manifest, Android install prompt, service worker shell cache, and offline fallback for the application shell. Supabase auth, REST, Storage, and Edge Function requests are deliberately excluded from service-worker caching.
-- Supabase migration `sponsor_capacity_vreeobank_unlimited` applied to Testing and Production. QA/CI and production deployment are pending.
+- Supabase migration `sponsor_capacity_vreeobank_unlimited` applied to Testing and Production. Caleris CI run #5077 passed; PR #372 merged to `main` at `ac105f341fa069924d5d08275955b5e6ea28bfe9`; Vercel Production deployment `dpl_9ZGKWuHXAMc5QnhtFuRYLZN5g9zF` is READY with `calerismasters.com` and `www.calerismasters.com` aliases.
+
+
+### Final release verification — PR #372
+
+- Main commit: `ac105f341fa069924d5d08275955b5e6ea28bfe9`.
+- Caleris CI run #5077 passed, including TypeScript, build, unit/schema validation, Playwright browser smoke tests, all existing economy/Driver Loan regressions, and Supabase schema parity.
+- Vercel Production deployment `dpl_9ZGKWuHXAMc5QnhtFuRYLZN5g9zF` is READY and assigned to `calerismasters.com` and `www.calerismasters.com`.
+- Supabase Testing and Production both have zero non-null sponsor budgets; sponsor settlement uses VreeoBank.
+- PWA manifest, install prompt, and service worker are included in production. Supabase authenticated/data API routes are excluded from service-worker caching.
