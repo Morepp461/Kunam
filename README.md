@@ -1322,3 +1322,18 @@ Owner-approved active scope for the current implementation branch:
 - Referral, CRM, 3D car integration, Cale artwork expansion, and unrelated backlog items are excluded from this scope.
 
 This checkpoint records approved scope and does not itself claim that the implementation, database migrations, QA, merge, or production deployment are complete. Versioned Supabase migrations must remain synchronized between Testing and Production. Update this checkpoint again with verified PR, CI, migration, and Vercel deployment identifiers after release.
+
+
+## Economy & Competition implementation checkpoint — 25 November 2026
+
+- Cash Loan origination/preview access is disabled; Driver Loan remains intact and is protected by the existing Driver Loan regression suite.
+- Race Settlement cash rewards now scale by division tier: Premio baseline 100%, Tier 2 90%, Tier 3 80%, then 10 percentage points less per tier. Driver P1/P2/P3 and Team P1 are covered. Legacy DDP/TDP race rules are deactivated.
+- Official DNF entries charge the affected Team €1,000,000 per Driver and round. Closed-round/official-result lifecycle, idempotent ledger posting, and correction reversals are retained.
+- Admin sponsor creation supports required PNG/JPG/WEBP logo upload (max 1 MB) to the Admin-write/public-read `sponsor-logos` bucket. Logos render in Team Panel → Sponsorship offers.
+- Team valuation base is system-derived: Premio €120m, Zwei €100m, each further division tier decreases €20m. Existing team base values are synchronized while historical valuation snapshots remain unchanged. Admin can request a ledger/audit-preserving system recalculation but cannot edit the base value.
+- Driver Transfer Tax is inactive and excluded from approved transfer settlement. Negotiation, FIA approval, and wallet settlement remain.
+- Prize Pool uses independent per-division configuration. New divisions do not inherit another division's rules.
+- Admin wallet adjustments remain ledger-backed and audited. Testing currently has zero adjustment records, so no historical rows were available for reconciliation.
+- Both new versioned migrations were applied to Testing and Production: `20261125220000_sponsor_logos_and_division_scaled_race_rewards.sql` and `20261125230000_system_team_valuation_refresh.sql`.
+
+Release state: implementation checkpoint only. QA/CI, merge, and production deployment verification are still pending.
