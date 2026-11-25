@@ -1697,10 +1697,8 @@ Scope approved for implementation. Preserve existing systems unless a rule below
 6. **Race Development rewards replaced by cash Race rewards**
    - Remove Race Development reward grants (DDP/TDP) from race settlement.
    - The only race reward is balance:
-     - Driver P1: €1,000,000
-     - Driver P2: €750,000
-     - Driver P3: €500,000
-     - Team: €1,000,000 only when one of its Drivers wins the race (P1).
+     - Premio (Tier 1) baseline: Driver P1 €1,000,000; P2 €750,000; P3 €500,000; Team €1,000,000 only when one of its Drivers wins P1.
+     - Lower divisions scale each corresponding Premio reward down by 10 percentage points per tier: Tier 2 = 90%, Tier 3 = 80%, Tier 4 = 70%, and so on. Use the division's numeric tier; never copy Premio amounts unchanged into a lower division.
    - Reward settlement must use official confirmed race results, be idempotent, and avoid paying from draft/unconfirmed OCR results.
 
 7. **One-time starting balances and manual Admin adjustments**
@@ -1730,3 +1728,20 @@ Scope approved for implementation. Preserve existing systems unless a rule below
 - Run project CI, unit/schema/security checks, build, and relevant race/economy regression tests. Fix failures before merge.
 - Merge to `main` only after QA/CI pass. Verify the resulting Vercel Production deployment is READY for the merged commit.
 - Midtrans real-money purchases must remain disabled until approved pricing and credentials are supplied. Referral remains explicitly out of scope.
+
+
+## OWNER SCOPE CLARIFICATIONS — 25 November 2026
+
+The owner explicitly confirmed the following corrections to the Economy and Competition Ruleset Revision above. These clarifications supersede conflicting wording in the earlier revision.
+
+1. **Loan system:** Remove Cash Loan only. Driver Loan remains active and must not be removed, disabled, or have its existing rules/history changed. All other unrelated loan references must be checked before any deletion.
+2. **Sponsor logo management:** Admin sponsor configuration must support uploading a sponsor logo. The saved sponsor logo must also appear on the Team Panel → Sponsorship page for each sponsor's offer. Use Supabase Storage with safe image validation and preserve existing sponsor identity and offer behavior.
+3. **Race rewards by division tier:** Premio (Tier 1) is the baseline. Each lower division tier receives 10 percentage points less of the Premio reward for each corresponding payout: Tier 2 = 90%, Tier 3 = 80%, Tier 4 = 70%, etc. Apply to Driver P1/P2/P3 and Team P1 reward. Resolve the numeric tier from the authoritative division record, not a hardcoded division-name list.
+4. **Prize pool per division:** The owner approved explicit, independent prize-pool configuration per division. A new division must not inherit Premio/Zwei rules implicitly and cannot activate prize settlement until its own prize rules are complete.
+5. **Sponsorship Admin UX:** Reorganize sponsor tier, offer range, duration, targets, negotiation, bonus, replacement, and breach configuration without changing existing commercial values or engine behavior.
+6. **Driver Transfer Tax:** Remove assessment and settlement while preserving transfer negotiation, FIA approval, window validation, wallet settlement, and audit history.
+7. **Team valuation:** Enforce system-calculated base/current valuation. Premio Tier 1 = €120,000,000; Zwei Tier 2 = €100,000,000; each further tier decreases by €20,000,000. The 40%–200% range applies only to buyer offers. Preserve historical snapshots; Admin cannot override valuation.
+8. **Race settlement:** Remove DDP/TDP race payouts. Cash rewards are division-tier-scaled as above, only after official confirmation, idempotently.
+9. **Starting balances and Admin adjustment:** Driver €5,000,000; Team €100,000,000; Team Owner €10,000,000, each one-time. Verify audited Admin adjustments (actor, reason, timestamp, ledger reconciliation) without bypassing ledger.
+10. **Car Maintenance:** €1,000,000 per DNF entry per round charged to the affected Team after official confirmation. No charge for DNS, DSQ, ordinary finishers, OCR drafts, or unconfirmed results. Corrections/voids must reconcile/reverse atomically and idempotently.
+11. **Out of scope:** Referral, CRM, Cale artwork/runtime expansion, 3D car asset integration, and other unrelated point.md backlog items are not part of this execution.
