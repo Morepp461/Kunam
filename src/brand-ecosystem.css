@@ -33,3 +33,6 @@
 .brand-sponsor-admin-row img,.brand-offer-sponsor img{width:48px;height:48px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.06);padding:5px;flex:0 0 auto}
 .brand-offer-sponsor img{width:56px;height:56px}
 .brand-offer-sponsor>div{display:grid;gap:4px}
+
+
+.brand-sponsor-filter{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}.brand-sponsor-filter label{display:flex;flex-direction:column;gap:6px;flex:1;max-width:240px;margin:0!important;color:var(--muted);font-size:12px}.brand-sponsor-filter>span{color:var(--muted);font-size:12px;padding-bottom:10px;white-space:nowrap}.brand-sponsor-filter select{width:100%}@media(max-width:460px){.brand-sponsor-filter{align-items:stretch;flex-direction:column;gap:7px}.brand-sponsor-filter label{max-width:none}.brand-sponsor-filter>span{padding:0}}
