@@ -70,7 +70,7 @@
  .race-complete-table td:first-child{grid-column:1/-1;flex-direction:row;align-items:center;border-top:0;background:rgba(255,255,255,.025)}
  .race-complete-table td:first-child select{width:100%;min-width:0}
  .race-complete-table td:first-child small{font-size:10px}
- .race-complete-table td::before{content:attr(data-label);font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+ .race-complete-table td::before{font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}\n .race-complete-table td:nth-child(2)::before{content:"CAR NUMBER"}\n .race-complete-table td:nth-child(3)::before{content:"COUNTRY / FLAG"}\n .race-complete-table td:nth-child(4)::before{content:"GRID"}\n .race-complete-table td:nth-child(5)::before{content:"STATUS"}\n .race-complete-table td:nth-child(6)::before{content:"FINISH POSITION"}\n .race-complete-table td:nth-child(7)::before{content:"TIME / LAPS"}\n .race-complete-table td:nth-child(8)::before{content:"GAP"}\n .race-complete-table td:nth-child(9)::before{content:"FASTEST LAP"}\n .race-complete-table td:nth-child(10)::before{content:"TYRE STINTS"}
  .race-complete-table td:first-child::before{display:none}
  .race-complete-table td:nth-child(2) input{width:100%}
  .race-country-fields{min-width:0}

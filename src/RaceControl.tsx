@@ -81,7 +81,7 @@ export default function RaceControl(){
  },[round?.id,participants,teams,circuits]);
  const update=(id:string,patch:Partial<Entry>)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,...patch}:x));
  const updateStint=(id:string,i:number,value:Tyre)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,stints:x.stints.map((s,j)=>j===i?value:s)}:x));
- const moveEntry=(index:number,direction:-1|1)=>setEntries(prev=>{const target=index+direction;if(target<0||target>=prev.length)return prev;const next=[...prev];const [item]=next.splice(index,1);next.splice(target,0,item);return next});
+ const moveEntry=(index:number,direction:-1|1)=>setEntries(prev=>{const target=index+direction;if(target<0||target>=prev.length)return prev;const next=[...prev];const [item]=next.splice(index,1);next.splice(target,0,item);let position=0;return next.map(entry=>entry.status==="finished"?{...entry,position:String(++position)}:entry)});
  const pole=entries.find(x=>Number(x.gridPosition)===1),fastest=entries.filter(x=>x.fastestLap.trim()).sort((a,b)=>(parseLap(a.fastestLap)||Infinity)-(parseLap(b.fastestLap)||Infinity))[0];
  const update=(id:string,patch:Partial<Entry>)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,...patch}:x));
  const updateStint=(id:string,i:number,value:Tyre)=>setEntries(prev=>prev.map(x=>x.memberId===id?{...x,stints:x.stints.map((s,j)=>j===i?value:s)}:x));
