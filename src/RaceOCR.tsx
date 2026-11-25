@@ -5,7 +5,7 @@ type Entry=RaceOCREntry;
 type Driver=RaceOCRDriver;
 type Team=RaceOCRTeam;
 type OCRMeta={rawText:string;sourceImageName:string;confidence:number};
-export default function RaceOCR({entries,drivers,teams,onDraft}:{entries:Entry[];drivers:Driver[];teams:Team[];onDraft:(rows:Entry[],meta:OCRMeta)=>void}){
+export default function RaceOCR({entries,drivers,teams,onDraft}:{entries:Entry[];drivers:Driver[];teams:Team[];onDraft:(rows:Entry[],meta:OCRMeta)=>void|Promise<void>}){
  const [busy,setBusy]=useState(false),[progress,setProgress]=useState(0),[raw,setRaw]=useState(""),[message,setMessage]=useState(""),[confidence,setConfidence]=useState<number|null>(null);
  const run=async(file:File)=>{
   if(!["image/png","image/jpeg","image/webp"].includes(file.type)){setMessage("Pilih gambar PNG, JPG, atau WEBP.");return}
@@ -17,7 +17,7 @@ export default function RaceOCR({entries,drivers,teams,onDraft}:{entries:Entry[]
    const rawText=String(result.data.text||"");
    const parsed=parseRaceResultOCR(rawText,entries,drivers,teams,Number(result.data.confidence||0));
    setRaw(rawText);setConfidence(parsed.confidence);
-   onDraft(parsed.rows,{rawText,sourceImageName:file.name,confidence:parsed.confidence});
+   await onDraft(parsed.rows,{rawText,sourceImageName:file.name,confidence:parsed.confidence});
    setMessage(parsed.matchedDriverCount
     ?`OCR membaca ${parsed.matchedDriverCount} Driver. Confidence ${parsed.confidence.toFixed(0)}%. Draft tersimpan untuk direvisi sebelum konfirmasi.`
     :"Teks berhasil dibaca, tetapi nama Driver belum cocok dengan database. Draft tetap dibuat; pilih Driver dan koreksi data secara manual.");

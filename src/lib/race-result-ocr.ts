@@ -7,16 +7,16 @@ export interface RaceOCREntry {
 export interface RaceOCRDriver {id:string;character_name:string|null;team_id:string|null;nationality:string|null}
 export interface RaceOCRTeam {id:string;name:string}
 export interface RaceOCRParseResult {rows:RaceOCREntry[];matchedDriverCount:number;confidence:number}
-const normalize=(value:string)=>value.normalize("NFKD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
-const timeTokens=(line:string)=>line.match(/\b\d{1,3}:\d{2}(?::\d{2})?[.,]\d{3}\b/g)||[];
+const normalize=(value:string)=>value.normalize("NFKD").replace(/[\\u0300-\\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+const timeTokens=(line:string)=>line.match(/\\b\\d{1,3}:\\d{2}(?::\\d{2})?[.,]\\d{3}\\b/g)||[];
 const tyreTokens=(line:string):RaceOCRTyre[]=>{
  const values:RaceOCRTyre[]=[];
- for(const [pattern,tyre] of [[/\bsoft\b/i,"soft"],[/\bmedium\b/i,"medium"],[/\bhard\b/i,"hard"],[/\binter(?:mediate)?\b/i,"intermediate"],[/\bwet\b/i,"wet"]] as [RegExp,RaceOCRTyre][])if(pattern.test(line))values.push(tyre);
+ for(const [pattern,tyre] of [[/\\bsoft\\b/i,"soft"],[/\\bmedium\\b/i,"medium"],[/\\bhard\\b/i,"hard"],[/\\binter(?:mediate)?\\b/i,"intermediate"],[/\\bwet\\b/i,"wet"]] as [RegExp,RaceOCRTyre][])if(pattern.test(line))values.push(tyre);
  return values;
 };
 export function parseRaceResultOCR(text:string,entries:RaceOCREntry[],drivers:RaceOCRDriver[],teams:RaceOCRTeam[],confidence=0):RaceOCRParseResult{
  const rows=entries.map(entry=>({...entry,stints:[...entry.stints]}));
- const lines=text.split(/\r?\n/).map(line=>line.trim()).filter(Boolean);
+ const lines=text.split(/\\r?\\n/).map(line=>line.trim()).filter(Boolean);
  const matched=new Set<string>();
  for(const line of lines){
   const normalized=normalize(line);
@@ -26,11 +26,11 @@ export function parseRaceResultOCR(text:string,entries:RaceOCREntry[],drivers:Ra
   if(index<0)continue;
   const team=teams.find(item=>item.id===driver.team_id);
   const tokens=timeTokens(line);
-  const position=Number((line.match(/^\s*P?(\d{1,2})(?:[.)-])?\s+/i)||[])[1]||"");
-  const carNumber=Number((line.match(/#\s*(\d{1,3})/)||[])[1]||"");
-  const laps=(line.match(/\+\s*\d+\s*laps?/i)||[])[0]||"";
-  const gap=(line.match(/\+\s*\d{1,6}[.,]\d{1,3}(?!\d)/)||[])[0]||"";
-  const status:RaceOCRStatus=/\bDSQ\b/i.test(line)?"dsq":/\bDNS\b/i.test(line)?"dns":/\bDNF\b/i.test(line)?"dnf":"finished";
+  const position=Number((line.match(/^\\s*P?(\\d{1,2})(?:[.)-])?\\s+/i)||[])[1]||"");
+  const carNumber=Number((line.match(/#\\s*(\\d{1,3})/)||[])[1]||"");
+  const laps=(line.match(/\\+\\s*\\d+\\s*laps?/i)||[])[0]||"";
+  const gap=(line.match(/\\+\\s*\\d{1,6}[.,]\\d{1,3}(?!\\d)/)||[])[0]||"";
+  const status:RaceOCRStatus=/\\bDSQ\\b/i.test(line)?"dsq":/\\bDNS\\b/i.test(line)?"dns":/\\bDNF\\b/i.test(line)?"dnf":"finished";
   const tyres=tyreTokens(line);
   const current=rows[index];
   rows[index]={
