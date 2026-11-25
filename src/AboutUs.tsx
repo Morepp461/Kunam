@@ -1,5 +1,4 @@
 import { ArrowDown, ArrowUpRight, CalendarDays, Compass, Flag, Gamepad2, Globe2, Instagram, Rocket, Users } from "lucide-react";
-import CaleMascot from "./CaleMascot";
 import "./about-us.css";
 
 const founders = [
@@ -177,7 +176,7 @@ export default function AboutUs() {
       </section>
 
       <section className="about-cale">
-        <CaleMascot designId="idle_default" context="general" size="clamp(150px, 18vw, 220px)" className="about-cale-mascot" eager />
+        <div className="about-cale-mascot"><img src="/assets/Cale/cale-racing.webp" alt="CALE, the official CALERIS MASTERS racing mascot" loading="eager" decoding="async" /></div>
         <div><span className="about-eyebrow">YOUR FRIENDLY PADDOCK GUIDE</span><h2>Say hi to <em>CALE.</em></h2><p>Meet CALE, our kind-hearted black panther mascot. CALE is here to help members find their way around the CALERIS in-game experience. Think of CALE as your friendly guide around the paddock.</p></div>
       </section>
 
