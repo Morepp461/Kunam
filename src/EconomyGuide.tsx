@@ -31,6 +31,7 @@ export default function EconomyGuide() {
     };
     void load();
     const loadPrizes=async()=>{
+      if(!supabase){setPrizeError("Konfigurasi Prizepool tidak dapat dimuat.");setPrizeLoading(false);return;}
       const {data,error}=await supabase.from("caleris_prizepool_rules").select("division_key,recipient_type,final_position,prize_amount,is_active").eq("is_active",true).order("final_position");
       if(!active)return;
       if(error){setPrizeError("Konfigurasi Prizepool gagal dimuat.");setPrizeRules([]);}
@@ -38,7 +39,7 @@ export default function EconomyGuide() {
       setPrizeLoading(false);
     };
     void loadPrizes();
-    const loadDivisions=async()=>{const {data,error}=await supabase.from("license_season_divisions").select("division_key,division_name,created_at").order("created_at");if(active&&!error&&data)setDivisionRows(data as DivisionRow[]);};
+    const loadDivisions=async()=>{if(!supabase)return;const {data,error}=await supabase.from("license_season_divisions").select("division_key,division_name,created_at").order("created_at");if(active&&!error&&data)setDivisionRows(data as DivisionRow[]);};
     void loadDivisions();
     return()=>{active=false;};
   },[]);
