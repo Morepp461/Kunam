@@ -1689,7 +1689,7 @@ Scope approved for implementation. Preserve existing systems unless a rule below
 
 5. **System-calculated Team valuation**
    - Team valuation is calculated by the system and must not be manually set by Admin.
-   - A newly created team starts with a base valuation of **€100,000,000**.
+   - New team base valuation is determined by division tier: Premio (Tier 1) **€120,000,000**, Zwei (Tier 2) **€100,000,000**, and each subsequent division tier decreases by **€20,000,000**.
    - The valuation subsequently grows through the existing valuation scheme and authoritative inputs.
    - The **40%–200%** range is strictly the offer range available to a prospective buyer when negotiating with the Team Owner; it is not a base valuation multiplier or an Admin-set valuation.
    - Preserve historical valuation snapshots and prevent Admin UI from overriding the calculated base/current valuation.
