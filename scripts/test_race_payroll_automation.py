@@ -21,7 +21,7 @@ team_development_notifications = read("supabase/migrations/20261118121500_team_d
 assert 'type FinishStatus="finished"|"dnf"|"dns"|"dsq"' in race
 assert 'value="dns"' in race and 'value="dsq"' in race
 assert 'export type RaceOCRStatus="finished"|"dnf"|"dns"|"dsq"' in ocr_parser
-assert 'status:/\\bDSQ\\b/i.test(line)' in ocr_parser
+assert 'const status:RaceOCRStatus=/\\bDSQ\\b/i.test(line)' in ocr_parser
 assert '/\\bDNS\\b/i.test(line)' in ocr_parser
 
 assert 'getRaceState' in schedule
