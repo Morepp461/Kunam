@@ -55,7 +55,8 @@ export default function RaceControl(){
  };
  const handleOcrDraft=async(rows:Entry[],meta:{rawText:string;sourceImageName:string;confidence:number})=>{
   setEntries(rows);setRawOcrText(meta.rawText);setSourceImageName(meta.sourceImageName);
-  await persistDraft(rows,meta.rawText,meta.sourceImageName);
+  const savedId=await persistDraft(rows,meta.rawText,meta.sourceImageName);
+  if(!savedId)throw new Error("OCR terbaca, tetapi draft gagal disimpan. Periksa koneksi dan coba lagi.");
  };
  useEffect(()=>{
   if(!round)return;
