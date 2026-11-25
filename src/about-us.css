@@ -1,0 +1,83 @@
+.about-page{--about-red:#a52d32;--about-gold:#c6a56a;color:#f2f0eb;background:#101112;overflow:hidden}
+.about-page *{box-sizing:border-box}
+.about-page em{font-style:normal;color:#c6a56a}
+.about-hero{min-height:590px;position:relative;display:flex;align-items:center;padding:clamp(42px,8vw,112px);background:#111 url("/assets/Background%203.png") center 42%/cover no-repeat;isolation:isolate}
+.about-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,9,10,.96) 0%,rgba(8,9,10,.82) 48%,rgba(8,9,10,.28) 100%),linear-gradient(0deg,#101112 0%,transparent 34%);z-index:-1}
+.about-hero-content{max-width:760px;position:relative;z-index:1}
+.about-kicker,.about-eyebrow,.about-section-label,.about-scroll-link,.about-founder-role,.about-founder-number,.about-timeline article small,.about-footnote{font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.about-kicker{display:flex;align-items:center;gap:10px;color:#d7d2c8}
+.about-kicker span{width:24px;height:2px;background:#a52d32}
+.about-hero h1,.about-intro h2,.about-timeline-heading h2,.about-vreeo h2,.about-founders h2,.about-caleris h2,.about-experience h2,.about-future h2{font-family:Anton,"Arial Narrow",Impact,sans-serif;font-size:clamp(52px,8vw,108px);font-weight:400;line-height:.98;letter-spacing:.005em;text-transform:uppercase;margin:22px 0}
+.about-hero h1 em{color:#c6a56a}
+.about-hero-content>p{max-width:570px;color:#c3c1bd;font-size:16px;line-height:1.85}
+.about-scroll-link{display:inline-flex;align-items:center;gap:12px;color:#f5f1e9;text-decoration:none;margin-top:32px;border-bottom:1px solid #8d292d;padding:0 0 12px}
+.about-hero-mark{position:absolute;right:7%;bottom:16%;font-family:Anton,Impact,sans-serif;font-size:clamp(68px,12vw,170px);color:rgba(255,255,255,.055);letter-spacing:-.08em}
+.about-section{padding:clamp(58px,8vw,112px) clamp(24px,8vw,112px)}
+.about-section-label{color:#aaa49a;display:flex;gap:12px;align-items:center;white-space:nowrap}
+.about-section-label span{color:#c6a56a}
+.about-intro{display:grid;grid-template-columns:minmax(150px,.65fr) minmax(0,1.5fr);gap:7vw;max-width:1440px;margin:auto}
+.about-intro-copy{max-width:800px}
+.about-intro h2,.about-vreeo h2,.about-founders h2,.about-caleris h2,.about-experience h2,.about-future h2{font-size:clamp(43px,6vw,76px);margin:0 0 28px}
+.about-intro-copy p,.about-vreeo-panel p,.about-caleris-copy p,.about-experience-heading p,.about-founders-heading p,.about-future-content p,.about-cale p{color:#b9b7b1;font-size:15px;line-height:1.9;margin:0 0 18px}
+.about-intro-copy strong,.about-vreeo-panel strong,.about-caleris-copy strong{color:#f2eee5}
+.about-timeline-wrap{padding:76px clamp(24px,8vw,112px);background:#171819;border-top:1px solid #2c2b29;border-bottom:1px solid #2c2b29}
+.about-timeline-heading{max-width:1216px;margin:0 auto 48px}
+.about-eyebrow{color:#c6a56a}
+.about-timeline-heading h2{font-size:clamp(42px,6vw,70px);margin:16px 0 0}
+.about-timeline{max-width:1216px;margin:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.about-timeline article{border-top:1px solid #6f292d;padding:20px 12px 0 0;display:grid;grid-template-columns:34px 1fr;gap:12px}
+.about-timeline-index{font-family:Anton,Impact,sans-serif;color:#c6a56a;font-size:25px}
+.about-timeline article small{color:#8f8980;font-size:9px}
+.about-timeline article h3{font-size:18px;line-height:1.25;margin:12px 0}
+.about-timeline article p{color:#aaa8a2;font-size:13px;line-height:1.8;margin:0}
+.about-vreeo-panel{margin-top:30px;display:grid;grid-template-columns:minmax(180px,.65fr) minmax(0,1.35fr);align-items:center;gap:clamp(28px,7vw,100px);padding:clamp(26px,5vw,64px);background:linear-gradient(135deg,#1b1c1d,#141516);border:1px solid #33312e}
+.about-vreeo-panel>img{width:min(100%,300px);max-height:190px;object-fit:contain;justify-self:center}
+.about-vreeo h2{margin:14px 0 20px}
+.about-founders{background:#171819}
+.about-founders-heading{display:flex;align-items:end;justify-content:space-between;gap:36px;margin:26px 0 40px}
+.about-founders-heading h2{margin:0}
+.about-founders-heading p{max-width:390px;margin:0 0 8px}
+.about-founder-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.about-founder-card{position:relative;min-height:250px;padding:24px 18px;background:#202122;border:1px solid #373533;display:flex;flex-direction:column;align-items:flex-start}
+.about-founder-number{position:absolute;right:16px;top:18px;color:#79736b}
+.about-founder-avatar{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#6f2429,#292a2b);border:1px solid #8f3a3e;color:#f4e9db;font-family:Anton,Impact,sans-serif;font-size:22px;margin-bottom:24px}
+.about-founder-role{font-size:9px;color:#c6a56a}
+.about-founder-card h3{font-size:16px;line-height:1.35;margin:9px 0 20px}
+.about-founder-card>a{display:inline-flex;align-items:center;gap:7px;margin-top:auto;color:#d9d4ca;text-decoration:none;font-size:12px;border-bottom:1px solid #5e3435;padding-bottom:6px}
+.about-founder-card>a:hover{color:#d8b97e}
+.about-caleris{display:grid;grid-template-columns:minmax(140px,.55fr) minmax(0,1.2fr) minmax(150px,.55fr);gap:5vw;align-items:center}
+.about-caleris-copy h2{margin:14px 0 24px}
+.about-caleris-brand{display:flex;flex-direction:column;align-items:center;gap:18px}
+.about-caleris-brand img{width:100%;max-width:230px;object-fit:contain}
+.about-caleris-brand span{font-size:9px;letter-spacing:.14em;color:#9d978e;text-align:center}
+.about-experience{background:#171819}
+.about-experience-heading{display:flex;align-items:end;justify-content:space-between;gap:32px;margin:26px 0 40px}
+.about-experience-heading h2{margin:0}
+.about-experience-heading p{max-width:330px;margin:0 0 8px}
+.about-experience-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.about-experience-grid article{min-height:220px;padding:24px;background:#202122;border:1px solid #373533}
+.about-experience-grid article>span{display:block;color:#c6a56a;font-family:Anton,Impact,sans-serif;font-size:24px;margin-bottom:26px}
+.about-experience-grid article>svg{color:#c6a56a}
+.about-experience-grid h3{font-size:17px;margin:16px 0 10px}
+.about-experience-grid p{font-size:13px;line-height:1.8;color:#aaa8a2;margin:0}
+.about-coming-soon{margin-top:18px;padding:clamp(24px,4vw,44px);display:flex;justify-content:space-between;align-items:center;gap:30px;border:1px solid #55433a;background:linear-gradient(110deg,#29201e,#1d1d1c)}
+.about-coming-soon h3{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(30px,4vw,44px);margin:12px 0}
+.about-coming-soon p{max-width:700px;color:#b9b7b1;font-size:14px;line-height:1.8;margin:0}
+.about-coming-status{min-width:190px;display:flex;flex-direction:column;gap:9px;color:#c6a56a}
+.about-coming-status strong{font-size:10px;letter-spacing:.13em}
+.about-coming-status small{color:#aaa49a;line-height:1.5}
+.about-cale{display:grid;grid-template-columns:180px minmax(0,680px);justify-content:center;align-items:center;gap:44px;padding:76px 24px;background:linear-gradient(110deg,#241719,#151617 60%)}
+.about-cale-symbol{font-size:100px;line-height:1;text-align:center;filter:grayscale(1)}
+.about-cale h2{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;font-size:clamp(44px,6vw,72px);margin:12px 0}
+.about-cale h2 em{color:#c6a56a;font-style:normal}
+.about-cale p{margin:0;max-width:680px}
+.about-future{display:grid;grid-template-columns:minmax(150px,.65fr) minmax(0,1.5fr);gap:7vw}
+.about-future-content{max-width:800px}
+.about-future-content p{max-width:680px}
+.about-join-link{display:inline-flex;align-items:center;gap:12px;margin-top:20px;padding:14px 18px;background:#8f292e;color:white;text-decoration:none;font-size:10px;font-weight:800;letter-spacing:.13em}
+.about-join-link:hover{background:#a6383e}
+.about-footnote{display:flex;align-items:center;justify-content:center;gap:10px;padding:24px;color:#8f8980;border-top:1px solid #2b2927;font-size:9px}
+.about-footnote span{height:3px;width:3px;border-radius:50%;background:#a52d32}
+@media(max-width:900px){.about-timeline{grid-template-columns:repeat(2,minmax(0,1fr))}.about-founder-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.about-caleris{grid-template-columns:140px minmax(0,1fr)}.about-caleris-brand{grid-column:2;align-items:flex-start}.about-caleris-brand img{max-width:180px}.about-experience-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){.about-hero{min-height:540px;padding:54px 24px}.about-hero h1{font-size:clamp(48px,13vw,70px)}.about-hero-content>p{font-size:14px}.about-hero-mark{right:8%;bottom:10%;font-size:78px}.about-intro,.about-future{grid-template-columns:1fr;gap:26px}.about-section{padding:58px 22px}.about-timeline-wrap{padding:58px 22px}.about-timeline{grid-template-columns:1fr;gap:26px}.about-vreeo-panel{grid-template-columns:1fr;padding:28px 22px}.about-vreeo-panel>img{max-height:120px}.about-founders-heading,.about-experience-heading{display:block}.about-founders-heading p,.about-experience-heading p{margin-top:20px}.about-founder-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.about-founder-card{min-height:230px;padding:18px 14px}.about-founder-card h3{font-size:14px}.about-caleris{grid-template-columns:1fr;gap:24px}.about-caleris-brand{grid-column:auto;align-items:flex-start}.about-experience-grid{grid-template-columns:1fr}.about-experience-grid article{min-height:180px}.about-coming-soon{display:block}.about-coming-status{margin-top:26px}.about-cale{grid-template-columns:1fr;gap:22px;text-align:center;padding:58px 24px}.about-cale-symbol{font-size:74px}.about-footnote{flex-wrap:wrap;font-size:8px;line-height:1.8}}
+@media(prefers-reduced-motion:reduce){.about-page *{scroll-behavior:auto!important;transition:none!important}}
