@@ -404,4 +404,23 @@ def main():
 
 if __name__ == "__main__":
     main()
+    merchandise_migration = ROOT / "supabase/migrations/20261125110019_reputation_merchandise_inventory_engine.sql"
+    merchandise_source = ROOT / "src/TeamMerchandise.tsx"
+    merchandise_pricing = ROOT / "src/lib/merchandisePricing.ts"
+    production_idempotency_migration = ROOT / "supabase/migrations/20261125110829_merchandise_production_idempotency.sql"
+    assert merchandise_migration.is_file(), "Missing reputation and merchandise inventory migration"
+    assert production_idempotency_migration.is_file(), "Missing merchandise production idempotency migration"
+    assert merchandise_source.is_file() and merchandise_pricing.is_file(), "Missing Merchandise Engine UI/pricing logic"
+    migration_sql = merchandise_migration.read_text(encoding="utf-8")
+    idempotency_sql = production_idempotency_migration.read_text(encoding="utf-8")
+    merchandise_ui = merchandise_source.read_text(encoding="utf-8")
+    for fragment in ["team_merchandise_production", "stock_quantity", "price_elasticity", "member_produce_merchandise", "calculate_merchandise_price_factor", "'world'", "'national'", "'local'", "'junior'"]:
+        assert fragment in migration_sql, f"Reputation/Merchandise migration missing: {fragment}"
+    for fragment in ["T-Shirt", "Polo Shirt", "Cap", "Fan Card", "Jacket", "Sticker", "Flag", "Scarf"]:
+        assert fragment in migration_sql, f"Merchandise catalog missing: {fragment}"
+    for fragment in ["Produce stock", "Unit margin", "Demand factor", "p_idempotency_key", "crypto.randomUUID()"]:
+        assert fragment in merchandise_ui, f"Merchandise UI missing: {fragment}"
+    for fragment in ["idempotency_key", "idx_caleris_merch_production_idempotency", "already_produced"]:
+        assert fragment in idempotency_sql, f"Merchandise production idempotency migration missing: {fragment}"
+
 
