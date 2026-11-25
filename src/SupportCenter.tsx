@@ -18,7 +18,7 @@ export default function SupportCenter({session,isAdmin}:{session:Session;isAdmin
  const activeTicket=tickets.find(t=>t.id===selected)||null;
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setError("");
-  let query=supabase.from("support_tickets").select("id,user_id,sender_email,sender_name,subject,status,priority,last_message_at,created_at").order("last_message_at",{ascending:false}).limit(150);
+  let query=supabase.from("support_tickets").select("id,user_id,sender_email,sender_name,subject,category,status,priority,last_message_at,created_at").order("last_message_at",{ascending:false}).limit(150);
   if(!isAdmin)query=query.eq("user_id",session.user.id);
   const {data,error:loadError}=await query;
   if(loadError)setError(loadError.message);
