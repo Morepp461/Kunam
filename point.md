@@ -1797,4 +1797,15 @@ Database migrations applied to Testing and Production:
 - `sponsor_capacity_vreeobank_unlimited` — sponsor budget removal, per-season capacity, VreeoBank settlement funding, and authenticated Prizepool rule read access.
 - Repository migration file: `supabase/migrations/20261125084011_sponsor_capacity_vreeobank_unlimited.sql`.
 
-QA/release still pending on this branch. Do not deploy until CI, migration parity, and preview installability checks pass.
+Release completed: PR #372 merged to main at `ac105f341fa069924d5d08275955b5e6ea28bfe9`; Caleris CI run #5077 passed including schema parity; Vercel Production deployment `dpl_9ZGKWuHXAMc5QnhtFuRYLZN5g9zF` is READY and aliased to `calerismasters.com` and `www.calerismasters.com`.
+
+
+### Final release verification — PR #372
+
+- Merged to `main`: `ac105f341fa069924d5d08275955b5e6ea28bfe9`.
+- Caleris CI run #5077: SUCCESS. TypeScript, production build, unit/schema tests, Playwright browser smoke tests, economy/Driver Loan regressions, and Supabase schema parity all passed.
+- Vercel Production: `dpl_9ZGKWuHXAMc5QnhtFuRYLZN5g9zF`, READY. Production aliases: `calerismasters.com`, `www.calerismasters.com`.
+- Testing and Production both report zero sponsor records with non-null legacy `available_budget`; all sponsor payouts now route through VreeoBank.
+- Both databases contain the new migration `sponsor_capacity_vreeobank_unlimited`, and both have the Prizepool authenticated-read policy.
+- Sponsor capacity rules are enforced in both matching paths: Title Partner T1 = 2 teams; other tiers = 3 teams per season. Outstanding offers reserve a slot; ended/rejected/expired records release it according to their status.
+- PWA manifest and service worker are deployed. The service worker excludes Supabase Auth, REST, Storage, and Edge Function endpoints from caching.
