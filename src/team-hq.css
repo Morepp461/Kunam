@@ -20,3 +20,27 @@
 .team-merch-history{display:grid;gap:0}.team-merch-history article{display:grid;grid-template-columns:2fr 1fr 1fr;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--border,rgba(255,255,255,.1));font-size:11px}.team-merch-history article>div{display:grid;gap:3px}.team-merch-history small{color:var(--muted,#999)}.team-merch-history article>strong{text-align:right}
 @media(max-width:900px){.team-merch-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.team-merch-config-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.team-merch-products{grid-template-columns:1fr}.team-merch-admin-fields{grid-template-columns:1fr 1fr}.team-merch-config-grid{grid-template-columns:1fr 1fr}.team-merch-history article{grid-template-columns:1.4fr .8fr 1fr;font-size:10px}.team-merch-heading{align-items:center}.team-merch-metrics strong{font-size:16px}}
+
+
+/* Merchandise inventory and pricing controls */
+.team-merch-admin-note{color:var(--muted,#a6a6a6);font-size:.86rem;margin:0 0 14px}
+.team-merch-catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.team-merch-catalog-item{border:1px solid var(--line,rgba(255,255,255,.12));border-radius:14px;padding:14px;background:rgba(255,255,255,.025);display:grid;gap:12px}
+.team-merch-catalog-item>.team-hq-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.team-merch-catalog-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.team-merch-catalog-fields label,.team-merch-product>label,.team-merch-production label{display:grid;gap:6px;font-size:.78rem;color:var(--muted,#aaa)}
+.team-merch-catalog-fields input,.team-merch-product input,.team-merch-production input{width:100%;min-width:0}
+.team-merch-product-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.team-merch-product-heading>div{display:grid;gap:5px}
+.team-merch-product-heading small{color:var(--muted,#aaa);font-size:.75rem}
+.team-merch-price-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding:10px;border-radius:10px;background:rgba(255,255,255,.035)}
+.team-merch-price-summary span{display:grid;gap:4px;font-size:.7rem;color:var(--muted,#aaa)}
+.team-merch-price-summary strong{font-size:.88rem;color:var(--text,#eee)}
+.team-merch-price-summary strong.is-loss,.team-merch-warning{color:#e9a15b}
+.team-merch-warning{font-size:.78rem;margin:0}
+.team-merch-production{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;border-top:1px solid var(--line,rgba(255,255,255,.12));padding-top:12px}
+.team-merch-production>div{display:grid;gap:5px;font-size:.75rem;color:var(--muted,#aaa)}
+.team-merch-production>div strong{font-size:.95rem;color:var(--text,#eee)}
+.team-merch-production small{grid-column:1/-1;color:var(--muted,#aaa);font-size:.72rem}
+.team-merch-production button{grid-column:1/-1}
+@media(max-width:760px){.team-merch-catalog-grid{grid-template-columns:1fr}.team-merch-catalog-fields{grid-template-columns:1fr 1fr}.team-merch-price-summary{grid-template-columns:1fr}.team-merch-production{grid-template-columns:1fr}}

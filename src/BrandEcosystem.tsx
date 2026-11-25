@@ -21,6 +21,10 @@ type Fan={entity_kind:string;team_id:string|null;member_id:string|null;region_ke
 const money=(v:number|null|undefined)=>"€ "+Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const num=(v:number|null|undefined)=>Number(v||0).toLocaleString("id-ID");
 const errText=(e:unknown)=>e instanceof Error?e.message:String(e);
+const reputationBandLabel = (band?: string | null) => ({
+  junior: "Junior", local: "Local", national: "National", world: "World", elite: "Elite"
+} as Record<string, string>)[String(band ?? "").toLowerCase()] ?? (band || "Belum dinilai");
+
 export default function BrandEcosystem({session,mode}:{session:Session;mode:"team"|"driver"|"admin"}){
  const [member,setMember]=useState<Member|null>(null),[team,setTeam]=useState<Team|null>(null);
  const [sponsors,setSponsors]=useState<Sponsor[]>([]),[seasons,setSeasons]=useState<Season[]>([]),[teams,setTeams]=useState<Team[]>([]),[members,setMembers]=useState<Member[]>([]);
@@ -298,7 +302,7 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
   {notice&&<div className="license-notice" role="status">{notice}</div>}
   {counterId&&<div className="brand-modal-backdrop" onMouseDown={e=>{if(e.target===e.currentTarget&&!saving)setCounterId("");}}><section className="brand-counter-modal" role="dialog" aria-modal="true" aria-labelledby="brand-counter-title"><header><div><span className="section-eyebrow">SPONSOR NEGOTIATION</span><h2 id="brand-counter-title">Ajukan Counter</h2></div><button className="brand-modal-close" aria-label="Tutup popup" disabled={saving} onClick={()=>setCounterId("")}><X size={19}/></button></header><p className="brand-card-help">Sponsor akan langsung memproses nominal ini. Penawaran yang melewati batas fleksibilitas sponsor akan ditolak, bukan dibalas dengan counter baru.</p><label>Nominal Counter (€)<input autoFocus type="number" min="0.01" step="0.01" value={counterAmount} onChange={e=>setCounterAmount(e.target.value)} placeholder="Masukkan nominal counter"/></label><label>Catatan / Ketentuan (opsional)<textarea rows={3} value={counterTerms} onChange={e=>setCounterTerms(e.target.value)} placeholder="Tambahkan catatan untuk sponsor"/></label><footer><button className="action" disabled={saving} onClick={()=>setCounterId("")}>Batal</button><button className="action primary" disabled={saving||!counterAmount||Number(counterAmount)<=0} onClick={()=>void respond(counterId,"counter")}>{saving?"Memproses...":"Kirim Counter"}</button></footer></section></div>}
   <div className="brand-stats">
-   <article><span>{mode==="team"?"TEAM REPUTATION":"DRIVER REPUTATION"}</span><strong>{reputation?num(reputation.score):"—"}</strong><small>{reputation?.band||"Belum dinilai"}</small></article>
+   <article><span>{mode==="team"?"TEAM REPUTATION":"DRIVER REPUTATION"}</span><strong>{reputation?num(reputation.score):"—"}</strong><small>{reputationBandLabel(reputation?.band)}</small></article>
    <article><span>FAN POPULATION</span><strong>{num(totalFans(fansFor))}</strong><small>Agregat regional</small></article>
    {mode==="team"&&<article><span>ACTIVE CONTRACTS</span><strong>{visibleContracts.filter(c=>c.status==="active").length}</strong><small>Brand partners</small></article>}
    {mode==="team"&&<article><span>SPONSORSHIP VALUE</span><strong>{money(visibleContracts.filter(c=>c.status==="active").reduce((n,c)=>n+Number(c.contract_amount),0))}</strong><small>Nilai kontrak aktif</small></article>}

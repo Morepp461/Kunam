@@ -38,6 +38,7 @@ export default function TeamHQ() {
   const [isFia, setIsFia] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isMerchOwner, setIsMerchOwner] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsError, setAnalyticsError] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
@@ -64,13 +65,14 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsMerchOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
     setIsFia(Boolean(adminResult.data?.user_id) || role === "FIA");
     setIsAdmin(Boolean(adminResult.data?.user_id));
     setIsOwner(role === "Owner" || role === "Principal");
+    setIsMerchOwner(role === "Owner");
     if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setLoading(false); return; }
     const [teamResult, facilityResult, projectResult] = await Promise.all([
       supabase.from("teams").select("id,name,division_key").eq("id", member.team_id).maybeSingle(),
@@ -227,7 +229,7 @@ export default function TeamHQ() {
         <div className="team-hq-project-row"><strong>{analytics.metrics?.dnf_count ?? 0}</strong><span>DNF records</span></div>
       </div> : <p className="team-hq-empty">{analytics?.message || "Upgrade Data Analytics Center untuk membuka analisis performa berdasarkan hasil race resmi."}</p>}
     </section>}
-    <TeamMerchandise teamId={team?.id ?? null} isOwner={isOwner} isAdmin={false} />
+    <TeamMerchandise teamId={team?.id ?? null} isOwner={isMerchOwner} isAdmin={isAdmin} />
     {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">CONSTRUCTION PIPELINE</span><h2>Project History</h2></div><span className="empty-tag">LATEST 10</span></div>{projects.length ? projects.map(project => <div className="team-hq-project-row" key={project.id}><strong>{configs.find(c => c.facility_key === project.facility_key)?.title ?? project.facility_key}</strong><span>Target level {project.target_level}</span><span>{project.status.replaceAll("_"," ")}</span><span>€{money(project.cost)}</span></div>) : <p className="team-hq-empty">Belum ada proyek pembangunan atau upgrade.</p>}</section>}
     {confirmConfig && team && <div className="team-hq-modal-backdrop" role="presentation" onClick={() => !submittingUpgrade && setConfirmConfig(null)}><section className="team-hq-confirm" role="dialog" aria-modal="true" aria-labelledby="team-hq-confirm-title" onClick={e => e.stopPropagation()}><span className="section-eyebrow">KONFIRMASI UPGRADE</span><h2 id="team-hq-confirm-title">{confirmConfig.title}</h2><p>Pastikan rincian pembangunan fasilitas berikut sudah benar.</p><div className="team-hq-confirm-row"><span>Level</span><strong>{(facilityMap.get(confirmConfig.facility_key)?.level ?? 0)} → {(facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1}</strong></div><div className="team-hq-confirm-row"><span>Biaya</span><strong>€{money(Number(confirmConfig.construction_cost_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0))}</strong></div><div className="team-hq-confirm-row"><span>Durasi</span><strong>{confirmConfig.construction_days_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0} hari</strong></div><div className="team-hq-confirm-row"><span>Pembayaran</span><strong>Team Wallet → VreeoBank</strong></div><p className="team-hq-confirm-note">Pembayaran dilakukan langsung saat proyek dimulai dan tidak dapat dibatalkan melalui halaman ini.</p><div className="team-hq-actions"><button className="team-hq-cancel" disabled={submittingUpgrade} onClick={() => setConfirmConfig(null)}>Kembali</button><button className="team-hq-save" disabled={submittingUpgrade} onClick={() => void startUpgrade()}>{submittingUpgrade ? "Memproses..." : "Konfirmasi & mulai upgrade"}</button></div></section></div>}
     {editing && draft && <div className="team-hq-editor"><div className="team-hq-section-title"><div><span className="section-eyebrow">FIA CONTROL</span><h2>Edit {draft.title}</h2></div></div>

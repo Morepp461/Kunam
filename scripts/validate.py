@@ -404,4 +404,16 @@ def main():
 
 if __name__ == "__main__":
     main()
+    merchandise_migration = ROOT / "supabase/migrations/20261125110019_reputation_merchandise_inventory_engine.sql"
+    merchandise_source = ROOT / "src/TeamMerchandise.tsx"
+    merchandise_pricing = ROOT / "src/lib/merchandisePricing.ts"
+    assert merchandise_migration.is_file(), "Missing reputation and merchandise inventory migration"
+    assert merchandise_source.is_file() and merchandise_pricing.is_file(), "Missing Merchandise Engine UI/pricing logic"
+    migration_sql = merchandise_migration.read_text(encoding="utf-8")
+    merchandise_ui = merchandise_source.read_text(encoding="utf-8")
+    for fragment in ["team_merchandise_production", "stock_quantity", "price_elasticity", "member_produce_merchandise", "calculate_merchandise_price_factor", "'world'", "'national'", "'local'", "'junior'"]:
+        assert fragment in migration_sql, f"Reputation/Merchandise migration missing: {fragment}"
+    for fragment in ["T-Shirt", "Polo Shirt", "Fan Card", "Jacket", "Sticker", "Flag", "Scarf", "Produce stock", "Unit margin", "Demand factor"]:
+        assert fragment in merchandise_ui, f"Merchandise UI missing: {fragment}"
+
 

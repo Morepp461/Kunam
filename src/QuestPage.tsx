@@ -31,6 +31,7 @@ function questDestination(quest:Quest,scope:"driver"|"team_owner"){
  if(key.startsWith("team_driver_contract"))return "/team-panel/driver-contracts";
  if(key.startsWith("team_affiliation"))return "/team-panel/affiliate-team";
  if(key.startsWith("team_checkin"))return "/team-panel/team-summary";
+  if(key.startsWith("team_merchandise_production"))return "/team-panel/team-hq";
  return "/team-panel/team-summary";
 }
 

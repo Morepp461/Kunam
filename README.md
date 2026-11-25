@@ -1062,14 +1062,16 @@ CALERIS memakai **satu layout fluid** untuk semua ukuran layar. Frame 1440 × 90
 ## Team HQ Brand, Merchandise, and Valuation Integration
 
 - Marketing Department and Commercial Department HQ levels now contribute condition-scaled effects to team reputation, positive fan growth, merchandise demand, and merchandise production capacity.
-- Team reputation recalculation consumes the active HQ effects. Fan growth applies an additional idempotent HQ bonus only to positive team fan-growth events; existing race-result decline rules remain intact.
+- Team reputation bands use the labels Junior, Local, National, World, and Elite. Existing score thresholds and reputation calculations are preserved. Team reputation recalculation consumes the active HQ effects. Fan growth applies an additional idempotent HQ bonus only to positive team fan-growth events; existing race-result decline rules remain intact.
 - After each official race result is published, the merchandise engine uses the updated regional fan population, loyalty, engagement, sentiment, team reputation, and HQ effects to simulate sales for active team products.
-- The default merchandise catalog includes official jersey, team cap, miniature race car, and team hoodie. Product prices, production costs, demand shares, and per-round capacity are editable. Team Owners/Principals can change selling price and product availability; Admin can edit the complete product configuration and market coefficients.
-- Merchandise settlement uses separate NPC market and merchandise supplier ledger accounts. Gross sales credit the Team Wallet, production cost debits the Team Wallet, and net income is reflected in the existing season net-cashflow valuation component. VreeoBank and Sponsor Source are not reused.
+- The official merchandise catalog contains **T-Shirt, Polo Shirt, Cap, Fan Card, Jacket, Sticker, Flag, and Scarf**. Team Owners choose which products to activate, set their own selling prices, and manufacture stock from the Team Wallet.
+- Admin configures each product's unit production cost, reference price, price elasticity, demand share, race sales capacity, and production batch capacity. Prices below production cost are allowed and visibly produce a per-unit loss warning; prices above the reference price reduce demand, while lower prices increase demand within bounded limits.
+- Production costs are charged when a batch is manufactured. Inventory is tracked by production batch and consumed FIFO after official race results are published. Unsold units remain in stock and retain their original unit-cost snapshot; sales credit the Team Wallet and net merchandise cashflow remains part of the existing valuation model.
+- Team Owner Quest includes a daily merchandise production activity. Its reward follows the existing explicit claim flow and is credited to the Team Owner Wallet, while manufacturing itself is funded by the Team Wallet.
 - Sales runs are unique per team and race round, and ledger transactions use deterministic idempotency keys to prevent duplicate payouts.
 - Default Base Valuation is €120,000,000 for Caleris Premio and €45,000,000 for Caleris Zwei. The value is seeded for new teams and existing teams without a saved base value; Admin can edit each team's Base Valuation from Operations Suite → Team Valuation.
 - Team Valuation now includes Team Reputation at 10% of the Team Score and adds completed HQ asset value separately to the final valuation. Fan population contributes through the existing reputation fanbase metric; merchandise net cashflow contributes through the existing cashflow component. HQ assets are not counted twice.
-- Migration: `20261119020000_team_hq_brand_merchandise_integration.sql`. No dependency changes.
+- Migrations: `20261119020000_team_hq_brand_merchandise_integration.sql` and `20261125110019_reputation_merchandise_inventory_engine.sql`. No dependency changes.
 
 ### Team UV Livery Editor
 
