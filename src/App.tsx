@@ -43,6 +43,7 @@ import "./economy-guide.css";
 
 const PrivacyPolicy = lazy(() => import("./PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./TermsAndConditions"));
+const AboutUs = lazy(() => import("./AboutUs"));
 const DashboardModule = lazy(() => import("./DashboardModule"));
 const ProfileModule = lazy(() => import("./ProfileModule"));
 const CommunityProgression = lazy(() => import("./CommunityProgression"));
@@ -220,6 +221,7 @@ function Application(){
   <Route path="/team/:teamId" element={<PublicTeamProfile/>}/>
    <Route path="/member-id/:memberCode" element={<PublicMemberId/>}/>
   <Route path="/account/settings" element={session&&!needsPaddockAccess?<AccountSettings session={session} profile={profile} profileReady={profileReady} onSaved={refreshProfile} theme={theme} setTheme={setTheme}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/about-us" element={<AboutUs/>}/>
   <Route path="/rules" element={<Rules/>}/>
   <Route path="/main-event/circuit-pool" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<CircuitPool/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/fia-panel/circuit-pool-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<CircuitPoolInput/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
