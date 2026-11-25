@@ -38,6 +38,7 @@ import "./season-calendar.css";
 import "./team-contracts.css";
 import "./admin-users.css";
 import "./caleris-controls.css";
+import "./support-center.css";
 
 const PrivacyPolicy = lazy(() => import("./PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./TermsAndConditions"));
@@ -87,6 +88,7 @@ const CaleAccountTutorial = lazy(() => import("./CaleAccountTutorial"));
 const CashLoanCentre = lazy(() => import("./CashLoanCentre"));
 const CircuitPool = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPool })));
 const CircuitPoolInput = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPoolInput })));
+const SupportCenter = lazy(() => import("./SupportCenter"));
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
@@ -171,6 +173,8 @@ function Application(){
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/financial-centre" element={session&&!needsPaddockAccess?<CashLoanCentre session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/race-checkin" element={session&&!needsPaddockAccess?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/support" element={session&&!needsPaddockAccess?<SupportCenter session={session} isAdmin={isAdmin}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/support" element={session&&!needsPaddockAccess&&isAdmin?<SupportCenter session={session} isAdmin/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin-workflow" element={session&&!needsPaddockAccess&&isAdmin?<AdminWorkflow session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/configuration" element={session&&!needsPaddockAccess&&isAdmin?<AdminConfiguration session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/prizepool" element={session&&!needsPaddockAccess&&isAdmin?<AdminPrizepool session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
