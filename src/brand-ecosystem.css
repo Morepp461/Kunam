@@ -28,3 +28,8 @@
 .brand-engine-advanced{margin-top:14px;padding-top:12px;border-top:1px solid var(--border-subtle,rgba(255,255,255,.12))}
 .brand-engine-advanced>summary{cursor:pointer;font-weight:700;font-size:13px;padding:8px 0}
 .brand-engine-advanced[open]>summary{margin-bottom:12px}
+
+.brand-sponsor-admin-row,.brand-offer-sponsor{display:flex;align-items:center;gap:12px}
+.brand-sponsor-admin-row img,.brand-offer-sponsor img{width:48px;height:48px;object-fit:contain;border-radius:10px;background:rgba(255,255,255,.06);padding:5px;flex:0 0 auto}
+.brand-offer-sponsor img{width:56px;height:56px}
+.brand-offer-sponsor>div{display:grid;gap:4px}
