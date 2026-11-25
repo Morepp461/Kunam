@@ -1795,6 +1795,6 @@ Approved follow-up scope:
 
 Database migrations applied to Testing and Production:
 - `sponsor_capacity_vreeobank_unlimited` — sponsor budget removal, per-season capacity, VreeoBank settlement funding, and authenticated Prizepool rule read access.
-- Repository migration file: `supabase/migrations/20261125240000_sponsor_capacity_vreeobank_unlimited.sql`.
+- Repository migration file: `supabase/migrations/20261125084011_sponsor_capacity_vreeobank_unlimited.sql`.
 
 QA/release still pending on this branch. Do not deploy until CI, migration parity, and preview installability checks pass.
