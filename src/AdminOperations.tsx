@@ -19,7 +19,7 @@ const number=(v:string)=>v.trim()===""?0:Number(v);
 export default function AdminOperations({session}:{session:Session}){
  const [tab,setTab]=useState<Tab>("tax"),[loading,setLoading]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[assessments,setAssessments]=useState<WealthAssessment[]>([]);
- const [teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]);
+ const [teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]),[valuationTeamId,setValuationTeamId]=useState("");
  const [taxType,setTaxType]=useState<"wealth">("wealth"),[taxScope,setTaxScope]=useState<"member"|"team">("member"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null),[wealthSeasonId,setWealthSeasonId]=useState("");
  const [teamId,setTeamId]=useState("");
 
@@ -83,6 +83,16 @@ export default function AdminOperations({session}:{session:Session}){
   setNotice(message);
  };
 
+ const recalculateValuation=async()=>{
+  if(!supabase||!valuationTeamId)return;
+  setSaving(true);setNotice("");
+  const {data,error}=await supabase.rpc("admin_recalculate_team_valuation",{p_team_id:valuationTeamId,p_notes:"Admin-triggered system valuation refresh"});
+  setSaving(false);
+  if(error){setNotice(error.message);return;}
+  const result=data as {team_score?:number;total_valuation?:number};
+  setNotice("Valuasi sistem diperbarui · Score "+Number(result.team_score||0).toFixed(2)+"/100 · Final "+money(Number(result.total_valuation||0)));
+  await refresh();
+ };
  const divisionOptions=Array.from(new Map(divisions.map(d=>[d.division_key,d.division_name])).entries());
  const assignTeamTier=async(id:string,key:string)=>{if(!supabase)return;setSaving(true);const {error}=await supabase.rpc("admin_set_team_division",{p_team_id:id,p_division_key:key||null});setSaving(false);setNotice(error?.message||"Tier tim diperbarui.");await refresh()};
  return <section className="workspace ops-workspace">
@@ -133,7 +143,7 @@ export default function AdminOperations({session}:{session:Session}){
    </section>
   </div>}
   {tab==="valuation"&&<div className="ops-grid">
-   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SYSTEM VALUATION</span><h2>Base valuation otomatis</h2></div></div><p className="economy-form-hint">Premio €120 juta, Zwei €100 juta, lalu turun €20 juta per tier. Base valuation dihitung sistem dan tidak dapat diedit Admin. Snapshot historis tetap dipertahankan.</p></section>
+   <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">SYSTEM VALUATION</span><h2>Base valuation otomatis</h2></div></div><p className="economy-form-hint">Premio €120 juta, Zwei €100 juta, lalu turun €20 juta per tier. Base valuation dihitung sistem dan tidak dapat diedit Admin. Snapshot historis tetap dipertahankan.</p><div className="economy-form"><label>Team<select value={valuationTeamId} onChange={e=>setValuationTeamId(e.target.value)}><option value="">Pilih team</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name} · {t.division_key||"Unassigned"}</option>)}</select></label><button type="button" className="economy-primary-button" disabled={saving||!valuationTeamId} onClick={()=>void recalculateValuation()}>Recalculate system valuation</button></div></section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">TEAM TIER MAPPING</span><h2>Penetapan tier tim</h2></div></div><p className="economy-form-hint">Affiliate hanya dapat dibuat antar-tier berbeda. Pilih division key yang sudah dibuat melalui License Scoring Engine. Perubahan tier akan diikuti perhitungan base valuation sistem.</p><div className="ops-record-list">{teams.map(t=><article key={t.id}><div><strong><TeamProfileLink teamId={t.id}>{t.name}</TeamProfileLink></strong><small>Tier saat ini: {t.division_key||"Belum ditetapkan"}</small></div><select value={t.division_key||""} onChange={e=>void assignTeamTier(t.id,e.target.value)} disabled={saving||divisionOptions.length===0}><option value="">Belum ditetapkan</option>{divisionOptions.map(([key,name])=><option key={key} value={key}>{name} · {key}</option>)}</select></article>)}</div></section>
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">VALUATION HISTORY</span><h2>Snapshot valuasi</h2></div></div>
     {valuations.length===0?<p className="economy-empty">Belum ada penilaian tim.</p>:<div className="ops-record-list">{valuations.map(v=><article key={v.id}><div><strong><TeamProfileLink teamId={v.team_id}>{v.team?.name||"Team"}</TeamProfileLink> · {money(v.total_valuation)}</strong><small>Base {money(Number(v.base_valuation||0))} · Score {Number(v.team_score||0).toFixed(2)}/100 · Penalti hutang {Number(v.debt_penalty||0).toFixed(2)} · Penalti tunggakan {Number(v.overdue_penalty||0).toFixed(2)}</small><small>{v.score_breakdown?"Komponen: "+Object.entries(v.score_breakdown).filter(([k])=>k!=="weights_normalized_from").map(([k,val]:[string,any])=>k.replaceAll("_"," ")+": "+(val?.score!=null?Number(val.score).toFixed(1)+"/100":money(Number(val?.amount||0)))).join(" · "):"Legacy snapshot · data historis dipertahankan"}</small></div><time>{new Date(v.assessed_at).toLocaleDateString("id-ID")}</time></article>)}</div>}
