@@ -1809,3 +1809,13 @@ Release completed: PR #372 merged to main at `ac105f341fa069924d5d08275955b5e6ea
 - Both databases contain the new migration `sponsor_capacity_vreeobank_unlimited`, and both have the Prizepool authenticated-read policy.
 - Sponsor capacity rules are enforced in both matching paths: Title Partner T1 = 2 teams; other tiers = 3 teams per season. Outstanding offers reserve a slot; ended/rejected/expired records release it according to their status.
 - PWA manifest and service worker are deployed. The service worker excludes Supabase Auth, REST, Storage, and Edge Function endpoints from caching.
+
+
+### Sponsor Database sorting checkpoint — PR #373
+
+- PR #373 merged to main at `1d5f103b27496d809fd038f3c80b6c48d5a1a785`.
+- Sponsor Database in Brand Ecosystem now supports independent tier filtering (All/T1–T5) and sorting by sponsor name A–Z/Z–A, tier T1–T5/T5–T1, configured offer minimum ascending/descending, and configured offer maximum ascending/descending.
+- Offer nominal sorting reads `offer_amount_min` / `offer_amount_max` from each sponsor's existing `target_audience` JSON, falling back to `base_amount` where needed; no schema or data migration was required.
+- Sponsor edit and logo replacement actions remain unchanged. The controls are responsive for mobile.
+- Caleris CI run #5086 passed: dependency gate, Deno parity/type checks, TypeScript, production build, unit/schema tests, Playwright browser smoke tests, economy regressions, and Supabase schema parity.
+- Vercel Production deployment `dpl_DyFZ46HNt1ByZn7ce398v2PcjLQ4` is READY for commit `1d5f103b27496d809fd038f3c80b6c48d5a1a785`, with aliases `calerismasters.com` and `www.calerismasters.com`.
