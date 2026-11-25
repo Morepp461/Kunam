@@ -35,11 +35,9 @@ export default function SupportCenter({session,isAdmin}:{session:Session;isAdmin
   e.preventDefault();if(!supabase||!session.user.email)return;
   if(subject.trim().length<4||body.trim().length<10){setError("Subject minimal 4 karakter dan deskripsi minimal 10 karakter.");return}
   setSaving(true);setError("");setNotice("");
-  const {data:ticket,error:ticketError}=await supabase.from("support_tickets").insert({user_id:session.user.id,sender_email:session.user.email,sender_name:session.user.user_metadata?.full_name||session.user.user_metadata?.name||null,recipient_email:"support@calerismasters.com",subject:subject.trim(),status:"open",priority}).select("id").single();
-  if(ticketError||!ticket){setError(ticketError?.message||"Tiket gagal dibuat.");setSaving(false);return}
-  const {error:messageError}=await supabase.from("support_messages").insert({ticket_id:ticket.id,direction:"inbound",sender_email:session.user.email,recipient_email:"support@calerismasters.com",subject:subject.trim(),body_text:body.trim(),provider:"website"});
-  if(messageError){await supabase.from("support_tickets").delete().eq("id",ticket.id);setError(messageError.message);setSaving(false);return}
-  setSubject("");setBody("");setPriority("normal");setNotice("Bug report berhasil dikirim. Simpan ID tiket untuk referensi.");await refresh();setSelected(ticket.id);setSaving(false);
+  const {data:ticketId,error:ticketError}=await supabase.rpc("support_create_ticket",{p_subject:subject.trim(),p_body:body.trim(),p_priority:priority});
+  if(ticketError||!ticketId){setError(ticketError?.message||"Tiket gagal dibuat.");setSaving(false);return}
+  setSubject("");setBody("");setPriority("normal");setNotice("Bug report berhasil dikirim. Simpan ID tiket untuk referensi.");await refresh();setSelected(ticketId);setSaving(false);
  };
  const sendReply=async(e:FormEvent)=>{
   e.preventDefault();if(!supabase||!activeTicket||reply.trim().length<2)return;
