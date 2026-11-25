@@ -42,9 +42,9 @@ export default function PublicTransactions() {
   const refresh = useCallback(async () => {
     if (!supabase) { setError("Koneksi database belum tersedia."); setLoading(false); return; }
     setLoading(true);
-    const {data,error:requestError} = await supabase.rpc("get_public_economy_transactions",{
-      p_limit:pageSize,p_offset:page*pageSize,p_event_type:filter==="all"?null:filter
-    });
+    const query = supabase.from("public_economy_transaction_feed").select("*",{count:"exact"});
+    const filtered = filter==="all" ? query : query.eq("event_type",filter);
+    const {data,error:requestError,count} = await filtered.order("created_at",{ascending:false}).order("id",{ascending:false}).range(page*pageSize,page*pageSize+pageSize-1);
     if(requestError) { setError(requestError.message); setRows([]); setTotal(0); }
     else {
       const result = (data||[]) as Transaction[];
