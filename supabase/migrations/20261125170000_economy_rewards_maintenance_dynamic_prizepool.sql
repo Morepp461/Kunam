@@ -181,11 +181,11 @@ create or replace function private.sync_official_race_cash_on_round_close()
 returns trigger language plpgsql security definer set search_path='' as $$
 begin perform private.sync_official_race_cash_and_maintenance(new.id); return new; end $$;
 create or replace function private.sync_official_race_cash_on_result_change()
-returns trigger language plpgsql security definer set search_path='' as $
+returns trigger language plpgsql security definer set search_path='' as $$
 begin
   if tg_op='DELETE' then perform private.sync_official_race_cash_and_maintenance(old.round_id); return old; end if;
   perform private.sync_official_race_cash_and_maintenance(new.round_id); return new;
-end $;
+end $$;
 drop trigger if exists caleris_official_round_economy_sync on public.license_rounds;
 create trigger caleris_official_round_economy_sync after update of status on public.license_rounds for each row when (new.status='closed' and old.status is distinct from new.status) execute function private.sync_official_race_cash_on_round_close();
 drop trigger if exists caleris_official_result_economy_sync on public.caleris_race_result_entries;
