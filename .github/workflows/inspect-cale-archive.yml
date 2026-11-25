@@ -1,8 +1,8 @@
 name: Inspect Cale Archive
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/inspect-cale-archive.yml"
+  push:
+    branches:
+      - "feat/cale-page-specific-avatars-20261125"
 permissions:
   contents: read
 jobs:
