@@ -413,12 +413,13 @@ if __name__ == "__main__":
     division_seed_guard_migration = ROOT / "supabase/migrations/20261125121325_merchandise_division_seed_trigger_update_guard.sql"
     division_price_sync_migration = ROOT / "supabase/migrations/20261125121423_merchandise_division_change_reference_price_sync.sql"
     quest_activation_migration = ROOT / "supabase/migrations/20261125121514_merchandise_quest_auto_activation.sql"
+    production_rpc_parity_migration = ROOT / "supabase/migrations/20261125121700_merchandise_production_rpc_definition_parity.sql"
     merchandise_source = ROOT / "src/TeamMerchandise.tsx"
     merchandise_pricing = ROOT / "src/lib/merchandisePricing.ts"
     cale_source = ROOT / "src/CaleAssistant.tsx"
     cale_styles = ROOT / "src/cale-mascot.css"
     app_source = ROOT / "src/App.tsx"
-    for migration in [merchandise_migration, production_idempotency_migration, hardmode_migration, default_economy_migration, public_market_migration, dynamic_division_migration, division_seed_guard_migration, division_price_sync_migration, quest_activation_migration]:
+    for migration in [merchandise_migration, production_idempotency_migration, hardmode_migration, default_economy_migration, public_market_migration, dynamic_division_migration, division_seed_guard_migration, division_price_sync_migration, quest_activation_migration, production_rpc_parity_migration]:
         assert migration.is_file(), f"Missing merchandise migration: {migration.name}"
     for source in [merchandise_source, merchandise_pricing, cale_source, cale_styles, app_source]:
         assert source.is_file(), f"Missing merchandise/overlay source: {source.name}"
@@ -429,6 +430,7 @@ if __name__ == "__main__":
     public_market_sql = public_market_migration.read_text(encoding="utf-8")
     dynamic_division_sql = dynamic_division_migration.read_text(encoding="utf-8")
     quest_activation_sql = quest_activation_migration.read_text(encoding="utf-8")
+    production_rpc_parity_sql = production_rpc_parity_migration.read_text(encoding="utf-8")
     merchandise_ui = merchandise_source.read_text(encoding="utf-8")
     cale_ui = cale_source.read_text(encoding="utf-8")
     cale_css = cale_styles.read_text(encoding="utf-8")
@@ -448,6 +450,7 @@ if __name__ == "__main__":
     for fragment in ["merchandise_costs", "v_existing_divisions", "50::numeric", "0.025", "fanbase_plus_reputation_gated_public_market_v3"]:
         assert fragment in dynamic_division_sql, f"Dynamic division/general market migration missing: {fragment}"
     assert "team_merchandise_production_daily" in quest_activation_sql and "is_active=exists" in quest_activation_sql
+    assert "member_produce_merchandise" in production_rpc_parity_sql and "member_finalize_merchandise_production" in production_rpc_parity_sql
     for fragment in ["idempotency_key", "idx_caleris_merch_production_idempotency", "already_produced"]:
         assert fragment in idempotency_sql, f"Merchandise production idempotency migration missing: {fragment}"
     for fragment in ["panelSize", "onPointerDown", "pointerdown", "dismissOutside"]:
