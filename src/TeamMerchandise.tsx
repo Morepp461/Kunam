@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   AlertTriangle, BadgePercent, Clock3, CreditCard, Factory, Flag, HardHat,
   Package, Plus, RefreshCw, Shirt, ShoppingBag, Star, Sticker, Tag, TrendingUp,
@@ -178,7 +179,7 @@ export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | 
   };
   const openProduct = (product: Product) => { setSelected(product.id); setError(""); setNotice(""); };
   const closeModal = () => { if (!saving) { setSelected(null); setError(""); } };
-  const resizeStart = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const resizeStart = (event: ReactPointerEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     resizeRef.current = { x: event.clientX, y: event.clientY, width: modalSize.width, height: modalSize.height };
