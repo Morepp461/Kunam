@@ -59,6 +59,18 @@ const experience = [
     description: "Take part in community activities, collect achievements, follow milestones, and build your own Digital ID.",
     icon: Compass,
   },
+  {
+    number: "05",
+    title: "Team Headquarters & merchandise",
+    description: "Give your team a home in the paddock, manage its identity, and build a merchandise line for your fans.",
+    icon: Users,
+  },
+  {
+    number: "06",
+    title: "Our own economy system",
+    description: "A custom-built economy designed around CALERIS, with wallets, payroll, sponsorship, rewards, and team finances.",
+    icon: Globe2,
+  },
 ];
 
 export default function AboutUs() {
@@ -158,7 +170,7 @@ export default function AboutUs() {
           })}
         </div>
         <div className="about-coming-soon">
-          <div><span className="about-eyebrow">THE NEXT CHAPTER</span><h3>Season 2 is taking shape.</h3><p>We're building out the web-game experience with new features like Team Headquarters, team merchandise, and more ways to shape your place in the paddock. Registration will be available through the website with Discord sign-in, keeping the community connected from day one.</p></div>
+          <div><span className="about-eyebrow">THE NEXT CHAPTER</span><h3>Season 2 is taking shape.</h3><p>Season 2 is bringing the web-game experience to a whole new level, with Team Headquarters, team merchandise, and more ways to shape your place in the paddock. Our in-house Economy Engine is designed around the needs of CALERIS, rather than forcing the community into a one-size-fits-all system. Registration will be available directly on the website through Discord sign-in, so members can join while staying connected to the community.</p></div>
           <div className="about-coming-status"><Rocket size={25}/><strong>IN DEVELOPMENT</strong><small>More updates coming as we get things ready.</small></div>
         </div>
       </section>
