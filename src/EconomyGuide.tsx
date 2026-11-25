@@ -14,7 +14,10 @@ const rewardRows = [
 
 export default function EconomyGuide() {
   const [taxRules,setTaxRules]=useState<TaxRule[]>([]);
-  const [taxLoading,setTaxLoading]=useState(true);\n  const [prizeRules,setPrizeRules]=useState<PrizeRule[]>([]);\n  const [prizeLoading,setPrizeLoading]=useState(true);\n  const [prizeError,setPrizeError]=useState("");\n  const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
+  const [taxLoading,setTaxLoading]=useState(true); 
+  const [prizeRules,setPrizeRules]=useState<PrizeRule[]>([]); 
+  const [prizeLoading,setPrizeLoading]=useState(true); 
+  const [prizeError,setPrizeError]=useState("");\n  const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
   const [taxError,setTaxError]=useState("");
   useEffect(()=>{
     let active=true;
