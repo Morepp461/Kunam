@@ -106,7 +106,7 @@ export default function AdminOperations({session}:{session:Session}){
   {tab==="tax"&&<div className="ops-grid">
    <section className="economy-panel"><div className="economy-panel-heading"><div><span className="section-eyebrow">CONFIGURABLE TAX</span><h2>{editingTax?"Edit tax rule":"Tambah tax rule"}</h2></div></div>
     <form className="economy-form" onSubmit={saveTax}>
-     <label>Jenis pajak<select value={taxType} onChange={e=>setTaxType("wealth")}><option value="wealth">Wealth Tax · saldo wallet</option></select></label>
+     <label>Jenis pajak<select value={taxType} onChange={()=>setTaxType("wealth")}><option value="wealth">Wealth Tax · saldo wallet</option></select></label>
      {taxType==="wealth"&&<label>Kategori Wealth Tax<select value={taxScope} onChange={e=>setTaxScope(e.target.value as "member"|"team")}><option value="member">Member · gabungan wallet personal</option><option value="team">Team · Team Wallet</option></select></label>}
      <label>Nama aturan<input value={taxLabel} onChange={e=>setTaxLabel(e.target.value)} required maxLength={100}/></label>
      <label>Ambang minimum (€)<input type="number" min="0" step="0.01" value={taxMinimum} onChange={e=>setTaxMinimum(e.target.value)} required/></label>
