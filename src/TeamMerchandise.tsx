@@ -1,5 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart3, Coins, Package, RefreshCw, Save, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertTriangle, BadgePercent, Clock3, CreditCard, Factory, Flag, HardHat,
+  Package, Plus, RefreshCw, Shirt, ShoppingBag, Star, Sticker, Tag, TrendingUp,
+  Users, Wallet, Waves, X, MoveDiagonal2
+} from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { calculatePriceDemandFactor, calculateUnitMargin } from "./lib/merchandisePricing";
 
@@ -9,318 +13,284 @@ type Product = {
   reference_price: number; price_elasticity: number; stock_quantity: number;
   catalog_enabled: boolean; is_active: boolean;
 };
-type CatalogItem = {
-  product_key: string; product_name: string; unit_cost: number; reference_price: number;
-  price_elasticity: number; demand_share: number; capacity_per_round: number;
-  production_capacity_per_order: number; is_enabled: boolean;
+type Batch = {
+  id: string; product_id: string; product_name: string; units_produced: number;
+  units_remaining: number; unit_cost: number; total_cost: number; status: string;
+  created_at: string; completes_at: string | null; completed_at: string | null;
 };
-type Run = { id: string; round_id: string; fan_population: number; reputation_score: number; conversion_rate: number; units_sold: number; gross_revenue: number; production_cost: number; net_revenue: number; created_at: string };
-type Item = { sales_run_id: string; product_name: string; units_sold: number; gross_revenue: number; production_cost: number };
-type Batch = { id: string; product_name: string; units_produced: number; units_remaining: number; unit_cost: number; total_cost: number; created_at: string };
-type EngineConfig = { is_enabled: boolean; base_conversion_rate: number; max_conversion_rate: number; reputation_factor_min: number; reputation_factor_max: number; hq_demand_bonus_per_level: number; hq_capacity_bonus_per_level: number };
-type FanSummary = { population: number; loyalty: number; engagement: number; sentiment: number };
-type Facility = { facility_key: string; level: number; condition: number };
+type Run = { id: string; round_id: string; units_sold: number; gross_revenue: number; production_cost: number; net_revenue: number; created_at: string };
+type SaleItem = { sales_run_id: string; product_id: string; units_sold: number; gross_revenue: number; production_cost: number };
+type Review = { id: string; product_id: string; sentiment: "positive" | "neutral" | "negative"; rating: number; comment: string; created_at: string };
+type Fan = { population: number; loyalty: number; engagement: number; sentiment: number };
+type ProductDraft = { unit_price: string; quantity: string };
+type ModalSize = { width: number; height: number };
 
 const money = (value: number) => "€" + Number(value || 0).toLocaleString("id-ID", { maximumFractionDigits: 2 });
-const defaults: EngineConfig = { is_enabled: true, base_conversion_rate: 0.002, max_conversion_rate: 0.01, reputation_factor_min: 0.75, reputation_factor_max: 1.25, hq_demand_bonus_per_level: 2.5, hq_capacity_bonus_per_level: 3 };
+const productIcons: Record<string, typeof Shirt> = {
+  t_shirt: Shirt, polo_shirt: Shirt, cap: HardHat, fan_card: CreditCard,
+  jacket: ShoppingBag, sticker: Sticker, flag: Flag, scarf: Waves
+};
+const productDescriptions: Record<string, string> = {
+  t_shirt: "Everyday team apparel",
+  polo_shirt: "Premium casual teamwear",
+  cap: "Team-branded headwear",
+  fan_card: "Collectible supporter card",
+  jacket: "Premium outerwear",
+  sticker: "Small-format brand merchandise",
+  flag: "Supporter display flag",
+  scarf: "Supporter scarf"
+};
+const statusLabels: Record<string, string> = {
+  idle: "Not Produced", producing: "Producing", marketed: "Marketed", sold_out: "Sold Out"
+};
 
-export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: string | null; isOwner: boolean; isAdmin: boolean }) {
+export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | null; isOwner: boolean; isAdmin?: boolean }) {
   const [products, setProducts] = useState<Product[]>([]);
-  const [catalog, setCatalog] = useState<CatalogItem[]>([]);
-  const [runs, setRuns] = useState<Run[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [fans, setFans] = useState<FanSummary[]>([]);
-  const [facilities, setFacilities] = useState<Facility[]>([]);
+  const [runs, setRuns] = useState<Run[]>([]);
+  const [items, setItems] = useState<SaleItem[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [fans, setFans] = useState<Fan[]>([]);
   const [reputation, setReputation] = useState(0);
-  const [config, setConfig] = useState<EngineConfig>(defaults);
-  const [configDraft, setConfigDraft] = useState<Record<keyof EngineConfig, string | boolean>>({
-    is_enabled: defaults.is_enabled,
-    base_conversion_rate: String(defaults.base_conversion_rate * 100),
-    max_conversion_rate: String(defaults.max_conversion_rate * 100),
-    reputation_factor_min: String(defaults.reputation_factor_min),
-    reputation_factor_max: String(defaults.reputation_factor_max),
-    hq_demand_bonus_per_level: String(defaults.hq_demand_bonus_per_level),
-    hq_capacity_bonus_per_level: String(defaults.hq_capacity_bonus_per_level)
-  });
-  const [drafts, setDrafts] = useState<Record<string, { unit_price: string; is_active: boolean }>>({});
-  const [catalogDrafts, setCatalogDrafts] = useState<Record<string, {
-    unit_cost: string; reference_price: string; price_elasticity: string; demand_share: string;
-    capacity_per_round: string; production_capacity_per_order: string; is_enabled: boolean
-  }>>({});
-  const [quantities, setQuantities] = useState<Record<string, string>>({});
-  const [productionKeys, setProductionKeys] = useState<Record<string, string>>({});
+  const [drafts, setDrafts] = useState<Record<string, ProductDraft>>({});
+  const [selected, setSelected] = useState<string | null>(null);
+  const [modalSize, setModalSize] = useState<ModalSize>({ width: 760, height: 720 });
+  const [clock, setClock] = useState(Date.now());
   const [loading, setLoading] = useState(true);
-  const [savingKey, setSavingKey] = useState("");
-  const [notice, setNotice] = useState("");
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const resizeRef = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
 
   const refresh = useCallback(async () => {
-    if (!supabase) { setError("Koneksi Supabase tidak tersedia."); setLoading(false); return; }
+    if (!supabase || !teamId) { setLoading(false); return; }
     setLoading(true); setError("");
-    const { data: cfg, error: cfgError } = await supabase.from("caleris_merchandise_engine_config").select("*").eq("singleton", true).maybeSingle();
-    if (cfgError) setError(cfgError.message);
-    if (cfg) {
-      const next: EngineConfig = {
-        is_enabled: Boolean(cfg.is_enabled), base_conversion_rate: Number(cfg.base_conversion_rate),
-        max_conversion_rate: Number(cfg.max_conversion_rate), reputation_factor_min: Number(cfg.reputation_factor_min),
-        reputation_factor_max: Number(cfg.reputation_factor_max), hq_demand_bonus_per_level: Number(cfg.hq_demand_bonus_per_level),
-        hq_capacity_bonus_per_level: Number(cfg.hq_capacity_bonus_per_level)
-      };
-      setConfig(next);
-      setConfigDraft({
-        is_enabled: next.is_enabled, base_conversion_rate: String(next.base_conversion_rate * 100),
-        max_conversion_rate: String(next.max_conversion_rate * 100), reputation_factor_min: String(next.reputation_factor_min),
-        reputation_factor_max: String(next.reputation_factor_max), hq_demand_bonus_per_level: String(next.hq_demand_bonus_per_level),
-        hq_capacity_bonus_per_level: String(next.hq_capacity_bonus_per_level)
-      });
+    if (isOwner) {
+      const { error: finalizeError } = await supabase.rpc("member_finalize_merchandise_production");
+      if (finalizeError && !finalizeError.message.toLowerCase().includes("function")) setError(finalizeError.message);
     }
-
-    if (isAdmin) {
-      const { data, error: catalogError } = await supabase.from("caleris_merchandise_catalog").select("*").order("product_key");
-      if (catalogError) setError(catalogError.message);
-      const rows = (data ?? []) as CatalogItem[];
-      setCatalog(rows);
-      setCatalogDrafts(Object.fromEntries(rows.map(item => [item.product_key, {
-        unit_cost: String(item.unit_cost), reference_price: String(item.reference_price),
-        price_elasticity: String(item.price_elasticity), demand_share: String(Number(item.demand_share) * 100),
-        capacity_per_round: String(item.capacity_per_round),
-        production_capacity_per_order: String(item.production_capacity_per_order), is_enabled: Boolean(item.is_enabled)
-      }])));
-    }
-
-    if (!teamId) {
-      setProducts([]); setRuns([]); setItems([]); setBatches([]); setFans([]); setFacilities([]); setReputation(0);
-      setDrafts({}); setQuantities({}); setLoading(false); return;
-    }
-
-    const [productQ, runQ, fanQ, repQ, facilityQ, batchQ] = await Promise.all([
-      supabase.from("caleris_merchandise_products").select("*").eq("team_id", teamId).eq("catalog_enabled", true).order("product_key"),
-      supabase.from("caleris_merchandise_sales_runs").select("*").eq("team_id", teamId).order("created_at", { ascending: false }).limit(12),
+    const [productQ, batchQ, runQ, fanQ, repQ] = await Promise.all([
+      supabase.from("caleris_merchandise_products").select("id,product_key,product_name,unit_price,unit_cost,demand_share,capacity_per_round,production_capacity_per_order,reference_price,price_elasticity,stock_quantity,catalog_enabled,is_active").eq("team_id", teamId).eq("catalog_enabled", true).order("product_key"),
+      supabase.from("caleris_merchandise_production_batches").select("id,product_id,product_name,units_produced,units_remaining,unit_cost,total_cost,status,created_at,completes_at,completed_at").eq("team_id", teamId).order("created_at", { ascending: false }),
+      supabase.from("caleris_merchandise_sales_runs").select("id,round_id,units_sold,gross_revenue,production_cost,net_revenue,created_at").eq("team_id", teamId).order("created_at", { ascending: false }).limit(30),
       supabase.from("caleris_fan_populations").select("population,loyalty,engagement,sentiment").eq("entity_kind", "team").eq("team_id", teamId),
-      supabase.from("caleris_team_reputation").select("score").eq("team_id", teamId).maybeSingle(),
-      supabase.from("caleris_team_hq_facilities").select("facility_key,level,condition").eq("team_id", teamId),
-      supabase.from("caleris_merchandise_production_batches").select("id,product_name,units_produced,units_remaining,unit_cost,total_cost,created_at").eq("team_id", teamId).order("created_at", { ascending: false }).limit(12)
+      supabase.from("caleris_team_reputation").select("score").eq("team_id", teamId).maybeSingle()
     ]);
-    const issue = [productQ.error, runQ.error, fanQ.error, repQ.error, facilityQ.error, batchQ.error].find(Boolean);
+    const issue = [productQ.error, batchQ.error, runQ.error, fanQ.error, repQ.error].find(Boolean);
     if (issue) setError(issue.message);
-    const productRows = (productQ.data ?? []) as Product[];
-    setProducts(productRows); setRuns((runQ.data ?? []) as Run[]); setFans((fanQ.data ?? []) as FanSummary[]);
-    setReputation(Number(repQ.data?.score ?? 0)); setFacilities((facilityQ.data ?? []) as Facility[]);
-    setBatches((batchQ.data ?? []) as Batch[]);
-    const runIds = (runQ.data ?? []).map((row: any) => row.id);
+    const nextProducts = (productQ.data ?? []) as Product[];
+    const nextBatches = (batchQ.data ?? []) as Batch[];
+    const nextRuns = (runQ.data ?? []) as Run[];
+    setProducts(nextProducts); setBatches(nextBatches); setRuns(nextRuns);
+    setFans((fanQ.data ?? []) as Fan[]); setReputation(Number(repQ.data?.score ?? 0));
+    const runIds = nextRuns.map(run => run.id);
     if (runIds.length) {
-      const { data: itemRows, error: itemError } = await supabase.from("caleris_merchandise_sales_items")
-        .select("sales_run_id,product_name,units_sold,gross_revenue,production_cost").in("sales_run_id", runIds);
-      if (itemError) setError(itemError.message);
-      setItems((itemRows ?? []) as Item[]);
-    } else setItems([]);
-    setDrafts(Object.fromEntries(productRows.map(product => [product.id, {
-      unit_price: String(product.unit_price), is_active: Boolean(product.is_active)
+      const [itemsQ, reviewsQ] = await Promise.all([
+        supabase.from("caleris_merchandise_sales_items").select("sales_run_id,product_id,units_sold,gross_revenue,production_cost").in("sales_run_id", runIds),
+        supabase.from("caleris_merchandise_reviews").select("id,product_id,sentiment,rating,comment,created_at").eq("team_id", teamId).order("created_at", { ascending: false }).limit(48)
+      ]);
+      if (itemsQ.error) setError(itemsQ.error.message);
+      if (reviewsQ.error) setError(reviewsQ.error.message);
+      setItems((itemsQ.data ?? []) as SaleItem[]); setReviews((reviewsQ.data ?? []) as Review[]);
+    } else { setItems([]); setReviews([]); }
+    setDrafts(current => Object.fromEntries(nextProducts.map(product => [product.id, current[product.id] ?? {
+      unit_price: String(product.unit_price || product.reference_price || ""),
+      quantity: "100"
     }])));
-    setQuantities(Object.fromEntries(productRows.map(product => [product.id, "1"])));
     setLoading(false);
-  }, [teamId, isAdmin]);
+  }, [teamId, isOwner]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => { void refresh(); }, 30000);
+    return () => window.clearInterval(timer);
+  }, [refresh]);
 
   const totalFans = fans.reduce((sum, fan) => sum + Number(fan.population || 0), 0);
-  const avg = (key: keyof FanSummary) => fans.length ? fans.reduce((sum, fan) => sum + Number(fan[key] || 0), 0) / fans.length : 0;
-  const totals = useMemo(() => runs.reduce((sum, run) => ({
-    gross: sum.gross + Number(run.gross_revenue || 0), cost: sum.cost + Number(run.production_cost || 0),
-    net: sum.net + Number(run.net_revenue || 0), units: sum.units + Number(run.units_sold || 0)
-  }), { gross: 0, cost: 0, net: 0, units: 0 }), [runs]);
-  const itemTotals = useMemo(() => items.reduce((acc, item) => {
-    acc[item.product_name] = (acc[item.product_name] || 0) + Number(item.units_sold || 0);
-    return acc;
-  }, {} as Record<string, number>), [items]);
-  const facilityLevel = (key: string) => facilities.find(facility => facility.facility_key === key)?.level ?? 0;
-
-  const saveEngineConfig = async () => {
-    if (!supabase || !isAdmin) return;
-    const base = Number(configDraft.base_conversion_rate) / 100, max = Number(configDraft.max_conversion_rate) / 100;
-    const minRep = Number(configDraft.reputation_factor_min), maxRep = Number(configDraft.reputation_factor_max);
-    const demand = Number(configDraft.hq_demand_bonus_per_level), capacity = Number(configDraft.hq_capacity_bonus_per_level);
-    if (![base,max,minRep,maxRep,demand,capacity].every(Number.isFinite) || base < 0 || max < base || max > 2 || minRep < 0.5 || maxRep < minRep || maxRep > 2 || demand < 0 || demand > 20 || capacity < 0 || capacity > 20) {
-      setError("Periksa batas conversion, reputation multiplier, dan bonus HQ."); return;
+  const fanQuality = fans.length ? fans.reduce((sum, fan) => sum + Number(fan.loyalty || 50) + Number(fan.engagement || 50) + Number(fan.sentiment || 50), 0) / (fans.length * 3) : 50;
+  const selectedProduct = products.find(product => product.id === selected) ?? null;
+  const salesByProduct = useMemo(() => {
+    const result: Record<string, { sold: number; gross: number; cogs: number }> = {};
+    for (const item of items) {
+      const current = result[item.product_id] ?? { sold: 0, gross: 0, cogs: 0 };
+      current.sold += Number(item.units_sold || 0);
+      current.gross += Number(item.gross_revenue || 0);
+      current.cogs += Number(item.production_cost || 0);
+      result[item.product_id] = current;
     }
-    setSavingKey("engine"); setError(""); setNotice("");
-    const { data: auth } = await supabase.auth.getUser();
-    const { error: saveError } = await supabase.from("caleris_merchandise_engine_config").update({
-      is_enabled: Boolean(configDraft.is_enabled), base_conversion_rate: base, max_conversion_rate: max,
-      reputation_factor_min: minRep, reputation_factor_max: maxRep, hq_demand_bonus_per_level: demand,
-      hq_capacity_bonus_per_level: capacity, updated_at: new Date().toISOString(), updated_by: auth.user?.id ?? null
-    }).eq("singleton", true);
-    setSavingKey("");
-    if (saveError) setError(saveError.message);
-    else { setNotice("Konfigurasi market tersimpan."); await refresh(); }
+    return result;
+  }, [items]);
+  const batchByProduct = useMemo(() => {
+    const result: Record<string, Batch[]> = {};
+    for (const batch of batches) (result[batch.product_id] ??= []).push(batch);
+    return result;
+  }, [batches]);
+  const statusFor = (product: Product) => {
+    const productBatches = batchByProduct[product.id] ?? [];
+    if (productBatches.some(batch => batch.status === "producing" && batch.completes_at && new Date(batch.completes_at).getTime() > clock)) return "producing";
+    if (Number(product.stock_quantity) > 0) return "marketed";
+    if (productBatches.length || (salesByProduct[product.id]?.sold ?? 0) > 0) return "sold_out";
+    return "idle";
   };
-
-  const saveCatalog = async (item: CatalogItem) => {
-    if (!supabase || !isAdmin) return;
-    const draft = catalogDrafts[item.product_key];
-    if (!draft) return;
-    const cost = Number(draft.unit_cost), reference = Number(draft.reference_price);
-    const elasticity = Number(draft.price_elasticity), share = Number(draft.demand_share) / 100;
-    const salesCapacity = Number(draft.capacity_per_round), productionCapacity = Number(draft.production_capacity_per_order);
-    if (![cost,reference,elasticity,share,salesCapacity,productionCapacity].every(Number.isFinite) ||
-      cost <= 0 || reference <= 0 || elasticity < 0.1 || elasticity > 5 || share <= 0 || share > 1 ||
-      !Number.isInteger(salesCapacity) || salesCapacity < 0 || !Number.isInteger(productionCapacity) || productionCapacity < 1) {
-      setError("Biaya produksi, harga acuan, elastisitas, demand share, dan kapasitas belum valid."); return;
-    }
-    setSavingKey("catalog:" + item.product_key); setError(""); setNotice("");
-    const { error: saveError } = await supabase.rpc("admin_update_merchandise_catalog_item", {
-      p_product_key: item.product_key, p_unit_cost: cost, p_reference_price: reference,
-      p_price_elasticity: elasticity, p_demand_share: share, p_capacity_per_round: salesCapacity,
-      p_production_capacity_per_order: productionCapacity, p_is_enabled: draft.is_enabled
-    });
-    setSavingKey("");
-    if (saveError) setError(saveError.message);
-    else { setNotice(item.product_name + " catalog configuration saved."); await refresh(); }
+  const activeBatch = (product: Product) => (batchByProduct[product.id] ?? []).find(batch => batch.status === "producing" && batch.completes_at && new Date(batch.completes_at).getTime() > clock);
+  const productReport = (product: Product) => {
+    const productBatches = batchByProduct[product.id] ?? [];
+    const sales = salesByProduct[product.id] ?? { sold: 0, gross: 0, cogs: 0 };
+    const produced = productBatches.reduce((sum, batch) => sum + Number(batch.units_produced), 0);
+    const productionCost = productBatches.reduce((sum, batch) => sum + Number(batch.total_cost), 0);
+    return { produced, remaining: Number(product.stock_quantity || 0), sold: sales.sold, gross: sales.gross, cogs: sales.cogs, productionCost, grossProfit: sales.gross - sales.cogs, netProfit: sales.gross - productionCost };
   };
+  const selectedDraft = selectedProduct ? drafts[selectedProduct.id] ?? { unit_price: "", quantity: "100" } : null;
+  const priceFactor = selectedProduct && selectedDraft ? calculatePriceDemandFactor(selectedProduct.reference_price, Number(selectedDraft.unit_price), selectedProduct.price_elasticity) : 0;
+  const unitMargin = selectedProduct && selectedDraft ? calculateUnitMargin(Number(selectedDraft.unit_price), selectedProduct.unit_cost) : 0;
+  const productionTotal = selectedProduct && selectedDraft ? Number(selectedDraft.quantity || 0) * selectedProduct.unit_cost : 0;
+  const selectedStatus = selectedProduct ? statusFor(selectedProduct) : "idle";
+  const selectedReport = selectedProduct ? productReport(selectedProduct) : null;
+  const selectedReviews = selectedProduct ? reviews.filter(review => review.product_id === selectedProduct.id).slice(0, 6) : [];
 
-  const saveProduct = async (product: Product) => {
-    if (!supabase || !isOwner) return;
-    const draft = drafts[product.id];
-    if (!draft) return;
-    const price = Number(draft.unit_price);
-    if (!Number.isFinite(price) || price <= 0) { setError("Harga jual harus lebih besar dari nol."); return; }
-    setSavingKey("product:" + product.id); setError(""); setNotice("");
-    const { error: saveError } = await supabase.rpc("member_update_merchandise_product", {
-      p_product_id: product.id, p_unit_price: price, p_is_active: draft.is_active
-    });
-    setSavingKey("");
-    if (saveError) setError(saveError.message);
-    else { setNotice(product.product_name + " berhasil diperbarui."); await refresh(); }
-  };
-
+  const updateDraft = (productId: string, patch: Partial<ProductDraft>) => setDrafts(current => ({
+    ...current, [productId]: { ...(current[productId] ?? { unit_price: "", quantity: "100" }), ...patch }
+  }));
   const produce = async (product: Product) => {
     if (!supabase || !isOwner) return;
-    const quantity = Number(quantities[product.id] ?? 1);
-    if (!Number.isInteger(quantity) || quantity < 1) { setError("Jumlah produksi harus berupa bilangan bulat positif."); return; }
-    setSavingKey("produce:" + product.id); setError(""); setNotice("");
-    const idempotencyKey = productionKeys[product.id] ?? crypto.randomUUID();
-    if (!productionKeys[product.id]) setProductionKeys(v => ({ ...v, [product.id]: idempotencyKey }));
-    const { data, error: produceError } = await supabase.rpc("member_produce_merchandise", {
-      p_product_id: product.id, p_quantity: quantity, p_idempotency_key: idempotencyKey
-    });
-    setSavingKey("");
-    if (produceError) setError(produceError.message);
-    else {
-      setProductionKeys(v => { const next = { ...v }; delete next[product.id]; return next; });
-      setNotice("Produksi " + Number(data?.units_produced ?? quantity) + " " + product.product_name + " berhasil. Biaya " + money(Number(data?.total_cost ?? product.unit_cost * quantity)) + ". Stok " + Number(data?.stock_quantity ?? product.stock_quantity + quantity) + ".");
-      await refresh();
+    const draft = drafts[product.id] ?? { unit_price: "", quantity: "100" };
+    const price = Number(draft.unit_price), quantity = Number(draft.quantity);
+    if (!Number.isFinite(price) || price <= 0) { setError("Tentukan harga jual yang valid terlebih dahulu."); return; }
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > product.production_capacity_per_order) {
+      setError("Jumlah produksi harus 1 sampai " + product.production_capacity_per_order.toLocaleString("id-ID") + " unit per batch."); return;
     }
+    setSaving(true); setError(""); setNotice("");
+    const { error: priceError } = await supabase.rpc("member_update_merchandise_product", {
+      p_product_id: product.id, p_unit_price: price, p_is_active: true
+    });
+    if (priceError) { setSaving(false); setError(priceError.message); return; }
+    const { data, error: produceError } = await supabase.rpc("member_produce_merchandise", {
+      p_product_id: product.id, p_quantity: quantity, p_idempotency_key: crypto.randomUUID()
+    });
+    setSaving(false);
+    if (produceError) { setError(produceError.message); return; }
+    setNotice("Produksi " + product.product_name + " dimulai. Estimasi selesai " + new Date(data.completes_at).toLocaleString("id-ID") + ".");
+    await refresh();
   };
+  const openProduct = (product: Product) => { setSelected(product.id); setError(""); setNotice(""); };
+  const closeModal = () => { if (!saving) { setSelected(null); setError(""); } };
+  const resizeStart = (event: React.PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    resizeRef.current = { x: event.clientX, y: event.clientY, width: modalSize.width, height: modalSize.height };
+  };
+  const resizeMove = (event: React.PointerEvent<HTMLButtonElement>) => {
+    if (!resizeRef.current) return;
+    const start = resizeRef.current;
+    const maxWidth = Math.max(320, window.innerWidth - 36);
+    const maxHeight = Math.max(360, window.innerHeight - 48);
+    setModalSize({
+      width: Math.max(320, Math.min(maxWidth, start.width + start.x - event.clientX)),
+      height: Math.max(360, Math.min(maxHeight, start.height + event.clientY - start.y))
+    });
+  };
+  const resizeEnd = () => { resizeRef.current = null; };
 
-  if (loading) return <section className="team-merchandise"><p>Memuat Merchandise Engine...</p></section>;
-  return <section className="team-merchandise">
-    <header className="team-merch-heading">
-      <div><span className="section-eyebrow">BRAND ECONOMY · OFFICIAL STORE</span><h2>Merchandise Engine</h2><p>Official products, production inventory, and demand-driven race sales.</p></div>
-      <button className="team-hq-refresh" onClick={() => void refresh()}><RefreshCw size={15}/> Refresh</button>
+  if (!teamId) return null;
+  if (loading) return <section className="team-merchandise-shell"><p>Loading official merchandise...</p></section>;
+
+  return <section className="team-merchandise-shell">
+    <header className="team-merch-store-heading">
+      <div><span className="section-eyebrow">BRAND ECONOMY · OFFICIAL STORE</span><h2>Team Merchandise</h2><p>Manufacture carefully. Price strategically. Unsold inventory ties up your capital.</p></div>
+      <button className="team-hq-refresh" onClick={() => void refresh()} aria-label="Refresh merchandise"><RefreshCw size={15}/></button>
     </header>
-    {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
+    {error && <p className="team-hq-error" role="alert">{error}</p>}
+    {notice && <p className="team-hq-notice" role="status">{notice}</p>}
+    <div className="team-merch-market-strip">
+      <span><Users size={15}/> Fanbase <strong>{totalFans.toLocaleString("id-ID")}</strong></span>
+      <span><TrendingUp size={15}/> Reputation <strong>{reputation.toLocaleString("id-ID")}</strong></span>
+      <span><BadgePercent size={15}/> Fan sentiment <strong>{Math.round(fanQuality)}%</strong></span>
+    </div>
+    <div className="team-merch-store-grid">
+      {products.map(product => {
+        const Icon = productIcons[product.product_key] ?? Package;
+        const status = statusFor(product);
+        const batch = activeBatch(product);
+        return <button type="button" className="team-merch-store-card" key={product.id} onClick={() => openProduct(product)}>
+          <span className="team-merch-store-icon"><Icon size={27}/></span>
+          <strong>{product.product_name}</strong>
+          <span className={"team-merch-store-status is-" + status}>{statusLabels[status]}</span>
+          {status === "producing" && batch?.completes_at && <small><Clock3 size={12}/> {Math.max(0, Math.ceil((new Date(batch.completes_at).getTime() - clock) / 60000))} min left</small>}
+          {status === "idle" && <span className="team-merch-card-action">Produce this item <Plus size={13}/></span>}
+          {status === "marketed" && <span className="team-merch-card-action">View catalog <ShoppingBag size={13}/></span>}
+          {status === "sold_out" && <span className="team-merch-card-action">Sales report <TrendingUp size={13}/></span>}
+        </button>;
+      })}
+    </div>
 
-    {isAdmin && <>
-      <section className="team-merch-admin">
-        <div className="team-hq-section-title"><div><span className="section-eyebrow">ADMIN CONFIGURATION</span><h3>Merchandise market rules</h3></div><span className={config.is_enabled ? "team-hq-status" : "team-hq-status disabled"}>{config.is_enabled ? "ACTIVE" : "PAUSED"}</span></div>
-        <label className="team-merch-toggle"><input type="checkbox" checked={Boolean(configDraft.is_enabled)} onChange={e => setConfigDraft(v => ({ ...v, is_enabled: e.target.checked }))}/> Aktifkan settlement setelah hasil race resmi dipublikasikan</label>
-        <div className="team-merch-config-grid">
-          <label>Base conversion (% per round)<input type="number" min="0" max="2" step="0.01" value={String(configDraft.base_conversion_rate)} onChange={e => setConfigDraft(v => ({ ...v, base_conversion_rate: e.target.value }))}/></label>
-          <label>Maximum conversion (% per round)<input type="number" min="0" max="2" step="0.01" value={String(configDraft.max_conversion_rate)} onChange={e => setConfigDraft(v => ({ ...v, max_conversion_rate: e.target.value }))}/></label>
-          <label>Minimum reputation multiplier<input type="number" min="0.5" max="2" step="0.05" value={String(configDraft.reputation_factor_min)} onChange={e => setConfigDraft(v => ({ ...v, reputation_factor_min: e.target.value }))}/></label>
-          <label>Maximum reputation multiplier<input type="number" min="0.5" max="2" step="0.05" value={String(configDraft.reputation_factor_max)} onChange={e => setConfigDraft(v => ({ ...v, reputation_factor_max: e.target.value }))}/></label>
-          <label>HQ demand bonus per level (%)<input type="number" min="0" max="20" step="0.5" value={String(configDraft.hq_demand_bonus_per_level)} onChange={e => setConfigDraft(v => ({ ...v, hq_demand_bonus_per_level: e.target.value }))}/></label>
-          <label>HQ capacity bonus per level (%)<input type="number" min="0" max="20" step="0.5" value={String(configDraft.hq_capacity_bonus_per_level)} onChange={e => setConfigDraft(v => ({ ...v, hq_capacity_bonus_per_level: e.target.value }))}/></label>
-        </div>
-        <button className="team-hq-save" disabled={savingKey === "engine"} onClick={() => void saveEngineConfig()}><Save size={14}/> {savingKey === "engine" ? "Menyimpan..." : "Simpan market rules"}</button>
-      </section>
-
-      <section className="team-merch-admin">
-        <div className="team-hq-section-title"><div><span className="section-eyebrow">GLOBAL PRODUCT CATALOG</span><h3>Production cost & demand settings</h3></div></div>
-        <p className="team-merch-admin-note">Admin mengatur biaya produksi dan harga acuan. Team Owner tetap menentukan harga jualnya sendiri.</p>
-        <div className="team-merch-catalog-grid">
-          {catalog.map(item => {
-            const draft = catalogDrafts[item.product_key] ?? {
-              unit_cost: String(item.unit_cost), reference_price: String(item.reference_price), price_elasticity: String(item.price_elasticity),
-              demand_share: String(item.demand_share * 100), capacity_per_round: String(item.capacity_per_round),
-              production_capacity_per_order: String(item.production_capacity_per_order), is_enabled: item.is_enabled
-            };
-            return <article className="team-merch-catalog-item" key={item.product_key}>
-              <div className="team-hq-section-title"><strong>{item.product_name}</strong><label className="team-merch-toggle"><input type="checkbox" checked={draft.is_enabled} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, is_enabled: e.target.checked } }))}/> Enabled</label></div>
-              <div className="team-merch-catalog-fields">
-                <label>Unit production cost (€)<input type="number" min="0.01" step="0.01" value={draft.unit_cost} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, unit_cost: e.target.value } }))}/></label>
-                <label>Reference price (€)<input type="number" min="0.01" step="0.01" value={draft.reference_price} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, reference_price: e.target.value } }))}/></label>
-                <label>Price elasticity<input type="number" min="0.1" max="5" step="0.1" value={draft.price_elasticity} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, price_elasticity: e.target.value } }))}/></label>
-                <label>Demand share (%)<input type="number" min="0.01" max="100" step="0.01" value={draft.demand_share} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, demand_share: e.target.value } }))}/></label>
-                <label>Sales capacity / race<input type="number" min="0" step="1" value={draft.capacity_per_round} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, capacity_per_round: e.target.value } }))}/></label>
-                <label>Production capacity / batch<input type="number" min="1" step="1" value={draft.production_capacity_per_order} onChange={e => setCatalogDrafts(v => ({ ...v, [item.product_key]: { ...draft, production_capacity_per_order: e.target.value } }))}/></label>
-              </div>
-              <button className="team-hq-save" disabled={savingKey === "catalog:" + item.product_key} onClick={() => void saveCatalog(item)}><Save size={13}/> {savingKey === "catalog:" + item.product_key ? "Menyimpan..." : "Simpan catalog item"}</button>
-            </article>;
-          })}
-        </div>
-      </section>
-    </>}
-
-    {teamId && <>
-      <div className="team-merch-metrics">
-        <article><Users size={16}/><span>Total fans</span><strong>{totalFans.toLocaleString("id-ID")}</strong><small>Loyalty {avg("loyalty").toFixed(1)} · Engagement {avg("engagement").toFixed(1)}</small></article>
-        <article><BarChart3 size={16}/><span>Team reputation</span><strong>{reputation.toLocaleString("id-ID")}</strong><small>Sentiment {avg("sentiment").toFixed(1)}</small></article>
-        <article><Coins size={16}/><span>Net merchandise income</span><strong>{money(totals.net)}</strong><small>Gross {money(totals.gross)} · COGS {money(totals.cost)}</small></article>
-        <article><Package size={16}/><span>Units sold</span><strong>{totals.units.toLocaleString("id-ID")}</strong><small>{runs.length} latest race sales runs</small></article>
-      </div>
-      <div className="team-merch-hq-line"><span>Marketing Department <strong>LV {facilityLevel("marketing_department")}</strong></span><span>Commercial Department <strong>LV {facilityLevel("commercial_department")}</strong></span></div>
-      <div className="team-hq-section-title"><div><span className="section-eyebrow">PRODUCT CATALOG</span><h3>Official team merchandise</h3></div></div>
-      <div className="team-merch-products">
-        {products.map(product => {
-          const draft = drafts[product.id] ?? { unit_price: String(product.unit_price), is_active: product.is_active };
-          const price = Number(draft.unit_price);
-          const margin = calculateUnitMargin(price, Number(product.unit_cost));
-          const factor = calculatePriceDemandFactor(Number(product.reference_price), price, Number(product.price_elasticity));
-          const configured = Number(product.unit_cost) > 0 && Number(product.reference_price) > 0;
-          const hasUnsavedSettings = draft.is_active !== product.is_active || Number(draft.unit_price) !== Number(product.unit_price);
-          const quantity = Number(quantities[product.id] ?? 1);
-          return <article className="team-merch-product" key={product.id}>
-            <div className="team-merch-product-heading">
-              <div><strong>{product.product_name}</strong><small>Stock {Number(product.stock_quantity).toLocaleString("id-ID")} · Sold {Number(itemTotals[product.product_name] || 0).toLocaleString("id-ID")} units</small></div>
-              <span className={draft.is_active ? "team-hq-status" : "team-hq-status disabled"}>{draft.is_active ? "ACTIVE" : "INACTIVE"}</span>
+    {selectedProduct && selectedDraft && selectedReport && <div className="team-merch-modal-backdrop" role="presentation" onClick={closeModal}>
+      <section className="team-merch-modal" role="dialog" aria-modal="true" aria-labelledby="team-merch-modal-title"
+        style={{ width: "min(" + modalSize.width + "px, calc(100vw - 24px))", height: "min(" + modalSize.height + "px, calc(100dvh - 24px))" }}
+        onClick={event => event.stopPropagation()}>
+        <button className="team-merch-resize-handle" aria-label="Resize merchandise window" title="Drag to resize"
+          onPointerDown={resizeStart} onPointerMove={resizeMove} onPointerUp={resizeEnd} onPointerCancel={resizeEnd}><MoveDiagonal2 size={15}/></button>
+        <header className="team-merch-modal-header">
+          <div><span className="section-eyebrow">OFFICIAL TEAM STORE</span><h2 id="team-merch-modal-title">{selectedProduct.product_name}</h2><p>{productDescriptions[selectedProduct.product_key] ?? "Official team merchandise"}</p></div>
+          <button className="team-merch-modal-close" onClick={closeModal} aria-label="Close"><X size={19}/></button>
+        </header>
+        <div className="team-merch-modal-body">
+          <div className="team-merch-modal-status"><span className={"team-merch-store-status is-" + selectedStatus}>{statusLabels[selectedStatus]}</span><span>Reference price: {money(selectedProduct.reference_price)}</span></div>
+          {selectedStatus === "idle" && <>
+            <div className="team-merch-modal-intro"><Factory size={19}/><p>Choose a selling price and production quantity. Production cost is charged immediately; stock becomes available after the production timer ends.</p></div>
+            <div className="team-merch-form-grid">
+              <label>Selling price (€)<input type="number" min="0.01" step="0.01" value={selectedDraft.unit_price} onChange={event => updateDraft(selectedProduct.id, { unit_price: event.target.value })}/></label>
+              <label>Production quantity<input type="number" min="1" max={selectedProduct.production_capacity_per_order} step="1" value={selectedDraft.quantity} onChange={event => updateDraft(selectedProduct.id, { quantity: event.target.value })}/></label>
             </div>
-            <label>Selling price (€)<input type="number" min="0.01" step="0.01" value={draft.unit_price} onChange={e => setDrafts(v => ({ ...v, [product.id]: { ...draft, unit_price: e.target.value } }))} disabled={!isOwner}/></label>
-            <div className="team-merch-price-summary">
-              <span>Unit cost <strong>{money(Number(product.unit_cost))}</strong></span>
-              <span>Unit margin <strong className={margin < 0 ? "is-loss" : ""}>{money(margin)}</strong></span>
-              <span>Demand factor <strong>{factor > 0 ? factor.toFixed(2) + "×" : "—"}</strong></span>
+            <div className="team-merch-risk-grid">
+              <article><span>Unit production cost</span><strong>{money(selectedProduct.unit_cost)}</strong></article>
+              <article><span>Total production cost</span><strong>{money(productionTotal)}</strong></article>
+              <article><span>Unit margin</span><strong className={unitMargin < 0 ? "is-loss" : ""}>{money(unitMargin)}</strong></article>
+              <article><span>Price demand factor</span><strong>{priceFactor.toFixed(2)}×</strong></article>
             </div>
-            {margin < 0 && price > 0 && <p className="team-merch-warning">Harga di bawah biaya produksi: potensi rugi {money(Math.abs(margin))} per unit terjual.</p>}
-            {!configured && <p className="team-merch-warning">Menunggu Admin mengatur biaya produksi dan harga acuan.</p>}
-            {isOwner && <label className="team-merch-toggle"><input type="checkbox" checked={draft.is_active} disabled={!configured} onChange={e => setDrafts(v => ({ ...v, [product.id]: { ...draft, is_active: e.target.checked } }))}/> Tawarkan produk ini untuk dijual</label>}
-            {isOwner && <button className="team-hq-save" disabled={savingKey === "product:" + product.id} onClick={() => void saveProduct(product)}><Save size={13}/> {savingKey === "product:" + product.id ? "Menyimpan..." : "Simpan pengaturan produk"}</button>}
-            {isOwner && <div className="team-merch-production">
-              <label>Jumlah produksi<input type="number" min="1" max={product.production_capacity_per_order} step="1" value={quantities[product.id] ?? "1"} onChange={e => { setQuantities(v => ({ ...v, [product.id]: e.target.value })); setProductionKeys(v => { const next = { ...v }; delete next[product.id]; return next; }); }}/></label>
-              <div><span>Estimasi biaya produksi</span><strong>{money(Number(product.unit_cost) * (Number.isFinite(quantity) ? quantity : 0))}</strong></div>
-              <small>Kapasitas batch: {Number(product.production_capacity_per_order).toLocaleString("id-ID")} unit sebelum bonus HQ.</small>
-              <button className="team-hq-save" disabled={!configured || !draft.is_active || hasUnsavedSettings || savingKey === "produce:" + product.id || !Number.isInteger(quantity) || quantity < 1} onClick={() => void produce(product)}>
-                {savingKey === "produce:" + product.id ? "Memproduksi..." : "Produce stock"}
-              </button>
-            </div>}
-          </article>;
-        })}
-        {!products.length && <p className="team-hq-empty">Belum ada produk aktif di katalog global.</p>}
-      </div>
-
-      <div className="team-hq-section-title"><div><span className="section-eyebrow">PRODUCTION HISTORY</span><h3>Manufacturing batches</h3></div><span className="empty-tag">LATEST 12</span></div>
-      <div className="team-merch-history">
-        {batches.map(batch => <article key={batch.id}><div><strong>{batch.product_name} · {Number(batch.units_produced).toLocaleString("id-ID")} produced</strong><small>{new Date(batch.created_at).toLocaleString("id-ID")} · {Number(batch.units_remaining).toLocaleString("id-ID")} units remaining</small></div><strong>{money(Number(batch.total_cost))}</strong></article>)}
-        {!batches.length && <p className="team-hq-empty">Belum ada batch produksi.</p>}
-      </div>
-
-      <div className="team-hq-section-title"><div><span className="section-eyebrow">SALES HISTORY</span><h3>Race sales</h3></div><span className="empty-tag">LATEST 12</span></div>
-      <div className="team-merch-history">
-        {runs.map(run => <article key={run.id}><div><strong>Round {run.round_id.slice(0, 8).toUpperCase()}</strong><small>{new Date(run.created_at).toLocaleString("id-ID")} · {run.units_sold.toLocaleString("id-ID")} units</small></div><strong>{money(run.net_revenue)}</strong></article>)}
-        {!runs.length && <p className="team-hq-empty">Belum ada penjualan. Sistem menghitung setelah hasil race resmi dipublikasikan.</p>}
-      </div>
-    </>}
-    {!teamId && !isAdmin && <p className="team-hq-empty">Akun ini belum terhubung ke tim.</p>}
+            {unitMargin < 0 && <p className="team-merch-risk-note"><AlertTriangle size={15}/> Selling below production cost creates a loss on every unit sold.</p>}
+            {Number(selectedDraft.unit_price) > selectedProduct.reference_price * 1.5 && <p className="team-merch-risk-note"><AlertTriangle size={15}/> This price is far above the market reference and may sharply reduce demand.</p>}
+            <p className="team-merch-muted">Potential demand is influenced by fanbase, general-public reach from reputation, fan sentiment, product appeal, HQ effects and price elasticity. No sales are guaranteed.</p>
+            <button className="team-merch-primary" disabled={!isOwner || saving} onClick={() => void produce(selectedProduct)}>{saving ? "Starting production..." : "Confirm production"}</button>
+          </>}
+          {selectedStatus === "producing" && <>
+            <div className="team-merch-production-progress"><Clock3 size={24}/><strong>Production in progress</strong><p>{activeBatch(selectedProduct)?.units_produced.toLocaleString("id-ID")} units are being manufactured.</p>
+              {activeBatch(selectedProduct)?.completes_at && <time>{new Date(activeBatch(selectedProduct)!.completes_at!).toLocaleString("id-ID")}</time>}
+              <small>Remaining: {activeBatch(selectedProduct)?.completes_at ? Math.max(0, Math.ceil((new Date(activeBatch(selectedProduct)!.completes_at!).getTime() - clock) / 60000)) + " minutes" : "—"}</small>
+            </div>
+            <div className="team-merch-risk-grid"><article><span>Production cost</span><strong>{money(activeBatch(selectedProduct)?.total_cost ?? 0)}</strong></article><article><span>Available stock</span><strong>{selectedReport.remaining.toLocaleString("id-ID")}</strong></article></div>
+          </>}
+          {(selectedStatus === "marketed" || selectedStatus === "sold_out") && <>
+            <div className="team-merch-report-grid">
+              <article><span>Total production cost</span><strong>{money(selectedReport.productionCost)}</strong></article>
+              <article><span>Initial stock produced</span><strong>{selectedReport.produced.toLocaleString("id-ID")}</strong></article>
+              <article><span>Remaining stock</span><strong>{selectedReport.remaining.toLocaleString("id-ID")}</strong></article>
+              <article><span>Units sold</span><strong>{selectedReport.sold.toLocaleString("id-ID")}</strong></article>
+              <article><span>Gross revenue</span><strong>{money(selectedReport.gross)}</strong></article>
+              <article><span>Gross profit</span><strong>{money(selectedReport.grossProfit)}</strong></article>
+              <article><span>Net profit / loss</span><strong className={selectedReport.netProfit < 0 ? "is-loss" : "is-profit"}>{money(selectedReport.netProfit)}</strong></article>
+              <article><span>Current selling price</span><strong>{money(selectedProduct.unit_price)}</strong></article>
+            </div>
+            <div className="team-merch-review-section"><div className="team-merch-subheading"><div><span className="section-eyebrow">CUSTOMER VOICE</span><h3>Fan reviews</h3></div><small>Updated after each official race</small></div>
+              {selectedReviews.length ? selectedReviews.map(review => <article className={"team-merch-review is-" + review.sentiment} key={review.id}>
+                <span className="team-merch-review-stars" aria-label={review.rating + " out of 5 stars"}>{review.rating ? "★".repeat(review.rating) : "No stars"}<small>{review.sentiment}</small></span>
+                <p>{review.comment}</p>
+              </article>) : <p className="team-merch-muted">No customer reviews yet. Reviews appear after the next official race settlement.</p>}
+            </div>
+            <div className="team-merch-repeat-form">
+              <div><strong>Produce another batch</strong><span>Current unit cost: {money(selectedProduct.unit_cost)}</span></div>
+              <label>Selling price (€)<input type="number" min="0.01" step="0.01" value={selectedDraft.unit_price} onChange={event => updateDraft(selectedProduct.id, { unit_price: event.target.value })}/></label>
+              <label>Quantity<input type="number" min="1" max={selectedProduct.production_capacity_per_order} value={selectedDraft.quantity} onChange={event => updateDraft(selectedProduct.id, { quantity: event.target.value })}/></label>
+              <button className="team-merch-primary" disabled={!isOwner || saving} onClick={() => void produce(selectedProduct)}>{saving ? "Starting..." : "Produce again"}</button>
+            </div>
+          </>}
+          {error && <p className="team-hq-error" role="alert">{error}</p>}
+          {notice && <p className="team-hq-notice" role="status">{notice}</p>}
+        </div>
+      </section>
+    </div>}
   </section>;
 }
