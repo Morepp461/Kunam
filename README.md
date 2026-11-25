@@ -1302,3 +1302,23 @@ This confirms the code and automated regression coverage, not the remaining manu
 - Community season snapshots select the latest team identity snapshot without attempting unsupported UUID aggregation.
 - The member-directory Edge Function's public team-profile path has least-privilege, column-level service_role reads for team livery and active sponsor lookup. No public or anonymous access to those underlying tables is granted.
 - Database changes are tracked in timestamped migrations and applied to both Production and Testing.
+
+
+## Economy & Competition Scope Checkpoint — 25 November 2026
+
+Owner-approved active scope for the current implementation branch:
+
+- Remove Cash Loan only; preserve Driver Loan and its existing workflows/history.
+- Add an independently configured prize pool to every division. A division cannot activate prize settlement without complete rules.
+- Keep Premio Tier 1 race rewards as the baseline; each lower division tier receives 10 percentage points less per tier (Tier 2 90%, Tier 3 80%, Tier 4 70%, etc.).
+- Remove Driver Transfer Tax assessment/settlement without changing transfer negotiation, FIA approval, transfer windows, settlement, or audit history.
+- Calculate Team base/current valuation from authoritative division tier and existing system inputs. Premio Tier 1 starts at €120m, Zwei Tier 2 at €100m, and each subsequent tier decreases €20m. Admin cannot manually override calculated valuation; 40%–200% applies only to buyer offers.
+- Race settlement pays cash rewards only after official confirmation; remove DDP/TDP race payouts. Apply the division-tier reward scale.
+- Starting balances: Driver €5m, Team €100m, Team Owner €10m, one-time only. Verify Admin adjustments through audited wallet ledger.
+- Charge €1m per official DNF result entry per round to the affected Team; exclude DNS, DSQ, OCR drafts, and unconfirmed results. Reconcile corrections/voids idempotently.
+- Sponsor Admin configuration must be reorganized without changing commercial values and support sponsor-logo upload. Uploaded logos must appear on offers in Team Panel → Sponsorship.
+- Preserve all existing sponsorship engine rules, including the agreed seven-sponsor maximum and negotiation/bonus constraints.
+- Shop + Midtrans remains disabled until approved packages/prices and merchant credentials are supplied.
+- Referral, CRM, 3D car integration, Cale artwork expansion, and unrelated backlog items are excluded from this scope.
+
+This checkpoint records approved scope and does not itself claim that the implementation, database migrations, QA, merge, or production deployment are complete. Versioned Supabase migrations must remain synchronized between Testing and Production. Update this checkpoint again with verified PR, CI, migration, and Vercel deployment identifiers after release.
