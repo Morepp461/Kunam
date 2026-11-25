@@ -39,7 +39,7 @@ import "./team-contracts.css";
 import "./admin-users.css";
 import "./caleris-controls.css";
 import "./support-center.css";
-import "./public-transactions.css";
+import "./economy-guide.css";
 
 const PrivacyPolicy = lazy(() => import("./PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./TermsAndConditions"));
@@ -89,7 +89,7 @@ const CaleAccountTutorial = lazy(() => import("./CaleAccountTutorial"));
 const CircuitPool = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPool })));
 const CircuitPoolInput = lazy(() => import("./CircuitPool").then((module) => ({ default: module.CircuitPoolInput })));
 const SupportCenter = lazy(() => import("./SupportCenter"));
-const PublicTransactions = lazy(() => import("./PublicTransactions"));
+const EconomyGuide = lazy(() => import("./EconomyGuide"));
 
 type Kind="success"|"error"|"warning"|"info";
 type Notice={id:number;kind:Kind;title:string;message?:string};
@@ -174,7 +174,8 @@ function Application(){
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/financial-centre" element={<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/race-checkin" element={session&&!needsPaddockAccess?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
-  <Route path="/transactions" element={session&&!needsPaddockAccess?<PublicTransactions/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/economy-guide" element={session&&!needsPaddockAccess?<EconomyGuide/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/transactions" element={<Navigate to="/economy-guide" replace/>}/>
   <Route path="/support" element={session&&!needsPaddockAccess?<SupportCenter session={session} isAdmin={false}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/support" element={session&&!needsPaddockAccess&&isAdmin?<SupportCenter session={session} isAdmin/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin-workflow" element={session&&!needsPaddockAccess&&isAdmin?<AdminWorkflow session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
