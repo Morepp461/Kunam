@@ -16,7 +16,13 @@ jobs:
       - name: Inspect official Cale pose archive (temporary)
         run: |
           echo "=== OFFICIAL CALE WEBP ARCHIVE FILES ==="
-          unzip -Z1 "public/assets/cale/Cale webp.zip"
+          unzip -Z1 "public/assets/cale/Cale webp.zip" | tee /tmp/cale-files.txt
+      - name: Upload temporary Cale archive inventory
+        uses: actions/upload-artifact@v4
+        with:
+          name: cale-archive-inventory
+          path: /tmp/cale-files.txt
+          retention-days: 1
           echo "=== END CALE ARCHIVE ==="
       - uses: actions/setup-node@v4
         with:
