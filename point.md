@@ -1759,10 +1759,25 @@ Implemented on the active feature branch; final QA/release gates remain open.
 - Driver Transfer Tax is inactive and settlement no longer adds tax. Transfer negotiation, approval, and settlement paths remain.
 - Prize Pool remains independently configured by division key through the Season Prizepool workspace; no default rule is copied to a newly created division.
 - Admin wallet adjustment UI uses the ledger-backed `admin_inject_wallet_balance` RPC and the audit table records actor, reason, timestamp, bank-funding transaction, and wallet-credit transaction. Current Testing audit table has zero adjustment rows, so the schema/workflow is present but no historical adjustments were available to reconcile.
-- Initial wallet grants: Driver €5m, Team €100m, Team Owner €10m, one-time only. Testing backfill already verified earlier; verify both environments again before release.
+- Initial wallet grants: Driver €5m, Team €100m, Team Owner €10m, one-time only. Final verification: Testing has 13 active Team Owner wallets and 13 one-time grants totaling €130,000,000; Production currently has zero Team Owner wallets, so there were no existing owner wallets to backfill.
 
 ### New migrations in this checkpoint
 - `20261125220000_sponsor_logos_and_division_scaled_race_rewards.sql`
 - `20261125230000_system_team_valuation_refresh.sql`
 
-Both migrations have been applied to Testing and Production. Final code QA, CI, merge, and Vercel Production READY confirmation are still pending.
+Both migrations have been applied to Testing and Production. PR #371 merged to main at `496e49f235db266484ebfe52919c844f87638c9b`; Caleris CI run #5045 passed. Vercel Production deployment `dpl_3nGeno99tvdmxZimUrNijXWexrUJ` is READY and serves `calerismasters.com` and `www.calerismasters.com`.
+
+
+## RELEASE CHECKPOINT — 25 November 2026
+
+- Pull Request: #371 — Complete economy and competition ruleset updates.
+- Main commit: `496e49f235db266484ebfe52919c844f87638c9b`.
+- Caleris CI: run #5045, SUCCESS. TypeScript, production build, unit/schema tests, Playwright, regression scripts, Driver Loan regression, and Supabase schema parity guard all passed.
+- Vercel Production: deployment `dpl_3nGeno99tvdmxZimUrNijXWexrUJ`, READY. Aliases include `calerismasters.com` and `www.calerismasters.com`.
+- Supabase migrations `sponsor_logos_and_division_scaled_race_rewards` and `system_team_valuation_refresh` are applied in both Testing and Production.
+- Team Owner starting balance verification: Testing 13/13 existing active wallets granted once, total €130,000,000. Production has zero existing Team Owner wallets; new Team Owner wallets receive €10,000,000 through the same one-time grant path.
+- Team base valuation verification: no Premio or Zwei team rows have an incorrect base value in either environment.
+- Admin adjustment audit tables currently have zero rows in both environments; workflow and audit structure exist, but there were no historical adjustments to reconcile.
+- Testing and Production migration ledgers have legacy version-timestamp drift from earlier migrations. The two migrations in this release are present in both; schema parity CI passed. Do not manually rewrite legacy migration ledger entries without mapping their canonical SQL.
+
+Release completed for the approved Economy & Competition scope. Unrelated backlog items remain excluded as directed.
