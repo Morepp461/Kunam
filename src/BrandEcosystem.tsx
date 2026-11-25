@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ArrowLeft,RefreshCw,Handshake,Coins,Target,Globe2,Plus,CheckCircle2,X} from "lucide-react";
+import {ArrowLeft,RefreshCw,Handshake,Coins,Target,Globe2,Save,CheckCircle2,X} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
@@ -30,7 +30,6 @@ export default function BrandEcosystem({session,mode}:{session:Session;mode:"tea
  const [counterId,setCounterId]=useState(""),[counterAmount,setCounterAmount]=useState(""),[counterTerms,setCounterTerms]=useState("");
  const [seasonId,setSeasonId]=useState(""),[sponsorName,setSponsorName]=useState(""),[industry,setIndustry]=useState(""),[tierKey,setTierKey]=useState(""),[flex,setFlex]=useState("10"),[offerMin,setOfferMin]=useState(""),[offerMax,setOfferMax]=useState(""),[logoFile,setLogoFile]=useState<File|null>(null),[editingSponsorId,setEditingSponsorId]=useState(""),[editingSponsorLogo,setEditingSponsorLogo]=useState("");
  const [tierForm,setTierForm]=useState({key:"T5",label:"Tier 5",rep:"0",fans:"0",performance:"0",active:true});
- const 
  const [repTeam,setRepTeam]=useState(""),[repMetrics,setRepMetrics]=useState<Record<string,string>>({championship:"0",race_performance:"0",consistency:"0",driver_reputation:"0",fanbase:"0",commercial_credibility:"0"}),[repDriver,setRepDriver]=useState(""),[driverMetrics,setDriverMetrics]=useState<Record<string,string>>({championship:"0",race_performance:"0",consistency:"0",experience:"0",fan_popularity:"0",professional_record:"0"}),[trustMetrics,setTrustMetrics]=useState<Record<string,string>>({target_achievement:"0",consistency:"0",fanbase_growth:"0",commercial_exposure:"0",partnership_conduct:"0"}),[fanEntity,setFanEntity]=useState("team"),[fanTarget,setFanTarget]=useState(""),[fanRegion,setFanRegion]=useState("Indonesia"),[fanDelta,setFanDelta]=useState("");
  const [targetContract,setTargetContract]=useState(""),[targetTitle,setTargetTitle]=useState(""),[targetMetric,setTargetMetric]=useState(""),[targetValue,setTargetValue]=useState(""),[targetBonus,setTargetBonus]=useState("");
  const [progressTarget,setProgressTarget]=useState(""),[progressValue,setProgressValue]=useState("");
