@@ -17,15 +17,8 @@ Deno.serve(async(req:Request)=>{
   const auth=createClient(url,publishable,{auth:{autoRefreshToken:false,persistSession:false},global:{headers:{Authorization:"Bearer "+jwt}}});
   const {data:authData,error:authError}=await auth.auth.getUser(jwt);if(authError||!authData.user)return respond(401,{error:"Invalid or expired session."});
   const body=await req.json(),action=typeof body.action==="string"?body.action:"",actor=authData.user.id,admin=serviceClient(url,serviceKey);
-  if(action==="cash_loan_preview"){
-   const {data,error}=await admin.rpc("member_cash_loan_preview",{p_actor_id:actor});if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
-  }
-  if(action==="apply_cash_loan"){
-   const amount=typeof body.amount==="number"?body.amount:Number.NaN,tenor=typeof body.tenorSeasons==="number"?body.tenorSeasons:0;
-   if(!Number.isFinite(amount)||amount<=0||amount>999999999999999999.99||Number(amount.toFixed(2))!==amount)return respond(400,{error:"Nominal pinjaman tidak valid."});
-   if(!Number.isInteger(tenor)||tenor<1||tenor>4)return respond(400,{error:"Tenor hanya 1 sampai 4 season."});
-   const {data,error}=await admin.rpc("member_apply_cash_loan",{p_actor_id:actor,p_amount:amount,p_tenor_seasons:tenor});
-   if(error)return respond(422,{error:error.message});return respond(200,{success:true,result:data});
+  if(["cash_loan_preview","apply_cash_loan","team_cash_loan_preview","apply_team_cash_loan"].includes(action)){
+   return respond(410,{error:"Skema Cash Loan VreeoBank telah dihentikan. Driver Loan tetap tersedia melalui alur terpisah."});
   }
   if(action==="upgrade_development_attribute"){
    const scope=body.scope==="team"?"team":body.scope==="driver"?"driver":"",attributeKey=typeof body.attributeKey==="string"?body.attributeKey:"",newValue=typeof body.newValue==="number"?body.newValue:Number.NaN,paymentMethod=body.paymentMethod==="token"?"token":body.paymentMethod==="cash"?"cash":"";
