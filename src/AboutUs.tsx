@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUpRight, CalendarDays, Compass, Flag, Gamepad2, Globe2, Instagram, Rocket, Users } from "lucide-react";
+import CaleMascot from "./CaleMascot";
 import "./about-us.css";
 
 const founders = [
@@ -105,7 +106,7 @@ export default function AboutUs() {
         <div className="about-timeline">
           <article><span className="about-timeline-index">01</span><div><small>THE FIRST GRID</small><h3>Monoposto Indonesia Championship</h3><p>A casual championship made for the fun of racing. Members signed up, picked a team, and raced against AI opponents.</p></div></article>
           <article><span className="about-timeline-index">02</span><div><small>THE COMMUNITY GROWS</small><h3>A Discord server, then almost 200 members</h3><p>Members wanted a place to hang out and stay connected. The server became the home base, and the community kept growing across two seasons.</p></div></article>
-          <article><span className="about-timeline-index">03</span><div><small>FIVE PEOPLE, ONE VISION</small><h3>VREEO.ID takes shape</h3><p>Four of the most active moderators brought fresh ideas and a shared vision. The five of us became VREEO's core team, working side by side as equals.</p></div></article>
+          <article><span className="about-timeline-index">03</span><div><small>FIVE PEOPLE, ONE VISION</small><h3>VREEO.ID takes shape</h3><p>Four of the most active moderators brought fresh ideas and a shared vision. The five of us became VREEO's core team, working side by side as equals. On <strong>22 May 2026</strong>, we officially established VREEO.ID and gave that shared vision a name.</p></div></article>
           <article><span className="about-timeline-index">04</span><div><small>A NEW CHAPTER</small><h3>CALERIS MASTERS is born</h3><p>We moved beyond the original Monoposto event and created a motorsport roleplay experience with its own identity, systems, and long-term plans.</p></div></article>
         </div>
       </section>
@@ -176,7 +177,7 @@ export default function AboutUs() {
       </section>
 
       <section className="about-cale">
-        <div className="about-cale-symbol" aria-hidden="true">🐆</div>
+        <CaleMascot designId="idle_default" context="general" size="clamp(150px, 18vw, 220px)" className="about-cale-mascot" eager />
         <div><span className="about-eyebrow">YOUR FRIENDLY PADDOCK GUIDE</span><h2>Say hi to <em>CALE.</em></h2><p>Meet CALE, our kind-hearted black panther mascot. CALE is here to help members find their way around the CALERIS in-game experience. Think of CALE as your friendly guide around the paddock.</p></div>
       </section>
 
