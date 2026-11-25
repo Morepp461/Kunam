@@ -39,6 +39,7 @@ import "./team-contracts.css";
 import "./admin-users.css";
 import "./caleris-controls.css";
 import "./support-center.css";
+import "./economy-guide.css";
 
 const PrivacyPolicy = lazy(() => import("./PrivacyPolicy"));
 const TermsAndConditions = lazy(() => import("./TermsAndConditions"));
