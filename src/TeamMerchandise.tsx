@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   AlertTriangle, BadgePercent, Clock3, CreditCard, Factory, Flag, HardHat,
-  Package, Plus, RefreshCw, Shirt, ShoppingBag, Star, Sticker, Tag, TrendingUp,
+  Package, Plus, RefreshCw, Shirt, ShoppingBag, Sticker, TrendingUp,
   Users, Waves, X, MoveDiagonal2
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
