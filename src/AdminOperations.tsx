@@ -21,7 +21,6 @@ export default function AdminOperations({session}:{session:Session}){
  const [taxRules,setTaxRules]=useState<TaxRule[]>([]),[divisions,setDivisions]=useState<Division[]>([]),[assessments,setAssessments]=useState<WealthAssessment[]>([]);
  const [teams,setTeams]=useState<Team[]>([]),[valuations,setValuations]=useState<Valuation[]>([]),[valuationTeamId,setValuationTeamId]=useState("");
  const [taxType,setTaxType]=useState<"wealth">("wealth"),[taxScope,setTaxScope]=useState<"member"|"team">("member"),[taxLabel,setTaxLabel]=useState(""),[taxMinimum,setTaxMinimum]=useState(""),[taxRate,setTaxRate]=useState(""),[taxActive,setTaxActive]=useState(true),[editingTax,setEditingTax]=useState<string|null>(null),[wealthSeasonId,setWealthSeasonId]=useState("");
- const [teamId,setTeamId]=useState("");
 
  const refresh=useCallback(async()=>{
   if(!supabase)return;setLoading(true);setNotice("");
