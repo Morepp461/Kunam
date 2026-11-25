@@ -1745,3 +1745,24 @@ The owner explicitly confirmed the following corrections to the Economy and Comp
 9. **Starting balances and Admin adjustment:** Driver €5,000,000; Team €100,000,000; Team Owner €10,000,000, each one-time. Verify audited Admin adjustments (actor, reason, timestamp, ledger reconciliation) without bypassing ledger.
 10. **Car Maintenance:** €1,000,000 per DNF entry per round charged to the affected Team after official confirmation. No charge for DNS, DSQ, ordinary finishers, OCR drafts, or unconfirmed results. Corrections/voids must reconcile/reverse atomically and idempotently.
 11. **Out of scope:** Referral, CRM, Cale artwork/runtime expansion, 3D car asset integration, and other unrelated point.md backlog items are not part of this execution.
+
+
+## IMPLEMENTATION CHECKPOINT — 25 November 2026
+
+Implemented on the active feature branch; final QA/release gates remain open.
+
+- Cash Loan origination and preview RPC access are revoked by the existing versioned migrations. Driver Loan tables, lifecycle, payroll split, FIA workflow, and its regression test are preserved. Do not remove Driver Loan.
+- Race Settlement uses official closed-round results and ledger transactions. Driver cash reward baseline is P1 €1,000,000, P2 €750,000, P3 €500,000; Team P1 baseline €1,000,000. The new migration scales all these values by division tier (Tier 1 100%, Tier 2 90%, Tier 3 80%, and so on). Legacy DDP/TDP race reward rules are inactive.
+- Car Maintenance is €1,000,000 per official DNF entry and round, with reversal handling for corrected results. OCR drafts and unclosed rounds do not trigger settlement.
+- Sponsor logo storage bucket `sponsor-logos` is public-read and Admin-write only. Upload accepts PNG/JPG/WEBP up to 1 MB. Admin sponsor creation now requires a logo upload; uploaded logos are shown beside Team Panel sponsorship offers.
+- Team base valuation now derives from division: Premio €120m, Zwei €100m, and each further tier decreases €20m. Existing team base valuation rows are synchronized without rewriting historical valuation snapshots. Admin valuation refresh uses an audited server-side RPC; direct base valuation editing is removed from the Admin UI.
+- Driver Transfer Tax is inactive and settlement no longer adds tax. Transfer negotiation, approval, and settlement paths remain.
+- Prize Pool remains independently configured by division key through the Season Prizepool workspace; no default rule is copied to a newly created division.
+- Admin wallet adjustment UI uses the ledger-backed `admin_inject_wallet_balance` RPC and the audit table records actor, reason, timestamp, bank-funding transaction, and wallet-credit transaction. Current Testing audit table has zero adjustment rows, so the schema/workflow is present but no historical adjustments were available to reconcile.
+- Initial wallet grants: Driver €5m, Team €100m, Team Owner €10m, one-time only. Testing backfill already verified earlier; verify both environments again before release.
+
+### New migrations in this checkpoint
+- `20261125220000_sponsor_logos_and_division_scaled_race_rewards.sql`
+- `20261125230000_system_team_valuation_refresh.sql`
+
+Both migrations have been applied to Testing and Production. Final code QA, CI, merge, and Vercel Production READY confirmation are still pending.
