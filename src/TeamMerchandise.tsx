@@ -204,7 +204,7 @@ export default function TeamMerchandise({ teamId, isOwner, isAdmin }: { teamId: 
     setSavingKey("");
     if (produceError) setError(produceError.message);
     else {
-      setNotice(\`Produksi \${Number(data?.units_produced ?? quantity)} \${product.product_name} berhasil. Biaya \${money(Number(data?.total_cost ?? product.unit_cost * quantity))}. Stok \${Number(data?.stock_quantity ?? product.stock_quantity + quantity)}.\`);
+      setNotice("Produksi " + Number(data?.units_produced ?? quantity) + " " + product.product_name + " berhasil. Biaya " + money(Number(data?.total_cost ?? product.unit_cost * quantity)) + ". Stok " + Number(data?.stock_quantity ?? product.stock_quantity + quantity) + ".");
       await refresh();
     }
   };
