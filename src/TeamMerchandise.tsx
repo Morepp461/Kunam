@@ -48,7 +48,6 @@ const statusLabels: Record<string, string> = {
 export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | null; isOwner: boolean; isAdmin?: boolean }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [batches, setBatches] = useState<Batch[]>([]);
-  const [runs, setRuns] = useState<Run[]>([]);
   const [items, setItems] = useState<SaleItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [fans, setFans] = useState<Fan[]>([]);
@@ -82,7 +81,7 @@ export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | 
     const nextProducts = (productQ.data ?? []) as Product[];
     const nextBatches = (batchQ.data ?? []) as Batch[];
     const nextRuns = (runQ.data ?? []) as Run[];
-    setProducts(nextProducts); setBatches(nextBatches); setRuns(nextRuns);
+    setProducts(nextProducts); setBatches(nextBatches);
     setFans((fanQ.data ?? []) as Fan[]); setReputation(Number(repQ.data?.score ?? 0));
     const runIds = nextRuns.map(run => run.id);
     if (runIds.length) {
