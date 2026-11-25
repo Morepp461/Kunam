@@ -1781,3 +1781,20 @@ Both migrations have been applied to Testing and Production. PR #371 merged to m
 - Testing and Production migration ledgers have legacy version-timestamp drift from earlier migrations. The two migrations in this release are present in both; schema parity CI passed. Do not manually rewrite legacy migration ledger entries without mapping their canonical SQL.
 
 Release completed for the approved Economy & Competition scope. Unrelated backlog items remain excluded as directed.
+
+
+## Checkpoint — Sponsor Capacity, Economy Guide & PWA (25 November 2026)
+
+Approved follow-up scope:
+- Sponsor records no longer have sponsor-owned budgets. Legacy `available_budget` is retained nullable for compatibility and set to NULL; the sponsor admin form no longer exposes budget controls. Offer minimum/maximum and negotiation flexibility remain.
+- Sponsor funding is paid from the VreeoBank wallet. Only the `sponsor_payout` event is allowed to draw the bank below zero, so sponsorship funding is unlimited without exposing bank balance or funding source in member-facing UI.
+- Sponsor matching reserves active contracts and outstanding offers per sponsor and season. T1 / Title Partner capacity is 2 teams; T2–T5 capacity is 3 teams. Rejected/expired offers do not reserve a slot; a slot is available again after the associated active contract ends.
+- Sponsor database supports editing existing name, industry, tier, flexibility, offer range, and logo. Logo replacement is optional while editing.
+- Economy Guide now loads active Wealth Tax and Prizepool rules from Supabase, previews the first three Prizepool positions per division/recipient, and opens the full list in a modal. Race rewards show division-scaled values; the guide also covers fixed license salary bands, Driver Loan, sponsorship limits, and Team Owner profit share.
+- PWA shell added using existing Android/Apple icon assets and manifest, a service worker that does not cache Supabase auth/data APIs, and an Android install prompt.
+
+Database migrations applied to Testing and Production:
+- `sponsor_capacity_vreeobank_unlimited` — sponsor budget removal, per-season capacity, VreeoBank settlement funding, and authenticated Prizepool rule read access.
+- Repository migration file: `supabase/migrations/20261125240000_sponsor_capacity_vreeobank_unlimited.sql`.
+
+QA/release still pending on this branch. Do not deploy until CI, migration parity, and preview installability checks pass.
