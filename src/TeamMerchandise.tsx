@@ -3,7 +3,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import {
   AlertTriangle, BadgePercent, Clock3, CreditCard, Factory, Flag, HardHat,
   Package, Plus, RefreshCw, Shirt, ShoppingBag, Star, Sticker, Tag, TrendingUp,
-  Users, Wallet, Waves, X, MoveDiagonal2
+  Users, Waves, X, MoveDiagonal2
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { calculatePriceDemandFactor, calculateUnitMargin } from "./lib/merchandisePricing";
@@ -42,7 +42,7 @@ const productDescriptions: Record<string, string> = {
   scarf: "Supporter scarf"
 };
 const statusLabels: Record<string, string> = {
-  idle: "Not Produced", producing: "Producing", marketed: "Marketed", sold_out: "Sold Out"
+  idle: "Tidak Diproduksi", producing: "Sedang Diproduksi", marketed: "Dipasarkan", sold_out: "Habis"
 };
 
 export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | null; isOwner: boolean; isAdmin?: boolean }) {
@@ -196,7 +196,7 @@ export default function TeamMerchandise({ teamId, isOwner }: { teamId: string | 
   };
   const resizeEnd = () => { resizeRef.current = null; };
 
-  if (!teamId) return null;
+  if (!teamId || !isOwner) return null;
   if (loading) return <section className="team-merchandise-shell"><p>Loading official merchandise...</p></section>;
 
   return <section className="team-merchandise-shell">
