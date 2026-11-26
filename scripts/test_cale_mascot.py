@@ -168,10 +168,11 @@ assert "--cale-assistant-avatar-size: 130px;" in GUIDE_CSS
 print("Cale Assistant avatar sizing checks passed: 180px desktop and 130px mobile.")
 
 
-# The fixed bottom-corner launcher is the large portrait card, not a tiny icon.
-assert 'width:150px;height:240px;min-height:240px' in CSS
-assert 'width:80px;--cale-size:80px;flex:0 0 80px' in CSS
-assert 'size={80} className="cale-assistant__trigger-art"' in ASSISTANT
-assert 'width:140px;height:220px;min-height:220px' in CSS
-assert 'width:72px;--cale-size:72px;flex-basis:72px' in CSS
-print("Cale floating launcher checks passed: large portrait card on desktop and mobile.")
+# Keep the floating portrait card compact; scale the official Cale artwork inside it.
+assert 'width:88px;height:144px;min-height:144px' in CSS
+assert 'width:110px;--cale-size:110px;flex:0 0 110px' in CSS
+assert 'size={110} className="cale-assistant__trigger-art"' in ASSISTANT
+assert 'position:absolute;left:-9px;bottom:5px' in CSS
+assert 'right:7px;top:50%' in CSS
+assert 'width:88px;height:144px;min-height:144px' in CSS
+print("Cale floating launcher checks passed: compact original-size frame with enlarged artwork.")

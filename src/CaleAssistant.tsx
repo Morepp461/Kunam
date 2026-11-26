@@ -69,7 +69,7 @@ export default function CaleAssistant() {
       )}
       <button type="button" className="cale-assistant__trigger" aria-label={open ? "Tutup asisten Cale" : "Buka asisten Cale"}
         aria-expanded={open} onClick={() => setOpen(value => !value)}>
-        <CaleMascot designId={designId} context={context} avatarSrc={avatarSrc} size={80} className="cale-assistant__trigger-art" eager/>
+        <CaleMascot designId={designId} context={context} avatarSrc={avatarSrc} size={110} className="cale-assistant__trigger-art" eager/>
         <span className="cale-assistant__trigger-label">CALE</span>
       </button>
     </aside>
