@@ -16,6 +16,7 @@ type CaleMascotProps = {
   designId?: string;
   context?: CaleContext;
   outfitOverride?: CaleOutfit;
+  avatarSrc?: string;
   size?: number | string;
   className?: string;
   showCaption?: boolean;
@@ -26,6 +27,7 @@ export default function CaleMascot({
   designId = "idle_default",
   context = "general",
   outfitOverride,
+  avatarSrc,
   size = 180,
   className = "",
   showCaption = false,
@@ -33,7 +35,8 @@ export default function CaleMascot({
 }: CaleMascotProps) {
   const design = getCaleDesign(designId);
   const outfit = outfitOverride ?? design?.outfit ?? resolveCaleOutfit(context);
-  const source = OUTFIT_ASSETS[outfit];
+  const fallbackSource = OUTFIT_ASSETS[outfit];
+  const source = avatarSrc ?? fallbackSource;
   const [imageSource, setImageSource] = useState(source);
 
   useEffect(() => {
@@ -41,6 +44,10 @@ export default function CaleMascot({
   }, [source]);
 
   const handleImageError = () => {
+    if (avatarSrc && imageSource !== fallbackSource) {
+      setImageSource(fallbackSource);
+      return;
+    }
     if (imageSource !== OUTFIT_ASSETS.racing) {
       setImageSource(OUTFIT_ASSETS.racing);
     }
