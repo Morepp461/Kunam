@@ -27,11 +27,14 @@ export default function ProfilePage({session,profile,profileReady,toast}:{sessio
    if(memberData?.role==="Driver"){
     const [fansQ,reputationQ,marketValueQ]=await Promise.all([
      supabase.from("caleris_fan_populations").select("population").eq("entity_kind","driver").eq("member_id",memberData.id),
-     supabase.from("caleris_driver_reputation").select("score,band").eq("member_id",memberData.id).maybeSingle()
+     supabase.from("caleris_driver_reputation").select("score,band").eq("member_id",memberData.id).maybeSingle(),
+     supabase.rpc("member_get_driver_market_values")
     ]);
     if(!active)return;
     if(fansQ.error)toast("error","Total fans gagal dimuat",fansQ.error.message);
     if(reputationQ.error)toast("error","Reputasi gagal dimuat",reputationQ.error.message);
+    if(marketValueQ.error)toast("error","Market Value gagal dimuat",marketValueQ.error.message);
+    const marketRow=(marketValueQ.data||[]).find((row:any)=>row.member_id===memberData.id);setMarketValue(marketRow?Number(marketRow.market_value_eur):null);
     setFanTotal((fansQ.data||[]).reduce((sum:number,row:any)=>sum+Number(row.population||0),0));
     setReputation(reputationQ.data?{score:Number(reputationQ.data.score),band:String(reputationQ.data.band)}:null);
    }else{setFanTotal(0);setReputation(null);setMarketValue(null);}
