@@ -425,22 +425,17 @@ begin
   v_source:=replace(v_source,'values(p_member,d.xp_reward,','values(p_member,public.caleris_milestone_reward_xp(d.code),');
   v_source:=replace(v_source,'total_xp:=total_xp+d.xp_reward;','total_xp:=total_xp+public.caleris_milestone_reward_xp(d.code);');
   v_source:=regexp_replace(v_source,'completion_source:=d.code\|\|p_member::text\|\|[[:space:]]*to_char\([^;]*\);','completion_source:=d.code;','g');
-  v_source:=replace(v_source,
-$old$
-if net_awarded>0 then
-          insert into public.caleris_xp_ledger(member_id,amount,source_type,source_id,description)
-          values(p_member,-net_awarded,'admin_adjustment','milestone_reversal:'||award.source_id,
-            'Reversal: milestone no longer met after official data reconciliation')
-          on conflict(member_id,source_type,source_id) do nothing;
-          total_xp:=total_xp-net_awarded;
-        end if;
-$old$,
-$replacement$
--- Achievement XP is permanent; only official race-result corrections may reverse XP.
-$replacement$);
+  v_source:=regexp_replace(
+    v_source,
+    'if net_awarded>0 then[[:space:]]*insert[^;]*on conflict[^;]*;[[:space:]]*total_xp:=total_xp-net_awarded;[[:space:]]*end if;',
+    '-- Achievement XP is permanent; only official race-result corrections may reverse XP.',
+    'g'
+  );
   if v_source=v_before
      or position('d.xp_reward' in v_source)>0
-     or position('milestone_reversal:'||'award.source_id' in v_source)>0 then
+     or position('values(p_member,-net_awarded' in v_source)>0
+     or position('total_xp:=total_xp-net_awarded' in v_source)>0
+     or position('completion_source:=d.code||' in v_source)>0 then
     raise exception 'Community milestone XP source changed; refusing unsafe patch.';
   end if;
   execute v_source;
