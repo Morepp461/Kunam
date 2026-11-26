@@ -51,7 +51,7 @@ for fragment in (
     "status in ('offered','negotiating')",
     "set status='signed'",
     "set status='cancelled'",
-    "Kontrak driver '||coalesce(v_driver.character_name,'Driver')||' segera berakhir, dia sedang bernegosiasi dengan tim lain saat ini, segera ajukan kontrak baru atau biarkan dia pergi secara gratis',
+    "Kontrak driver '||coalesce(v_driver.character_name,'Driver')||' segera berakhir, dia sedang bernegosiasi dengan tim lain saat ini, segera ajukan kontrak baru atau biarkan dia pergi secara gratis'",
 ):
     assert fragment in MARKET, f"Missing Pre-contract requirement: {fragment}"
 assert "private.process_driver_precontracts()" in MARKET
