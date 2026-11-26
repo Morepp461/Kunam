@@ -9,6 +9,7 @@ import {
   sanitizeCarNumber,
 } from './f1Decals';
 import type { SponsorSlotConfig, SponsorSlotId } from './f1Decals';
+import type { TeamLiveryDecal } from '../team-livery-decals';
 
 export interface F1AppearanceConfig {
   primaryHex: string;
@@ -23,6 +24,7 @@ export interface F1AppearanceConfig {
   roughness: number;
   clearcoat: number;
   rimAccent?: string;
+  teamDecals?: TeamLiveryDecal[];
 }
 
 export interface F1MaterialLibrary {
