@@ -41,6 +41,10 @@ const disableLegacyWallet = readFileSync(
   new URL("../../supabase/migrations/20261126228000_disable_legacy_vreeobank_wallet_injection.sql", import.meta.url),
   "utf8",
 );
+const appendOnlyLedger = readFileSync(
+  new URL("../../supabase/migrations/20261126229000_xp_ledger_append_only_guard.sql", import.meta.url),
+  "utf8",
+);
 
 describe("CALERIS XP reward policy", () => {
   it("uses the approved fixed quest and check-in rewards", () => {
@@ -123,5 +127,10 @@ describe("Admin profile adjustment safeguards", () => {
     expect(adminCenterUi).not.toContain("admin_inject_wallet_balance");
     expect(adminCenterUi).not.toContain("Wallet injection");
     expect(disableLegacyWallet).toContain("revoke all on function public.admin_inject_wallet_balance");
+  });
+  it("enforces an append-only XP ledger", () => {
+    expect(appendOnlyLedger).toContain("before update or delete on public.caleris_xp_ledger");
+    expect(appendOnlyLedger).toContain("XP ledger is append-only");
+    expect(appendOnlyLedger).toContain("revoke insert,update,delete on public.caleris_xp_ledger");
   });
 });
