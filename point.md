@@ -2591,11 +2591,11 @@ Perform a complete integration audit and regression suite for all nine facilitie
 - The Admin-only history shows signed XP/Wallet changes and their audit descriptions.
 - Wallet adjustments use the existing double-entry economy transaction service and a dedicated hidden admin_adjustment_clearing system wallet. VreeoBank and Sponsor Source balances are not changed by this profile adjustment path.
 - Direct authenticated writes to the XP ledger and milestone reward definitions are revoked. caleris_set_xp_reward is no longer executable by clients. caleris_admin_save_milestone ignores caller-supplied XP and uses the fixed source-code reward map; an active milestone without a source reward is rejected.
-- The older duplicate Manual XP Adjustment and XP Reward Configuration panels were removed from Community Progression Admin.
+- The older duplicate Manual XP Adjustment and XP Reward Configuration panels were removed from Community Progression Admin. The legacy global Wallet Injection panel was removed from AdminAdjustmentCenter, and the old admin_inject_wallet_balance RPC was disabled so the previous VreeoBank-funded path cannot be called by clients.
 
 ### Supabase migrations applied to both databases
 
-The following migration sources exist in this branch and have been applied successfully to Testing and Production, in order:
+The following eight migration sources exist in this branch and have been applied successfully to Testing and Production, in order:
 
 1. 20261126210000_xp_engine_priority6_completion.sql
 2. 20261126220000_admin_profile_xp_wallet_adjustments.sql
@@ -2604,6 +2604,7 @@ The following migration sources exist in this branch and have been applied succe
 5. 20261126225000_xp_team_milestone_owner_rewards.sql
 6. 20261126226000_xp_official_result_backfill.sql
 7. 20261126227000_lock_xp_rewards_to_source_code.sql
+8. 20261126228000_disable_legacy_vreeobank_wallet_injection.sql
 
 ### QA evidence
 
@@ -2621,7 +2622,7 @@ The following migration sources exist in this branch and have been applied succe
 
 **Production database caleris-masters-newgen:**
 
-- All seven migrations applied successfully.
+- All eight migrations applied successfully.
 - Production has no Driver/Team operational records in the audited scope, so the historical XP backfill correctly created no player XP rows. No Testing dummy data was copied.
 - Function-definition hashes for the 14 shared XP, milestone, race reconciliation, Admin adjustment, and economy transaction functions matched between Testing and Production before the final source-owned reward migrations. Re-run final parity check after the last migration.
 - The dedicated Admin clearing wallet exists once and is hidden from the public wallet directory; it starts at zero.
@@ -2630,7 +2631,7 @@ The following migration sources exist in this branch and have been applied succe
 
 - [ ] Finish source QA and CI for the current branch, including TypeScript, production build, unit tests, schema/migration checks, and browser smoke tests.
 - [ ] Fix any QA/CI failure before merge.
-- [ ] Verify Testing/Production function-definition parity after all seven migrations.
+- [ ] Verify Testing/Production function-definition parity after all eight migrations.
 - [ ] Create/refresh the PR, merge to main only after CI is green.
 - [ ] Verify the new Vercel Production deployment is READY and serves the merged commit.
 - [ ] Do not change Vercel environment variables or project settings.
