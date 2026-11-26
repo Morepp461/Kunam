@@ -314,3 +314,114 @@ begin
   );
 end
 $$;
+
+
+-- Attach operational history to the active season and retain only the current season's logs.
+alter table public.caleris_team_hq_audit_logs
+  add column if not exists season_id uuid references public.license_seasons(id) on delete set null,
+  add column if not exists season_key text;
+
+create or replace function private.set_team_hq_audit_season()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+begin
+  if new.season_id is null then
+    select id, season_key
+      into new.season_id, new.season_key
+    from public.license_seasons
+    where status = 'active'
+    order by starts_on desc, created_at desc
+    limit 1;
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists caleris_team_hq_audit_season on public.caleris_team_hq_audit_logs;
+create trigger caleris_team_hq_audit_season
+before insert on public.caleris_team_hq_audit_logs
+for each row execute function private.set_team_hq_audit_season();
+
+create or replace function private.audit_team_hq_project_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_event text;
+begin
+  if tg_op = 'INSERT' then
+    if new.status not in ('queued','in_progress') then return new; end if;
+    v_event := 'project_started';
+  elsif new.status = 'completed' and old.status is distinct from new.status then
+    v_event := 'project_completed';
+  else
+    return new;
+  end if;
+
+  insert into public.caleris_team_hq_audit_logs(
+    team_id, facility_key, event_type, amount, metadata, actor_id
+  ) values (
+    new.team_id, new.facility_key, v_event, new.cost,
+    jsonb_build_object(
+      'project_id',new.id,
+      'target_level',new.target_level,
+      'status',new.status,
+      'started_at',new.started_at,
+      'completes_at',new.completes_at,
+      'completed_at',new.completed_at
+    ),
+    coalesce(new.created_by, (select auth.uid()))
+  );
+  return new;
+end;
+$function$;
+
+drop trigger if exists caleris_team_hq_project_audit on public.caleris_team_hq_projects;
+create trigger caleris_team_hq_project_audit
+after insert or update of status on public.caleris_team_hq_projects
+for each row execute function private.audit_team_hq_project_change();
+
+create or replace function private.prune_team_hq_audit_logs()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $function$
+declare
+  v_active_season uuid;
+  v_deleted integer;
+begin
+  select id into v_active_season
+  from public.license_seasons
+  where status = 'active'
+  order by starts_on desc, created_at desc
+  limit 1;
+
+  if v_active_season is null then return 0; end if;
+
+  delete from public.caleris_team_hq_audit_logs
+  where season_id is not null and season_id <> v_active_season;
+
+  get diagnostics v_deleted = row_count;
+  return v_deleted;
+end;
+$function$;
+
+revoke all on function private.prune_team_hq_audit_logs() from public, anon, authenticated;
+do $$
+begin
+  if exists(select 1 from cron.job where jobname = 'caleris-team-hq-audit-retention') then
+    perform cron.unschedule((select jobid from cron.job where jobname = 'caleris-team-hq-audit-retention' limit 1));
+  end if;
+  perform cron.schedule(
+    'caleris-team-hq-audit-retention',
+    '23 * * * *',
+    'select private.prune_team_hq_audit_logs();'
+  );
+end
+$$;
