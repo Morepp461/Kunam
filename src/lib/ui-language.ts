@@ -347,7 +347,7 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "Terms &amp; Conditions":"Syarat &amp; Ketentuan", "ADMIN CONTROL · ECONOMY":"KONTROL ADMIN · EKONOMI","Quest Engine":"Mesin Misi","REWARD CONFIGURATION":"KONFIGURASI HADIAH",
  "Registered Member":"Anggota Terdaftar","Engine ID pilihan":"ID Mesin pilihan","Reward milestone":"Hadiah tonggak pencapaian",
  "Season Calendar":"Kalender Musim","Season window:":"Rentang musim:","Periode season":"Periode musim",
- "Memuat sesi Admin...":"Memuat sesi Admin...","ADMIN CONTROL · TEAM LIFECYCLE":"KONTROL ADMIN · SIKLUS TIM",
+ "ADMIN CONTROL · TEAM LIFECYCLE":"KONTROL ADMIN · SIKLUS TIM",
  "Team Inactivity Control":"Kontrol Ketidakaktifan Tim","PENDING COMPENSATION":"KOMPENSASI TERTUNDA",
  "OPEN REPLACEMENT SLOTS":"SLOT PENGGANTIAN TERBUKA","Season review":"Tinjauan musim","Team / Driver":"Tim / Pembalap",
  "ADMIN · TESTING TOOLS":"ADMIN · ALAT PENGUJIAN","Admin Test Personas":"Persona Pengujian Admin",
