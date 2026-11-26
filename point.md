@@ -1999,7 +1999,7 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
 - Merge ke main hanya setelah QA/CI lulus. Pastikan Vercel Production deployment berstatus READY dan alias production aktif. Jangan mengubah Vercel environment variables.
 
 ### Progress pengerjaan
-- [x] Scope delapan poin dicatat di point.md sebelum implementasi.
+- [x] Scope tujuh poin dicatat di point.md sebelum implementasi.
 - [x] Branch kerja dibuat dari main commit `1b6542f9628507c0e5ff9ae360d60360f30c4e9a`.
 - [ ] Audit dependency dan pemetaan file/komponen terkait seluruh scope.
 - [ ] Implementasi dan regression tests.
