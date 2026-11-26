@@ -2676,3 +2676,17 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Approved Factory rule: production capacity receives +1 at LV6 only, the total maximum is 4, and one additional slot is reserved for a future paid Shop item. No Shop item is being created in this scope.
 - The starting/base capacity and the meaning of a production slot (concurrent merchandise batches versus active merchandise products) were not specified. The old linear factory_capacity_bonus_percent has been removed from the merchandise-capacity calculation and the LV6 bonus is stored as factory_production_capacity_bonus, but it is not connected to a production validator until the slot definition and base capacity are confirmed.
 - R&D's measurable research-efficiency/TDP-cost effect is integrated. No additional capability-unlock list or per-level unlock thresholds were specified, so no new Development capability gates have been invented.
+
+
+### Team HQ active upgrade project slots and Shop item — 27 November 2026
+
+- Corrected Factory's approved role: it increases the number of simultaneously active Team HQ upgrade projects, not merchandise production capacity.
+- Base capacity remains 2 active projects. Factory LV6 adds +1 when its condition-scaled effect rounds to an active slot. The absolute capacity ceiling is 4.
+- Added a permanent Shop entitlement, `Additional HQ Project Slot`, which adds +1 active project slot to the owning team. It is a one-time purchase from Team Wallet (EUR) to VreeoBank; no DDP/TDP is consumed.
+- The Shop item is listed in the marketplace but starts inactive with no price. Admin must set a positive EUR price and activate it before Team Owners can purchase it. No arbitrary price was invented.
+- Purchase is Owner-only, team-scoped, idempotent, ledger-backed, and protected by the Team HQ advisory lock. Each team can own the entitlement once.
+- `member_start_team_hq_project` enforces the live capacity in the database: base 2 + Factory bonus + Shop entitlement, capped at 4. UI summary and Shop page read the same authoritative capacity RPC.
+- Testing DB migration and rolled-back transaction test passed: Factory LV6 produced capacity 3; the Shop purchase test moved capacity to 4. Transaction, entitlement, Factory level, and temporary Shop price were all rolled back; existing 117 HQ facility rows and the original active R&D project remain intact.
+- The same three migrations were applied to Production. Function-definition hashes for project start, purchase, capacity, and Admin config reader match Testing and Production. Production remains at 0 HQ facility rows and 0 purchased entitlements; no Testing data was copied.
+- New migration sources: `20261127130000_team_hq_project_slot_shop_and_dynamic_capacity.sql`, `20261127131000_team_hq_slot_shop_admin_config_read.sql`, and `20261127132000_team_hq_slot_purchase_ledger_compatibility.sql`.
+- Shop price and activation remain an Admin configuration step after deployment. The item cannot be purchased until those settings are supplied.
