@@ -72,7 +72,9 @@ const EN_TO_ID: Record<string,string> = {
  "Agent":"Agen","Journalist":"Jurnalis","Main Event":"Acara Utama","Paddock Access":"Akses Paddock","Current Season":"Musim Berjalan",
  "Active Season":"Musim Aktif","Previous Season":"Musim Sebelumnya","Next Season":"Musim Berikutnya","Race Period":"Periode Balapan",
  "Break Period":"Periode Jeda","End Season":"Akhir Musim","Off Season":"Musim Jeda","Prize":"Hadiah","Purchase":"Pembelian",
- "Buy":"Beli","Sell":"Jual","Sponsor":"Sponsor","Sponsorship":"Sponsorship","Interest":"Bunga","Euro":"Euro","Caleris Pound":"Caleris Pound"
+ "Buy":"Beli","Sell":"Jual","Sponsor":"Sponsor","Sponsorship":"Sponsorship","Interest":"Bunga","Euro":"Euro","Caleris Pound":"Caleris Pound","Search...":"Cari...","Select...":"Pilih...","Type to search...":"Ketik untuk mencari...",
+ "No active projects":"Tidak ada proyek aktif","No active contracts":"Tidak ada kontrak aktif","No pending offers":"Tidak ada penawaran tertunda",
+ "No results found":"Hasil tidak ditemukan","No drivers found":"Pembalap tidak ditemukan","No teams found":"Tim tidak ditemukan" 
 };
 
 const ID_TO_EN: Record<string,string> = {
@@ -143,7 +145,16 @@ const ID_TO_EN: Record<string,string> = {
  "Penawaran Balasan":"Counter Offer","Pre-kontrak":"Pre-contract","Agen":"Agent","Jurnalis":"Journalist","Acara Utama":"Main Event",
  "Akses Paddock":"Paddock Access","Musim Berjalan":"Current Season","Musim Aktif":"Active Season","Musim Sebelumnya":"Previous Season",
  "Musim Berikutnya":"Next Season","Periode Balapan":"Race Period","Periode Jeda":"Break Period","Akhir Musim":"End Season",
- "Musim Jeda":"Off Season","Pembelian":"Purchase","Beli":"Buy","Jual":"Sell","Bunga":"Interest"
+ "Musim Jeda":"Off Season","Pembelian":"Purchase","Beli":"Buy","Jual":"Sell","Bunga":"Interest",
+ "Belum dihitung":"Not calculated","Catatan":"Notes","Rentang lisensi:":"License range:",
+ "Gaji tahunan (€)":"Annual salary (€)","Market Value gagal dimuat":"Market Value failed to load",
+ "Reputasi gagal dimuat":"Reputation failed to load",
+ "Pilihan ini diterapkan ke antarmuka CALERIS MASTERS. Halaman About Us tetap berbahasa Inggris.":"This preference is applied to the CALERIS MASTERS interface. The About Us page remains in English.",
+ "Hanya Team Owner dengan roster kurang dari dua Driver yang dapat merekrut Free Agent.":"Only the Team Owner can recruit a Free Agent when the roster has fewer than two Drivers.",
+ "Negosiasi gaji langsung dengan Driver. Tidak ada transfer fee; roster baru aktif setelah kesepakatan dan registrasi FIA.":"Negotiate salary directly with the Driver. There is no transfer fee; the new roster becomes active after agreement and FIA registration.",
+ "Penawaran kontrak dikirim kepada Free Agent. Driver belum masuk roster tim sampai kesepakatan dan registrasi FIA selesai.":"The contract offer has been sent to the Free Agent. The Driver will not join the team roster until the agreement and FIA registration are complete.",
+ "Transfer Window hanya terbuka pada End Season dan Off Season.":"The Transfer Window is only open during End Season and Off Season.",
+ "Permanent Transfer dan Driver Loan harus melalui persetujuan FIA.":"Permanent Transfer and Driver Loan require FIA approval."
 };
 
 function preserveCase(replacement: string, source: string) {
