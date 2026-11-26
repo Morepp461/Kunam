@@ -321,7 +321,30 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "MEMBER ATTENDANCE":"KEHADIRAN ANGGOTA","MEMBER IDENTITY":"IDENTITAS ANGGOTA","Beli Engine":"Beli Mesin",
  "OFFICIAL DIRECTORY":"DIREKTORI RESMI","LEVEL":"TINGKAT","UPGRADE LEVEL":"TINGKATKAN LEVEL",
  "Team Performance Analysis":"Analisis Performa Tim","Average grid":"Posisi rata-rata di grid",
- "Average finish":"Posisi finis rata-rata","Level":"Tingkat"
+ "Average finish":"Posisi finis rata-rata","Level":"Tingkat", "DRIVER PERFORMANCE PROGRAM":"PROGRAM PERFORMA PEMBALAP","02 · SELECTED PROGRAM":"02 · PROGRAM TERPILIH",
+ "TRAINING RESULT":"HASIL PELATIHAN","SUCCESS ROLL":"HASIL KEBERHASILAN","Atribut driver":"Atribut pembalap",
+ "PRE-CONTRACT APPROACH":"PENDEKATAN PRAKONTRAK","Salary band:":"Rentang gaji:",
+ "Negosiasi Pre-contract":"Negosiasi prakontrak","PRE-CONTRACT ·":"PRAKONTRAK ·","Move type":"Jenis perpindahan",
+ "Accept offer":"Terima penawaran","Counter amount (€)":"Nilai penawaran balasan (€)","Loan start":"Awal peminjaman",
+ "Loan end":"Akhir peminjaman","CALERIS MASTERS · ECONOMY":"CALERIS MASTERS · EKONOMI",
+ "Economy Guide":"Panduan Ekonomi","Driver Wallet":"Dompet Pembalap","Race Reward ·":"Hadiah Balapan ·",
+ "Driver P1":"Pembalap P1","Driver P2":"Pembalap P2","Driver P3":"Pembalap P3",
+ "Team · Driver P1":"Tim · Pembalap P1","Member Wallet":"Dompet Anggota",
+ "SEASON FINALE · PRIZEPOOL":"AKHIR MUSIM · HADIAH","Super License":"Lisensi Super",
+ "1 season penuh":"1 musim penuh","Team peminjam → Team asal":"Tim peminjam → Tim asal",
+ "Salary share":"Pembagian gaji","Dibagi antar kedua Team":"Dibagi antar kedua tim",
+ "Counter Owner":"Penawaran balasan Pemilik","Event Control Center":"Pusat Kendali Acara",
+ "Season Operations":"Operasional Musim","EVENT CONTROL MODULE":"MODUL KENDALI ACARA",
+ "Race & Punishment Operations":"Operasional Balapan & Hukuman","Race winner":"Pemenang balapan",
+ "Regulation reference":"Referensi regulasi","Race classification detail":"Detail klasifikasi balapan",
+ "Pilih round":"Pilih putaran","Fastest lap time (optional)":"Waktu putaran tercepat (opsional)",
+ "Notes (optional)":"Catatan (opsional)","TEAM ACQUISITION REVIEW":"TINJAUAN AKUISISI TIM",
+ "DISCIPLINARY RECORD":"CATATAN DISIPLIN","Fine history":"Riwayat denda","Job Search":"Pencarian Pekerjaan",
+ "OPEN POSITIONS":"POSISI TERBUKA","Check-in Round":"Check-in Putaran","RACE ENGINE LAB":"LAB MESIN BALAPAN",
+ "Driver + Car/Team snapshot":"Snapshot Pembalap + Mobil/Tim",
+ "Track wetness and tyre degradation":"Kebasahan lintasan dan degradasi ban",
+ "R&amp;D Center":"Pusat Riset & Pengembangan","COMMUNITY &amp; SUPPORT":"KOMUNITAS &amp; DUKUNGAN",
+ "Terms &amp; Conditions":"Syarat &amp; Ketentuan"
 };
 const EXTRA_ID_TO_EN: Record<string,string> = Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english]));
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
