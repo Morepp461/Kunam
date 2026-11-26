@@ -2046,3 +2046,7 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
 - Edge Function `member-directory` di Testing dan Production sudah memiliki implementasi Market Value dengan source hash yang sama; source repository kini diselaraskan dengan versi terpasang.
 
 - Migration `20261126140000` diterapkan pada Testing dan Production serta ledger diseragamkan. Recalculation selesai: Testing memperbarui 26 snapshot Driver; Production memperbarui 0 karena belum ada data Driver. Formula memakai Growth Factor 0,25, sehingga nilai berjalan bertahap menuju target baru dan tidak langsung disetel ke €18 juta per Driver.
+### QA lanjutan — 26 November 2026
+- Bahasa UI diperluas untuk label status, aksi, jadwal/hasil, event, ekonomi, dan pesan workflow. Bridge juga menerjemahkan placeholder, title, dan aria-label; teks di input/textarea dan konten yang ditandai `data-no-translate` tidak diubah.
+- Kata tunggal hanya diterjemahkan jika menjadi satu teks label utuh, sehingga nama tim/anggota seperti `Team Alpha` tidak ikut berubah menjadi teks terjemahan.
+- CI pertama menemukan duplicate object key `Pencapaian` pada kamus Bahasa Inggris; duplikasi sudah dihapus. Menunggu CI ulang pada commit terbaru.
