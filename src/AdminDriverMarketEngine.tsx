@@ -14,7 +14,7 @@ type MarketConfig={
  tier_order:NumericMap;
  initial_license_scores:NumericMap;
 };
-type MarketValue={member_id:string;market_value_eur:number;mv_score:number;tier_number:number;division_key:string|null};
+type MarketValue={member_id:string;market_value_eur:number;tier_number:number;division_key:string|null};
 
 const weightLabels:[string,string][]=[
  ["license","License"],["contract","Contract"],["performance","Performance"],
@@ -45,7 +45,7 @@ export default function AdminDriverMarketEngine({session:_session}:{session:Sess
   setLoading(true);
   const [cfg,mv]=await Promise.all([
    supabase.rpc("admin_get_driver_market_config"),
-   supabase.from("caleris_driver_market_values").select("member_id,market_value_eur,mv_score,tier_number,division_key").order("market_value_eur",{ascending:false})
+   supabase.from("caleris_driver_market_values").select("member_id,market_value_eur,tier_number,division_key").order("market_value_eur",{ascending:false})
   ]);
   if(cfg.error){setNotice({kind:"error",text:cfg.error.message});setLoading(false);return}
   if(mv.error){setNotice({kind:"error",text:mv.error.message});setLoading(false);return}
@@ -143,9 +143,9 @@ export default function AdminDriverMarketEngine({session:_session}:{session:Sess
    <div className="driver-market-actions"><button className="action primary" onClick={()=>void save()} disabled={saving}><Save size={16}/>{saving?"Menyimpan...":"Simpan konfigurasi"}</button><button className="action" onClick={()=>void recalculate()} disabled={recalculating}><RefreshCw size={16}/>{recalculating?"Menghitung...":"Recalculate semua Driver"}</button></div>
    <section className="workspace-card">
     <div className="section-title-row"><div><span className="section-eyebrow">CURRENT SNAPSHOT</span><h2>Market Value Driver</h2></div><button className="economy-secondary-button" onClick={()=>void load()}><RefreshCw size={15}/> Refresh</button></div>
-    <div className="s5-table-wrap"><table className="s5-table"><thead><tr><th>Member ID</th><th>Home Division</th><th>Tier</th><th>MV Score</th><th>Market Value</th></tr></thead><tbody>
-     {values.map(v=><tr key={v.member_id}><td>{v.member_id.slice(0,8).toUpperCase()}</td><td>{v.division_key||"—"}</td><td>{v.tier_number}</td><td>{Number(v.mv_score||0).toFixed(2)}</td><td>{money(v.market_value_eur)}</td></tr>)}
-     {values.length===0&&<tr><td colSpan={5}>Belum ada snapshot Market Value.</td></tr>}
+    <div className="s5-table-wrap"><table className="s5-table"><thead><tr><th>Member ID</th><th>Home Division</th><th>Tier</th><th>Market Value</th></tr></thead><tbody>
+     {values.map(v=><tr key={v.member_id}><td>{v.member_id.slice(0,8).toUpperCase()}</td><td>{v.division_key||"—"}</td><td>{v.tier_number}</td><td>{money(v.market_value_eur)}</td></tr>)}
+     {values.length===0&&<tr><td colSpan={4}>Belum ada snapshot Market Value.</td></tr>}
     </tbody></table></div>
    </section>
   </>}
