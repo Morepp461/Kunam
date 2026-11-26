@@ -302,7 +302,26 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "No customer reviews yet. Reviews appear after the next official race settlement.":"Belum ada ulasan pelanggan. Ulasan akan muncul setelah penyelesaian balapan resmi berikutnya.",
  "Current unit cost:":"Biaya per unit saat ini:","OFFICIAL SPONSORS":"SPONSOR RESMI","Official Sponsors":"Sponsor Resmi",
  "Season Engine":"Mesin Musim","Team Take Over":"Pengambilalihan Tim","Memuat Team Take Over...":"Memuat Pengambilalihan Tim...",
- "ACQUISITION OFFER":"PENAWARAN AKUISISI","Offer price (€)":"Harga penawaran (€)","Counter-offer (€)":"Penawaran balasan (€)"
+ "ACQUISITION OFFER":"PENAWARAN AKUISISI","Offer price (€)":"Harga penawaran (€)","Counter-offer (€)":"Penawaran balasan (€)", "RACE CONTROL":"KONTROL BALAPAN","Incidents, flags and time loss":"Insiden, bendera, dan kehilangan waktu",
+ "Persistent state and recovery":"Status persisten dan pemulihan","NEW TEST SESSION":"SESI UJI BARU","TEST ONLY":"KHUSUS PENGUJIAN",
+ "Race distance":"Jarak balapan","Front brake balance":"Keseimbangan rem depan","HQ division":"Divisi HQ",
+ "Premio · max level 8":"Premio · level maks 8","Zwei · max level 6":"Zwei · level maks 6",
+ "R&D Center":"Pusat Riset & Pengembangan","Simulator Facility":"Fasilitas Simulator","Create test race":"Buat balapan uji",
+ "Race Sessions":"Sesi Balapan","Loading sessions...":"Memuat sesi...","· ENGINE":"· MESIN",
+ "LIVE SPEED · CLOCK PROGRESSION ONLY":"KECEPATAN LANGSUNG · HANYA PROGRESI WAKTU",
+ "PER DRIVER":"PER PEMBALAP","DERIVED FROM SIMULATION":"BERDASARKAN SIMULASI","SIM TIME":"WAKTU SIMULASI",
+ "FIA / Admin Race Control Lab":"Lab Kontrol Balapan FIA / Admin","Race control flag":"Bendera kontrol balapan",
+ "Evidence description":"Deskripsi bukti","Clear flag":"Hapus bendera","Select driver":"Pilih pembalap",
+ "Penalty type":"Jenis penalti","Time penalty":"Penalti waktu","Race ban":"Larangan balapan",
+ "Race Event Log":"Log Peristiwa Balapan","Race Replay":"Tayangan Ulang Balapan","EVENT":"PERISTIWA","3D VIEW":"TAMPILAN 3D",
+ "SEGMENT-LEVEL · SEQUENCE":"TINGKAT SEGMEN · URUTAN","START":"MULAI","ABOUT VREEO":"TENTANG VREEO",
+ "A community-first organiser bringing people together through virtual events and shared passions.":"Penyelenggara yang mengutamakan komunitas dan menyatukan orang melalui acara virtual serta minat bersama.",
+ "COMMUNITY & SUPPORT":"KOMUNITAS & DUKUNGAN","Support VREEO ↗":"Dukung VREEO ↗",
+ "Join our Discord ↗":"Bergabung dengan Discord kami ↗","Terms & Conditions":"Syarat & Ketentuan",
+ "MEMBER ATTENDANCE":"KEHADIRAN ANGGOTA","MEMBER IDENTITY":"IDENTITAS ANGGOTA","Beli Engine":"Beli Mesin",
+ "OFFICIAL DIRECTORY":"DIREKTORI RESMI","LEVEL":"TINGKAT","UPGRADE LEVEL":"TINGKATKAN LEVEL",
+ "Team Performance Analysis":"Analisis Performa Tim","Average grid":"Posisi rata-rata di grid",
+ "Average finish":"Posisi finis rata-rata","Level":"Tingkat"
 };
 const EXTRA_ID_TO_EN: Record<string,string> = Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english]));
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
