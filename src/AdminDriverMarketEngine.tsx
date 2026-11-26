@@ -9,7 +9,7 @@ type MarketValue={member_id:string;market_value_eur:number;tier_number:number;di
 
 const fixedConfig={
  weights:[["License",10],["Contract",10],["Performance",20],["Overall Skill",20],["Achievement",10],["Activity",10],["Reputation",20]] as [string,number][],
- baseValue:10000000,
+ baseValue:18000000,
  growthFactor:0.25,
  tiers:[[1,1],[2,0.85],[3,0.7],[4,0.6]] as [number,number][],
  divisions:[["Caleris Premio","Tier 1"],["Caleris Zwei","Tier 2"]] as [string,string][],
