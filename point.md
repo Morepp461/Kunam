@@ -1978,3 +1978,26 @@ Scope locked to the following seven items only:
 Execution branch: `fix/seven-point-market-profile-hq-language-20261126` (created from `main`).
 
 Progress at start: scope and branch recorded. Implementation, database verification/migrations, QA, CI, merge, and Vercel Production deployment are pending. No Vercel environment settings may be changed. Do not add unrelated work.
+
+
+### Progress update — 26 November 2026
+
+Completed in the execution branch:
+- Transfer Market: restored the Free Agent recruitment form for Team Owner accounts; the database RPC already enforces Owner-only authorization.
+- Transfer Market: license filter now includes Bronze, Silver, Gold, and Super License; nationality filter uses the complete country list from the existing `@countrystatecity/countries-browser` dependency.
+- Driver Market Value: added display to the private member profile, public member profile payload/UI, public Digital ID payload/UI, and Driver List directory.
+- Notifications: bulk deletion now calls `member_delete_caleris_notifications()`, which writes deletion tombstones before deleting rows. Direct table deletion bypassed this protection and allowed reminder jobs to recreate notifications.
+
+Database verification:
+- The current Base Value row is already EUR 18,000,000 in both `caleris-masters-testing` and `caleris-masters-newgen`; no Base Value migration is needed.
+- Both databases expose the authenticated `member_get_driver_market_values()` RPC. It is not executable by anon. Public Digital ID already includes `market_value_eur` in the verified `caleris_get_public_digital_id()` response; the public profile Edge Function uses service-role reads to add MV to its existing character payload.
+- Team HQ uses the PostgreSQL RPC `member_start_team_hq_project(text,text)` directly from `src/TeamHQ.tsx`; it does not invoke a Supabase Edge Function. The RPC and its economy transaction dependency are present in both databases and the function is executable by authenticated users.
+- Team HQ data parity is not present: Testing has 13 teams, 117 facility rows, 13 active Team Wallets, and 1 active VreeoBank wallet. Production currently has 0 teams, 0 facility rows, 0 active Team Wallets, and 1 active VreeoBank wallet. Do not copy Testing/dummy data into Production.
+- The Testing and Production database migration ledgers contain newer Driver Market Value migrations than the migration files currently visible on `main`; reconcile source migration files before any merge. Do not manually rewrite migration history.
+
+Still pending:
+- Diagnose the exact Team HQ upgrade failure using request/error logs or a controlled authenticated test. The Supabase unified log query could not be retrieved during this pass; no speculative database change has been made.
+- Complete Indonesian/English language preference and end-to-end translation coverage. About Us remains excluded.
+- Backfill tombstones for the specific legacy notifications dated 20 November only after confirming the exact target rows and idempotency keys.
+- Run full TypeScript/build/unit/e2e and Supabase schema-parity QA, deploy the updated `member-directory` Edge Function to Testing then Production, merge only after CI passes, and verify Vercel Production deployment.
+- No Vercel environment variables/settings were changed.
