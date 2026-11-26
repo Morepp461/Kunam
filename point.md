@@ -2668,7 +2668,8 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Rolled-back database checks passed for condition-scaled effects across the HQ facilities, Development cash/token discounts, Sponsor attraction probability, Data Analytics depth, owner demolition/idempotency, maintenance during an active project, and project completion/restoration after 0% degradation.
 - All mutation checks used transaction rollback; the Testing facility/project records remain unchanged.
 - Manual rollback checks also verified 1% condition decay per 24 hours, one-level degradation only at 0%, and the matching season audit events.
-- Full GitHub CI, merge, and Vercel deployment are still release gates and have not been claimed as complete.
+- GitHub CI passed all 48 steps on commit 7eee542. Vercel Preview deployment is READY at https://calerismastersnewgen-5aspr1l6v-morepp.vercel.app.
+- Production deployment and merge remain intentionally blocked until the Factory production-slot definition is confirmed; no Vercel environment variables were changed.
 
 ### Remaining specification required before Factory production-capacity wiring
 
