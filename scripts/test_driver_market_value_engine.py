@@ -8,6 +8,17 @@ CONTRACT_SYNC = (ROOT / "supabase/migrations/20261126065318_precontract_season_c
 ROSTER = (ROOT / "supabase/migrations/20261126065827_precontract_season_roster_integration.sql").read_text(encoding="utf-8")
 ROSTER_SNAPSHOT = (ROOT / "supabase/migrations/20261126070004_precontract_roster_snapshot_refresh.sql").read_text(encoding="utf-8")
 LOCKED_CONFIG = (ROOT / "supabase/migrations/20261126072000_lock_driver_market_engine_decisions.sql").read_text(encoding="utf-8")
+BASE_VALUE_UPDATE = (ROOT / "supabase/migrations/20261126130000_driver_market_value_base_18m_and_hq_two_active_projects.sql").read_text(encoding="utf-8")
+RECALC = (ROOT / "supabase/migrations/20261126140000_recalculate_driver_market_values_after_base_18m.sql").read_text(encoding="utf-8")
+PROFILE = (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
+DIGITAL_ID = (ROOT / "src/PublicMemberId.tsx").read_text(encoding="utf-8")
+DRIVER_CARD = (ROOT / "src/DriverExhibition.tsx").read_text(encoding="utf-8")
+NOTIFICATIONS = (ROOT / "src/NotificationsCenter.tsx").read_text(encoding="utf-8")
+HQ = (ROOT / "src/TeamHQ.tsx").read_text(encoding="utf-8")
+LANGUAGE = (ROOT / "src/lib/ui-language.ts").read_text(encoding="utf-8")
+LANGUAGE_BRIDGE = (ROOT / "src/UiLanguageBridge.tsx").read_text(encoding="utf-8")
+LANGUAGE_MIGRATION = (ROOT / "supabase/migrations/20261126100000_profile_market_language_notification_tombstones.sql").read_text(encoding="utf-8")
+PUBLIC_MV_MIGRATION = (ROOT / "supabase/migrations/20261126110000_public_driver_market_value_rpc.sql").read_text(encoding="utf-8")
 TIER = (ROOT / "supabase/migrations/20261126064645_driver_market_tier_relation.sql").read_text(encoding="utf-8")
 NORMALIZATION = (ROOT / "supabase/migrations/20261126065153_driver_market_scoring_normalization.sql").read_text(encoding="utf-8")
 TRANSFER = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
@@ -54,6 +65,11 @@ assert 'admin_configure_driver_market' not in ADMIN
 assert 'admin_get_driver_market_config' not in ADMIN
 assert '<input' not in ADMIN
 assert 'fixedConfig' in ADMIN
+assert 'baseValue:18000000' in ADMIN
+assert 'base_value_eur=18000000' in BASE_VALUE_UPDATE
+assert 'caleris_team_hq_one_active_project_per_team' in BASE_VALUE_UPDATE
+assert 'caleris_team_hq_one_active_project_per_facility' in BASE_VALUE_UPDATE
+assert "recalculate_driver_market_values(null,'base_value_change_18m')" in RECALC
 assert 'admin_recalculate_driver_market_values' in ADMIN
 
 # Pre-contract is separate from existing permanent transfer and loan workflows.
@@ -99,6 +115,29 @@ assert 'supabase.rpc("member_start_driver_precontract"' in TRANSFER
 assert 'supabase.rpc("member_respond_driver_precontract"' in TRANSFER
 assert 'member?.role==="Owner"' in TRANSFER
 assert 'Market Value</th>' in TRANSFER
+assert 'member_start_free_agent_contract_negotiation' in TRANSFER
+assert 'canRecruit&&freeAgents.some' in TRANSFER
+assert 'getCountries' in TRANSFER
+assert 'member_get_driver_market_values' in PROFILE
+assert 'market_value_eur' in PROFILE
+assert 'market_value_eur' in DIGITAL_ID
+assert 'member_get_driver_market_values' in DRIVER_CARD
+assert 'driver-card-detail-market-value' in DRIVER_CARD
+assert 'member_delete_caleris_notification' in NOTIFICATIONS
+assert 'member_delete_caleris_notifications' in NOTIFICATIONS
+assert 'from("caleris_notifications").delete()' not in NOTIFICATIONS
+assert 'preferred_language' in APP
+assert 'UiLanguageBridge' in APP
+assert 'isAboutUs' in LANGUAGE_BRIDGE
+assert 'translateUiText' in LANGUAGE
+assert 'preferred_language' in LANGUAGE_MIGRATION
+assert 'member_delete_caleris_notifications' in LANGUAGE_MIGRATION
+assert 'caleris_get_public_digital_id' in PUBLIC_MV_MIGRATION
+assert 'market_value_eur' in APP
+assert 'language-preference-field' in APP
+assert '!target.data.team_id' in APP
+assert 'upgradeError.details' in HQ
+assert 'upgradeError.code' in HQ
 assert 'AdminDriverMarketEngine' in APP
 assert '/admin/driver-market-engine' in APP
 assert '/admin/driver-market-engine' in NAV

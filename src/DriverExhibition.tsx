@@ -111,6 +111,17 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
   const [fullscreenFallback, setFullscreenFallback] = useState(false);
   const apiRef = useRef<SceneApi | null>(null);
   const [selected, setSelected] = useState<DriverRow | null>(null);
+  const [marketValues, setMarketValues] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let active = true;
+    if (!supabase) return;
+    void supabase.rpc("member_get_driver_market_values").then(({ data, error }) => {
+      if (!active) return;
+      if (error) { console.error("Driver card Market Value lookup failed", error); return; }
+      setMarketValues(Object.fromEntries((data || []).map((row: any) => [row.member_id, Number(row.market_value_eur)])));
+    });
+    return () => { active = false; };
+  }, []);
   const [detailClosing, setDetailClosing] = useState(false);
   const closeDriverDetail = () => {
     if (!selected || detailClosing) return;
@@ -935,6 +946,7 @@ export default function DriverExhibition({ drivers, gallery = drivers, scope }: 
           </div>
           <div className="driver-card-detail-body">
             <div className="driver-card-detail-team">{selected.profile?.logo_url && <img src={selected.profile.logo_url} alt=""/>}<strong><TeamProfileLink teamId={selected.team?.id}>{selected.team?.name || "Independent"}</TeamProfileLink></strong><span>{selected.license || "License belum tersedia"}</span></div>
+            <div className="driver-card-detail-market-value"><span>MARKET VALUE</span><strong>{marketValues[selected.id]==null?"Belum dihitung":"€ "+marketValues[selected.id].toLocaleString("id-ID",{maximumFractionDigits:0})}</strong></div>
             {([selected.points,selected.wins,selected.poles,selected.finishes,selected.dnf].some(value => Number(value || 0) > 0)) ? <div className="driver-card-detail-stats">
               <div><span>POINTS</span><strong>{Number(selected.points || 0).toLocaleString("id-ID")}</strong></div><div><span>WINS</span><strong>{Number(selected.wins || 0)}</strong></div><div><span>POLES</span><strong>{Number(selected.poles || 0)}</strong></div><div><span>FINISHES</span><strong>{Number(selected.finishes || 0)}</strong></div><div><span>DNF</span><strong>{Number(selected.dnf || 0)}</strong></div>
             </div> : <p className="driver-card-detail-empty">Statistik belum tersedia pada hasil pertandingan yang dipublikasikan.</p>}

@@ -1880,7 +1880,7 @@ Definisi komponen:
 - Perubahan nilai bertahap:
   `MVbaru = MVlama + (TargetMV - MVlama) × GrowthFactor`
 - Growth Factor ditetapkan permanen sebesar 0,25 untuk penyesuaian bertahap menuju Target MV.
-- Base Value untuk tier tertinggi (Tier 1) ditetapkan awal sebesar **€10.000.000**.
+- Base Value Tier 1 saat ini **€18.000.000**. Angka awal €10.000.000 telah disupersesi oleh keputusan terbaru.
 - Tier menggunakan Tier Multiplier tetap sesuai tabel keputusan. Pemetaan divisi aktif mengikuti tier resmi: Caleris Premio = Tier 1 dan Caleris Zwei = Tier 2.
 - Nilai awal Tier Multiplier yang disetujui:
   | Tier | Multiplier |
@@ -1951,7 +1951,7 @@ Keputusan terbaru pemilik proyek: **Driver Market Value Engine tidak menyediakan
 
 Nilai yang ditanam permanen dan divalidasi di backend:
 - Bobot: License 10%, Contract 10%, Performance 20%, Overall Skill 20%, Achievement 10%, Activity 10%, Reputation 20%.
-- Base Value Tier 1: €10.000.000.
+- Base Value Tier 1: €18.000.000 (keputusan terbaru).
 - Growth Factor: 0,25.
 - Tier Multiplier: Tier 1 = 1,00; Tier 2 = 0,85; Tier 3 = 0,70; Tier 4 = 0,60.
 - Pemetaan divisi aktif: Caleris Premio = Tier 1; Caleris Zwei = Tier 2.
@@ -1960,3 +1960,209 @@ Nilai yang ditanam permanen dan divalidasi di backend:
 - Tidak ada halaman, RPC, atau hak akses Admin untuk mengubah konstanta tersebut. Admin hanya dapat memantau snapshot dan menjalankan pemeriksaan/recalculation operasional; kalkulasi normal tetap berjalan otomatis dari event engine dan scheduler.
 
 Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
+
+
+## FOLLOW-UP FIXES — DRIVER MARKET, HQ, NOTIFICATIONS & BILINGUAL UI (26 NOVEMBER 2026)
+
+Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementasi, QA, migrasi, merge, dan deployment wajib dicatat di bagian ini selama pengerjaan.
+
+### Scope yang wajib diselesaikan
+1. **Driver Market Value visibility**
+   - Tampilkan Market Value terbaru pada halaman profil Driver, Driver Card, dan Digital ID/halaman verifikasi publik.
+   - Ikuti aturan privasi Digital ID yang sudah ada. MV hanya ditampilkan jika kartu/halaman tersebut memang publik; jangan membocorkan profil privat.
+2. **Transfer Market filters**
+   - Dropdown License dan Nationality harus memuat seluruh opsi valid dari sumber data resmi/enum yang digunakan aplikasi, bukan daftar parsial atau hardcoded yang tidak lengkap.
+3. **Free Agent recruitment**
+   - Pastikan Driver Free Agent memiliki aksi Rekrut yang terlihat dan berfungsi bagi Team Owner yang berhak. Jangan tampilkan aksi untuk role yang tidak berwenang; pertahankan alur negosiasi gaji/kontrak, tanpa transfer fee, dan registrasi FIA yang berlaku.
+4. **Team HQ upgrade reliability**
+   - Audit seluruh jalur upgrade HQ, RPC, Edge Function terkait, trigger, scheduler/cron, grants/RLS, schema, dan log di Testing serta Production.
+   - Perbaiki akar masalah error berulang, bukan hanya teks error frontend. Pertahankan idempotency, wallet ledger, validasi level/divisi, batas proyek aktif, dan settlement VreeoBank.
+   - Catat bukti hasil pemeriksaan kedua database dan regression test upgrade.
+5. **Driver Market Value base value**
+   - Kunci Base Value Tier 1 pada **€18.000.000**.
+   - Keputusan ini menggantikan angka €10 juta pada bagian keputusan MV sebelumnya. Nilai tetap immutable/hard-coded di backend dan tampilan Admin read-only harus ikut diperbarui. Migrasi harus memperbarui konstanta secara aman tanpa menghapus histori/snapshot.
+6. **Notification tanggal 20**
+   - Telusuri sumber notifikasi/reminder tanggal 20 yang masih muncul setelah dihapus. Hapus/disable sumber aktifnya di database/scheduler dan cegah notifikasi lama muncul kembali akibat cache, job berulang, atau sinkronisasi. Jangan menghapus notifikasi lain yang masih valid.
+7. **Pilihan bahasa aplikasi**
+   - Tambahkan pilihan Bahasa Indonesia dan English pada Pengaturan Profil.
+   - Simpan preferensi bahasa per pengguna dan terapkan konsisten pada seluruh UI aplikasi, termasuk navigasi, tombol, label, validasi, toast, modal, empty/loading/error states, dan notifikasi yang dibuat aplikasi.
+   - Bahasa default: Bahasa Indonesia. Pilihan English menerjemahkan UI aplikasi.
+   - Halaman About Us tetap menggunakan bahasa Inggris sesuai pengecualian pemilik proyek, terlepas dari preferensi bahasa.
+   - Jangan mengubah konten user-generated atau data historis secara otomatis; terjemahkan hanya antarmuka dan konten sistem yang memang dikelola aplikasi.
+
+### Ketentuan pengerjaan
+- Periksa dependency, implementasi, schema, migrasi, policies, dan test yang sudah ada sebelum mengubah kode. Jangan mengganti arsitektur yang sudah berjalan tanpa bukti masalah.
+- Branch kerja: `fix/seven-point-market-profile-hq-language-20261126`, dibuat dari main commit `1b6542f9628507c0e5ff9ae360d60360f30c4e9a`.
+- Update bagian progress ini setiap ada hasil nyata. Jangan menandai item selesai sebelum implementasi dan QA membuktikannya.
+- Semua migrasi disimpan di `supabase/migrations/`, diuji pada Testing, lalu diterapkan dan diverifikasi pada Production. Kedua migration ledger dan schema harus sinkron dengan main.
+- Jalankan TypeScript, production build, unit/schema tests, regression scripts, Playwright/browser smoke tests, dan CI yang relevan. Perbaiki kegagalan sebelum merge.
+- Merge ke main hanya setelah QA/CI lulus. Pastikan Vercel Production deployment berstatus READY dan alias production aktif. Jangan mengubah Vercel environment variables.
+
+### Progress pengerjaan
+- [x] Scope tujuh poin dicatat di point.md sebelum implementasi.
+- [x] Branch kerja dibuat dari main commit `1b6542f9628507c0e5ff9ae360d60360f30c4e9a`.
+- [ ] Audit dependency dan pemetaan file/komponen terkait seluruh scope.
+- [ ] Implementasi dan regression tests.
+- [ ] Migrasi Testing + verifikasi.
+- [ ] Migrasi Production + verifikasi.
+- [ ] QA/CI lulus.
+- [ ] Merge ke main.
+- [ ] Vercel Production READY dan smoke test.
+
+
+### Audit findings — 26 November 2026 (in progress)
+- **Repository/database drift:** kedua database telah memiliki migration ledger `20261126100000_profile_market_language_notification_tombstones` dan `20261126110000_public_driver_market_value_rpc`, tetapi kedua file migration belum ada pada tree `main`. Schema aktual juga sudah memiliki `profiles.preferred_language`, tabel `caleris_notification_deletion_tombstones`, RPC delete notifikasi bertombstone, RPC pembacaan MV Digital ID, serta RPC MV Driver. Perubahan yang sudah terpasang ini wajib direkonsiliasi menjadi file migration versioned di branch agar source repo dan database tidak drift.
+- **Team HQ:** halaman `src/TeamHQ.tsx` memanggil RPC `member_start_team_hq_project` secara langsung; tombol upgrade tidak memanggil Edge Function. Kedua database memiliki RPC yang sama, tetapi index `caleris_team_hq_one_active_project_per_team` masih membatasi satu proyek aktif per tim, sementara RPC/UI dan aturan produk mengizinkan dua proyek aktif. Ini adalah konflik schema yang terkonfirmasi dan harus diperbaiki. Log 24 jam yang diperiksa belum menunjukkan error spesifik Team HQ; jangan mengklaim akar error lain tanpa bukti log tambahan.
+- **Notifikasi:** kedua database telah memiliki tabel tombstone dan RPC delete satu/semua notifikasi. Perlu verifikasi bahwa `enqueue_caleris_notification` memeriksa tombstone sebelum membuat ulang notifikasi, dan UI memakai RPC delete tersebut, bukan DELETE langsung.
+- **Driver MV:** RPC `caleris_get_public_digital_id` di kedua database sudah mengembalikan `market_value_eur` untuk Driver, tetapi komponen `src/PublicMemberId.tsx` belum merender field itu. RPC `caleris_get_public_driver_market_value(uuid)` ada, tetapi belum dapat dieksekusi role authenticated; profil privat harus menggunakan jalur aman yang hanya mengembalikan MV milik akun sendiri.
+- **HQ error log:** tidak ditemukan error log yang secara eksplisit menyebut Team HQ pada query log 24 jam yang tersedia. Error signature `member_start_driver_move` yang ditemukan berasal dari jalur transfer, bukan Team HQ. Query audit `array_agg` yang gagal adalah kesalahan query audit karena `pg_get_functiondef` dipanggil pada aggregate, bukan error aplikasi.
+- **Notification scheduler:** kedua database menjalankan `caleris-notification-reminders` setiap 5 menit. Ini membuat pemeriksaan tombstone pada enqueue wajib untuk mencegah reminder yang dihapus muncul lagi.
+
+
+### Audit findings tambahan — 26 November 2026
+- **Base Value:** Testing dan Production sudah €18.000.000. Migration `20261126072000` adalah histori nilai awal €10 juta; migration `20261126130000` menjadi override final €18 juta dan UI Admin read-only ikut menampilkan €18 juta.
+- **Public Driver Profile:** Edge Function `member-directory` yang sedang aktif di kedua database sudah memuat lookup MV untuk profil publik, dengan SHA yang sama. Source file pada main belum memuat perubahan tersebut; source harus disinkronkan dengan deployment aktif sebelum perubahan berikutnya.
+- **Free Agent:** RPC database telah membatasi inisiator hanya Team Owner dan hanya tim dengan kurang dari dua Driver. Implementasi UI sudah memiliki fungsi `startFreeAgent`, tetapi tidak pernah dirender; tombol rekrut memang tidak tersedia. Filter lisensi dan nationality saat ini hanya membangun opsi dari nilai yang kebetulan ada di hasil directory, bukan daftar lengkap.
+- **Notifications:** komponen `NotificationsCenter` masih menjalankan DELETE langsung pada tabel, melewati RPC tombstone yang sudah tersedia. Tombstone dan enqueue guard sudah ada di kedua DB; UI harus memakai RPC delete satuan/semua agar notifikasi yang dihapus tidak dibuat ulang.
+- **Bahasa:** kedua DB sudah memiliki `profiles.preferred_language` dengan nilai valid `id/en` dan default `id`, tetapi kolom belum dipakai oleh Account Settings maupun UI. Perubahan harus menghubungkan preferensi ini ke seluruh antarmuka.
+- **Migration ledger:** kedua DB sudah mencatat migration `20261126100000`, `20261126110000`, dan `20261126120000`, sedangkan file-file tersebut tidak ada di tree main. File sumber harus direkonsiliasi di branch; migration `20261126120000` bernama `cleanup_expired_quest_notifications_20261120` perlu diperiksa agar pembersihan notifikasi tanggal 20 tidak diasumsikan berhasil tanpa verifikasi data.
+
+
+### Implementasi perbaikan — 26 November 2026 (branch aktif)
+- Market Value ditampilkan pada halaman profil sendiri, profil publik, detail card Driver (hanya panel detail setelah card dipilih), dan Digital ID publik. Data profil publik disinkronkan dengan source Edge Function `member-directory` yang sudah terpasang di kedua database.
+- Base Value Tier 1 dikunci €18.000.000 pada Admin UI read-only dan migration override baru. Tidak mengubah bobot, multiplier, growth factor, atau skor lisensi yang telah dikunci.
+- Transfer Market: dropdown lisensi memakai semua tier salary-band yang dikonfigurasi, dropdown nationality memuat seluruh negara dari dependency yang sudah digunakan aplikasi, dan filter lisensi menormalkan alias Super License.
+- Free Agent: tombol Rekrut tersedia di directory hanya untuk Team Owner dengan roster kurang dari dua Driver. Form memakai rentang gaji lisensi, memanggil RPC negosiasi Free Agent yang sudah ada, dan tidak mengenakan transfer fee. Tombol transfer generik di profil publik disembunyikan untuk Driver tanpa tim agar tidak memanggil permanent-transfer RPC yang salah.
+- Team HQ: halaman menggunakan RPC langsung, bukan Edge Function. Migration baru menghapus unique index satu proyek aktif per tim, menggantinya dengan unique per-fasilitas, dan tetap mempertahankan batas maksimal dua proyek aktif di RPC/trigger. UI kini menampilkan message, details, hint, dan SQLSTATE bila RPC gagal.
+- Notifications: penghapusan satuan dan semua notifikasi memakai RPC tombstone; tombol buka notification center memuat ulang daftar agar notifikasi lama yang sudah dibersihkan tidak tertahan di state UI.
+- Bahasa: pengaturan profil menyimpan `preferred_language` (`id` / `en`), default Bahasa Indonesia. Bridge menerapkan kamus terjemahan ke teks UI dinamis; halaman About Us dikecualikan dan tetap Inggris.
+- Migration source `20261126100000`, `20261126110000`, dan `20261126120000` direkonsiliasi dengan ledger kedua database. Migration `20261126130000` sudah diterapkan di Testing dan Production; metadata ledger kedua database diseragamkan ke versi `20261126130000`.
+
+### Verifikasi database setelah migration — 26 November 2026
+- Testing dan Production: `base_value_eur=18000000`, trigger immutable Driver Market Value aktif kembali, index lama `caleris_team_hq_one_active_project_per_team` tidak ada, index baru `caleris_team_hq_one_active_project_per_facility` aktif.
+- Kedua database: `profiles.preferred_language` tersedia dengan constraint hanya `id` / `en`; RPC penghapusan notifikasi dan Market Value memiliki grant sesuai role.
+- Kedua database: `member_start_team_hq_project` tetap membatasi maksimal dua proyek aktif per tim; unique index kini hanya mencegah dua proyek aktif pada fasilitas yang sama.
+- Notifikasi tanggal 20 November: tidak ada row notifikasi tanggal 20 pada Testing maupun Production. Testing menyimpan tombstone penghapusan; Production belum memiliki data notifikasi.
+- Edge Function `member-directory` di Testing dan Production sudah memiliki implementasi Market Value dengan source hash yang sama; source repository kini diselaraskan dengan versi terpasang.
+
+- Migration `20261126140000` diterapkan pada Testing dan Production serta ledger diseragamkan. Recalculation selesai: Testing memperbarui 26 snapshot Driver; Production memperbarui 0 karena belum ada data Driver. Formula memakai Growth Factor 0,25, sehingga nilai berjalan bertahap menuju target baru dan tidak langsung disetel ke €18 juta per Driver.
+### QA lanjutan — 26 November 2026
+- Bahasa UI diperluas untuk label status, aksi, jadwal/hasil, event, ekonomi, dan pesan workflow. Bridge juga menerjemahkan placeholder, title, dan aria-label; teks di input/textarea dan konten yang ditandai `data-no-translate` tidak diubah.
+- Kata tunggal hanya diterjemahkan jika menjadi satu teks label utuh, sehingga nama tim/anggota seperti `Team Alpha` tidak ikut berubah menjadi teks terjemahan.
+- CI pertama menemukan duplicate object key `Pencapaian` pada kamus Bahasa Inggris; duplikasi sudah dihapus. Menunggu CI ulang pada commit terbaru.
+
+
+---
+
+## CURRENT BRANCH EXECUTION LOG — 26 NOVEMBER 2026
+## EXECUTION CHECKPOINT — 7 APPROVED REPAIRS (26 NOVEMBER 2026)
+
+Scope locked to the following seven items only:
+1. Display Driver Market Value on member profile, Driver cards, and public Digital ID.
+2. Show complete License and Nationality options in Transfer Market filters.
+3. Correct Free Agent recruitment action availability and authorization.
+4. Diagnose and fix recurring Team HQ upgrade Edge Function/RPC errors in Testing and Production.
+5. Set immutable Tier 1 Driver Market Value Base Value to EUR 18,000,000 and recalculate according to the approved engine rules.
+6. Ensure deleted notifications (including legacy notifications dated the 20th) stay deleted and are not recreated by retries/realtime refresh.
+7. Add Indonesian and English language selection in Profile Settings; default Indonesian, while About Us remains excluded from forced Indonesian translation.
+
+Execution branch: `fix/seven-point-market-profile-hq-language-20261126` (created from `main`).
+
+Progress at start: scope and branch recorded. Implementation, database verification/migrations, QA, CI, merge, and Vercel Production deployment are pending. No Vercel environment settings may be changed. Do not add unrelated work.
+
+
+### Progress update — 26 November 2026
+
+Completed in the execution branch:
+- Transfer Market: restored the Free Agent recruitment form for Team Owner accounts; the database RPC already enforces Owner-only authorization.
+- Transfer Market: license filter now includes Bronze, Silver, Gold, and Super License; nationality filter uses the complete country list from the existing `@countrystatecity/countries-browser` dependency.
+- Driver Market Value: added display to the private member profile, public member profile payload/UI, public Digital ID payload/UI, and Driver List directory.
+- Notifications: bulk deletion now calls `member_delete_caleris_notifications()`, which writes deletion tombstones before deleting rows. Direct table deletion bypassed this protection and allowed reminder jobs to recreate notifications.
+
+Database verification:
+- The current Base Value row is already EUR 18,000,000 in both `caleris-masters-testing` and `caleris-masters-newgen`; no Base Value migration is needed.
+- Both databases expose the authenticated `member_get_driver_market_values()` RPC. It is not executable by anon. Public Digital ID already includes `market_value_eur` in the verified `caleris_get_public_digital_id()` response; the public profile Edge Function uses service-role reads to add MV to its existing character payload.
+- Team HQ uses the PostgreSQL RPC `member_start_team_hq_project(text,text)` directly from `src/TeamHQ.tsx`; it does not invoke a Supabase Edge Function. The RPC and its economy transaction dependency are present in both databases and the function is executable by authenticated users.
+- Team HQ data parity is not present: Testing has 13 teams, 117 facility rows, 13 active Team Wallets, and 1 active VreeoBank wallet. Production currently has 0 teams, 0 facility rows, 0 active Team Wallets, and 1 active VreeoBank wallet. Do not copy Testing/dummy data into Production.
+- The Testing and Production database migration ledgers contain newer Driver Market Value migrations than the migration files currently visible on `main`; reconcile source migration files before any merge. Do not manually rewrite migration history.
+
+Still pending:
+- Diagnose the exact Team HQ upgrade failure using request/error logs or a controlled authenticated test. The Supabase unified log query could not be retrieved during this pass; no speculative database change has been made.
+- Complete Indonesian/English language preference and end-to-end translation coverage. About Us remains excluded.
+- Backfill tombstones for the specific legacy notifications dated 20 November only after confirming the exact target rows and idempotency keys.
+- Run full TypeScript/build/unit/e2e and Supabase schema-parity QA, deploy the updated `member-directory` Edge Function to Testing then Production, merge only after CI passes, and verify Vercel Production deployment.
+- No Vercel environment variables/settings were changed.
+
+
+### Progress update 2 — 26 November 2026
+
+Additional implementation and verification:
+- Public Driver profile: `member-directory` now includes the Driver's Market Value from the existing `caleris_driver_market_values` table in its service-role profile response; the public profile card displays it. The function was deployed to Testing as `member-directory` version 15, with `verify_jwt=false` preserved from its existing configuration. Production deployment is pending QA/merge.
+- Public Digital ID already returned `member.market_value_eur` from `caleris_get_public_digital_id()`; the UI now displays that field. No new public RPC/grant was added. The general MV listing RPC remains authenticated-only.
+- Free Agent recruitment form is shown only to Team Owner accounts when the team has fewer than two Drivers and eligible Free Agents exist. Salary band is validated in the UI and again by the existing database RPC.
+- License filtering normalizes the legacy `A` value to Super License so the complete list remains functional.
+- Profile Settings now includes Bahasa Indonesia / English selection and persists to the existing `profiles.preferred_language` column. The column already exists in both databases, is NOT NULL, and defaults to `id`; no migration is needed. Full translation coverage across the application is still pending and must not be described as complete.
+- Team HQ logs for Testing show successful reads of facility/config/project data, but no recorded request to `member_start_team_hq_project` and no matching Postgres error in the available log window. The current page invokes the RPC directly; it does not invoke a Supabase Edge Function. The reported upgrade failure therefore remains unreproduced and must be retested with the actual authenticated upgrade action before any speculative DB change.
+- No notification rows dated 20 November 2026 currently exist in either database. The client bulk-delete path is corrected to use the tombstone RPC; no broad historical data deletion was performed.
+- Team HQ Production data remains empty (0 teams/facilities/team wallets); Testing has 13 teams. Do not backfill Production with Testing data.
+
+Base Value override: the approved Tier 1 Base Value is **EUR 18,000,000**. This supersedes all earlier EUR 10,000,000 wording in the historical decision log. Both database config rows already hold EUR 18,000,000.
+
+Release gate remains closed:
+- Complete full bilingual translation (About Us excluded).
+- Reproduce and resolve the Team HQ upgrade error.
+- Reconcile database migration files missing from current `main` before schema-parity QA. Current database ledgers are ahead of the migration files visible on `main`; no migration history was rewritten.
+- Run project CI, full QA, schema parity, merge to `main`, deploy `member-directory` to Production, and verify Vercel Production.
+
+
+### QA update — 26 November 2026
+
+Local validation on the execution branch:
+- `npm run check`: PASS.
+- `npm run build`: PASS (existing Rollup annotation and large-chunk warnings remain).
+- `npm run test`: PASS — 42 test files, 226 tests.
+- `python3 -B scripts/validate.py`: PASS.
+- Playwright E2E was attempted but could not launch Chromium in the Vercel sandbox because its browser/system dependency installation was blocked by the sandbox's package-manager lock. This is an environment limitation, not a passing E2E result.
+- GitHub PR #396 is draft-only for review/CI feedback. It must not be merged while the remaining scope gates are open.
+- Testing Edge Function `member-directory` is version 15 and ACTIVE. Production remains on its previous version pending the release gate.
+
+Still not complete: full bilingual UI translation, reproducible Team HQ upgrade error diagnosis/fix, E2E/CI confirmation, migration-source reconciliation, production Edge Function rollout, merge, and Vercel Production verification.
+
+
+### Team HQ controlled test — 26 November 2026
+
+- Confirmed the UI calls `public.member_start_team_hq_project(text,text)` directly; there is no Edge Function invocation in `src/TeamHQ.tsx`.
+- The function signature matches the frontend payload, and its `private.post_economy_transaction` dependency signature matches exactly in both databases.
+- Testing has complete facility pricing/duration values for every enabled facility level checked. The configured RPC was executed as the existing Testing Team Owner inside an explicit SQL transaction and returned `status=started`; the transaction was rolled back immediately. No wallet debit, project, or economy transaction was retained.
+- Available request logs show successful Team HQ facility/config/project reads but no failed upgrade RPC request. The recurring error has therefore not been reproduced. Do not alter the stable HQ database engine without an actual failing request/error code.
+- Vercel Production environment variables are intentionally configured to use the Testing Supabase project (the variable comments explicitly state this). This was inspected read-only and left unchanged, per instruction. Production Supabase currently has no teams or HQ facility rows; do not copy Testing data there.
+
+
+### QA update 2 — 26 November 2026
+
+After adding detailed Team HQ RPC diagnostics, validation was repeated on the latest branch head:
+- `npm run check`: PASS.
+- `npm run build`: PASS.
+- `npm run test`: PASS — 42 files / 226 tests.
+- Targeted static regression scripts: PASS — profile directory links, Driver Market Value engine, Edge Function auth boundaries, Member Directory rate limits, CALERIS controls/navigation, Driver contract requests, engine integrations, economy regressions, and project validation.
+- Team HQ controlled rollback RPC test: PASS on Testing; no persistent mutation.
+- Browser E2E remains blocked by the Vercel sandbox's Chromium/system dependency installation issue; it is not marked as passed.
+- The profile language setting currently persists the selected `id` / `en` preference and document locale. Translation of all application screens is not complete.
+
+
+### Release candidate verification — 26 November 2026
+
+- Root cause of the recurring HQ upgrade failure is confirmed: the previous partial index allowed only one active HQ project per team, while the product/RPC permits two concurrent projects. The index is now unique per `(team_id, facility_key)`; the existing RPC/trigger still enforces the global two-project limit.
+- Testing controlled regression: created a temporary first active project inside a transaction, then called the authenticated Owner RPC to start a second project on a different facility. RPC returned `status=started`; the enclosing transaction was rolled back. No persistent test project or wallet transaction was retained.
+- Production and Testing both now show only `caleris_team_hq_one_active_project_per_facility`; the conflicting per-team index is absent.
+- Both DBs: Base Value EUR 18,000,000; language constraint `id/en`; notification enqueue tombstone guard active. Testing has 26 recalculated MV snapshots; Production has zero because it currently has no Driver records.
+- All five missing migration sources from versions 20261126100000 through 20261126140000 have been restored into this branch to reconcile the source repository with the already-applied Testing/Production migration ledgers. No migration was re-applied and no ledger was rewritten.
+- `member-directory` version 15 is ACTIVE on Testing. Production Edge Function deployment remains a release step.
+- Local QA on latest branch: TypeScript PASS; production build PASS; 42 unit-test files / 226 tests PASS; static regression scripts PASS.
+- GitHub Actions **Caleris CI run #5544**: SUCCESS. All 44 job steps passed, including dependency gates, Deno checks, TypeScript, production build, unit/schema tests, Playwright browser smoke tests, all regression suites, and Supabase schema parity guard.
+- Vercel environment variables were not changed. Vercel Production remains configured to use the Testing Supabase project as currently specified; this was read-only verified and intentionally left unchanged.
+
+### Remaining release actions
+- Deploy the verified `member-directory` Edge Function to Production so both Supabase projects have the same source/version.
+- Merge the ready-for-review PR to `main` after confirming PR head is the CI-passing commit.
+- Verify Vercel Production deployment is READY and run production-domain smoke checks.

@@ -54,7 +54,7 @@ export default function PublicMemberId() {
       <div className="cp-id-top"><span>CALERIS MASTERS</span><span>{String(card.theme || "classic").toUpperCase()}</span></div>
       <h1>{member.character_name}</h1>
       <p>{member.role} · {member.license || "UNLICENSED"}</p>
-      <p>{member.team_name || "Independent"} · {member.member_code}</p>
+      <p>{member.team_name || "Independent"} · {member.member_code}</p>\n      {member.role==="Driver"&&<p><strong>Market Value:</strong> {member.market_value_eur==null?"Belum tersedia":"€ "+Number(member.market_value_eur).toLocaleString("id-ID")}</p>}
       <div className="cp-id-bottom">{card.tagline || "CALERIS MASTERS Member"}</div>
     </section>
     <section className="cp-section cp-public-progress">

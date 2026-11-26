@@ -545,3 +545,7 @@
   .driver-timing-class{font-size:5.5px}
   .team-graphic-card-top h3{max-width:52%;font-size:16px}
 }
+
+.driver-card-detail-market-value{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:14px;padding:12px 14px;border:1px solid rgba(198,163,58,.24);border-radius:7px;background:rgba(198,163,58,.055)}
+.driver-card-detail-market-value span{color:#b9a77b;font:700 9px 'Barlow Condensed',sans-serif;letter-spacing:.16em}
+.driver-card-detail-market-value strong{color:#f4efe4;font:700 18px 'Barlow Condensed',sans-serif}

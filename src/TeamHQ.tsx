@@ -125,15 +125,30 @@ export default function TeamHQ() {
   const startUpgrade = async () => {
     if (!supabase || !confirmConfig || submittingUpgrade) return;
     setSubmittingUpgrade(true); setError(""); setNotice("");
-    const { error: upgradeError } = await supabase.rpc("member_start_team_hq_project", {
-      p_facility_key: confirmConfig.facility_key,
-      p_idempotency_key: crypto.randomUUID()
-    });
-    setSubmittingUpgrade(false);
-    if (upgradeError) { setError(upgradeError.message); return; }
-    setConfirmConfig(null);
-    setNotice("Proyek upgrade berhasil dimulai. Biaya telah dipindahkan ke VreeoBank.");
-    await load();
+    try {
+      const { error: upgradeError } = await supabase.rpc("member_start_team_hq_project", {
+        p_facility_key: confirmConfig.facility_key,
+        p_idempotency_key: crypto.randomUUID()
+      });
+      if (upgradeError) {
+        console.error("[TeamHQ] Upgrade RPC failed", {
+          code: upgradeError.code,
+          message: upgradeError.message,
+          details: upgradeError.details,
+          hint: upgradeError.hint
+        });
+        setError([upgradeError.message, upgradeError.details, upgradeError.hint, upgradeError.code ? `Kode: ${upgradeError.code}` : ""].filter(Boolean).join(" · "));
+        return;
+      }
+      setConfirmConfig(null);
+      setNotice("Proyek upgrade berhasil dimulai. Biaya telah dipindahkan ke VreeoBank.");
+      await load();
+    } catch (upgradeError) {
+      console.error("[TeamHQ] Unexpected upgrade failure", upgradeError);
+      setError(upgradeError instanceof Error ? upgradeError.message : "Upgrade HQ gagal diproses. Coba lagi dan periksa koneksi.");
+    } finally {
+      setSubmittingUpgrade(false);
+    }
   };
 
   const beginEdit = (config: FacilityConfig) => {
