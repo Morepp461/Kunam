@@ -501,8 +501,8 @@ Acceptance requires Android browser QA on representative low/mid-range devices, 
 - Designs are saved per team in `caleris_team_liveries`, can be exported/imported as versioned JSON, and are protected by RLS. Owner/Principal and verified site administrators can write; authenticated members can read their own team's design.
 
 ### Rendering and physics boundary
-- The current UI includes a procedural Three.js preview and a generated CALERIS UV atlas. It is a functional design editor prototype, not a claim that the repository already contains a production UV-unwrapped vehicle model.
-- A production livery requires an original or appropriately licensed vehicle asset with a documented UV layout matching the atlas contract. The editor must reject or clearly mark incompatible UV revisions rather than silently applying the wrong mapping.
+- Team Livery and Public Team Profile now use the original procedural 2026 F1 chassis generator with game-low LOD, shared team colors, car number, team logo, and active sponsor labels. The chassis is generated at runtime using the existing Three.js dependency; it is not a prebuilt GLB. The existing V1 UV atlas and saved decal layers remain intact, but only the first selected decal preset is currently projected onto the 2026 chassis.
+- Exact per-surface multi-decal placement still requires a verified 2026 chassis UV mapping matching the existing atlas contract. Until that mapping is verified, do not imply that arbitrary atlas coordinates or every saved decal layer are rendered on the chassis.
 - Livery data is visual-only. It must never affect Race Engine inputs, attributes, physics, timing, classification, tyre behavior, or economy settlement.
 - Current Race Engine replay is reconstructed from persisted segment-completion events. It does not contain continuous steering, suspension travel, wheel angular velocity, throttle, or brake telemetry. Those motions must not be fabricated in the renderer.
 - Before race viewer integration, race-start snapshots must freeze the selected team's livery revision and asset/UV version. Historical replay must continue using that immutable snapshot after the team changes its current livery.
@@ -511,3 +511,13 @@ Acceptance requires Android browser QA on representative low/mid-range devices, 
 - Team UV Livery Editor, team-scoped persistence, RLS, import/export, and procedural preview are implemented in the feature branch.
 - Production vehicle UV asset integration and immutable race-start livery snapshot wiring remain explicit follow-up gates; they are not represented as delivered functionality.
 - Database migration must be applied to Testing first, then Production after validation and merge. No existing race snapshot or save-data field is rewritten.
+
+
+### 18.9 2026 chassis integration checkpoint — 26 November 2026
+
+- PR #380 integrates the original procedural 2026 chassis generator from the owner's 3d-F1-car repository into CALERIS Team Livery and Public Team Profile.
+- The model uses the game-low LOD, low-power WebGL, a 1.2 device-pixel-ratio ceiling, a 30 FPS render cap, visibility-aware pause/resume, context-loss handling, and deterministic resource disposal.
+- Existing team colors, car number, team logo, and active sponsor placement labels are mapped from the current livery/sponsor records. No Supabase schema, wallet, race result, or Vercel environment changes are involved.
+- The 2025 Abu Saif GLB was never hosted in the repository or Supabase Storage; no production GLB file was deleted. The new chassis is procedural runtime geometry, not a replacement GLB binary.
+- Existing V1 atlas data and multi-decal layers remain stored. Only the first selected decal preset is projected onto the new chassis until the model-specific surface/UV contract is verified.
+- Android physical-device WebGL/GPU/memory acceptance remains a manual release gate.

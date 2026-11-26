@@ -1819,3 +1819,14 @@ Release completed: PR #372 merged to main at `ac105f341fa069924d5d08275955b5e6ea
 - Sponsor edit and logo replacement actions remain unchanged. The controls are responsive for mobile.
 - Caleris CI run #5086 passed: dependency gate, Deno parity/type checks, TypeScript, production build, unit/schema tests, Playwright browser smoke tests, economy regressions, and Supabase schema parity.
 - Vercel Production deployment `dpl_DyFZ46HNt1ByZn7ce398v2PcjLQ4` is READY for commit `1d5f103b27496d809fd038f3c80b6c48d5a1a785`, with aliases `calerismasters.com` and `www.calerismasters.com`.
+
+
+## 2026 F1 CHASSIS INTEGRATION — 26 November 2026
+
+- CALERIS now integrates the original procedural 2026 single-seater chassis generator from the owner's Morepp461/3d-F1-car repository into Team Livery and Public Team Profile through PR #380.
+- The existing Three.js 0.187.0 dependency is reused. No package dependency, Supabase schema, migration, wallet, race-engine authority, or Vercel environment setting was changed.
+- Runtime renderer uses the source generator's game-low LOD, low-power WebGL, capped device pixel ratio, 30 FPS render cap, visibility-aware pause/resume, context-loss recovery, and deterministic geometry/material/texture disposal.
+- Existing team colors, car number, team logo, and active sponsor placement labels are mapped into the chassis. Team livery data and the existing V1 atlas remain persisted without schema changes.
+- The first selected decal preset is mapped to the chassis. Arbitrary multi-decal atlas positions are not claimed to match the 2026 model UV layout until that model-specific mapping is verified.
+- The earlier 2025 GLB was only an inspected intake asset; it was never committed to the app repository or hosted in Supabase Storage. No GLB binary was deleted. The new model is procedural runtime geometry, not a prebuilt GLB file.
+- No database migration is required. Physical Android browser testing for WebGL stability, GPU load, frame pacing, and memory remains outstanding.

@@ -25,6 +25,13 @@
 - Team Directory uses responsive team identity cards with main/secondary color gradients, team logos, division, base nation, hometown, driver roster, points, and wins.
 - Public Team Profile displays the official roster with verified public member links and, when configured, the saved team livery plus active sponsor identity through the rate-limited `member-directory` Edge Function.
 
+### Team Livery 3D Chassis
+
+- Team Livery and Public Team Profile share the original procedural 2026 single-seater chassis generator from the 3d-F1-car source repository, rendered with the game-low LOD for mobile-conscious use.
+- Team main/secondary/accent colors, car number, team logo, and active sponsor placement labels are applied from the existing saved livery and sponsor records.
+- The chassis is generated at runtime with the existing Three.js dependency; it is not a prebuilt GLB and requires no new dependency or database migration.
+- The existing V1 decal atlas and saved multi-decal layers remain intact. The current chassis maps the first selected decal preset; exact per-surface multi-decal placement remains gated on a verified model-specific UV contract.
+
 ### 3D Driver Exhibition
 
 - Interactive Three.js exhibition hall presenting registered Caleris Masters drivers as realistic 3D characters.

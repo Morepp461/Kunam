@@ -6,6 +6,7 @@ import { optimizeImageToWebp } from "./lib/imageOptimization";
 import { validateTeamLiveryDesign } from "./lib/team-livery";
 import { drawTeamLiveryDecal, TEAM_LIVERY_DECAL_CATALOG, type DecalSurface, type TeamLiveryDecal } from "./lib/team-livery-decals";
 import "./team-livery.css";
+import { F1Car2026Preview } from "./TeamLiveryCarPreview3D";
 
 type SponsorPlacement = "title" | "major" | "other";
 export type Sponsor = { id:string; name:string; logo_url:string|null; tier_key:string|null };
@@ -92,78 +93,7 @@ function paintAtlas(canvas:HTMLCanvasElement,d:Design,sponsors:Sponsor[],selecte
   if(d.logoDataUrl){const img=new Image();img.onload=()=>{const c=canvas.getContext("2d");if(!c)return;PARTS.slice(0,4).forEach(p=>c.drawImage(img,p.x+p.w*.38,p.y+p.h*.32,p.w*.24,p.h*.2));};img.src=d.logoDataUrl;}
 }
 export function Preview3D({design,sponsors}:{design:Design;sponsors:Sponsor[]}){
-  const host=useRef<HTMLDivElement>(null);
-  useEffect(()=>{
-    let disposed=false,renderer:import("three").WebGLRenderer|null=null,frame=0,observer:ResizeObserver|null=null;
-    const geometries:import("three").BufferGeometry[]=[],materials:import("three").Material[]=[],textures:import("three").Texture[]=[];
-    let interactionCleanup:(()=>void)|null=null;
-    const node=host.current;if(!node)return;
-    void import("three").then(T=>{
-      if(disposed)return;
-      const w=Math.max(1,node.clientWidth),h=Math.max(1,node.clientHeight);
-      renderer=new T.WebGLRenderer({antialias:true,alpha:false,powerPreference:"low-power"});
-      renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.25));renderer.setSize(w,h);renderer.outputColorSpace=T.SRGBColorSpace;node.appendChild(renderer.domElement);
-      const scene=new T.Scene();scene.background=new T.Color("#111419");
-      const camera=new T.PerspectiveCamera(34,w/h,.1,100);
-      let theta=.62,phi=.95,distance=11.5,dragging=false,lastX=0,lastY=0;
-      const updateCamera=()=>{camera.position.set(distance*Math.sin(phi)*Math.cos(theta),distance*Math.cos(phi),distance*Math.sin(phi)*Math.sin(theta));camera.lookAt(0,.25,0);};
-      updateCamera();
-      const onDown=(event:PointerEvent)=>{dragging=true;lastX=event.clientX;lastY=event.clientY;node.setPointerCapture?.(event.pointerId);node.style.cursor="grabbing";};
-      const onMove=(event:PointerEvent)=>{if(!dragging)return;theta-=(event.clientX-lastX)*.008;phi=Math.max(.28,Math.min(1.45,phi+(event.clientY-lastY)*.006));lastX=event.clientX;lastY=event.clientY;updateCamera();};
-      const onUp=()=>{dragging=false;node.style.cursor="grab";};
-      const onWheel=(event:WheelEvent)=>{event.preventDefault();distance=Math.max(7,Math.min(17,distance+event.deltaY*.012));updateCamera();};
-      node.addEventListener("pointerdown",onDown);node.addEventListener("pointermove",onMove);node.addEventListener("pointerup",onUp);node.addEventListener("pointercancel",onUp);node.addEventListener("wheel",onWheel,{passive:false});
-      node.style.cursor="grab";
-      scene.add(new T.HemisphereLight(0xffffff,0x202630,1.8));
-      const light=new T.DirectionalLight(0xffe6bf,2.6);light.position.set(-4,8,5);scene.add(light);
-      const fill=new T.DirectionalLight(0xb7c8dd,1.1);fill.position.set(5,4,-5);scene.add(fill);
-      const car=new T.Group();scene.add(car);
-      const mat=(color:string,rough=.45,metal=.15)=>{const m=new T.MeshStandardMaterial({color,roughness:rough,metalness:metal});materials.push(m);return m;};
-      const add=(g:import("three").BufferGeometry,m:import("three").Material,x:number,y:number,z:number,sx=1,sy=1,sz=1)=>{geometries.push(g);const o=new T.Mesh(g,m);o.position.set(x,y,z);o.scale.set(sx,sy,sz);car.add(o);return o;};
-      const main=mat(design.mainColor,.32,.35),secondary=mat(design.secondaryColor,.42,.25),accent=mat(design.accentColor,.3,.25),rubber=mat("#090B0E",.94),glass=mat("#18212B",.12,.45);
-      add(new T.BoxGeometry(1.3,.35,3.25),main,0,.32,-.05);
-      const nose=add(new T.ConeGeometry(.43,2.3,5),main,0,.25,2.55);nose.rotation.x=Math.PI/2;
-      add(new T.BoxGeometry(2.35,.12,.38),secondary,0,.1,3.45);add(new T.BoxGeometry(1.95,.16,.35),secondary,0,.62,-1.72);
-      add(new T.SphereGeometry(.42,16,12),glass,0,.63,-.1,.75,.55,1.1);
-      for(const side of [-1,1]){
-        add(new T.BoxGeometry(.44,.27,1.55),main,side*.68,.27,-.1);
-        if(design.pattern==="split")add(new T.BoxGeometry(.045,.035,1.5),secondary,side*.68,.42,-.1);
-        if(design.pattern==="stripe"){add(new T.BoxGeometry(.035,.012,1.5),accent,side*.68,.415,-.1);add(new T.BoxGeometry(.025,.012,1.5),secondary,side*.58,.415,-.1);}
-        for(const axle of [-1,1]){const wheel=add(new T.CylinderGeometry(.4,.4,.3,24),rubber,side*.88,.2,axle*1.12);wheel.rotation.z=Math.PI/2;}
-      }
-      const sideCanvas=document.createElement("canvas");sideCanvas.width=1024;sideCanvas.height=256;
-      const sideCtx=sideCanvas.getContext("2d")!;sideCtx.fillStyle=design.secondaryColor;sideCtx.fillRect(0,0,1024,256);
-      sideCtx.fillStyle=design.accentColor;sideCtx.textAlign="center";sideCtx.font="900 62px Arial";sideCtx.fillText(design.teamWordmark.toUpperCase(),512,78);
-      const titleNames=sponsors.filter(s=>design.sponsorPlacements[s.id]==="title").map(s=>s.name);
-      drawSponsorText(sideCtx,titleNames.length?titleNames:[design.sponsors[0]],40,95,944,140,54);
-      design.decals.filter(d=>d.surface==="sidepod").forEach(d=>drawTeamLiveryDecal(sideCtx,d,1024*d.x/100,256*d.y/100,300,130));
-      const sideTexture=new T.CanvasTexture(sideCanvas);sideTexture.colorSpace=T.SRGBColorSpace;textures.push(sideTexture);
-      const sideMat=new T.MeshStandardMaterial({map:sideTexture,roughness:.48,metalness:.08});materials.push(sideMat);
-      for(const side of [-1,1]){const plane=new T.Mesh(new T.PlaneGeometry(1.2,.28),sideMat);geometries.push(plane.geometry);plane.position.set(side*.91,.34,-.25);plane.rotation.y=side===1?Math.PI/2:-Math.PI/2;car.add(plane);}
-      const noseCanvas=document.createElement("canvas");noseCanvas.width=512;noseCanvas.height=256;
-      const noseCtx=noseCanvas.getContext("2d")!;noseCtx.fillStyle=design.secondaryColor;noseCtx.fillRect(0,0,512,256);
-      const majorNames=sponsors.filter(s=>design.sponsorPlacements[s.id]==="major").map(s=>s.name);
-      drawSponsorText(noseCtx,majorNames.length?majorNames:[design.sponsors[1]],10,4,492,126,36);
-      noseCtx.fillStyle=design.accentColor;noseCtx.textAlign="center";noseCtx.textBaseline="middle";noseCtx.font="900 104px Arial";noseCtx.fillText(design.carNumber,256,194);
-      const noseTexture=new T.CanvasTexture(noseCanvas);noseTexture.colorSpace=T.SRGBColorSpace;textures.push(noseTexture);
-      const noseMat=new T.MeshStandardMaterial({map:noseTexture,roughness:.38});materials.push(noseMat);
-      const nosePanel=new T.Mesh(new T.PlaneGeometry(.56,.72),noseMat);geometries.push(nosePanel.geometry);nosePanel.rotation.x=-Math.PI/2;nosePanel.position.set(0,.505,2.55);car.add(nosePanel);
-      const wingCanvas=document.createElement("canvas");wingCanvas.width=512;wingCanvas.height=128;
-      const wingCtx=wingCanvas.getContext("2d")!;wingCtx.fillStyle=design.secondaryColor;wingCtx.fillRect(0,0,512,128);
-      const otherNames=sponsors.filter(s=>design.sponsorPlacements[s.id]==="other").map(s=>s.name);
-      drawSponsorText(wingCtx,otherNames.length?otherNames:[design.sponsors[2]],8,4,496,120,28);
-      const wingTexture=new T.CanvasTexture(wingCanvas);wingTexture.colorSpace=T.SRGBColorSpace;textures.push(wingTexture);
-      const wingMat=new T.MeshStandardMaterial({map:wingTexture,roughness:.5});materials.push(wingMat);
-      for(const z of [3.45,-1.72]){const plane=new T.Mesh(new T.PlaneGeometry(1.4,.24),wingMat);geometries.push(plane.geometry);plane.rotation.x=-Math.PI/2;plane.position.set(0,z===3.45?.17:.69,z);car.add(plane);}
-      const floor=add(new T.CircleGeometry(5,64),mat("#20262D",1,0),0,-.2,0,1,.02,.72);floor.rotation.x=-Math.PI/2;floor.position.y=-.21;
-      const resize=()=>{if(!renderer)return;const nw=Math.max(1,node.clientWidth),nh=Math.max(1,node.clientHeight);camera.aspect=nw/nh;camera.updateProjectionMatrix();renderer.setSize(nw,nh);};
-      observer=new ResizeObserver(resize);observer.observe(node);
-      const animate=()=>{if(disposed)return;renderer?.render(scene,camera);frame=requestAnimationFrame(animate);};animate();
-      interactionCleanup=()=>{node.removeEventListener("pointerdown",onDown);node.removeEventListener("pointermove",onMove);node.removeEventListener("pointerup",onUp);node.removeEventListener("pointercancel",onUp);node.removeEventListener("wheel",onWheel);};
-    }).catch(()=>{if(!disposed)node.dataset.error="WebGL preview unavailable";});
-    return()=>{disposed=true;cancelAnimationFrame(frame);observer?.disconnect();interactionCleanup?.();geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());renderer?.dispose();renderer?.domElement.remove();};
-  },[design,sponsors]);
-  return <div className="team-livery-3d" ref={host}><span>INTERACTIVE 3D PREVIEW · DRAG TO ORBIT · SCROLL TO ZOOM</span></div>;
+  return <F1Car2026Preview design={design} sponsors={sponsors}/>;
 }
 
 export default function TeamLivery({isAdmin=false}:{isAdmin?:boolean}){
@@ -259,7 +189,7 @@ export default function TeamLivery({isAdmin=false}:{isAdmin?:boolean}){
   const selectedDecal=selectedDecalIndex===null?null:design.decals[selectedDecalIndex]??null;
   if(loading)return <section className="workspace team-livery"><p>Mempersiapkan Data...</p></section>;
   return <section className="workspace team-livery">
-    <header className="page-heading"><span className="section-eyebrow">TEAM MANAGEMENT · VISUAL IDENTITY</span><h1 className="page-title">Custom Team Livery</h1><p className="page-description">50 preset decal vektor, warna RGB penuh, sponsor aktif tim, dan kontrol kamera 3D.</p></header>
+    <header className="page-heading"><span className="section-eyebrow">TEAM MANAGEMENT · VISUAL IDENTITY</span><h1 className="page-title">Custom Team Livery</h1><p className="page-description">50 preset decal vektor, warna RGB penuh, sponsor aktif tim, dan 2026 chassis 3D dengan LOD ramah perangkat.</p></header>
     {error&&<div className="team-livery-message error" role="alert">{error}</div>}{notice&&<div className="team-livery-message success" role="status">{notice}</div>}
     {availableTeams.length>0&&isAdmin&&<label className="team-livery-admin-select"><span>ADMIN · PILIH TIM UNTUK QA</span><select value={teamId} onChange={e=>void chooseTeam(e.target.value)}><option value="">Pilih tim</option>{availableTeams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>}
     {teamId&&<div className="team-livery-teamline"><strong>{teamName}</strong><span>TEAM LIVERY · JSON V1</span></div>}
