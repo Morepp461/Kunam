@@ -113,7 +113,7 @@ export default function AboutUs() {
       <section className="about-vreeo about-section">
         <div className="about-section-label"><span>02</span> WHO WE ARE</div>
         <div className="about-vreeo-panel">
-          <img src="/assets/Untitled%20design_20261103_142659_0000.png" alt="VREEO.ID logo" width={500} height={500} loading="lazy" decoding="async" />
+          <img src="/assets/Untitled%20design_20261103_142659_0000.png" alt="VREEO.ID logo" loading="lazy" decoding="async" />
           <div>
             <span className="about-eyebrow">EST. 22 MAY 2026</span>
             <h2>Meet <em>VREEO.ID.</em></h2>
