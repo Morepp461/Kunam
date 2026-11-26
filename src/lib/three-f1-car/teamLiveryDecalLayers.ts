@@ -97,7 +97,6 @@ export function createTeamLiveryDecalLayers(
     const scale = THREE.MathUtils.clamp(Number(decal.scale) || 1, 0.2, 2);
     const x = normalized(decal.x);
     const y = normalized(decal.y);
-    const rotation = THREE.MathUtils.degToRad(THREE.MathUtils.clamp(decal.rotation, -180, 180));
 
     if (decal.surface === "sidepod") {
       for (const target of targets) {
