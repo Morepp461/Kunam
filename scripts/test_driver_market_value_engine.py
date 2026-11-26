@@ -132,6 +132,10 @@ assert 'preferred_language' in LANGUAGE_MIGRATION
 assert 'member_delete_caleris_notifications' in LANGUAGE_MIGRATION
 assert 'caleris_get_public_digital_id' in PUBLIC_MV_MIGRATION
 assert 'market_value_eur' in APP
+assert 'language-preference-field' in APP
+assert '!target.data.team_id' in APP
+assert 'upgradeError.details' in HQ
+assert 'upgradeError.code' in HQ
 assert 'AdminDriverMarketEngine' in APP
 assert '/admin/driver-market-engine' in APP
 assert '/admin/driver-market-engine' in NAV
