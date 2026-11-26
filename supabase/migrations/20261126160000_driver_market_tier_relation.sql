@@ -72,4 +72,6 @@ revoke all on function private.recalculate_driver_market_values_raw(uuid,text) f
 revoke all on function private.apply_driver_market_tier_relation() from public,anon,authenticated,service_role;
 revoke all on function private.recalculate_driver_market_values(uuid,text) from public,anon,authenticated,service_role;
 
+select private.recalculate_driver_market_values(null,'tier_relation_seed');
+
 commit;
