@@ -2028,3 +2028,9 @@ Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
 - The new scoped RPC returns one MV only for a Driver whose linked profile is public/active/admin; EXECUTE is granted only to `service_role`, not `anon` or `authenticated`. This preserves the original MV privacy boundary.
 - The scoped RPC migration was applied to both databases. `member-directory` was redeployed with the corrected source to Testing v14 and Production v18; both have identical source hashes and retain `verify_jwt=false`.
 - Added regression assertions to prevent future direct service-role table reads and ensure the scoped RPC remains the only public profile MV path.
+
+
+### Progress update — date-20 notification cleanup
+
+- The remaining November 20 notifications in Testing were three `Quest baru tersedia` entries. Their linked quest assignments were all `expired` and had ended on November 20; all three belonged to one member account.
+- Added a narrowly scoped cleanup migration that tombstones and deletes only those three expired notifications. Quest assignment records and unrelated notifications are untouched. The migration was applied to both databases; Production had no matching rows.
