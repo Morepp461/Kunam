@@ -8,6 +8,7 @@ as $$
 declare
   n record;
   v_next_season public.license_seasons%rowtype;
+  v_driver public.members%rowtype;
   v_contract_end date;
   v_done integer:=0;
   v_cancelled integer:=0;
@@ -20,12 +21,21 @@ begin
       and ct.ends_on=pc.contract_ends_on
       and pc.contract_ends_on < (now() at time zone 'Asia/Jakarta')::date
     order by pc.contract_ends_on,pc.created_at
-    for update of pc skip locked
+    for update of pc,ct skip locked
   loop
     select * into v_next_season from public.license_seasons s
       where s.starts_on>n.contract_ends_on and s.status in ('draft','active')
       order by s.starts_on limit 1;
     if not found then continue; end if;
+
+    select * into v_driver from public.members m
+      where m.id=n.driver_member_id for update;
+    if not found or v_driver.role<>'Driver' or v_driver.team_id<>n.origin_team_id then
+      update public.caleris_driver_precontract_negotiations
+        set status='cancelled',updated_at=now() where id=n.id;
+      v_cancelled:=v_cancelled+1;
+      continue;
+    end if;
 
     if exists(select 1 from public.caleris_driver_contract_terms t
       where t.member_id=n.driver_member_id and t.first_season_id=v_next_season.id
@@ -61,6 +71,15 @@ begin
       where id=n.origin_contract_id and status='active' and ends_on=n.contract_ends_on;
     update public.members set team_id=n.destination_team_id
       where id=n.driver_member_id and role='Driver' and team_id=n.origin_team_id;
+    if not found then
+      update public.caleris_driver_contract_terms set status='cancelled'
+        where member_id=n.driver_member_id and first_season_id=v_next_season.id
+          and team_id=n.destination_team_id;
+      update public.caleris_driver_precontract_negotiations
+        set status='cancelled',updated_at=now() where id=n.id;
+      v_cancelled:=v_cancelled+1;
+      continue;
+    end if;
 
     if not exists(select 1 from public.contracts c
       where c.member_id=n.driver_member_id and c.status='active'
