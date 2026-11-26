@@ -33,6 +33,14 @@ const adminUi = readFileSync(
   new URL("../../src/AdminProfileAdjustments.tsx", import.meta.url),
   "utf8",
 );
+const adminCenterUi = readFileSync(
+  new URL("../../src/AdminAdjustmentCenter.tsx", import.meta.url),
+  "utf8",
+);
+const disableLegacyWallet = readFileSync(
+  new URL("../../supabase/migrations/20261126228000_disable_legacy_vreeobank_wallet_injection.sql", import.meta.url),
+  "utf8",
+);
 
 describe("CALERIS XP reward policy", () => {
   it("uses the approved fixed quest and check-in rewards", () => {
@@ -110,5 +118,10 @@ describe("Admin profile adjustment safeguards", () => {
     expect(fixedRewardMigration).toContain("v_fixed_reward:=public.caleris_milestone_reward_xp(p_code)");
     expect(fixedRewardMigration).toContain("milestone_reward_not_defined_in_source");
     expect(fixedRewardMigration).toContain("revoke all on function public.caleris_set_xp_reward");
+  });
+  it("removes the legacy VreeoBank injection path", () => {
+    expect(adminCenterUi).not.toContain("admin_inject_wallet_balance");
+    expect(adminCenterUi).not.toContain("Wallet injection");
+    expect(disableLegacyWallet).toContain("revoke all on function public.admin_inject_wallet_balance");
   });
 });
