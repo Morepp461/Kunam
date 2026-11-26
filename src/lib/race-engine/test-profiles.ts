@@ -84,7 +84,8 @@ export function createRaceEngineTestModels(
     hqEffects: {
       race_pace_bonus: { segment_pace_ms_per_point: -0.002 },
       reliability_bonus: { mechanical_failure_probability_per_point: -0.00002 },
-      aero_power_bonus: { high_speed_pace_ms_per_point: -0.002 }
+      aero_power_bonus: { high_speed_pace_ms_per_point: -0.002 },
+      pit_stop_efficiency_bonus: { pit_stop_time_ms_per_point: -25 }
     },
     carSetup: carSetupCalibration
   };

@@ -2641,3 +2641,56 @@ The following ten migration sources exist in this branch and have been applied s
 ### Next approved priority
 
 Continue with the approved Team HQ audit priorities using a new implementation branch, with full dependency review, QA, both-database migrations, CI, merge, and Vercel release gates. Do not start Assets, Achievement/Badge expansion, or Digital ID redesign before the Team HQ priorities are complete.
+
+---
+
+## Team HQ full integration follow-up — 27 November 2026
+
+### Implemented on branch feat/team-hq-full-engine-integration-20261127
+
+- Maintenance lifecycle remains: condition decreases 1% per 24 hours; maintenance is available below 50%; cost is the configured maintenance price for the facility's current/restoration level multiplied by the missing condition percentage; at 0%, one level is degraded and the previous level is retained for restoration. No separate repair transaction exists.
+- Upgrade safety now blocks upgrades on a facility that is awaiting restoration, and blocks a project whose configured duration would outlast the remaining condition. Maintenance remains payable while a project is active.
+- Project completion now handles the edge case where condition reaches 0% during an already-running project: the project completes at its target level, but that target level remains pending maintenance restoration.
+- Team HQ cards now show explicit lifecycle states: Enabled / Available, Not Built, Under Construction, Operational, Maintenance Required, and Disabled. Active effects are displayed using condition-scaled values.
+- Owner-only demolition is implemented. It removes the facility level and HQ asset value, gives no refund, blocks demolition during an active project, and uses an idempotent audit record.
+- Pit Crew Training Center now has a real per-level pit_stop_efficiency_bonus; the Race Engine snapshot applies condition scaling and uses the bonus for pit-stop time. The cash discount for upgrading Pit Stop Efficiency now uses the same condition-scaled effect.
+- Simulator, Engineering, and R&D effects refresh the authoritative Development part hq_bonus values using facility condition. R&D research efficiency and Driver Development efficiency remain token-cost effects; the Development page now previews the actual condition-scaled discounts from a read-only RPC.
+- Commercial Department sponsor attraction is consumed by both AI and Admin sponsor-offer generation as an increase to eligible discovery probability. Existing sponsor caps, tier rules, negotiation, and contract terms are unchanged.
+- Data Analytics Center strategy_analysis_depth now controls the number of detailed per-round breakdowns returned from official published race results. The report explicitly states that official results do not currently store pit-stop or tyre-compound telemetry; no pit strategy or tyre analysis is fabricated.
+- Facility creation, condition decay, level degradation, maintenance, project lifecycle, and demolition use season-scoped HQ audit records.
+- Existing Team HQ valuation remains additive through sum(caleris_team_hq_facilities.asset_value); demolition sets the facility asset value to zero so the existing valuation calculation excludes it.
+
+### Both-database migration and QA
+
+- Added migration source: supabase/migrations/20261127095000_team_hq_full_engine_integration.sql.
+- Migration successfully applied to Testing only. Production has not yet been changed by this follow-up.
+- Testing still has 117 HQ facility rows and 1 active R&D project. No dummy data was copied or reset.
+- Rolled-back database checks passed for condition-scaled effects across the HQ facilities, Development cash/token discounts, Sponsor attraction probability, Data Analytics depth, owner demolition/idempotency, maintenance during an active project, and project completion/restoration after 0% degradation.
+- All mutation checks used transaction rollback; the Testing facility/project records remain unchanged.
+- Manual rollback checks also verified 1% condition decay per 24 hours, one-level degradation only at 0%, and the matching season audit events.
+- GitHub CI passed all 48 steps on commit 7eee542. Vercel Preview deployment is READY at https://calerismastersnewgen-5aspr1l6v-morepp.vercel.app.
+- Production deployment and merge remain intentionally blocked until the Factory production-slot definition is confirmed; no Vercel environment variables were changed.
+
+### Remaining specification required before Factory production-capacity wiring
+
+- Approved Factory rule: production capacity receives +1 at LV6 only, the total maximum is 4, and one additional slot is reserved for a future paid Shop item. No Shop item is being created in this scope.
+- The starting/base capacity and the meaning of a production slot (concurrent merchandise batches versus active merchandise products) were not specified. The old linear factory_capacity_bonus_percent has been removed from the merchandise-capacity calculation and the LV6 bonus is stored as factory_production_capacity_bonus, but it is not connected to a production validator until the slot definition and base capacity are confirmed.
+- R&D's measurable research-efficiency/TDP-cost effect is integrated. No additional capability-unlock list or per-level unlock thresholds were specified, so no new Development capability gates have been invented.
+
+
+### Team HQ active upgrade project slots and Shop item — 27 November 2026
+
+- Corrected Factory's approved role: it increases the number of simultaneously active Team HQ upgrade projects, not merchandise production capacity.
+- Base capacity remains 2 active projects. Factory LV6 adds +1 when its condition-scaled effect rounds to an active slot. The absolute capacity ceiling is 4.
+- Added a permanent Shop entitlement, `Additional HQ Project Slot`, which adds +1 active project slot to the owning team. It is a one-time purchase from Team Wallet (EUR) to VreeoBank; no DDP/TDP is consumed.
+- The Shop item is listed in the marketplace but starts inactive with no price. Admin must set a positive EUR price and activate it before Team Owners can purchase it. No arbitrary price was invented.
+- Purchase is Owner-only, team-scoped, idempotent, ledger-backed, and protected by the Team HQ advisory lock. Each team can own the entitlement once.
+- `member_start_team_hq_project` enforces the live capacity in the database: base 2 + Factory bonus + Shop entitlement, capped at 4. UI summary and Shop page read the same authoritative capacity RPC.
+- Testing DB migration and rolled-back transaction test passed: Factory LV6 produced capacity 3; the Shop purchase test moved capacity to 4. Transaction, entitlement, Factory level, and temporary Shop price were all rolled back; existing 117 HQ facility rows and the original active R&D project remain intact.
+- The same three migrations were applied to Production. Function-definition hashes for project start, purchase, capacity, and Admin config reader match Testing and Production. Production remains at 0 HQ facility rows and 0 purchased entitlements; no Testing data was copied.
+- New migration sources: `20261127130000_team_hq_project_slot_shop_and_dynamic_capacity.sql`, `20261127131000_team_hq_slot_shop_admin_config_read.sql`, and `20261127132000_team_hq_slot_purchase_ledger_compatibility.sql`.
+- Shop price and activation remain an Admin configuration step after deployment. The item cannot be purchased until those settings are supplied.
+
+- Additional QA caught a second hard-coded limit in the database trigger `enforce_team_hq_project_limit()`. It is now capacity-aware too, using the same Factory + Shop entitlement calculation while retaining the team-row lock against concurrent project creation.
+- Final rolled-back enforcement test purchased the Shop entitlement, set Factory LV6, inserted temporary projects up to four active projects, and confirmed a fifth project start is rejected. All test changes and ledger entries were rolled back.
+- Additional migration source: `20261127133000_team_hq_dynamic_project_limit_trigger.sql`. This trigger migration is applied to both Testing and Production.
