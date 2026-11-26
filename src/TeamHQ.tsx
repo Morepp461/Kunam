@@ -54,7 +54,7 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsMerchOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsMerchOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
@@ -63,7 +63,7 @@ export default function TeamHQ() {
     setIsOwner(role === "Owner" || role === "Principal");
     setIsMerchOwner(role === "Owner");
     if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsMerchOwner(false); setLoading(false); return; }
-    const [teamResult, facilityResult, projectResult] = await Promise.all([
+    const [teamResult, facilityResult, projectResult, auditResult] = await Promise.all([
       supabase.from("teams").select("id,name,division_key").eq("id", member.team_id).maybeSingle(),
       supabase.from("caleris_team_hq_facilities").select("*").eq("team_id", member.team_id),
       supabase.from("caleris_team_hq_projects").select("*").eq("team_id", member.team_id).order("created_at", { ascending: false }).limit(10),
