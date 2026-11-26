@@ -2178,3 +2178,15 @@ After adding detailed Team HQ RPC diagnostics, validation was repeated on the la
 - `member-directory` Edge Function is ACTIVE in both Supabase projects with identical source hash `c67c07c5db53852717d8ecb7f31a0baa06644ce1626393f4dae5b94188fc6e68`: Testing version 15, Production version 19. `verify_jwt=false` preserved in both.
 - Vercel Production deployment for the merge commit `10792e50ada68a6155e007fac0e7d6bb60f897d5` was created as `dpl_Egjw3oxHFW1u53H1rD3p75RoXGdG`; initial state BUILDING. Final READY confirmation remains pending.
 - No Vercel environment settings were changed.
+
+
+### Bilingual follow-up QA — 26 November 2026
+
+On `fix/finalize-bilingual-ui-coverage-20261126`:
+- `npm run check`: PASS.
+- `npm run build`: PASS.
+- `npm run test`: 42 files / 226 tests PASS.
+- `scripts/validate.py`: PASS.
+- All targeted CALERIS regression scripts: PASS (profile directory, Driver Market Value, Edge Function auth, Member Directory rate limits, controls/navigation, Driver contracts, engine integrations, economy).
+- Static JSX language audit excluding About Us: only technical/role/API terminology remains untranslated (Admin, Email, Token, Authorization/Bearer); those are intentional technical labels.
+- No dependency was added; existing language preference column and existing React/TypeScript stack are reused.
