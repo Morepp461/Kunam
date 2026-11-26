@@ -20,7 +20,7 @@ const raceBackfill = readFileSync(
   new URL("../../supabase/migrations/20261126220000_admin_profile_xp_wallet_adjustments.sql", import.meta.url),
   "utf8",
 );
-const adminUi = readFileSync(
+const communityUi = readFileSync(\n  new URL("../../src/CommunityProgression.tsx", import.meta.url),\n  "utf8",\n);\nconst fixedRewardMigration = readFileSync(\n  new URL("../../supabase/migrations/20261126227000_lock_xp_rewards_to_source_code.sql", import.meta.url),\n  "utf8",\n);\nconst adminUi = readFileSync(
   new URL("../../src/AdminProfileAdjustments.tsx", import.meta.url),
   "utf8",
 );
@@ -91,5 +91,15 @@ describe("Admin profile adjustment safeguards", () => {
     expect(adminUi).toContain("caleris_admin_adjust_profile_wallet");
     expect(adminUi).toContain("window.confirm");
     expect(adminUi).toContain("reason.trim().length<3");
+  });
+  it("removes Admin XP reward configuration and the duplicate manual XP tool", () => {
+    expect(communityUi).not.toContain("caleris_xp_reward_settings");
+    expect(communityUi).not.toContain("caleris_set_xp_reward");
+    expect(communityUi).not.toContain("Manual XP Adjustment");
+    expect(communityUi).not.toContain("XP Reward Configuration");
+    expect(communityUi).not.toContain("caleris_admin_adjust_xp");
+    expect(fixedRewardMigration).toContain("v_fixed_reward:=public.caleris_milestone_reward_xp(p_code)");
+    expect(fixedRewardMigration).toContain("milestone_reward_not_defined_in_source");
+    expect(fixedRewardMigration).toContain("revoke all on function public.caleris_set_xp_reward");
   });
 });
