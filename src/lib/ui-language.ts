@@ -256,7 +256,31 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "BUILDING DRIVER MODELS":"MEMBANGUN MODEL PEMBALAP","3D VIEW UNAVAILABLE":"TAMPILAN 3D TIDAK TERSEDIA",
  "THE PEOPLE BEHIND THE GRID ·":"ORANG-ORANG DI BALIK GRID ·","MEET THE":"KENALI",
  "SELECTED DRIVER":"PEMBALAP PILIHAN",
- "Driver statistics reflect published Caleris Masters records.":"Statistik pembalap mencerminkan catatan CALERIS MASTERS yang dipublikasikan."
+ "Driver statistics reflect published Caleris Masters records.":"Statistik pembalap mencerminkan catatan CALERIS MASTERS yang dipublikasikan.", "PERFORMANCE VISUALIZATION":"VISUALISASI PERFORMA","ALL DIVISIONS":"SEMUA DIVISI","DRIVER IDENTITY":"IDENTITAS PEMBALAP",
+ "Character Profile":"Profil Karakter","Contract Overview":"Ringkasan Kontrak","ACCOUNT PROFILE":"PROFIL AKUN",
+ "Completed Career Milestones":"Tonggak Karier Selesai","TEAM IDENTITY":"IDENTITAS TIM","Official Team Livery":"Livery Resmi Tim",
+ "OFFICIAL ROSTER":"DAFTAR RESMI","Reward masuk wallet pribadi":"Hadiah masuk dompet pribadi",
+ "Reward siap diklaim":"Hadiah siap diklaim","· QUEST ENGINE":"· MESIN MISI","01 · RACE SESSION":"01 · SESI BALAPAN",
+ "Race information":"Informasi balapan","SESSION TYPE":"JENIS SESI","Driver / Team":"Pembalap / Tim",
+ "Country / Flag":"Negara / Bendera","Time / Laps Behind":"Waktu / Selisih Putaran","Add stint":"Tambah stint",
+ "03 · RACE AWARDS":"03 · HADIAH BALAPAN","Official race highlights":"Sorotan balapan resmi","Pole lap time":"Waktu putaran pole",
+ "Fastest lap driver (automatic)":"Pembalap putaran tercepat (otomatis)","Fastest lap time (automatic)":"Waktu putaran tercepat (otomatis)",
+ "Driver of the Day":"Pembalap Terbaik Hari Ini","Refresh round":"Segarkan putaran",
+ "OCR · IMAGE RESULT READER":"OCR · PEMBACA HASIL GAMBAR","Import race screenshot":"Impor tangkapan layar balapan",
+ "LIVE SEASON CALENDAR · GMT+7":"KALENDER MUSIM LANGSUNG · GMT+7","Rewarded Ads Quest":"Misi Iklan Berhadiah",
+ "UPCOMING":"MENDATANG","Something is being prepared for the paddock.":"Sesuatu sedang disiapkan untuk paddock.",
+ "Contract term":"Durasi kontrak","season(s)":"musim","Driver Attributes Chart":"Grafik Atribut Pembalap","Country":"Negara",
+ "Nama Driver":"Nama Pembalap","Assigned to Team":"Ditugaskan ke Tim","RACE CLASSIFICATIONS":"KLASIFIKASI BALAPAN",
+ "FINAL STANDINGS":"KLASEMEN AKHIR","RACE ROUND":"PUTARAN BALAPAN","VIEW RACE":"LIHAT BALAPAN","TEAM GARAGE":"GARASI TIM",
+ "OFFICIAL ENTRY":"ENTRI RESMI","Quick view":"Tampilan cepat","Choose season":"Pilih musim","All seasons":"Semua musim",
+ "Jam start":"Waktu mulai","Bug report":"Laporan bug","NEW SUPPORT REQUEST":"PERMINTAAN DUKUNGAN BARU",
+ "Bug Report":"Laporan Bug","Affiliate Team":"Tim Afiliasi","YOUR TEAM":"TIM KAMU","Tier:":"Tingkat:",
+ "Driver Registration":"Registrasi Pembalap","/season":"/musim","TEAM RECRUITMENT":"REKRUTMEN TIM",
+ "Driver Applications":"Lamaran Pembalap","Driver Contracts":"Kontrak Pembalap","CONTRACT RECORDS":"CATATAN KONTRAK",
+ "payroll period":"periode penggajian","PAYROLL CONTRIBUTION":"KONTRIBUSI PENGGAJIAN","Engine Market":"Pasar Mesin",
+ "Memuat Engine Market...":"Memuat Pasar Mesin...","AVAILABLE ENGINE":"MESIN TERSEDIA",
+ "DIVISION MAX LEVEL":"LEVEL MAKSIMUM DIVISI","Asset value":"Nilai aset","Edit configuration":"Ubah konfigurasi",
+ "UPGRADE BERIKUTNYA · LEVEL":"PENINGKATAN BERIKUTNYA · LEVEL"
 };
 const EXTRA_ID_TO_EN: Record<string,string> = Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english]));
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
