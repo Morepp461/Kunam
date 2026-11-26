@@ -111,6 +111,7 @@ type DirectoryTeam={id:string;name:string;division_key:string|null};
 function LiveEntityDirectory({kind}:{kind:"drivers"|"teams"}){
  const [drivers,setDrivers]=useState<DirectoryDriver[]>([]);
  const [teams,setTeams]=useState<DirectoryTeam[]>([]);
+ const [marketValues,setMarketValues]=useState<Record<string,number>>({});
  const [query,setQuery]=useState("");
  const [busy,setBusy]=useState(true);
  const [error,setError]=useState("");
@@ -120,13 +121,14 @@ function LiveEntityDirectory({kind}:{kind:"drivers"|"teams"}){
    if(!supabase){setError("Koneksi database belum tersedia.");setBusy(false);return;}
    setBusy(true);setError("");
    if(kind==="drivers"){
-    const [driverResult,teamResult]=await Promise.all([
+    const [driverResult,teamResult,marketResult]=await Promise.all([
      supabase.from("caleris_driver_market_directory").select("id,character_name,role,team_id,license,public_member_id").eq("role","Driver").order("character_name"),
-     supabase.from("caleris_team_directory").select("id,name,division_key").order("name")
+     supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
+     supabase.rpc("member_get_driver_market_values")
     ]);
     if(!active)return;
     if(driverResult.error||teamResult.error){setError(driverResult.error?.message||teamResult.error?.message||"Direktori gagal dimuat.");setDrivers([]);setTeams([]);}
-    else{setDrivers((driverResult.data||[]) as DirectoryDriver[]);setTeams((teamResult.data||[]) as DirectoryTeam[]);}
+    else{setDrivers((driverResult.data||[]) as DirectoryDriver[]);setTeams((teamResult.data||[]) as DirectoryTeam[]);setMarketValues(Object.fromEntries(((marketResult.data||[]) as {member_id:string;market_value_eur:number}[]).map(row=>[row.member_id,Number(row.market_value_eur)])));}
    }else{
     const result=await supabase.from("caleris_team_directory").select("id,name,division_key").order("name");
     if(!active)return;
@@ -142,12 +144,12 @@ function LiveEntityDirectory({kind}:{kind:"drivers"|"teams"}){
  const needle=query.trim().toLocaleLowerCase("id-ID");
  const filteredDrivers=drivers.filter(driver=>[driver.character_name,driver.license,teamById.get(driver.team_id||"")?.name].some(value=>String(value||"").toLocaleLowerCase("id-ID").includes(needle)));
  const filteredTeams=teams.filter(team=>[team.name,team.division_key].some(value=>String(value||"").toLocaleLowerCase("id-ID").includes(needle)));
- const columns=kind==="drivers"?["Driver","License","Team","Division"]:["Team","Division"];
+ const columns=kind==="drivers"?["Driver","Market Value","License","Team","Division"]:["Team","Division"];
  return <div className="workspace-card">
   <div className="section-title-row"><div><span className="section-eyebrow">OFFICIAL DIRECTORY</span><h2>{kind==="drivers"?"Driver List":"Team List"}</h2><p>{busy?"Memuat data resmi...":kind==="drivers"?filteredDrivers.length+" driver ditemukan":filteredTeams.length+" tim terdaftar"}</p></div></div>
   <div className="panel-filter-bar"><label className="panel-search"><Search size={16}/><input value={query} onChange={event=>setQuery(event.target.value)} placeholder={kind==="drivers"?"Cari nama driver, lisensi, atau tim...":"Cari nama tim atau divisi..."}/></label></div>
   {error?<p className="panel-table-empty">{error}</p>:busy?<p className="panel-table-empty">Menghubungkan direktori resmi...</p>:<div className="panel-table-wrap"><table className="panel-data-table"><thead><tr>{columns.map(column=><th key={column}>{column}</th>)}</tr></thead><tbody>
-   {kind==="drivers"?filteredDrivers.map(driver=>{const team=teamById.get(driver.team_id||"");return <tr key={driver.id}><td><MemberProfileLink memberId={driver.public_member_id}>{driver.character_name||"Driver"}</MemberProfileLink></td><td>{driver.license||"Belum ditetapkan"}</td><td>{team?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>:"Independent"}</td><td>{team?.division_key||"—"}</td></tr>}):filteredTeams.map(team=><tr key={team.id}><td><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink></td><td>{team.division_key||"—"}</td></tr>)}
+   {kind==="drivers"?filteredDrivers.map(driver=>{const team=teamById.get(driver.team_id||"");return <tr key={driver.id}><td><MemberProfileLink memberId={driver.public_member_id}>{driver.character_name||"Driver"}</MemberProfileLink></td><td>{marketValues[driver.id]===undefined?"—":"€ "+marketValues[driver.id].toLocaleString("id-ID")}</td><td>{driver.license||"Belum ditetapkan"}</td><td>{team?<TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>:"Independent"}</td><td>{team?.division_key||"—"}</td></tr>}):filteredTeams.map(team=><tr key={team.id}><td><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink></td><td>{team.division_key||"—"}</td></tr>)}
    {((kind==="drivers"&&!filteredDrivers.length)||(kind==="teams"&&!filteredTeams.length))&&<tr><td colSpan={columns.length}><span className="panel-table-empty">{query?"Tidak ada hasil yang cocok.":"Belum ada data direktori."}</span></td></tr>}
   </tbody></table></div>}
   <p className="panel-note">Data berasal dari read model direktori CALERIS. Nama Driver hanya menjadi tautan profil jika Public Member ID tersedia; nama tim membuka profil tim.</p>
