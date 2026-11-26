@@ -9,7 +9,14 @@ const permanentMilestones = readFileSync(
   new URL("../../supabase/migrations/20261126224000_xp_milestone_rewards_permanent.sql", import.meta.url),
   "utf8",
 );
-const teamMilestones = readFileSync(\n  new URL("../../supabase/migrations/20261126225000_xp_team_milestone_owner_rewards.sql", import.meta.url),\n  "utf8",\n);\nconst raceBackfill = readFileSync(\n  new URL("../../supabase/migrations/20261126226000_xp_official_result_backfill.sql", import.meta.url),\n  "utf8",\n);\nconst adminMigration = readFileSync(
+const teamMilestones = readFileSync(
+  new URL("../../supabase/migrations/20261126225000_xp_team_milestone_owner_rewards.sql", import.meta.url),
+  "utf8",
+);
+const raceBackfill = readFileSync(
+  new URL("../../supabase/migrations/20261126226000_xp_official_result_backfill.sql", import.meta.url),
+  "utf8",
+);\nconst adminMigration = readFileSync(
   new URL("../../supabase/migrations/20261126220000_admin_profile_xp_wallet_adjustments.sql", import.meta.url),
   "utf8",
 );
