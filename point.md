@@ -2190,3 +2190,357 @@ On `fix/finalize-bilingual-ui-coverage-20261126`:
 - All targeted CALERIS regression scripts: PASS (profile directory, Driver Market Value, Edge Function auth, Member Directory rate limits, controls/navigation, Driver contracts, engine integrations, economy).
 - Static JSX language audit excluding About Us: only technical/role/API terminology remains untranslated (Admin, Email, Token, Authorization/Bearer); those are intentional technical labels.
 - No dependency was added; existing language preference column and existing React/TypeScript stack are reused.
+
+
+---
+
+# FOLLOW-UP SCOPE — MEMBER PROFILE, HQ, ECONOMY GUIDE, LANGUAGE & MARKET VALUE
+**Request recorded: 26 November 2026**
+
+Execution rule:
+- This follow-up is a separate scope from the previously merged seven-point repair package.
+- Work on items **1–5 only**, in the order below. Do not start items 6–8 until all five are implemented, QA-tested, merged to `main`, and verified in the intended Vercel deployment.
+- Before changing code, inspect the current implementation, dependency graph, existing database functions/triggers/configuration, and the exact production/testing behavior. Do not guess or replace established engine rules.
+- Every required database change must be migration-backed and applied consistently to `caler is-masters-testing` and `caler is-masters-newgen` (actual project slugs must be verified before execution). Never copy testing/dummy business data into Production. Do not change Vercel environment variables/settings.
+- Record implementation decisions, migration IDs, QA evidence, CI result, merge SHA, and deployment result in this file as work progresses.
+
+## Priority 1 — Member profile unavailable
+**Reported symptom:** opening a member profile currently displays “Profil tidak tersedia”.
+
+Acceptance criteria:
+- Reproduce from the real member directory/search entry point and from direct profile URL navigation.
+- Trace route parameter/member identifier resolution, member-directory Edge Function response, Supabase query/RLS/service-role access, and profile rendering/loading/error states.
+- Identify and fix the actual failing layer; do not mask missing/unauthorized records as a successful empty profile.
+- Confirm valid public profiles load, private/restricted profiles respect current privacy rules, and genuinely missing IDs show the intended not-found state.
+- Test on both database environments with representative records that already exist in each environment; do not seed Production with Testing data.
+
+## Priority 2 — Team HQ facility analytics card / access rule
+**Reported question:** the Team page shows a Data Analytics Center section with a red message: “Upgrade Data Analytics Center untuk membuka laporan performa tim.” Determine whether this analytics/report feature is intended to belong only to Data Analytics Center or is currently being displayed generically for every Team HQ.
+
+Acceptance criteria:
+- Inspect existing HQ facility catalog/configuration, facility-to-feature mapping, Team HQ page components, entitlement/level checks, and relevant product/rules documentation.
+- Verify which facility or facility level is supposed to unlock Team Performance Analytics. Compare all facility cards and their configured capabilities.
+- If the current UI is incorrectly generic or incorrectly gated, correct it to match the documented/configured rule. If the existing product rules do not define the behavior, report the ambiguity before changing the rule; do not invent a new entitlement.
+- Preserve existing HQ project concurrency, upgrade pricing/duration, and two-active-project limit. No unrelated HQ redesign.
+
+## Priority 3 — Economy Guide cards
+On the Economy Guide page:
+- Remove the **Driver Loan / Peminjaman Pembalap** card. The old Loan-to-VreeoBank feature is no longer part of the current economy rules.
+- Remove the **Sponsorship** card from this guide; it is not needed in this page.
+- Replace the removed cards with a **Driver Market Value calculation details** card, visually consistent with the Prizepool cards.
+- If the complete calculation explanation is too long for a card, show a concise summary in the card and the full breakdown in a popup/modal.
+- Derive every formula, factor, tier, and example from the current authoritative Market Value engine/configuration and its tests/docs. Clearly distinguish base value, driver attributes, license/reputation/other supported modifiers, growth/decay, and any caps/floors only where the actual implementation confirms them. Do not document a formula that differs from the running engine.
+- Keep the guide informational; it must not initiate a transaction or modify member/driver balances.
+
+## Priority 4 — Profile language preference does not apply
+**Reported symptom:** changing language in Profile Settings, saving, and refreshing still leaves the application in Indonesian.
+
+Acceptance criteria:
+- Reproduce the preference save and reload flow for both `id` and `en`.
+- Trace the profile preference read/write, auth/profile hydration timing, language provider/bridge initialization, persisted state, and route/navigation refresh behavior.
+- Fix the underlying state synchronization or translation application issue. A successful save toast alone is not sufficient.
+- English selection must remain English after refresh and navigation; Indonesian selection must remain Indonesian after refresh and navigation. Default remains Indonesian for accounts without a saved preference.
+- About Us remains excluded from forced Indonesian/English translation as previously specified.
+- Do not add a new preference column or migration if the existing `profiles.preferred_language` field and constraints already satisfy the requirement.
+
+## Priority 5 — Driver Market Value drops after Base Value changed to EUR 18,000,000
+**Reported symptom:** after Base Value was increased to EUR 18,000,000, the user observes that many Driver Market Values decreased instead of increasing.
+
+Acceptance criteria:
+- Audit the complete authoritative MV formula and the actual before/after snapshots, including Base Value, driver attribute score, license/reputation modifiers, growth factor, historical snapshot timing, recalculation job/RPC, and any caps/floors/normalization.
+- Reproduce the decrease with real Testing records and explain exactly which input or formula stage caused it. Do not assume that increasing Base Value must immediately increase every current MV if the engine intentionally applies gradual growth; verify whether that behavior is documented and correct.
+- Compare calculated target MV against stored/current MV and identify whether the displayed number is stale, the snapshot is stale, the formula is wrong, or the new base is being applied incorrectly.
+- Fix only the proven defect while preserving approved locked weights/multipliers and the EUR 18,000,000 Tier 1 Base Value. Do not change unrelated MV rules or tune values merely to make numbers look higher.
+- Validate representative Drivers across license/division/attribute ranges; verify recalculation idempotency and no unintended wallet/economy effects. Keep Testing and Production configuration/schema aligned, while respecting Production's current lack of Driver rows if that remains true.
+
+## Priority 6 — Complete XP Engine and Community Progression integration
+
+**Scope:** Complete the existing XP system so all approved sources award XP reliably and consistently. XP is cumulative, server-authoritative, and integrated with the existing Community Progression system. All reward values and eligibility rules below are fixed in reviewed source code, not Admin-editable configuration.
+
+### Approved reward values
+
+| XP source | Condition | XP |
+|---|---|---:|
+| Quest | Easy / Mudah completed and successfully claimed | 5 |
+| Quest | Normal completed and successfully claimed | 10 |
+| Quest | Hard / Sulit completed and successfully claimed | 15 |
+| Official race result | P1 | 20 |
+| Official race result | P2 | 15 |
+| Official race result | P3 | 12 |
+| Official race result | Confirmed Pole position | +5 |
+| Race check-in | Valid check-in for an eligible scheduled race | 10 |
+| Shop | Non-Development Shop purchase | 0 while no eligible items exist |
+| Achievement milestone | Each existing achievement gets a fixed reward based on verified difficulty | 5–20 |
+
+Race reward examples:
+- P1 + Pole = 25 XP total.
+- P2 + Pole = 20 XP total.
+- P3 + Pole = 17 XP total.
+- Pole bonus requires explicit official pole-position data. Never infer pole from finishing position.
+- Other finishing positions receive no race-result XP unless separately approved.
+- Draft, unpublished, invalid, or void results do not trigger an official race-result award.
+
+Quest and achievement rules:
+- Award Quest XP only after the authoritative workflow confirms completion and successful claim. Preserve actual quest completion semantics if a particular quest does not have a claim step; inspect before wiring.
+- Map the actual Easy/Normal/Hard values to the fixed rewards above. Retries must not award twice.
+- Inventory the existing CALERIS achievement/milestone catalog first. Assign each existing achievement a fixed 5–20 XP reward according to verified difficulty, rarity, and effort. Keep this mapping as code-owned constants.
+- Do not invent achievements or change milestone eligibility as part of XP wiring unless separately approved.
+
+### Mandatory engine behavior
+
+1. **No XP deductions.** XP is cumulative and cannot be reduced, clawed back, manually debited, or set to a lower value. Remove/disable negative adjustment paths and reject negative award inputs at the authoritative server/database boundary. Never silently delete historical XP ledger rows.
+2. **No manual Admin XP configuration.** Remove the Admin XP reward configuration and manual XP adjustment controls/RPCs from active workflows. Reward values and eligibility must be defined in reviewed, tested source-code constants. Admin must not be able to change XP amounts through UI or a client-callable endpoint.
+3. **Community Progression integration is mandatory.** Every valid award must reconcile the existing authoritative XP ledger, cumulative account XP, account level, activity feed, and relevant milestone progress. Do not introduce a competing XP balance or level formula.
+4. **Duplicate prevention is mandatory.** Each award must use a deterministic unique source reference (member + source type + authoritative event/claim/result/milestone ID). Retries, repeated claims/publications, duplicate webhooks and concurrent calls must never create duplicate awards. Enforce this transactionally with a database uniqueness/idempotency guard, not only in UI code.
+5. **Race result correction/cancellation is mandatory.** Reconcile awards when official results are revised, unpublished, or voided. Preserve links to prior/corrected source versions, prevent a second full award for the same event, and make reconciliation deterministic.
+6. **No-clawback reconciliation.** Because XP deductions are prohibited, a correction must never create a negative ledger entry or reduce cumulative XP. If a corrected result lowers/removes a previously granted award, retain the XP already granted and mark the old award superseded/non-reclaimable for audit; do not grant further XP for the lower/cancelled outcome. If the corrected outcome increases the award, grant only the positive difference. This no-clawback rule takes precedence over recalculating a lower total.
+7. **Server-authoritative awards.** Trusted database functions/server-side event handlers decide eligibility and award amounts. Client UI may display XP/progress but must never write or decide the amount.
+8. **Append-only ledger integrity.** Keep an auditable XP ledger with source type, unique source reference, member, positive amount, timestamp, and reconciliation metadata. Reject zero/negative award inserts. A zero-reward Shop outcome is represented by no award row.
+9. **Future Assets level gate.** XP-derived account level will determine eligibility for future Assets catalog tiers. At purchase time, the server must check the authoritative account level, never a client-supplied level/display label. Each Assets catalog item will define its required level; exact thresholds are deferred until the Assets catalog is designed and approved. Asset ownership itself does not grant XP unless separately approved.
+
+### Implementation and QA acceptance criteria
+- Trace every source/event entry point: Quest completion/claim, official race result publication/revision/void, explicit pole confirmation, race check-in, non-Development Shop purchase, and achievement/milestone completion.
+- Route all valid awards through one authoritative award service/function and the same ledger/Community Progression level calculation.
+- Replace the current default-zero/Admin-editable reward configuration with the fixed source-code reward map above. Remove stale Admin configuration/manual adjustment controls and unsafe RPC paths without breaking unrelated Admin features.
+- Verify non-Development Shop XP remains zero while no eligible items exist. Development Shop purchases never award XP.
+- Verify idempotency under retries and concurrent duplicate calls.
+- Verify race corrections for increased position, decreased position, cancellation, and republication, respecting no-clawback.
+- Verify no XP for draft/unpublished/invalid/void results or failed/unclaimed quest claims.
+- Verify Community Progression XP, levels, activity feed and milestones remain consistent with the authoritative ledger after every source event.
+- Verify future Assets can securely consume the authoritative account level; do not implement the Assets catalog in this priority.
+- Test in Testing first. Apply required versioned migrations consistently to Testing and Production. Never copy dummy/testing business data into Production.
+- Add automated tests for every reward amount, eligibility rule, duplicate path, race correction path, no-negative invariant, and level reconciliation.
+- Record reward constants, migration IDs, QA/CI evidence, schema parity, merge SHA and Vercel deployment result in this file.
+
+### Deferred priorities — do not start before priorities 1–6 are complete
+
+#### Priority 7 — Assets feature (gimmick)
+- Available to all roles. Catalog categories include motorcycles, cars, ships, aircraft/jets, houses, apartments, hotels, and other approved assets, with meaningful tiers (e.g. scooter → big motorcycle → Harley-Davidson class).
+- Assets do not affect gameplay, team performance, race results, or economy transactions except that owned asset value contributes to reputation and applicable tax liability.
+- Higher total asset value increases reputation and tax according to configurable, documented rules.
+- Before implementation, define ownership, purchase/sale source, valuation, recurring/one-time tax treatment, thresholds/rates, reputation formula/caps, audit history, and Admin catalog controls. Do not assume a purchase shop or tax formula. No hardcoded financial thresholds.
+
+#### Priority 8 — Achievements and badges expansion
+- Research actual achievement patterns in the `vreeobot` repository and badge patterns in the `VML` repository before proposing/porting.
+- Adapt to CALERIS roles, motorsport activity, seasons, divisions, teams, Drivers, Principals, Agents, FIA/Admin boundaries, and existing Community Progression/XP/badge catalog.
+- Reuse authoritative activity/milestone events where possible. Achievements/badges must never grant permissions or roles.
+- Prepare a CALERIS-specific catalog and acceptance rules before implementation; avoid duplicate/conflicting rewards.
+
+#### Priority 9 — Digital ID design system and customization
+- Prepare 14 distinct templates: 4 license-based, 5 reputation-based, and 5 division-tier-based. Only the current 2 division tiers are selectable now; the other 3 are future-ready designs.
+- Templates must differ in visual depth, composition, graphics, framing and supporting elements, not merely color.
+- Every template displays the CALERIS MASTERS logo at top-right and the account user's profile photo.
+- Members may select any template unlocked by their own license, reputation tier, or division tier; they cannot edit the template design itself.
+- Customization is limited to a tagline and up to 3 earned badges.
+- Display badges horizontally in one compact row alongside the tagline at upper-left. Keep badges small and prevent vertical stacking/overlap.
+- Preserve Digital ID privacy/publication opt-in and canonical verification behavior. Never expose private profile information on public Digital IDs.
+
+### XP policy clarification — 26 November 2026
+
+User-approved exception to the no-deduction rule:
+
+- **XP deductions are allowed only when reconciling an official race result that was previously awarded and is subsequently corrected, unpublished, or cancelled/voided.**
+- This is a narrow exception. Quest XP, race check-in XP, achievement XP, Shop XP, and all other XP sources remain non-reversible and cannot be manually deducted.
+- For a corrected race result, calculate the member's eligible award from the latest authoritative published result and compare it with the net XP already credited for that same race-result source.
+  - If the corrected award is higher, credit only the positive difference.
+  - If the corrected award is lower, debit only the difference attributable to that race-result award.
+  - If the result is cancelled/voided or no longer qualifies, reverse the race-result award attributable to that result.
+  - If the correction changes Pole status, include/remove the +5 Pole component in the same reconciliation.
+- Every correction/reversal must be an auditable ledger entry linked to the original award, race/result ID, corrected result version, actor/system event, reason, and timestamp. Never delete or overwrite the original ledger entry.
+- Reconciliation must be idempotent and transaction-safe. Repeated publication, correction, cancellation, retries, and concurrent events must not double-credit or double-debit.
+- A reversal must never exceed the unreversed XP previously awarded for that same race-result source. It must not affect XP earned from quests, check-ins, achievements, or other races.
+- The member's cumulative XP and level must be recalculated from the authoritative net ledger after the race-result correction. Community Progression totals, level, activity feed, and milestone progress must stay consistent.
+- No Admin manual XP debit is introduced. The exception is executed only by the trusted race-result correction/reconciliation flow.
+- This clarification supersedes the earlier no-clawback wording in Priority 6 **only for official race-result corrections/cancellations**. All other no-deduction protections remain in force.
+
+
+
+### Admin emergency adjustment controls — 26 November 2026
+
+**Purpose:** Provide a controlled recovery/administrative correction capability from the relevant member or team profile. This is separate from automatic XP rewards and is not a reward-configuration interface.
+
+#### Single profile action
+- Add one clearly labelled **Edit / Adjust** action on the profile page for authorized Admin users.
+- Show it when an Admin visits:
+  - Driver/member profile: adjust that user's XP and personal wallet balance.
+  - Team Owner profile: adjust that owner's XP and personal wallet balance.
+  - Team profile: adjust the team's wallet balance.
+- The same action opens one modal/panel with only the fields relevant to the profile type. Do not expose unrelated balances or allow changing another entity through an ambiguous target.
+- Non-Admin users must never see or invoke this action. Enforce authorization server-side; hiding the button is not security.
+
+#### Allowed operations
+1. Admin may add or subtract XP from a user.
+2. Admin may add or subtract balance from a user's personal wallet.
+3. Admin may add or subtract balance from a team's wallet.
+4. This is a deliberate exception to the normal XP no-deduction policy: Admin adjustments may add or subtract XP as an explicit, auditable emergency/manual correction. The separate race-result reconciliation flow remains automatic and independently idempotent.
+5. This capability does not create manual XP reward configuration. Quest, race, check-in, Shop, and achievement reward amounts remain fixed in source code as defined in Priority 6.
+
+#### Mandatory safeguards and audit
+- Require an explicit operation (add or subtract), positive amount, currency/unit, target identity, and mandatory reason before submission.
+- Display the target entity and before/after values for confirmation. Prevent accidental double submission.
+- Perform mutations only through trusted server/database functions with strict Admin-role authorization and appropriate permission checks. Never trust a client-supplied role, balance, XP total, or target ID without server-side authorization and validation.
+- Apply atomic transactions and concurrency-safe balance/XP updates. Reject invalid amounts, overflow, insufficient funds where applicable, and unsupported target types.
+- Never silently overwrite balances or XP totals. Record immutable adjustment ledger entries with actor Admin ID, target user/team ID, adjustment type, signed amount, before/after values, reason, timestamp, and unique idempotency/reference ID.
+- Keep XP adjustment entries distinct from automatic quest/race/check-in/achievement awards and from race-result correction entries, while including all valid XP entries in the same authoritative cumulative XP and Community Progression calculation.
+- Wallet adjustments must use the existing authoritative wallet/transaction ledger and preserve the existing wallet ownership and accounting rules. Do not directly edit cached/display balance fields if the project uses ledger-derived balances.
+- Do not allow adjustment of VreeoBank or other system wallets unless separately specified and approved.
+- Add an audit history view or accessible adjustment history for authorized Admins. Ordinary users may see their updated totals according to existing profile privacy rules, but must not gain access to internal Admin reasons or actor details unless explicitly allowed by current policy.
+- Record every adjustment and failure safely; never log secrets or service-role credentials.
+
+#### QA acceptance criteria
+- Test Driver, Team Owner, and Team targets separately, including add and subtract paths.
+- Confirm the Admin action is absent and server calls are denied for non-Admin roles, including direct RPC/function invocation.
+- Confirm XP changes recalculate Community Progression XP, level, and dependent progress immediately and consistently.
+- Confirm wallet changes update the authoritative ledger and displayed balance without breaking payroll, transfers, taxes, purchases, or team accounting.
+- Test invalid amount, missing reason, insufficient balance, duplicate request, concurrent updates, and unauthorized target scenarios.
+- Verify audit entries are immutable and attributable.
+- Apply versioned database migrations to Testing and Production consistently after Testing QA passes. Do not change Vercel environment settings.
+- This is an Admin-only profile adjustment capability; do not add a global manual reward configuration page.
+
+### Admin emergency adjustment controls — 26 November 2026
+
+**Purpose:** Provide a controlled recovery/administrative correction capability from the relevant member or team profile. This is separate from automatic XP rewards and is not a reward-configuration interface.
+
+#### Single profile action
+- Add one clearly labelled **Edit / Adjust** action on the profile page for authorized Admin users.
+- Show it when an Admin visits:
+  - Driver/member profile: adjust that user's XP and personal wallet balance.
+  - Team Owner profile: adjust that owner's XP and personal wallet balance.
+  - Team profile: adjust the team's wallet balance.
+- The same action opens one modal/panel with only the fields relevant to the profile type. Do not expose unrelated balances or allow changing another entity through an ambiguous target.
+- Non-Admin users must never see or invoke this action. Enforce authorization server-side; hiding the button is not security.
+
+#### Allowed operations
+1. Admin may add or subtract XP from a user.
+2. Admin may add or subtract balance from a user's personal wallet.
+3. Admin may add or subtract balance from a team's wallet.
+4. This is a deliberate exception to the normal XP no-deduction policy: Admin adjustments may add or subtract XP as an explicit, auditable emergency/manual correction. The separate race-result reconciliation flow remains automatic and independently idempotent.
+5. This capability does not create manual XP reward configuration. Quest, race, check-in, Shop, and achievement reward amounts remain fixed in source code as defined in Priority 6.
+
+#### Mandatory safeguards and audit
+- Require an explicit operation (add or subtract), positive amount, currency/unit, target identity, and mandatory reason before submission.
+- Display the target entity and before/after values for confirmation. Prevent accidental double submission.
+- Perform mutations only through trusted server/database functions with strict Admin-role authorization and appropriate permission checks. Never trust a client-supplied role, balance, XP total, or target ID without server-side authorization and validation.
+- Apply atomic transactions and concurrency-safe balance/XP updates. Reject invalid amounts, overflow, insufficient funds where applicable, and unsupported target types.
+- Never silently overwrite balances or XP totals. Record immutable adjustment ledger entries with actor Admin ID, target user/team ID, adjustment type, signed amount, before/after values, reason, timestamp, and unique idempotency/reference ID.
+- Keep XP adjustment entries distinct from automatic quest/race/check-in/achievement awards and from race-result correction entries, while including all valid XP entries in the same authoritative cumulative XP and Community Progression calculation.
+- Wallet adjustments must use the existing authoritative wallet/transaction ledger and preserve the existing wallet ownership and accounting rules. Do not directly edit cached/display balance fields if the project uses ledger-derived balances.
+- Do not allow adjustment of VreeoBank or other system wallets unless separately specified and approved.
+- Add an audit history view or accessible adjustment history for authorized Admins. Ordinary users may see their updated totals according to existing profile privacy rules, but must not gain access to internal Admin reasons or actor details unless explicitly allowed by current policy.
+- Record every adjustment and failure safely; never log secrets or service-role credentials.
+
+#### QA acceptance criteria
+- Test Driver, Team Owner, and Team targets separately, including add and subtract paths.
+- Confirm the Admin action is absent and server calls are denied for non-Admin roles, including direct RPC/function invocation.
+- Confirm XP changes recalculate Community Progression XP, level, and dependent progress immediately and consistently.
+- Confirm wallet changes update the authoritative ledger and displayed balance without breaking payroll, transfers, taxes, purchases, or team accounting.
+- Test invalid amount, missing reason, insufficient balance, duplicate request, concurrent updates, and unauthorized target scenarios.
+- Verify audit entries are immutable and attributable.
+- Apply versioned database migrations to Testing and Production consistently after Testing QA passes. Do not change Vercel environment settings.
+- This is an Admin-only profile adjustment capability; do not add a global manual reward configuration page.
+
+### Team HQ total audit — approved priorities — 26 November 2026
+
+**User approval:** All findings and recommendations from the Team HQ audit are approved and must be treated as implementation priorities. This is a documentation decision only; do not treat approval as permission to bypass the normal branch, QA, migration, and release gates.
+
+#### Audit baseline and environment facts
+
+- Team HQ has nine configured facilities: Commercial Department, Data Analytics Center, Driver Development Center, Engineering Department, Factory, Marketing Department, Pit Crew Training Center, Pusat Riset & Pengembangan, and Simulator Facility.
+- Both Testing and Production contain the nine facility configuration rows, the Team HQ effect functions, and the main facility/project/attribute/reputation/fan-growth triggers. Both have an active cron job running `private.complete_due_team_hq_projects()` every minute.
+- At audit time, Testing contained 13 teams, 117 facility rows, and one in-progress `rd_center` level-1 project. Production contained zero teams, zero facility rows, and zero projects. Do not copy Testing teams, facilities, wallets, or dummy data into Production.
+- The Testing project was still in progress and the facility level remained 0; this is consistent with the construction lifecycle and must not be mistaken for a failed upgrade.
+- The UI's current ACTIVE indicator reflects whether a facility configuration is enabled, not whether the facility has been built or is operational. This distinction must be corrected.
+- Existing effect implementations are partial: some effects are already consumed by their target systems, while other calculated outputs have no verified downstream consumer. Do not describe all nine facilities as fully integrated until end-to-end tests prove it.
+
+#### Priority 1 — Complete maintenance lifecycle
+
+Implement a complete, auditable maintenance workflow for every facility:
+- Define and implement the maintenance-required condition threshold using the existing project configuration/data model; do not invent a new threshold without checking current config and established balancing rules.
+- Provide an authorized Team Owner workflow to initiate maintenance and show its cost, duration if applicable, current condition, and expected post-maintenance condition before confirmation.
+- Charge the correct Team Wallet through the existing authoritative economy transaction/ledger path. Do not directly mutate cached balance fields.
+- On successful completion, restore condition according to the approved maintenance rule, update `last_maintenance_at`, and preserve an immutable maintenance history.
+- Ensure condition affects facility effects consistently before, during, and after maintenance. Prevent maintenance from being charged twice through retries or concurrent requests.
+- Handle insufficient balance, invalid facility ownership, unauthorized actors, duplicate submissions, and maintenance requests while a facility project is already active.
+- Display maintenance status and action availability accurately in the Team HQ UI.
+
+#### Priority 2 — Complete Pusat Riset & Pengembangan integration with Development Engine
+
+The current R&D facility has verified effects for Aero Power and a team Development token-cost discount, but the audit did not find a complete direct research/capability effect matching the facility description. Complete the integration so the facility genuinely supports research and Development capability:
+- Trace the current Development Engine, its upgrade lifecycle, token/cash cost calculation, duration, validation, and authoritative RPCs before designing changes.
+- Define a concrete, measurable R&D effect that is consumed by the Development Engine, such as an approved improvement to research/development efficiency or capability. Reuse existing config fields where suitable; do not add arbitrary or duplicate modifiers.
+- Preserve existing Aero Power and token-cost effects unless a verified conflict requires a documented correction.
+- Scale the effect by facility level and condition, using the same authoritative Team HQ effect calculation as other facilities.
+- Ensure the effect applies only to the owning team's eligible Development operations and cannot be exploited through direct RPC calls.
+- Add tests proving that changing R&D level/condition changes the actual Development outcome, not merely a displayed bonus or an unused calculated field.
+
+#### Priority 3 — Connect Commercial Department sponsor attraction to Sponsor Engine
+
+- The audit found `sponsor_attraction_bonus_percent` in the Team HQ effect output but did not verify a downstream consumer in the Sponsor Engine.
+- Trace sponsor discovery, AI sponsor offer generation, eligibility, negotiation, and contract creation before implementation.
+- Integrate the bonus into the appropriate sponsor attraction/offer-generation calculation so a higher Commercial Department level can produce a measurable, explainable effect.
+- Apply facility condition and level consistently. Do not apply the same bonus twice or modify existing contract values/terms after a contract is signed unless existing sponsor rules explicitly require it.
+- Keep the existing sponsor tier, offer, negotiation, and contract constraints intact.
+- Add deterministic tests proving the bonus changes eligible sponsor discovery/offer outcomes and that zero-level/disabled/degraded facilities behave correctly.
+
+#### Priority 4 — Connect Data Analytics Center strategy analysis depth
+
+- The audit found `strategy_analysis_depth` calculated and returned by the HQ analytics report, but did not verify that it changes the actual Strategy Engine analysis.
+- Trace the existing strategy-analysis workflow and report consumers.
+- Integrate the effect into the real analysis depth/detail available to the team, not only into report metadata or a UI label.
+- Scale it by Data Analytics Center level and condition; preserve existing access/entitlement requirements for Data Analytics Center reports.
+- Do not grant report access merely because a calculated bonus exists. Keep facility entitlement and analytics access authorization separate.
+- Add tests proving that different facility levels/conditions produce the intended difference in actual analysis output, with no fabricated strategy data.
+
+#### Priority 5 — Correct facility lifecycle status in Team HQ UI
+
+Replace the ambiguous single ACTIVE label with clear lifecycle states:
+- **Enabled / Available:** facility is enabled in configuration and can be built or upgraded subject to eligibility.
+- **Not Built:** facility level is zero and no active project exists.
+- **Under Construction:** a valid active project exists for that facility.
+- **Operational:** facility construction is complete, its level is above zero, and it is available for use.
+- **Maintenance Required:** condition has reached the configured maintenance threshold or maintenance is otherwise required.
+- If multiple conditions overlap, show the primary lifecycle state plus a separate maintenance warning where useful; do not hide an active construction state.
+- UI status must derive from authoritative facility/project/condition data, not merely `config.is_enabled`.
+- Ensure status refreshes after project start/completion, maintenance, configuration changes, and page reload.
+
+#### Priority 6 — End-to-end verification of all nine facilities
+
+Perform a complete integration audit and regression suite for all nine facilities:
+- Commercial Department: commercial credibility, sponsor attraction, and any merchandise-related effects; verify each output has a real consumer.
+- Data Analytics Center: report entitlement/access, analysis window, and strategy analysis depth.
+- Driver Development Center: driver Development efficiency/cost effect and its actual Development Engine consumer.
+- Engineering Department: Reliability attribute bonus and the authoritative attribute update path.
+- Factory: merchandise production capacity and production validation.
+- Marketing Department: fan growth, fanbase/reputation effects, and merchandise demand.
+- Pit Crew Training Center: Pit Stop Efficiency cash-upgrade discount and economy ledger.
+- Pusat Riset & Pengembangan: Aero Power bonus plus the completed Development Engine integration above.
+- Simulator Facility: Race Pace and Qualifying Pace bonuses and authoritative attribute update path.
+- For each effect, verify level scaling, condition scaling, disabled configuration, level zero, ownership/team scope, recalculation after upgrades/config edits, and no duplicate application.
+- Verify trigger execution, function privileges, RLS/security boundaries, and transaction rollback behavior. A calculated value or trigger's existence alone is not proof of a working feature.
+- Add automated regression tests for effect calculations and target-engine outcomes. Use controlled Testing transactions/fixtures and roll back destructive test operations.
+
+#### Database, dependency, and release requirements
+
+- Before changing implementation, inspect the exact frontend, RPCs, SQL functions/triggers, configuration schema, effect consumers, wallet ledger, cron lifecycle, and dependency graph. Stop and report if a proposed change risks breaking existing stable economy, Development, Sponsor, Strategy, or race systems.
+- Keep all Team HQ schema changes in versioned Supabase migrations. Apply and verify on Testing first, then synchronize the same migration source/schema to Production after QA. Never manually rewrite migration history.
+- Production currently has zero teams and zero facility rows while Testing has 13 teams and 117 facility rows. Preserve this separation; never copy Testing/dummy operational data into Production.
+- Do not change Vercel environment variables or settings.
+- Run TypeScript/application checks, production build, unit/regression tests, project validation, Supabase schema/migration parity checks, and relevant authenticated end-to-end tests. Do not report browser E2E as passed if the environment prevents it from running.
+- Work on a new dedicated branch. Merge into `main` only after QA and CI pass, then verify the Vercel Production deployment.
+- This section records the approved Team HQ work scope and priorities; it does not claim that the above fixes have already been implemented.
+
+## Progress log
+
+### Execution branch — 26 November 2026
+- Active implementation branch: `feat/caleris-priorities-1-5-xp-hq-20261126`, created from `main`. All code and migrations remain isolated from `main` until QA and CI pass.
+- Priority 1: root cause confirmed from Supabase logs. `member-directory` failed with HTTP 500 because it directly selected `public.caleris_driver_market_values` without the required grant. The Edge Function now uses the existing public Market Value RPC and treats MV as optional profile enrichment. Testing Edge Function deployed as version 16; Production deployment remains pending release.
+- Priority 2: verified that Team Performance Analytics is exclusively unlocked by the Data Analytics Center. The server RPC checks authorized Owner/Principal access and requires the facility to be built above level 0. The facility is enabled in both DBs. Testing has 13 teams and all 13 Data Analytics Centers are level 0; Production has no teams. The locked message is therefore expected, not a universal automatic entitlement. No access-rule change is justified.
+- Priority 3: Economy Guide source updated. Driver Loan and Sponsorship cards removed and replaced with a Driver Market Value summary card plus detailed calculation modal. Formula content is derived from the active engine and migration source.
+- Priority 4: root cause confirmed. Authenticated users have no direct INSERT/UPDATE privilege on `public.profiles`, while Account Settings previously used `upsert`. Added scoped `member_update_profile_settings` SECURITY DEFINER RPC and changed the UI to use it. Migration `member_profile_settings_rpc` applied to Testing and Production. Authenticated-role transactional smoke tests passed in both DBs; direct table UPDATE remains denied.
+- Priority 5: audited all 26 Testing Driver MV rows. Stored target formula mismatches: 0; growth-step mismatches after Base Value €18m: 0; latest snapshot mismatches: 0. All 26 current values remain below their initial license/division seed because the full weighted score is applied progressively with Growth Factor 0.25; average initial €9.019m, current €8.096m, target €9.129m. Only 2/26 targets are below their initial seed. The Base Value update itself increased 25 rows and decreased 1 because that driver's target was lower than its prior value. The formula and approved weights are correct; Base Value is not a minimum guarantee.
+- Priority 5 defect fixed: the original source triggers could recalculate the same Driver multiple times in one race-publication transaction (standings updates plus result insert/update), applying multiple 0.25 growth steps. Added a transaction-scoped deferred recalculation queue, relevant-field guards, new Driver/home-division triggers, and delete/correction refresh triggers. Migration `driver_market_value_transaction_dedupe` applied to Testing and Production.
+- MV transactional QA in Testing: no-op updates left MV unchanged and created 0 history rows; two relevant source changes for one Driver created exactly 1 history row; a full-result marker plus member marker recalculated exactly 26 Drivers once and left 0 queue rows. All test mutations were rolled back; the original 50 published result rows remain unchanged.
+- Both DBs now contain the two new migration names `member_profile_settings_rpc` and `driver_market_value_transaction_dedupe`. Historical migration ledgers have pre-existing version/name divergence, including Testing-only race-engine test migrations; do not replay historical migrations blindly. Verify schema parity for each future change.
+- Testing currently has 26 Driver MV records; Production has no Driver records. No Testing business data was copied to Production.
+- Remaining before release: complete source QA/CI, deploy `member-directory` to Production, merge only after all checks pass, and verify the Vercel Production deployment. Vercel environment settings must remain unchanged.
+- After priorities 1–5 are released, continue Priority 6 XP Engine, then the approved Team HQ audit priorities. Priorities 7–9 (Assets, Achievements/Badges expansion, Digital ID design system) remain deferred until the approved earlier priorities are complete.
