@@ -2343,5 +2343,5 @@ Perform a complete integration audit and regression suite for all nine facilitie
 - Production currently has zero teams and zero facility rows while Testing has 13 teams and 117 facility rows. Preserve this separation; never copy Testing/dummy operational data into Production.
 - Do not change Vercel environment variables or settings.
 - Run TypeScript/application checks, production build, unit/regression tests, project validation, Supabase schema/migration parity checks, and relevant authenticated end-to-end tests. Do not report browser E2E as passed if the environment prevents it from running.
-- Work on a new dedicated branch. Merge into `main) only after QA and CI pass, then verify the Vercel Production deployment.
+- Work on a new dedicated branch. Merge into `main` only after QA and CI pass, then verify the Vercel Production deployment.
 - This section records the approved Team HQ work scope and priorities; it does not claim that the above fixes have already been implemented.
