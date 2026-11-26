@@ -117,3 +117,5 @@
 /* Digital ID theme uses one custom picker only; suppress any legacy native select in this editor. */
 .cp-digital-id-editor select{display:none!important;visibility:hidden!important;pointer-events:none!important}
 .cp-theme-trigger{appearance:none;-webkit-appearance:none}
+
+.cp-id-market-value{display:inline-flex;align-items:center;gap:7px;margin:14px 0 2px;padding:7px 10px;border:1px solid rgba(198,163,58,.38);border-radius:4px;color:#e2c77d;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.12em}
