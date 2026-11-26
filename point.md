@@ -2621,7 +2621,7 @@ The following migration sources exist in this branch and have been applied succe
 
 **Production database caleris-masters-newgen:**
 
-- All eight migrations applied successfully.
+- All seven migrations applied successfully.
 - Production has no Driver/Team operational records in the audited scope, so the historical XP backfill correctly created no player XP rows. No Testing dummy data was copied.
 - Function-definition hashes for the 14 shared XP, milestone, race reconciliation, Admin adjustment, and economy transaction functions matched between Testing and Production before the final source-owned reward migrations. Re-run final parity check after the last migration.
 - The dedicated Admin clearing wallet exists once and is hidden from the public wallet directory; it starts at zero.
@@ -2630,7 +2630,7 @@ The following migration sources exist in this branch and have been applied succe
 
 - [ ] Finish source QA and CI for the current branch, including TypeScript, production build, unit tests, schema/migration checks, and browser smoke tests.
 - [ ] Fix any QA/CI failure before merge.
-- [ ] Verify Testing/Production function-definition parity after all eight migrations.
+- [ ] Verify Testing/Production function-definition parity after all seven migrations.
 - [ ] Create/refresh the PR, merge to main only after CI is green.
 - [ ] Verify the new Vercel Production deployment is READY and serves the merged commit.
 - [ ] Do not change Vercel environment variables or project settings.
