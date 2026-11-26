@@ -2660,14 +2660,15 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Facility creation, condition decay, level degradation, maintenance, project lifecycle, and demolition use season-scoped HQ audit records.
 - Existing Team HQ valuation remains additive through sum(caleris_team_hq_facilities.asset_value); demolition sets the facility asset value to zero so the existing valuation calculation excludes it.
 
-### Testing-only migration and QA
+### Both-database migration and QA
 
 - Added migration source: supabase/migrations/20261127095000_team_hq_full_engine_integration.sql.
 - Migration successfully applied to Testing only. Production has not yet been changed by this follow-up.
 - Testing still has 117 HQ facility rows and 1 active R&D project. No dummy data was copied or reset.
 - Rolled-back database checks passed for condition-scaled effects across the HQ facilities, Development cash/token discounts, Sponsor attraction probability, Data Analytics depth, owner demolition/idempotency, maintenance during an active project, and project completion/restoration after 0% degradation.
 - All mutation checks used transaction rollback; the Testing facility/project records remain unchanged.
-- Full GitHub CI, Production migration, merge, and Vercel deployment are still release gates and have not been claimed as complete.
+- Manual rollback checks also verified 1% condition decay per 24 hours, one-level degradation only at 0%, and the matching season audit events.
+- Full GitHub CI, merge, and Vercel deployment are still release gates and have not been claimed as complete.
 
 ### Remaining specification required before Factory production-capacity wiring
 
