@@ -698,7 +698,7 @@ create trigger caleris_mv_members_refresh after update of team_id,license on pub
   for each row execute function private.refresh_driver_market_after_change();
 
 -- The scheduled processors are idempotent and isolated from the existing transfer/loan worker.
-select cron.unschedule(jobid) from cron.job where jobname='caler is-driver-precontract-lifecycle';
+select cron.unschedule(jobid) from cron.job where jobname='caleris-driver-precontract-lifecycle';
 select cron.schedule('caleris-driver-precontract-lifecycle','*/5 * * * *',
   'select private.process_driver_precontracts();');
 select cron.unschedule(jobid) from cron.job where jobname='caleris-driver-market-daily';
