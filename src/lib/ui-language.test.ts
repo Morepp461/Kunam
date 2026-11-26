@@ -6,6 +6,12 @@ describe("CALERIS UI language", () => {
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");
     expect(translateUiText("TEAM HQ", "id")).toBe("MARKAS TIM");
   });
+  it("covers admin, season, and economy labels in both languages", () => {
+    expect(translateUiText("ADMIN ONLY", "id")).toBe("KHUSUS ADMIN");
+    expect(translateUiText("Daily Check-in Reward", "id")).toBe("Hadiah Check-in Harian");
+    expect(translateUiText("Team Wallet", "id")).toBe("Dompet Tim");
+    expect(translateUiText("Hadiah Check-in Harian", "en")).toBe("Daily Check-in Reward");
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
