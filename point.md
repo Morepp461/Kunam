@@ -2210,3 +2210,47 @@ User-approved exception to the no-deduction rule:
 - No Admin manual XP debit is introduced. The exception is executed only by the trusted race-result correction/reconciliation flow.
 - This clarification supersedes the earlier no-clawback wording in Priority 6 **only for official race-result corrections/cancellations**. All other no-deduction protections remain in force.
 
+
+
+### Admin emergency adjustment controls — 26 November 2026
+
+**Purpose:** Provide a controlled recovery/administrative correction capability from the relevant member or team profile. This is separate from automatic XP rewards and is not a reward-configuration interface.
+
+#### Single profile action
+- Add one clearly labelled **Edit / Adjust** action on the profile page for authorized Admin users.
+- Show it when an Admin visits:
+  - Driver/member profile: adjust that user's XP and personal wallet balance.
+  - Team Owner profile: adjust that owner's XP and personal wallet balance.
+  - Team profile: adjust the team's wallet balance.
+- The same action opens one modal/panel with only the fields relevant to the profile type. Do not expose unrelated balances or allow changing another entity through an ambiguous target.
+- Non-Admin users must never see or invoke this action. Enforce authorization server-side; hiding the button is not security.
+
+#### Allowed operations
+1. Admin may add or subtract XP from a user.
+2. Admin may add or subtract balance from a user's personal wallet.
+3. Admin may add or subtract balance from a team's wallet.
+4. This is a deliberate exception to the normal XP no-deduction policy: Admin adjustments may add or subtract XP as an explicit, auditable emergency/manual correction. The separate race-result reconciliation flow remains automatic and independently idempotent.
+5. This capability does not create manual XP reward configuration. Quest, race, check-in, Shop, and achievement reward amounts remain fixed in source code as defined in Priority 6.
+
+#### Mandatory safeguards and audit
+- Require an explicit operation (add or subtract), positive amount, currency/unit, target identity, and mandatory reason before submission.
+- Display the target entity and before/after values for confirmation. Prevent accidental double submission.
+- Perform mutations only through trusted server/database functions with strict Admin-role authorization and appropriate permission checks. Never trust a client-supplied role, balance, XP total, or target ID without server-side authorization and validation.
+- Apply atomic transactions and concurrency-safe balance/XP updates. Reject invalid amounts, overflow, insufficient funds where applicable, and unsupported target types.
+- Never silently overwrite balances or XP totals. Record immutable adjustment ledger entries with actor Admin ID, target user/team ID, adjustment type, signed amount, before/after values, reason, timestamp, and unique idempotency/reference ID.
+- Keep XP adjustment entries distinct from automatic quest/race/check-in/achievement awards and from race-result correction entries, while including all valid XP entries in the same authoritative cumulative XP and Community Progression calculation.
+- Wallet adjustments must use the existing authoritative wallet/transaction ledger and preserve the existing wallet ownership and accounting rules. Do not directly edit cached/display balance fields if the project uses ledger-derived balances.
+- Do not allow adjustment of VreeoBank or other system wallets unless separately specified and approved.
+- Add an audit history view or accessible adjustment history for authorized Admins. Ordinary users may see their updated totals according to existing profile privacy rules, but must not gain access to internal Admin reasons or actor details unless explicitly allowed by current policy.
+- Record every adjustment and failure safely; never log secrets or service-role credentials.
+
+#### QA acceptance criteria
+- Test Driver, Team Owner, and Team targets separately, including add and subtract paths.
+- Confirm the Admin action is absent and server calls are denied for non-Admin roles, including direct RPC/function invocation.
+- Confirm XP changes recalculate Community Progression XP, level, and dependent progress immediately and consistently.
+- Confirm wallet changes update the authoritative ledger and displayed balance without breaking payroll, transfers, taxes, purchases, or team accounting.
+- Test invalid amount, missing reason, insufficient balance, duplicate request, concurrent updates, and unauthorized target scenarios.
+- Verify audit entries are immutable and attributable.
+- Apply versioned database migrations to Testing and Production consistently after Testing QA passes. Do not change Vercel environment settings.
+- This is an Admin-only profile adjustment capability; do not add a global manual reward configuration page.
+
