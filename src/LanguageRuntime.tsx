@@ -128,11 +128,11 @@ const translations: Array<[string, string]> = [
   ["Transaction Details", "Detail Transaksi"], ["Transaction Status", "Status Transaksi"],
   ["Date Created", "Tanggal Dibuat"], ["Created at", "Dibuat pada"],
   ["Updated at", "Diperbarui pada"], ["No notifications", "Tidak ada notifikasi"],
-  ["Delete notification", "Hapus notifikasi"], ["Mark as read", "Tandai sudah dibaca"]
+  ["Delete notification", "Hapus notifikasi"], ["Mark as read", "Tandai sudah dibaca"],
   ["Digital ID", "ID Digital"], ["Main Event", "Acara Utama"], ["Recruitment", "Rekrutmen"],
   ["Team Market", "Bursa Tim"], ["Official Notice", "Pengumuman Resmi"], ["Circuit Database", "Database Sirkuit"],
   ["Driver Ranking", "Peringkat Pembalap"], ["Rookie of the Season", "Rookie Terbaik Musim Ini"],
-  ["Team Ranking", "Peringkat Tim"], ["Engine Ranking", "Peringkat Engine"], ["Statistic", "Statistik"],
+  ["Team Ranking", "Peringkat Tim"], ["Engine Ranking", "Peringkat Engine"],
   ["Comparison", "Perbandingan"], ["Driver List", "Daftar Pembalap"], ["Team List", "Daftar Tim"],
   ["Open Seat", "Kursi Tersedia"], ["Available From", "Tersedia Mulai"], ["Requirements", "Persyaratan"],
   ["Applications", "Lamaran"], ["Circuit Library", "Perpustakaan Sirkuit"], ["Race Pace", "Kecepatan Balap"],
