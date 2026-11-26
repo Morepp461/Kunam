@@ -65,7 +65,7 @@ assert "touch-action:pan-y" in CONTROLS
 assert "min-height:0" in CONTROLS
 assert "calerisCometOrbit" in CONTROLS
 assert "comet-skeleton" in APP
-assert "Background%203.png" in NAV
+assert "Background%203.webp" in NAV
 assert "rgba(91,20,34,.99)" in CONTROLS
 
 # The account menu is consolidated at the sidebar bottom; the duplicate category/header avatar is removed.
