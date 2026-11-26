@@ -113,7 +113,7 @@ export default function AboutUs() {
       <section className="about-vreeo about-section">
         <div className="about-section-label"><span>02</span> WHO WE ARE</div>
         <div className="about-vreeo-panel">
-          <img src="/assets/Untitled%20design_20261103_142659_0000.png" alt="VREEO.ID logo" />
+          <img src="/assets/Untitled%20design_20261103_142659_0000.png" alt="VREEO.ID logo" loading="lazy" decoding="async" />
           <div>
             <span className="about-eyebrow">EST. 22 MAY 2026</span>
             <h2>Meet <em>VREEO.ID.</em></h2>
@@ -155,7 +155,7 @@ export default function AboutUs() {
           <p>We moved on from Monoposto when the project became CALERIS MASTERS. Since then, we've been using <strong>Formula Game Companion (FGC)</strong> for our race weekends. We're also working on our own Race Engine for the future. It's a big step, and we're taking it one piece at a time.</p>
         </div>
         <div className="about-caleris-brand">
-          <img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="CALERIS MASTERS logo" />
+          <img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="CALERIS MASTERS logo" width={500} height={500} loading="lazy" decoding="async" />
           <span>MORE THAN A RACE. IT'S YOUR PADDOCK.</span>
         </div>
       </section>
