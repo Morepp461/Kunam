@@ -41,7 +41,14 @@ function addProjectedDecal(
 ): DecalLayer | null {
   try {
     target.updateWorldMatrix(true, false);
-    const geometry = new DecalGeometry(target, position, orientation, size);
+    const baseRotation = new THREE.Quaternion().setFromEuler(orientation);
+    const surfaceRoll = new THREE.Quaternion().setFromAxisAngle(
+      new THREE.Vector3(0, 0, 1),
+      THREE.MathUtils.degToRad(THREE.MathUtils.clamp(decal.rotation, -180, 180)),
+    );
+    baseRotation.multiply(surfaceRoll);
+    const projectionOrientation = new THREE.Euler().setFromQuaternion(baseRotation);
+    const geometry = new DecalGeometry(target, position, projectionOrientation, size);
     if (!geometry.attributes.position || geometry.attributes.position.count < 3) {
       geometry.dispose();
       return null;
@@ -111,7 +118,7 @@ export function createTeamLiveryDecalLayers(
           target,
           decal,
           position,
-          new THREE.Euler(rotation, side > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
+          new THREE.Euler(0, side > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
           size,
         );
         if (layer) layers.push(layer);
@@ -138,7 +145,7 @@ export function createTeamLiveryDecalLayers(
       target,
       decal,
       position,
-      new THREE.Euler(-Math.PI / 2, 0, rotation),
+      new THREE.Euler(-Math.PI / 2, 0, 0),
       size,
     );
     if (layer) layers.push(layer);
