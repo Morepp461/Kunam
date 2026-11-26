@@ -2166,3 +2166,27 @@ After adding detailed Team HQ RPC diagnostics, validation was repeated on the la
 - Deploy the verified `member-directory` Edge Function to Production so both Supabase projects have the same source/version.
 - Merge the ready-for-review PR to `main` after confirming PR head is the CI-passing commit.
 - Verify Vercel Production deployment is READY and run production-domain smoke checks.
+
+
+### Final bilingual coverage and release handoff — 26 November 2026
+
+- Follow-up branch `fix/finalize-bilingual-ui-coverage-20261126` was created from the merged `main` to add the remaining static UI translations without replaying already-merged seven-point implementation commits.
+- Expanded the bilingual dictionary with 424 additional exact UI phrase mappings and inverse mappings. The bridge continues to skip the About Us page, user-generated text, code/preformatted content, and explicitly excluded elements.
+- Static JSX text audit (excluding About Us) now leaves only technical/role terms such as Admin, Email, Token and the API Authorization header; no remaining unmatched user-facing English phrases were found by the audit heuristic.
+- Added bilingual regression tests for admin, economy, season, driver and navigation labels, including both translation directions.
+- PR #396 merged to `main` at `10792e50ada68a6155e007fac0e7d6bb60f897d5`.
+- `member-directory` Edge Function is ACTIVE in both Supabase projects with identical source hash `c67c07c5db53852717d8ecb7f31a0baa06644ce1626393f4dae5b94188fc6e68`: Testing version 15, Production version 19. `verify_jwt=false` preserved in both.
+- Vercel Production deployment for the merge commit `10792e50ada68a6155e007fac0e7d6bb60f897d5` was created as `dpl_Egjw3oxHFW1u53H1rD3p75RoXGdG`; initial state BUILDING. Final READY confirmation remains pending.
+- No Vercel environment settings were changed.
+
+
+### Bilingual follow-up QA — 26 November 2026
+
+On `fix/finalize-bilingual-ui-coverage-20261126`:
+- `npm run check`: PASS.
+- `npm run build`: PASS.
+- `npm run test`: 42 files / 226 tests PASS.
+- `scripts/validate.py`: PASS.
+- All targeted CALERIS regression scripts: PASS (profile directory, Driver Market Value, Edge Function auth, Member Directory rate limits, controls/navigation, Driver contracts, engine integrations, economy).
+- Static JSX language audit excluding About Us: only technical/role/API terminology remains untranslated (Admin, Email, Token, Authorization/Bearer); those are intentional technical labels.
+- No dependency was added; existing language preference column and existing React/TypeScript stack are reused.
