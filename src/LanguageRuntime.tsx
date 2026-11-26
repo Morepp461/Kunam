@@ -79,6 +79,7 @@ const translations: Array<[string, string]> = [
   ["Information", "Informasi"], ["Contact", "Kontak"], ["Support", "Bantuan"], ["Help", "Bantuan"],
   ["Terms and Conditions", "Syarat dan Ketentuan"], ["Privacy Policy", "Kebijakan Privasi"],
   ["User Guide", "Panduan Pengguna"], ["How it works", "Cara kerja"], ["About", "Tentang"],
+  ["Directory", "Direktori"], ["Market", "Pasar"], ["Driver of the Day", "Pembalap Terbaik"],
   ["Digital ID", "ID Digital"], ["Main Event", "Acara Utama"], ["Recruitment", "Rekrutmen"],
   ["Team Market", "Bursa Tim"], ["Official Notice", "Pengumuman Resmi"], ["Circuit Database", "Database Sirkuit"],
   ["Driver Ranking", "Peringkat Pembalap"], ["Rookie of the Season", "Rookie Terbaik Musim Ini"],
@@ -112,7 +113,11 @@ const dictionaries: Record<CalerisLanguage, Map<string, string>> = {
   en: new Map(translations.map(([english, indonesian]) => [indonesian, english]))
 };
 
-function translate(source: string, language: CalerisLanguage) {
+function escapeRegex(value: string) {
+  return value.split("").map(character => "\\^$.*+?()[]{}|".includes(character) ? "\\" + character : character).join("");
+}
+
+function translate(source: string, language: CalerisLanguage, allowTokens = false) {
   const dictionary = dictionaries[language];
   const trimmed = source.trim();
   if (!trimmed) return source;
@@ -121,6 +126,13 @@ function translate(source: string, language: CalerisLanguage) {
   let output = source;
   const phrases = [...dictionary.entries()].filter(([key]) => key.includes(" ")).sort((a, b) => b[0].length - a[0].length);
   for (const [from, to] of phrases) output = output.split(from).join(to);
+  if (allowTokens) {
+    const words = [...dictionary.entries()].filter(([key]) => !key.includes(" ") && /^[A-Za-z]+$/.test(key)).sort((a, b) => b[0].length - a[0].length);
+    for (const [from, to] of words) {
+      const pattern = new RegExp("\\b" + escapeRegex(from) + "\\b", "gi");
+      output = output.replace(pattern, match => match === match.toUpperCase() ? to.toUpperCase() : match[0] === match[0].toUpperCase() ? to[0].toUpperCase() + to.slice(1) : to);
+    }
+  }
   return output;
 }
 
@@ -149,7 +161,9 @@ export default function LanguageRuntime({ language, pathname }: { language: Cale
         source = current;
         originals.current.set(node, source);
       }
-      const next = aboutUs ? source : translate(source, language);
+      const tag = node.parentElement?.tagName ?? "";
+      const allowTokens = ["BUTTON","LABEL","H1","H2","H3","H4","TH","OPTION","SMALL","STRONG","SPAN"].includes(tag);
+      const next = aboutUs ? source : translate(source, language, allowTokens);
       lastRendered.current.set(node, next);
       if (current !== next) node.nodeValue = next;
     };
