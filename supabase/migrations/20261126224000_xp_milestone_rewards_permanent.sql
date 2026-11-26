@@ -173,7 +173,7 @@ begin
     end if;
   end loop;
 end;
-$function$
+$function$;
 
 
 commit;
