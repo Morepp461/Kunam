@@ -2190,3 +2190,128 @@ On `fix/finalize-bilingual-ui-coverage-20261126`:
 - All targeted CALERIS regression scripts: PASS (profile directory, Driver Market Value, Edge Function auth, Member Directory rate limits, controls/navigation, Driver contracts, engine integrations, economy).
 - Static JSX language audit excluding About Us: only technical/role/API terminology remains untranslated (Admin, Email, Token, Authorization/Bearer); those are intentional technical labels.
 - No dependency was added; existing language preference column and existing React/TypeScript stack are reused.
+
+
+---
+
+# FOLLOW-UP PRIORITIES — MEMBER EXPERIENCE, HQ, ECONOMY GUIDE, LANGUAGE, MARKET VALUE & XP
+**Updated: 26 November 2026**
+
+Execution order is mandatory. Complete priorities 1–5 first, then Priority 6. Do not start priorities 7–9 until priorities 1–6 are implemented, QA-tested, merged to `main`, and verified in the intended Vercel deployment. This update is documentation-only; do not infer that implementation has started.
+
+## Priority 1 — Member profile unavailable
+- Reproduce “Profil tidak tersedia” from member directory/search and direct profile URL.
+- Trace route/member ID resolution, `member-directory` Edge Function, Supabase query/RLS/service-role access, and loading/error states.
+- Fix the actual failing layer. Confirm valid public profiles load, private profiles honor privacy rules, and missing IDs show a correct not-found state.
+- Test both databases using existing records; do not copy Testing data to Production.
+
+## Priority 2 — Team HQ Analytics access rule
+- Audit the facility catalog/configuration, facility-to-feature mapping, Team HQ UI and entitlement/level checks.
+- Determine whether Team Performance Analytics is unlocked specifically by Data Analytics Center and at what level.
+- Correct the UI only according to existing product rules/configuration. If the intended rule is not defined, report the ambiguity rather than inventing one.
+- Preserve facility pricing, durations, concurrency and the maximum two active HQ projects per team.
+
+## Priority 3 — Economy Guide
+- Remove the Driver Loan / Peminjaman Pembalap card and Sponsorship card from the Economy Guide.
+- Replace them with a Driver Market Value calculation card styled consistently with Prizepool cards.
+- If the full formula is too long, show a concise card and a detailed popup.
+- Derive every factor and example from the actual authoritative MV engine/configuration/tests. Keep the guide informational and read-only.
+
+## Priority 4 — Profile language preference
+- Reproduce saving and reloading both `id` and `en`.
+- Trace profile preference persistence, auth/profile hydration, language bridge/provider initialization, and route changes.
+- Fix the actual synchronization/translation issue. English and Indonesian must persist across refresh/navigation; default is Indonesian.
+- Keep About Us excluded. Reuse `profiles.preferred_language` if it already meets the requirement; do not add an unnecessary column.
+
+## Priority 5 — Driver Market Value regression after Base Value update
+- Audit the full authoritative formula and before/after snapshots: Base Value, attributes, license/reputation modifiers, growth factor, snapshot timing, recalculation and caps/floors.
+- Reproduce the decrease using Testing data and identify whether it is stale display/snapshot data, an incorrect formula, or incorrect Base Value application.
+- Fix only a proven defect. Preserve approved weights/multipliers and Tier 1 Base Value EUR 18,000,000.
+- Verify representative Drivers, recalculation idempotency, and no wallet/economy side effects. Respect Production's current lack of Driver records if still applicable.
+
+## Priority 6 — Complete XP Engine and Community Progression integration
+
+**Scope:** Complete the existing XP system so all approved sources award XP reliably and consistently. XP is cumulative, server-authoritative, and integrated with the existing Community Progression system. All reward values and eligibility rules below are fixed in reviewed source code, not Admin-editable configuration.
+
+### Approved reward values
+
+| XP source | Condition | XP |
+|---|---|---:|
+| Quest | Easy / Mudah completed and successfully claimed | 5 |
+| Quest | Normal completed and successfully claimed | 10 |
+| Quest | Hard / Sulit completed and successfully claimed | 15 |
+| Official race result | P1 | 20 |
+| Official race result | P2 | 15 |
+| Official race result | P3 | 12 |
+| Official race result | Confirmed Pole position | +5 |
+| Race check-in | Valid check-in for an eligible scheduled race | 10 |
+| Shop | Non-Development Shop purchase | 0 while no eligible items exist |
+| Achievement milestone | Each existing achievement gets a fixed reward based on verified difficulty | 5–20 |
+
+Race reward examples:
+- P1 + Pole = 25 XP total.
+- P2 + Pole = 20 XP total.
+- P3 + Pole = 17 XP total.
+- Pole bonus requires explicit official pole-position data. Never infer pole from finishing position.
+- Other finishing positions receive no race-result XP unless separately approved.
+- Draft, unpublished, invalid, or void results do not trigger an official race-result award.
+
+Quest and achievement rules:
+- Award Quest XP only after the authoritative workflow confirms completion and successful claim. Preserve actual quest completion semantics if a particular quest does not have a claim step; inspect before wiring.
+- Map the actual Easy/Normal/Hard values to the fixed rewards above. Retries must not award twice.
+- Inventory the existing CALERIS achievement/milestone catalog first. Assign each existing achievement a fixed 5–20 XP reward according to verified difficulty, rarity, and effort. Keep this mapping as code-owned constants.
+- Do not invent achievements or change milestone eligibility as part of XP wiring unless separately approved.
+
+### Mandatory engine behavior
+
+1. **No XP deductions.** XP is cumulative and cannot be reduced, clawed back, manually debited, or set to a lower value. Remove/disable negative adjustment paths and reject negative award inputs at the authoritative server/database boundary. Never silently delete historical XP ledger rows.
+2. **No manual Admin XP configuration.** Remove the Admin XP reward configuration and manual XP adjustment controls/RPCs from active workflows. Reward values and eligibility must be defined in reviewed, tested source-code constants. Admin must not be able to change XP amounts through UI or a client-callable endpoint.
+3. **Community Progression integration is mandatory.** Every valid award must reconcile the existing authoritative XP ledger, cumulative account XP, account level, activity feed, and relevant milestone progress. Do not introduce a competing XP balance or level formula.
+4. **Duplicate prevention is mandatory.** Each award must use a deterministic unique source reference (member + source type + authoritative event/claim/result/milestone ID). Retries, repeated claims/publications, duplicate webhooks and concurrent calls must never create duplicate awards. Enforce this transactionally with a database uniqueness/idempotency guard, not only in UI code.
+5. **Race result correction/cancellation is mandatory.** Reconcile awards when official results are revised, unpublished, or voided. Preserve links to prior/corrected source versions, prevent a second full award for the same event, and make reconciliation deterministic.
+6. **No-clawback reconciliation.** Because XP deductions are prohibited, a correction must never create a negative ledger entry or reduce cumulative XP. If a corrected result lowers/removes a previously granted award, retain the XP already granted and mark the old award superseded/non-reclaimable for audit; do not grant further XP for the lower/cancelled outcome. If the corrected outcome increases the award, grant only the positive difference. This no-clawback rule takes precedence over recalculating a lower total.
+7. **Server-authoritative awards.** Trusted database functions/server-side event handlers decide eligibility and award amounts. Client UI may display XP/progress but must never write or decide the amount.
+8. **Append-only ledger integrity.** Keep an auditable XP ledger with source type, unique source reference, member, positive amount, timestamp, and reconciliation metadata. Reject zero/negative award inserts. A zero-reward Shop outcome is represented by no award row.
+9. **Future Assets level gate.** XP-derived account level will determine eligibility for future Assets catalog tiers. At purchase time, the server must check the authoritative account level, never a client-supplied level/display label. Each Assets catalog item will define its required level; exact thresholds are deferred until the Assets catalog is designed and approved. Asset ownership itself does not grant XP unless separately approved.
+
+### Implementation and QA acceptance criteria
+- Trace every source/event entry point: Quest completion/claim, official race result publication/revision/void, explicit pole confirmation, race check-in, non-Development Shop purchase, and achievement/milestone completion.
+- Route all valid awards through one authoritative award service/function and the same ledger/Community Progression level calculation.
+- Replace the current default-zero/Admin-editable reward configuration with the fixed source-code reward map above. Remove stale Admin configuration/manual adjustment controls and unsafe RPC paths without breaking unrelated Admin features.
+- Verify non-Development Shop XP remains zero while no eligible items exist. Development Shop purchases never award XP.
+- Verify idempotency under retries and concurrent duplicate calls.
+- Verify race corrections for increased position, decreased position, cancellation, and republication, respecting no-clawback.
+- Verify no XP for draft/unpublished/invalid/void results or failed/unclaimed quest claims.
+- Verify Community Progression XP, levels, activity feed and milestones remain consistent with the authoritative ledger after every source event.
+- Verify future Assets can securely consume the authoritative account level; do not implement the Assets catalog in this priority.
+- Test in Testing first. Apply required versioned migrations consistently to Testing and Production. Never copy dummy/testing business data into Production.
+- Add automated tests for every reward amount, eligibility rule, duplicate path, race correction path, no-negative invariant, and level reconciliation.
+- Record reward constants, migration IDs, QA/CI evidence, schema parity, merge SHA and Vercel deployment result in this file.
+
+### Deferred priorities — do not start before priorities 1–6 are complete
+
+#### Priority 7 — Assets feature (gimmick)
+- Available to all roles. Catalog categories include motorcycles, cars, ships, aircraft/jets, houses, apartments, hotels, and other approved assets, with meaningful tiers (e.g. scooter → big motorcycle → Harley-Davidson class).
+- Assets do not affect gameplay, team performance, race results, or economy transactions except that owned asset value contributes to reputation and applicable tax liability.
+- Higher total asset value increases reputation and tax according to configurable, documented rules.
+- Before implementation, define ownership, purchase/sale source, valuation, recurring/one-time tax treatment, thresholds/rates, reputation formula/caps, audit history, and Admin catalog controls. Do not assume a purchase shop or tax formula. No hardcoded financial thresholds.
+
+#### Priority 8 — Achievements and badges expansion
+- Research actual achievement patterns in the `vreeobot` repository and badge patterns in the `VML` repository before proposing/porting.
+- Adapt to CALERIS roles, motorsport activity, seasons, divisions, teams, Drivers, Principals, Agents, FIA/Admin boundaries, and existing Community Progression/XP/badge catalog.
+- Reuse authoritative activity/milestone events where possible. Achievements/badges must never grant permissions or roles.
+- Prepare a CALERIS-specific catalog and acceptance rules before implementation; avoid duplicate/conflicting rewards.
+
+#### Priority 9 — Digital ID design system and customization
+- Prepare 14 distinct templates: 4 license-based, 5 reputation-based, and 5 division-tier-based. Only the current 2 division tiers are selectable now; the other 3 are future-ready designs.
+- Templates must differ in visual depth, composition, graphics, framing and supporting elements, not merely color.
+- Every template displays the CALERIS MASTERS logo at top-right and the account user's profile photo.
+- Members may select any template unlocked by their own license, reputation tier, or division tier; they cannot edit the template design itself.
+- Customization is limited to a tagline and up to 3 earned badges.
+- Display badges horizontally in one compact row alongside the tagline at upper-left. Keep badges small and prevent vertical stacking/overlap.
+- Preserve Digital ID privacy/publication opt-in and canonical verification behavior. Never expose private profile information on public Digital IDs.
+
+## Progress log
+- 26 November 2026: priorities 1–5 recorded for review; no implementation started under this follow-up.
+- 26 November 2026: Priority 6 XP Engine scope and approved reward values added. Priorities 7–9 explicitly deferred until priorities 1–6 are complete.
+- This commit changes documentation only. No application code, database, Admin configuration, or Vercel settings were changed.
