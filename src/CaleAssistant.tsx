@@ -59,7 +59,7 @@ export default function CaleAssistant() {
             <button type="button" className="cale-assistant__close" aria-label="Tutup asisten Cale" onClick={() => setOpen(false)}><X size={17}/></button>
           </header>
           <div className="cale-assistant__body">
-            <CaleMascot designId={designId} context={context} avatarSrc={avatarSrc} size={112} className="cale-assistant__character" eager/>
+            <CaleMascot designId={designId} context={context} avatarSrc={avatarSrc} size="var(--cale-assistant-avatar-size, 180px)" className="cale-assistant__character" eager/>
             <div className="cale-assistant__copy">
               <strong>{pageGuide.title}</strong><p>{pageGuide.purpose}</p>
               <ul className="cale-assistant__guide-list">{pageGuide.sections.map(section => <li key={section}>{section}</li>)}</ul>
