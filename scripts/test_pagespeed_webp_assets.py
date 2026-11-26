@@ -8,6 +8,7 @@ EXPECTED = {
 REFERENCES = {
     "index.html": ["/assets/Background%203.webp"],
     "src/styles.css": ["/assets/Background%203.webp"],
+    "src/about-us.css": ["/assets/Background%203.webp"],
     "src/MainLayout.tsx": [
         "/assets/Background%203.webp",
         "/assets/VREEO.ID.webp",
@@ -27,7 +28,7 @@ for relative, expected in REFERENCES.items():
     for reference in expected:
         assert reference in source, f"Missing {reference} in {relative}"
 
-for relative in ("index.html", "src/styles.css", "src/MainLayout.tsx", "src/AboutUs.tsx"):
+for relative in ("index.html", "src/styles.css", "src/about-us.css", "src/MainLayout.tsx", "src/AboutUs.tsx"):
     source = (ROOT / relative).read_text(encoding="utf-8")
     assert "Background%203.png" not in source, f"Legacy background reference in {relative}"
     assert "Untitled%20design_20261103_142659_0000.png" not in source, (
