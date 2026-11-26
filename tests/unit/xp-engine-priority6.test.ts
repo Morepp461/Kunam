@@ -45,6 +45,10 @@ const appendOnlyLedger = readFileSync(
   new URL("../../supabase/migrations/20261126229000_xp_ledger_append_only_guard.sql", import.meta.url),
   "utf8",
 );
+const privateAdminAudit = readFileSync(
+  new URL("../../supabase/migrations/20261126230000_private_admin_adjustment_audit.sql", import.meta.url),
+  "utf8",
+);
 
 describe("CALERIS XP reward policy", () => {
   it("uses the approved fixed quest and check-in rewards", () => {
@@ -132,5 +136,14 @@ describe("Admin profile adjustment safeguards", () => {
     expect(appendOnlyLedger).toContain("before update or delete on public.caleris_xp_ledger");
     expect(appendOnlyLedger).toContain("XP ledger is append-only");
     expect(appendOnlyLedger).toContain("revoke insert,update,delete on public.caleris_xp_ledger");
+  });
+  it("keeps Admin reasons and actor IDs in private audit tables", () => {
+    expect(privateAdminAudit).toContain("private.caleris_admin_xp_adjustment_audit");
+    expect(privateAdminAudit).toContain("private.caleris_admin_wallet_adjustment_audit");
+    expect(privateAdminAudit).toContain("XP balance adjustment by CALERIS administration");
+    expect(privateAdminAudit).toContain("'Admin profile wallet adjustment'");
+    expect(privateAdminAudit).toContain("v_reason");
+    expect(privateAdminAudit).toContain("a.reason as description");
+    expect(privateAdminAudit).toContain("a.actor_id");
   });
 });
