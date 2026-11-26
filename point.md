@@ -2044,3 +2044,5 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
 - Kedua database: `member_start_team_hq_project` tetap membatasi maksimal dua proyek aktif per tim; unique index kini hanya mencegah dua proyek aktif pada fasilitas yang sama.
 - Notifikasi tanggal 20 November: tidak ada row notifikasi tanggal 20 pada Testing maupun Production. Testing menyimpan tombstone penghapusan; Production belum memiliki data notifikasi.
 - Edge Function `member-directory` di Testing dan Production sudah memiliki implementasi Market Value dengan source hash yang sama; source repository kini diselaraskan dengan versi terpasang.
+
+- Migration `20261126140000` diterapkan pada Testing dan Production serta ledger diseragamkan. Recalculation selesai: Testing memperbarui 26 snapshot Driver; Production memperbarui 0 karena belum ada data Driver. Formula memakai Growth Factor 0,25, sehingga nilai berjalan bertahap menuju target baru dan tidak langsung disetel ke €18 juta per Driver.
