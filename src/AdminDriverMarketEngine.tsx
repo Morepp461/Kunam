@@ -122,7 +122,7 @@ export default function AdminDriverMarketEngine({session:_session}:{session:Sess
    <section className="workspace-card">
     <div className="section-title-row"><div><span className="section-eyebrow">DIVISION TIER</span><h2>Tier Multiplier</h2></div></div>
     <div className="driver-market-map-list">
-     {Object.entries(config.tier_multipliers).sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,value])=><div className="driver-market-map-row" key={key}><label>Tier {key}<input type="number" min="0.01" max="1" step="0.01" value={value} onChange={e=>setMapValue("tier_multipliers",key,Number(e.target.value))}/></label>{key!=="1"&&<button className="driver-market-icon-button" title="Hapus tier" onClick={()=>removeMapKey("tier_multipliers",key)}><Trash2 size={15}/></button>}</div>)}
+     {Object.entries(config.tier_multipliers).sort((a,b)=>Number(a[0])-Number(b[0])).map(([key,value])=><div className="driver-market-map-row" key={key}><label>Tier {key}<input type="number" min="0.01" max="1" step="0.01" value={value} onChange={e=>setMapValue("tier_multipliers",key,Number(e.target.value))}/></label>{key!=="1"&&Number(key)===Math.max(...Object.keys(config.tier_multipliers).map(Number))&&<button className="driver-market-icon-button" title="Hapus tier" onClick={()=>removeMapKey("tier_multipliers",key)}><Trash2 size={15}/></button>}</div>)}
     </div>
     <div className="driver-market-add-row"><input placeholder="Nomor tier baru" type="number" min="2" value={newTier} onChange={e=>setNewTier(e.target.value)}/><button className="action" onClick={()=>addMapKey("tier_multipliers",newTier,0.5)}><Plus size={15}/> Tambah tier</button></div>
    </section>
