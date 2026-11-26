@@ -384,7 +384,18 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "Memeriksa akses admin...":"Memeriksa akses admin...","Token gratis digunakan":"Token gratis digunakan",
  "Sisa token":"Sisa token","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI"
 };
-const EXTRA_ID_TO_EN: Record<string,string> = Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english]));
+const EXTRA_ID_TO_EN: Record<string,string> = {
+ ...Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english])),
+ "Penyesuaian Admin":"Admin Adjustments",
+ "hadiah tertunda":"Pending reward",
+ "penggajian tertunda":"Pending payroll",
+ "Konfigurasi Misi Iklan":"Ad Quest Configuration",
+ "Memuat sesi Admin...":"Loading Admin sessions...",
+ "Memeriksa akses admin...":"Checking admin access...",
+ "Token gratis digunakan":"Free tokens used",
+ "Sisa token":"Remaining tokens",
+ "CALERIS MASTERS · REGISTRASI PEMBALAP RESMI":"CALERIS MASTERS · OFFICIAL DRIVER REGISTER"
+};
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
 const ID_TO_EN_COMPLETE: Record<string,string> = {...ID_TO_EN,...EXTRA_ID_TO_EN};
 
