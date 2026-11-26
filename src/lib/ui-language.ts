@@ -379,10 +379,7 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "Lap record":"Rekor putaran","License ID *":"ID Lisensi *","Lap record time (opsional)":"Waktu rekor putaran (opsional)",
  "Race Starts":"Start Balapan","Completed official sessions":"Sesi resmi selesai","Official P1 results":"Hasil P1 resmi",
  "Official top-three results":"Hasil tiga besar resmi","Championship Points":"Poin Kejuaraan",
- "Completed rounds only":"Hanya putaran yang selesai","Season Titles":"Gelar Musim", "Penyesuaian Admin":"Penyesuaian Admin","reward tertunda":"hadiah tertunda","payroll tertunda":"penggajian tertunda",
- "Konfigurasi Quest Iklan":"Konfigurasi Misi Iklan","Memuat sesi Admin...":"Memuat sesi Admin...",
- "Memeriksa akses admin...":"Memeriksa akses admin...","Token gratis digunakan":"Token gratis digunakan",
- "Sisa token":"Sisa token","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI"
+  "Completed rounds only":"Hanya putaran yang selesai","Season Titles":"Gelar Musim","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI"
 };
 const EXTRA_ID_TO_EN: Record<string,string> = {
  ...Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english])),
