@@ -11,7 +11,7 @@ type DecalLayer = {
 const TARGET_NAMES: Record<TeamLiveryDecal["surface"], string[]> = {
   sidepod: ["sidepod_L", "sidepod_R"],
   nose: ["monocoque_nosecone"],
-  frontWing: ["front_flap_1_L", "front_flap_1_R"],
+  frontWing: ["front_flap_main_L", "front_flap_main_R"],
   rearWing: ["rear_wing_mainplane"],
 };
 
