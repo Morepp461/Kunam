@@ -8,6 +8,12 @@ CONTRACT_SYNC = (ROOT / "supabase/migrations/20261126065318_precontract_season_c
 ROSTER = (ROOT / "supabase/migrations/20261126065827_precontract_season_roster_integration.sql").read_text(encoding="utf-8")
 ROSTER_SNAPSHOT = (ROOT / "supabase/migrations/20261126070004_precontract_roster_snapshot_refresh.sql").read_text(encoding="utf-8")
 LOCKED_CONFIG = (ROOT / "supabase/migrations/20261126072000_lock_driver_market_engine_decisions.sql").read_text(encoding="utf-8")
+MARKET_LANGUAGE_NOTIFICATIONS = (ROOT / "supabase/migrations/20261126100000_profile_market_language_notification_tombstones.sql").read_text(encoding="utf-8")
+DIGITAL_ID = (ROOT / "src/PublicMemberId.tsx").read_text(encoding="utf-8")
+LANGUAGE = (ROOT / "src/LanguageRuntime.tsx").read_text(encoding="utf-8")
+NOTIFICATIONS = (ROOT / "src/NotificationsCenter.tsx").read_text(encoding="utf-8")
+TEAM_HQ = (ROOT / "src/TeamHQ.tsx").read_text(encoding="utf-8")
+DIRECTORY = (ROOT / "supabase/functions/member-directory/index.ts").read_text(encoding="utf-8")
 TIER = (ROOT / "supabase/migrations/20261126064645_driver_market_tier_relation.sql").read_text(encoding="utf-8")
 NORMALIZATION = (ROOT / "supabase/migrations/20261126065153_driver_market_scoring_normalization.sql").read_text(encoding="utf-8")
 TRANSFER = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
@@ -55,6 +61,36 @@ assert 'admin_get_driver_market_config' not in ADMIN
 assert '<input' not in ADMIN
 assert 'fixedConfig' in ADMIN
 assert 'admin_recalculate_driver_market_values' in ADMIN
+
+# November 26 update supersedes the original €10m baseline with a locked €18m baseline.
+assert "base_value_eur=18000000" in MARKET_LANGUAGE_NOTIFICATIONS
+assert "private.recalculate_driver_market_values(null,'base_value_increase_18m')" in MARKET_LANGUAGE_NOTIFICATIONS
+assert "market_value_eur" in MARKET_LANGUAGE_NOTIFICATIONS
+assert "preferred_language text not null default 'id'" in MARKET_LANGUAGE_NOTIFICATIONS
+assert "member_delete_caleris_notification" in MARKET_LANGUAGE_NOTIFICATIONS
+assert "caleris_notification_deletion_tombstones" in MARKET_LANGUAGE_NOTIFICATIONS
+
+# Driver MV appears on private/public profiles and the public Digital ID card.
+assert 'Market Value' in APP and 'character.market_value_eur' in APP
+assert 'member_get_driver_market_values' in (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
+assert 'member.market_value_eur' in DIGITAL_ID
+assert 'market_value_eur' in DIRECTORY
+
+# Complete filter catalogs and owner-only Free Agent recruitment are present.
+assert 'getCountries' in TRANSFER
+assert 'licenseOptions' in TRANSFER and 'nationalityOptions' in TRANSFER
+assert 'freeAgents.some' in TRANSFER and 'startFreeAgent' in TRANSFER
+assert 'Hanya Team Owner' in MARKET
+
+# Language preference is persisted and applied globally, except About Us.
+assert 'preferred_language' in APP and 'LanguageRuntime' in APP
+assert 'pathname.replace' in LANGUAGE and '"/about-us"' in LANGUAGE
+assert 'Bahasa aplikasi' in APP
+
+# Notification deletes go through authenticated tombstone RPCs.
+assert 'member_delete_caleris_notification' in NOTIFICATIONS
+assert 'member_delete_caleris_notifications' in NOTIFICATIONS
+assert 'try {' in TEAM_HQ and 'member_start_team_hq_project' in TEAM_HQ
 
 # Pre-contract is separate from existing permanent transfer and loan workflows.
 for fragment in (
