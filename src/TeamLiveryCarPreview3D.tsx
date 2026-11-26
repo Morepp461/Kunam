@@ -26,6 +26,7 @@ export function F1Car2026Preview({ design, sponsors }: Props) {
     let disposed = false;
     let frame = 0;
     let lastFrameTime = 0;
+    let contextLost = false;
     let renderer: THREE.WebGLRenderer | null = null;
     let controls: OrbitControls | null = null;
     let car: F1Car2026Asset | null = null;
@@ -124,18 +125,29 @@ export function F1Car2026Preview({ design, sponsors }: Props) {
 
       const onContextLost = (event: Event) => {
         event.preventDefault();
+        contextLost = true;
+        window.cancelAnimationFrame(frame);
         if (!disposed) setError("Konteks grafis terputus. Muat ulang preview atau gunakan perangkat dengan WebGL aktif.");
       };
       const onContextRestored = () => {
-        if (!disposed) setError("");
+        contextLost = false;
+        if (!disposed) {
+          setError("");
+          lastFrameTime = 0;
+          render();
+        }
       };
       renderer.domElement.addEventListener("webglcontextlost", onContextLost);
       renderer.domElement.addEventListener("webglcontextrestored", onContextRestored);
 
       const render = () => {
-        if (disposed || document.hidden) return;
+        if (disposed || document.hidden || contextLost) return;
         const now = performance.now();
-        const delta = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, 0.05) : 1 / 60;
+        if (lastFrameTime && now - lastFrameTime < 1000 / 30) {
+          frame = window.requestAnimationFrame(render);
+          return;
+        }
+        const delta = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, 0.05) : 1 / 30;
         lastFrameTime = now;
         controls?.update();
         car?.updateAnimation(delta, 0, 0);
@@ -145,7 +157,7 @@ export function F1Car2026Preview({ design, sponsors }: Props) {
       visibilityHandler = () => {
         if (document.hidden) {
           window.cancelAnimationFrame(frame);
-        } else {
+        } else if (!contextLost) {
           lastFrameTime = 0;
           render();
         }
