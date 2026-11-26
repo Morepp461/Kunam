@@ -17,6 +17,7 @@ type FacilityConfig = {
 type Facility = { id: string; team_id: string; facility_key: string; level: number; condition: number; asset_value: number; last_maintenance_at: string | null; last_condition_decay_at: string | null; maintenance_restore_level: number | null };
 type Project = { id: string; facility_key: string; target_level: number; status: string; cost: number; started_at: string | null; completes_at: string | null; completed_at: string | null; created_at: string };
 type Team = { id: string; name: string; division_key: string | null };
+type ProjectCapacity = { base_limit: number; factory_bonus: number; shop_bonus: number; active_projects: number; max_projects: number; shop_item_owned: boolean };
 
 const money = (value: number) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value);
 const divisionMax = (division: string | null) => division?.toLowerCase().includes("zwei") ? 6 : 8;
@@ -36,7 +37,7 @@ const HQ_EFFECT_LABELS: Record<string, { label: string; unit: string; integer?: 
   research_efficiency_bonus_percent: { label: "Research efficiency", unit: "%" },
   analytics_round_window: { label: "Analysis window", unit: " rounds", integer: true },
   strategy_analysis_depth: { label: "Analysis detail", unit: " rounds", integer: true },
-  factory_production_capacity_bonus: { label: "Production capacity", unit: " slot", integer: true, pending: true }
+  factory_production_capacity_bonus: { label: "Active upgrade project capacity", unit: " slot", integer: true }
 };
 const formatEffectValue = (value: number, integer = false) => {
   const normalized = integer ? Math.round(value) : Math.round(value * 100) / 100;
@@ -48,6 +49,7 @@ export default function TeamHQ() {
   const [configs, setConfigs] = useState<FacilityConfig[]>([]);
   const [facilities, setFacilities] = useState<Facility[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [projectCapacity, setProjectCapacity] = useState<ProjectCapacity | null>(null);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [isFia, setIsFia] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -79,7 +81,7 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsDemolitionOwner(false); setIsMerchOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setProjectCapacity(null); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsDemolitionOwner(false); setIsMerchOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
@@ -88,7 +90,7 @@ export default function TeamHQ() {
     setIsOwner(role === "Owner" || role === "Principal");
     setIsDemolitionOwner(role === "Owner");
     setIsMerchOwner(role === "Owner");
-    if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsMerchOwner(false); setLoading(false); return; }
+    if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setProjectCapacity(null); setAuditLogs([]); setIsMerchOwner(false); setLoading(false); return; }
     const [teamResult, facilityResult, projectResult, auditResult] = await Promise.all([
       supabase.from("teams").select("id,name,division_key").eq("id", member.team_id).maybeSingle(),
       supabase.from("caleris_team_hq_facilities").select("*").eq("team_id", member.team_id),
@@ -103,6 +105,9 @@ export default function TeamHQ() {
     else setProjects((projectResult.data ?? []) as Project[]);
     if (auditResult.error) setError(auditResult.error.message);
     else setAuditLogs(auditResult.data ?? []);
+    const { data: capacityData, error: capacityError } = await supabase.rpc("member_get_team_hq_project_capacity");
+    if (capacityError) { setProjectCapacity(null); setError(capacityError.message); }
+    else setProjectCapacity(capacityData as ProjectCapacity);
     setLoading(false);
   }, []);
 
@@ -216,7 +221,7 @@ export default function TeamHQ() {
       <button className="team-hq-refresh" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button>
     </div>
     {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
-    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{activeProjects.length}/2</strong></div></div>}
+    {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{activeProjects.length}/{projectCapacity?.max_projects ?? 2}</strong></div></div>}
     {team && <div className="team-hq-maintenance-reminder"><Wrench size={14}/><span>End Season adalah pengingat maintenance, bukan batas wajib. Maintenance bisa dibayar kapan saja saat condition fasilitas di bawah 50%.</span></div>}
     <div className="team-hq-section-title"><div><span className="section-eyebrow">FACILITY DIRECTORY</span><h2>{isFia ? "Facility Oversight" : "Facilities"}</h2></div><span className="empty-tag">9 FACILITIES</span></div>
     <div className="team-hq-grid">
