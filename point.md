@@ -2190,3 +2190,94 @@ On `fix/finalize-bilingual-ui-coverage-20261126`:
 - All targeted CALERIS regression scripts: PASS (profile directory, Driver Market Value, Edge Function auth, Member Directory rate limits, controls/navigation, Driver contracts, engine integrations, economy).
 - Static JSX language audit excluding About Us: only technical/role/API terminology remains untranslated (Admin, Email, Token, Authorization/Bearer); those are intentional technical labels.
 - No dependency was added; existing language preference column and existing React/TypeScript stack are reused.
+
+
+---
+
+# FOLLOW-UP SCOPE — MEMBER PROFILE, HQ, ECONOMY GUIDE, LANGUAGE & MARKET VALUE
+**Request recorded: 26 November 2026**
+
+Execution rule:
+- This follow-up is a separate scope from the previously merged seven-point repair package.
+- Work on items **1–5 only**, in the order below. Do not start items 6–8 until all five are implemented, QA-tested, merged to `main`, and verified in the intended Vercel deployment.
+- Before changing code, inspect the current implementation, dependency graph, existing database functions/triggers/configuration, and the exact production/testing behavior. Do not guess or replace established engine rules.
+- Every required database change must be migration-backed and applied consistently to `caler is-masters-testing` and `caler is-masters-newgen` (actual project slugs must be verified before execution). Never copy testing/dummy business data into Production. Do not change Vercel environment variables/settings.
+- Record implementation decisions, migration IDs, QA evidence, CI result, merge SHA, and deployment result in this file as work progresses.
+
+## Priority 1 — Member profile unavailable
+**Reported symptom:** opening a member profile currently displays “Profil tidak tersedia”.
+
+Acceptance criteria:
+- Reproduce from the real member directory/search entry point and from direct profile URL navigation.
+- Trace route parameter/member identifier resolution, member-directory Edge Function response, Supabase query/RLS/service-role access, and profile rendering/loading/error states.
+- Identify and fix the actual failing layer; do not mask missing/unauthorized records as a successful empty profile.
+- Confirm valid public profiles load, private/restricted profiles respect current privacy rules, and genuinely missing IDs show the intended not-found state.
+- Test on both database environments with representative records that already exist in each environment; do not seed Production with Testing data.
+
+## Priority 2 — Team HQ facility analytics card / access rule
+**Reported question:** the Team page shows a Data Analytics Center section with a red message: “Upgrade Data Analytics Center untuk membuka laporan performa tim.” Determine whether this analytics/report feature is intended to belong only to Data Analytics Center or is currently being displayed generically for every Team HQ.
+
+Acceptance criteria:
+- Inspect existing HQ facility catalog/configuration, facility-to-feature mapping, Team HQ page components, entitlement/level checks, and relevant product/rules documentation.
+- Verify which facility or facility level is supposed to unlock Team Performance Analytics. Compare all facility cards and their configured capabilities.
+- If the current UI is incorrectly generic or incorrectly gated, correct it to match the documented/configured rule. If the existing product rules do not define the behavior, report the ambiguity before changing the rule; do not invent a new entitlement.
+- Preserve existing HQ project concurrency, upgrade pricing/duration, and two-active-project limit. No unrelated HQ redesign.
+
+## Priority 3 — Economy Guide cards
+On the Economy Guide page:
+- Remove the **Driver Loan / Peminjaman Pembalap** card. The old Loan-to-VreeoBank feature is no longer part of the current economy rules.
+- Remove the **Sponsorship** card from this guide; it is not needed in this page.
+- Replace the removed cards with a **Driver Market Value calculation details** card, visually consistent with the Prizepool cards.
+- If the complete calculation explanation is too long for a card, show a concise summary in the card and the full breakdown in a popup/modal.
+- Derive every formula, factor, tier, and example from the current authoritative Market Value engine/configuration and its tests/docs. Clearly distinguish base value, driver attributes, license/reputation/other supported modifiers, growth/decay, and any caps/floors only where the actual implementation confirms them. Do not document a formula that differs from the running engine.
+- Keep the guide informational; it must not initiate a transaction or modify member/driver balances.
+
+## Priority 4 — Profile language preference does not apply
+**Reported symptom:** changing language in Profile Settings, saving, and refreshing still leaves the application in Indonesian.
+
+Acceptance criteria:
+- Reproduce the preference save and reload flow for both `id` and `en`.
+- Trace the profile preference read/write, auth/profile hydration timing, language provider/bridge initialization, persisted state, and route/navigation refresh behavior.
+- Fix the underlying state synchronization or translation application issue. A successful save toast alone is not sufficient.
+- English selection must remain English after refresh and navigation; Indonesian selection must remain Indonesian after refresh and navigation. Default remains Indonesian for accounts without a saved preference.
+- About Us remains excluded from forced Indonesian/English translation as previously specified.
+- Do not add a new preference column or migration if the existing `profiles.preferred_language` field and constraints already satisfy the requirement.
+
+## Priority 5 — Driver Market Value drops after Base Value changed to EUR 18,000,000
+**Reported symptom:** after Base Value was increased to EUR 18,000,000, the user observes that many Driver Market Values decreased instead of increasing.
+
+Acceptance criteria:
+- Audit the complete authoritative MV formula and the actual before/after snapshots, including Base Value, driver attribute score, license/reputation modifiers, growth factor, historical snapshot timing, recalculation job/RPC, and any caps/floors/normalization.
+- Reproduce the decrease with real Testing records and explain exactly which input or formula stage caused it. Do not assume that increasing Base Value must immediately increase every current MV if the engine intentionally applies gradual growth; verify whether that behavior is documented and correct.
+- Compare calculated target MV against stored/current MV and identify whether the displayed number is stale, the snapshot is stale, the formula is wrong, or the new base is being applied incorrectly.
+- Fix only the proven defect while preserving approved locked weights/multipliers and the EUR 18,000,000 Tier 1 Base Value. Do not change unrelated MV rules or tune values merely to make numbers look higher.
+- Validate representative Drivers across license/division/attribute ranges; verify recalculation idempotency and no unintended wallet/economy effects. Keep Testing and Production configuration/schema aligned, while respecting Production's current lack of Driver rows if that remains true.
+
+## Deferred scope — do not implement before priorities 1–5 are complete
+
+### Priority 6 — Assets feature (gimmick)
+A future feature available to **all roles** with a catalog of owned assets, including vehicles (motorcycles, cars, ships, aircraft/jets), houses, apartments, hotels, and other configurable categories. Categories need meaningful tiers (for example, scooter → big motorcycle → Harley-Davidson class). Assets do not affect gameplay, team performance, race results, or economy transactions except:
+- Asset ownership/value contributes to reputation.
+- Asset value contributes to the owner's applicable tax calculation.
+- More total asset value increases reputation and tax liability according to configurable, documented rules.
+
+Before implementation, define ownership, purchase/sale source, valuation, recurring/one-time tax treatment, tax thresholds/rates, reputation formula/caps, audit history, and admin catalog controls. Do not assume a purchase shop or tax formula until separately approved. All catalog/tax/reputation values must be admin-configurable; no hardcoded financial thresholds.
+
+### Priority 7 — Achievements and badges expansion
+- Research the actual implementation in the `vreeobot` repository for achievement patterns and the `VML` repository for badge patterns before proposing/porting anything.
+- Adapt concepts to CALERIS MASTERS roles, motorsport activity, seasons, divisions, teams, Drivers, Principals, Agents, FIA/Admin boundaries, and existing Community Progression/XP/badge catalog.
+- Reuse CALERIS's existing authoritative activity and milestone events where possible. No granting permissions or roles through achievements/badges.
+- Prepare a CALERIS-specific achievement/badge catalog and acceptance rules before implementation; avoid duplicate or conflicting rewards.
+
+### Priority 8 — Digital ID design system and customization
+- Prepare **14 distinct Digital ID design templates**: 4 license-based, 5 reputation-based, and 5 division-tier-based templates. Only the current 2 division tiers are selectable now; the additional 3 division templates are prepared for future tiers.
+- Designs must differ in visual depth, composition, graphics, framing, and supporting elements, not merely color swaps.
+- Every template must display the CALERIS MASTERS logo in the top-right corner and the account user's profile photo.
+- A member can use any design unlocked by their own credentials (license, reputation tier, and division tier). They may select among eligible templates but cannot edit the template design itself.
+- Member-customizable fields are limited to a tagline and exactly up to 3 selected earned badges.
+- Display the selected badges horizontally in one compact row alongside the tagline, positioned at the upper-left. Keep badges small and prevent vertical stacking/overlap.
+- Preserve Digital ID privacy/publication opt-in and canonical verification behavior. Do not expose private profile information through public Digital IDs.
+
+## Progress log
+- 26 November 2026: request and acceptance criteria recorded. New execution branch: `fix/profile-market-value-language-economy-guide-20261126`, created from current `main`.
+- Implementation has not started. Next step is source/dependency inspection for priorities 1–5 only.
