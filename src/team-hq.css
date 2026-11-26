@@ -103,3 +103,18 @@
 .team-hq-maintenance-panel>small{font-size:10px;color:var(--muted,#aaa)}
 .team-hq-maintenance-action{width:100%;padding:9px 11px;border:1px solid #94713e;border-radius:8px;background:rgba(148,113,62,.2);color:inherit;font-weight:700;font-size:11px;cursor:pointer}
 .team-hq-maintenance-action:disabled{opacity:.55;cursor:wait}
+
+/* Explicit facility lifecycle states and owner-only demolition */
+.team-hq-config-state{display:block;margin-top:7px;color:var(--muted,#999);font-size:10px}
+.team-hq-status.not-built{color:#b7b7b7}
+.team-hq-status.under-construction{color:#e5c078}
+.team-hq-status.operational{color:#8fc99d}
+.team-hq-status.maintenance-required{color:#e8a15b}
+.team-hq-status.enabled-available{color:#8fc99d}
+.team-hq-status.disabled{color:#d69a75}
+.team-hq-demolish,.team-hq-demolish-confirm{width:100%;margin-top:10px;padding:9px 11px;border:1px solid rgba(210,95,75,.45);border-radius:9px;background:rgba(150,35,35,.08);color:#e3a08f;font-size:11px;font-weight:700;cursor:pointer}
+.team-hq-demolish:disabled,.team-hq-demolish-confirm:disabled{opacity:.5;cursor:wait}
+.team-hq-demolish-confirm{width:auto;margin-top:0;background:#8e2626;border-color:#8e2626;color:#fff}
+.team-hq-analysis-detail{display:grid;gap:10px;padding:14px;border:1px solid var(--border,rgba(255,255,255,.12));border-radius:12px;background:rgba(255,255,255,.02)}
+.team-hq-analysis-detail h3{margin:4px 0 0;font-size:15px}
+.team-hq-analysis-note{color:var(--muted,#999);font-size:10px;line-height:1.5}
