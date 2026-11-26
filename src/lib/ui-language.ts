@@ -157,6 +157,38 @@ const ID_TO_EN: Record<string,string> = {
  "Permanent Transfer dan Driver Loan harus melalui persetujuan FIA.":"Permanent Transfer and Driver Loan require FIA approval."
 };
 
+const EXTRA_EN_TO_ID: Record<string,string> = {
+ "Tier":"Tingkat","Edit":"Ubah","/ season":"/ musim","records":"catatan","Season ·":"Musim ·","Pilih season":"Pilih musim",
+ "Pilih Driver":"Pilih Pembalap","← Dashboard":"← Dasbor","Pilih team":"Pilih tim","TEAM REPUTATION":"REPUTASI TIM",
+ "active contracts":"kontrak aktif","Team Wallet":"Dompet Tim","points ·":"poin ·","Race Check-in":"Check-in Balapan",
+ "HQ effect · level 0–":"Dampak Markas · level 0–","Open":"Buka","Season berikutnya":"Musim berikutnya",
+ "Wallet mismatch":"Ketidaksesuaian saldo dompet","Daily reward":"Hadiah harian","masih pending":"masih tertunda",
+ "race round ·":"putaran balapan ·","Team Valuation":"Valuasi Tim","Driver Number":"Nomor Pembalap",
+ "Team Brand Identity":"Identitas Merek Tim","Nickname web":"Nama panggilan web","Nickname driver":"Nama panggilan pembalap",
+ "CALERIS MASTERS · MEMBER REGISTRATION":"CALERIS MASTERS · PENDAFTARAN ANGGOTA","member terdaftar":"anggota terdaftar",
+ "Team Reputation":"Reputasi Tim","Driver Reputation":"Reputasi Pembalap","ACTIVE CONTRACTS":"KONTRAK AKTIF",
+ "per season ·":"per musim ·","season ·":"musim ·","ACTIVE DRIVERS":"PEMBALAP AKTIF","Official results":"Hasil resmi",
+ "NEW APPLICATION":"PENGAJUAN BARU","Remove":"Hapus","Achievement Badges":"Lencana Pencapaian","/ token":"/ token",
+ "DRIVER DIRECTORY":"DIREKTORI PEMBALAP","Latest offer":"Penawaran terbaru","OFFICIAL CLASSIFICATION":"KLASEMEN RESMI",
+ "Closed round":"Putaran ditutup","15–35 PSI · test profile":"15–35 PSI · profil uji","ATTRIBUTE PROFILE":"PROFIL ATRIBUT",
+ "Schedule":"Jadwal","No registered drivers":"Belum ada pembalap terdaftar","Race Pace":"Kecepatan Balap",
+ "Engine Power":"Daya Mesin","Selling price (€)":"Harga jual (€)","License & Wallet Adjustments":"Penyesuaian Lisensi & Dompet",
+ "LICENSE ADMINISTRATION":"ADMINISTRASI LISENSI","ECONOMY ENGINE":"MESIN EKONOMI","Wallet injection":"Penambahan saldo dompet",
+ "Jenis wallet":"Jenis dompet","Pilih wallet":"Pilih dompet","ADMIN CONTROL · SYSTEM SETTINGS":"KONTROL ADMIN · PENGATURAN SISTEM",
+ "Configuration Center":"Pusat Konfigurasi","CONFIGURATION LIBRARY":"PUSTAKA KONFIGURASI","Configuration":"Konfigurasi",
+ "CONFIGURATION DETAIL":"DETAIL KONFIGURASI","SEASON DEVELOPMENT CONTROL":"KONTROL PENGEMBANGAN MUSIM",
+ "Development Season Rollover":"Pergantian Musim Pengembangan","CALERIS MASTERS · ADMIN ENGINE":"CALERIS MASTERS · MESIN ADMIN",
+ "DIVISION TIER":"TINGKAT DIVISI","CURRENT SNAPSHOT":"SNAPSHOT SAAT INI","Home Division":"Divisi Asal",
+ "SYSTEM HEALTH & FINANCIAL RECONCILIATION":"KESEHATAN SISTEM & REKONSILIASI KEUANGAN","Payroll pending":"Penggajian tertunda",
+ "Race check-in":"Check-in balapan","dicoba · Race check-in":"dicoba · Check-in balapan",
+ "Automated Payroll Preparation":"Persiapan Penggajian Otomatis","ADMIN CONTROL · FINANCIAL CORE":"KONTROL ADMIN · INTI KEUANGAN",
+ "Economy Engine":"Mesin Ekonomi","Pending Check-in":"Check-in tertunda","Active Wallets":"Dompet aktif",
+ "Prize · VreeoBank":"Hadiah · VreeoBank","Check-in reward · VreeoBank":"Hadiah check-in · VreeoBank"
+};
+const EXTRA_ID_TO_EN: Record<string,string> = Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english]));
+const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
+const ID_TO_EN_COMPLETE: Record<string,string> = {...ID_TO_EN,...EXTRA_ID_TO_EN};
+
 function preserveCase(replacement: string, source: string) {
   if (source === source.toUpperCase()) return replacement.toUpperCase();
   if (source === source.toLowerCase()) return replacement.toLowerCase();
@@ -166,7 +198,7 @@ function preserveCase(replacement: string, source: string) {
 
 export function translateUiText(value: string, language: UiLanguage): string {
   if (!value || !value.trim()) return value;
-  const dictionary = language === "id" ? EN_TO_ID : ID_TO_EN;
+  const dictionary = language === "id" ? EN_TO_ID_COMPLETE : ID_TO_EN_COMPLETE;
   let result = value;
   const entries = Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length);
   for (const [source, replacement] of entries) {
