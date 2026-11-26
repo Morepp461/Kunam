@@ -55,7 +55,7 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
  const deleteAll=async()=>{
   if(!supabase||!memberId||busy||!items.length)return;
   if(!window.confirm("Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan."))return;
-  setBusy(true);const {error:requestError}=await supabase.from("caleris_notifications").delete().eq("member_id",memberId);
+  setBusy(true);const {error:requestError}=await supabase.rpc("member_delete_caleris_notifications");
   if(requestError)setError(requestError.message);else{setItems([]);setUnread(0);setError("")}
   setBusy(false);
  };
