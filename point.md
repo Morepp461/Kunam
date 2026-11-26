@@ -2663,13 +2663,13 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 ### Both-database migration and QA
 
 - Added migration source: supabase/migrations/20261127095000_team_hq_full_engine_integration.sql.
-- Migration successfully applied to Testing only. Production has not yet been changed by this follow-up.
+- The three Team HQ integration migrations were applied to both Testing and Production. Testing retains 117 facility rows and its original active R&D project; Production remains at 0 HQ facility rows. No Testing data was copied to Production.
 - Testing still has 117 HQ facility rows and 1 active R&D project. No dummy data was copied or reset.
 - Rolled-back database checks passed for condition-scaled effects across the HQ facilities, Development cash/token discounts, Sponsor attraction probability, Data Analytics depth, owner demolition/idempotency, maintenance during an active project, and project completion/restoration after 0% degradation.
 - All mutation checks used transaction rollback; the Testing facility/project records remain unchanged.
 - Manual rollback checks also verified 1% condition decay per 24 hours, one-level degradation only at 0%, and the matching season audit events.
 - GitHub CI passed all 48 steps on commit 7eee542. Vercel Preview deployment is READY at https://calerismastersnewgen-5aspr1l6v-morepp.vercel.app.
-- Production deployment and merge remain intentionally blocked until the Factory production-slot definition is confirmed; no Vercel environment variables were changed.
+- The Factory rule was subsequently clarified as an active upgrade-project slot. Follow-up Shop and dynamic-capacity migrations were applied to both databases, CI passed, PR #402 was merged, and Vercel Production reached READY. No Vercel environment variables were changed.
 
 ### Remaining specification required before Factory production-capacity wiring
 
@@ -2694,3 +2694,14 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Additional QA caught a second hard-coded limit in the database trigger `enforce_team_hq_project_limit()`. It is now capacity-aware too, using the same Factory + Shop entitlement calculation while retaining the team-row lock against concurrent project creation.
 - Final rolled-back enforcement test purchased the Shop entitlement, set Factory LV6, inserted temporary projects up to four active projects, and confirmed a fifth project start is rejected. All test changes and ledger entries were rolled back.
 - Additional migration source: `20261127133000_team_hq_dynamic_project_limit_trigger.sql`. This trigger migration is applied to both Testing and Production.
+
+
+### Final release record — Team HQ dynamic upgrade slots
+
+- PR #402 merged into main. Merge commit: `96131174a01e9a4b37273ce07870c338493d789f`.
+- GitHub CI run #5754 passed all 48 steps on the release candidate.
+- Vercel Preview reached READY: `https://calerismastersnewgen-7bgw6fixg-morepp.vercel.app`.
+- Vercel Production deployment reached READY: `dpl_5jRmB54pk5d3mYghLVSW7o6P9dBV`, serving `calerismasters.com`, `www.calerismasters.com`, and `calerismastersnewgen-mu.vercel.app`.
+- Shop item `Additional HQ Project Slot` is deployed but inactive until Admin configures its EUR price and activates it. No purchase price was invented.
+- Testing/Production schema function hashes match for project start, Shop purchase, capacity lookup, Admin config read, and project-limit trigger. Testing data remains intact; Production remains without copied Testing dummy data.
+- Vercel environment variables and project settings were not modified.
