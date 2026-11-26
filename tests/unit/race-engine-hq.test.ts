@@ -44,27 +44,29 @@ function configs(): TeamHqFacilityConfigInput[] {
       maxLevelPremio: 8,
       maxLevelZwei: 6,
       updatedAt,
-      effectsByLevel: { "8": {} }
+      effectsByLevel: { "8": { pit_stop_efficiency_bonus: 8 } }
     }
   ];
 }
 
 describe("Race Engine team HQ effect snapshots", () => {
-  it("resolves configured race effects and reports a facility with no measurable race effect", () => {
+  it("resolves all configured race effects and condition-scales the facility snapshot", () => {
     const result = resolveTeamHqRaceEffects("premio", [
       { facilityKey: "engineering_department", level: 8 },
       { facilityKey: "rd_center", level: 8 },
       { facilityKey: "simulator_facility", level: 8 },
-      { facilityKey: "pit_crew_training_center", level: 8 }
+      { facilityKey: "pit_crew_training_center", level: 8, condition: 50 }
     ], configs(), updatedAt);
 
     expect(result.snapshot.effects).toEqual({
       reliability_bonus: 4,
       aero_power_bonus: 4,
-      race_pace_bonus: 2
+      race_pace_bonus: 2,
+      pit_stop_efficiency_bonus: 4
     });
-    expect(result.unresolvedFacilityKeys).toEqual(["pit_crew_training_center"]);
-    expect(validateTeamHqRaceEffectSnapshot(result.snapshot)).toContain("HQ facilities have no configured race effect: pit_crew_training_center");
+    expect(result.unresolvedFacilityKeys).toEqual([]);
+    expect(validateTeamHqRaceEffectSnapshot(result.snapshot)).toEqual([]);
+    expect(result.snapshot.facilities.find(item => item.facilityKey === "pit_crew_training_center")?.condition).toBe(50);
   });
 
   it("enforces division-specific facility limits and required configuration", () => {
