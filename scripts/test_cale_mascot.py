@@ -139,3 +139,22 @@ assert "{session&&<CaleAssistant/>}" not in LAYOUT, "Cale must not disappear on 
 assert '"/shop": guide("Shop"' in GUIDES, "Shop must use general marketplace guidance"
 assert "Marketplace CALERIS MASTERS" in GUIDES
 print("Global Cale mounting and general Shop guidance checks passed.")
+
+# Page-specific official CALE artwork mapping.
+AVATAR_MAP = (ROOT / "src" / "cale" / "avatarMap.ts").read_text(encoding="utf-8")
+for asset in re.findall(r'"([a-z0-9_-]+\\.webp)"', AVATAR_MAP):
+    assert (ROOT / "public" / "assets" / "cale" / asset).is_file(), f"Missing mapped Cale avatar: {asset}"
+for route in (
+    '"/about-us"', '"/dashboard"', '"/community"', '"/race-checkin"',
+    '"/fia-panel/event-control"', '"/admin/users"',
+):
+    assert route in AVATAR_MAP, f"Missing page-specific Cale avatar route: {route}"
+for fragment in (
+    'group === "driver-panel"', 'group === "team-panel"',
+    'group === "fia-panel"', 'group === "main-event"',
+    'resolveCalePageAvatar(pathname)',
+):
+    assert fragment in AVATAR_MAP + ASSISTANT, f"Missing page avatar resolver behavior: {fragment}"
+assert "avatarSrc?: string" in MASCOT
+assert ASSISTANT.count("avatarSrc={avatarSrc}") == 2, "Trigger and expanded panel must use the same page avatar"
+print("Page-specific official Cale avatar mapping checks passed: all mapped assets exist and both assistant views use the active page pose.")
