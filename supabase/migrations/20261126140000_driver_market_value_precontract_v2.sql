@@ -350,9 +350,13 @@ begin
 end;
 $$;
 
+revoke all on function public.member_get_driver_market_values() from public,anon;
 grant execute on function public.member_get_driver_market_values() to authenticated;
+revoke all on function public.admin_get_driver_market_config() from public,anon;
 grant execute on function public.admin_get_driver_market_config() to authenticated;
+revoke all on function public.admin_configure_driver_market(jsonb,numeric,numeric,jsonb,jsonb,jsonb) from public,anon;
 grant execute on function public.admin_configure_driver_market(jsonb,numeric,numeric,jsonb,jsonb,jsonb) to authenticated;
+revoke all on function public.admin_recalculate_driver_market_values(uuid,text) from public,anon;
 grant execute on function public.admin_recalculate_driver_market_values(uuid,text) to authenticated;
 
 -- Separate lifecycle for Pre-contract: never relax the existing transfer/loan constraints.
@@ -423,6 +427,7 @@ create policy "Precontract parties read offers" on public.caleris_driver_precont
         and m.role='Owner' and m.team_id=n.destination_team_id)
     or exists(select 1 from public.site_admins a where a.user_id=(select auth.uid()))
   );
+grant select on public.caleris_driver_precontract_negotiations,public.caleris_driver_precontract_offers to authenticated;
 
 create or replace function public.member_start_driver_precontract(
   p_driver_member_id uuid,
@@ -640,7 +645,9 @@ begin
 end;
 $$;
 revoke all on function private.process_driver_precontracts() from public,anon,authenticated,service_role;
+revoke all on function public.member_start_driver_precontract(uuid,numeric,integer,text) from public,anon;
 grant execute on function public.member_start_driver_precontract(uuid,numeric,integer,text) to authenticated;
+revoke all on function public.member_respond_driver_precontract(uuid,text,numeric,integer,text) from public,anon;
 grant execute on function public.member_respond_driver_precontract(uuid,text,numeric,integer,text) to authenticated;
 
 -- Keep the market current after authoritative data changes.
@@ -660,9 +667,9 @@ begin
     v_member_id:=coalesce(new.member_id,old.member_id);
     if v_member_id is not null then perform private.recalculate_driver_market_values(v_member_id,tg_table_name); end if;
   end if;
-  return coalesce(new,old);
+  return null;
 end;
-$$;
+$;
 revoke all on function private.refresh_driver_market_after_change() from public,anon,authenticated,service_role;
 
 drop trigger if exists caleris_mv_attributes_refresh on public.caleris_driver_attributes;
