@@ -729,23 +729,14 @@ function PollAdmin({
   const [badgeRarityInput, setBadgeRarityInput] = useState("common");
   const [badgeActiveInput, setBadgeActiveInput] = useState(true);
   const [editingBadgeCode, setEditingBadgeCode] = useState("");
-  const [rewardSettings, setRewardSettings] = useState<any[]>([]);
-  const [rewardInputs, setRewardInputs] = useState<Record<string, string>>({});
   const [editingCode, setEditingCode] = useState("");
   const [scope, setScope] = useState("driver");
   const [metricKey, setMetricKey] = useState("driver_race_starts");
   const [milestoneTitle, setMilestoneTitle] = useState("");
   const [milestoneDescription, setMilestoneDescription] = useState("");
   const [target, setTarget] = useState("1");
-  const [reward, setReward] = useState("0");
   const [badgeCode, setBadgeCode] = useState("");
   const [active, setActive] = useState(true);
-  const [memberSearch, setMemberSearch] = useState("");
-  const [memberMatches, setMemberMatches] = useState<any[]>([]);
-  const [adjustMember, setAdjustMember] = useState("");
-  const [adjustAmount, setAdjustAmount] = useState("0");
-  const [adjustDescription, setAdjustDescription] = useState("");
-  const [searchingMembers, setSearchingMembers] = useState(false);
 
   const teamPoll = type === "team_of_period" || type === "team_of_season";
   const driverPoll = type === "driver_of_period" || type === "driver_of_season";
@@ -783,23 +774,20 @@ function PollAdmin({
 
   const loadAdminConfig = async () => {
     if (!db) return;
-    const [definitionResult, badgeResult, seasonResult, periodResult, rewardResult] = await Promise.all([
+    const [definitionResult, badgeResult, seasonResult, periodResult] = await Promise.all([
       db.from("caleris_milestone_definitions").select("*").order("scope").order("title"),
       db.from("caleris_achievement_badges").select("*").order("title"),
       db.from("license_seasons").select("id,title").order("starts_on", { ascending: false }),
       db.from("season_calendar_periods").select("id,season_id,title,period_type,period_number").order("sort_order"),
-      db.from("caleris_xp_reward_settings").select("*").order("source_type"),
     ]);
-    if (definitionResult.error || badgeResult.error || seasonResult.error || periodResult.error || rewardResult.error) {
-      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message || periodResult.error?.message || rewardResult.error?.message);
+    if (definitionResult.error || badgeResult.error || seasonResult.error || periodResult.error) {
+      toast("error", "Konfigurasi progression gagal dimuat", definitionResult.error?.message || badgeResult.error?.message || seasonResult.error?.message || periodResult.error?.message);
     }
     setDefinitions(definitionResult.data ?? []);
     setBadgeCatalog(badgeResult.data ?? []);
     setBadgeOptions((badgeResult.data ?? []).filter((badge: any) => badge.active));
     setSeasonOptions(seasonResult.data ?? []);
     setPeriodOptions(periodResult.data ?? []);
-    setRewardSettings(rewardResult.data ?? []);
-    setRewardInputs(Object.fromEntries((rewardResult.data ?? []).map((item: any) => [item.source_type, String(item.reward_xp)])));
   };
 
   useEffect(() => { void loadCandidates(); }, [type]);
@@ -838,20 +826,6 @@ function PollAdmin({
       toast("success", startDate.getTime() > Date.now() ? "Voting berhasil dijadwalkan" : "Voting berhasil dibuat");
       setTitle(""); setDescription(""); setSelected([]); setStartsAt(""); setEndsAt(""); setPeriodId("");
       onCreated();
-    }
-  };
-
-  const saveReward = async (source: string) => {
-    const value = Number(rewardInputs[source]);
-    if (!db || !Number.isInteger(value) || value < 0 || value > 100000) {
-      toast("warning", "Reward XP tidak valid", "Masukkan angka bulat dari 0 sampai 100.000.");
-      return;
-    }
-    const { error } = await db.rpc("caleris_set_xp_reward", { p_source: source, p_reward: value });
-    if (error) toast("error", "Reward XP gagal disimpan", error.message);
-    else {
-      toast("success", "Reward XP diperbarui", `${source}: ${formatNumber(value)} XP`);
-      await loadAdminConfig();
     }
   };
 
@@ -901,7 +875,6 @@ function PollAdmin({
     setMilestoneTitle(definition.title);
     setMilestoneDescription(definition.description ?? "");
     setTarget(String(definition.target_value));
-    setReward(String(definition.xp_reward ?? 0));
     setBadgeCode(definition.badge_code ?? "");
     setActive(Boolean(definition.active));
   };
@@ -913,17 +886,16 @@ function PollAdmin({
     setMilestoneTitle("");
     setMilestoneDescription("");
     setTarget("1");
-    setReward("0");
     setBadgeCode("");
     setActive(true);
   };
 
   const saveMilestone = async () => {
-    if (!db || !milestoneTitle.trim() || !Number.isInteger(Number(target)) || Number(target) <= 0 || !Number.isInteger(Number(reward)) || Number(reward) < 0) {
-      toast("warning", "Milestone belum lengkap", "Judul dan target harus valid.");
+    if (!db || !editingCode || !milestoneTitle.trim() || !Number.isInteger(Number(target)) || Number(target) <= 0) {
+      toast("warning", "Milestone belum valid", "Pilih milestone yang sudah terdaftar di source code, lalu isi judul dan target.");
       return;
     }
-    const code = editingCode || milestoneTitle.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80);
+    const code = editingCode;
     if (!code || code.length < 3) {
       toast("warning", "Kode milestone tidak valid", "Judul harus menghasilkan kode minimal tiga karakter.");
       return;
@@ -935,7 +907,7 @@ function PollAdmin({
       p_description: milestoneDescription,
       p_metric_key: metricKey,
       p_target: Number(target),
-      p_xp_reward: scope === "driver" ? Number(reward) : 0,
+      p_xp_reward: 0,
       p_badge_code: badgeCode || null,
       p_active: active,
     });
@@ -944,41 +916,6 @@ function PollAdmin({
       toast("success", "Konfigurasi milestone tersimpan");
       resetMilestone();
       await loadAdminConfig();
-      onCreated();
-    }
-  };
-
-  const searchMembers = async () => {
-    if (!db || memberSearch.trim().length < 2) {
-      toast("warning", "Masukkan minimal dua karakter nama member");
-      return;
-    }
-    setSearchingMembers(true);
-    const { data, error } = await db.from("members")
-      .select("id,character_name,member_code,role")
-      .ilike("character_name", `%${memberSearch.trim()}%`)
-      .order("character_name")
-      .limit(20);
-    setSearchingMembers(false);
-    if (error) toast("error", "Pencarian member gagal", error.message);
-    else setMemberMatches(data ?? []);
-  };
-
-  const adjustXp = async () => {
-    if (!db || !adjustMember || !Number.isInteger(Number(adjustAmount)) || Number(adjustAmount) === 0 || !adjustDescription.trim()) {
-      toast("warning", "Penyesuaian XP belum valid", "Pilih member, masukkan angka bulat bukan nol, dan isi alasan.");
-      return;
-    }
-    const { data, error } = await db.rpc("caleris_admin_adjust_xp", {
-      p_member_id: adjustMember,
-      p_amount: Number(adjustAmount),
-      p_source_id: `admin-adjust-${crypto.randomUUID()}`,
-      p_description: adjustDescription.trim(),
-    });
-    if (error) toast("error", "Penyesuaian XP gagal", error.message);
-    else {
-      toast("success", "XP berhasil disesuaikan", `Saldo XP terbaru: ${formatNumber(data?.total_xp)}`);
-      setAdjustAmount("0"); setAdjustDescription("");
       onCreated();
     }
   };
@@ -1020,7 +957,7 @@ function PollAdmin({
 
     <div className="cp-admin-config">
       <h4>Milestone Catalog</h4>
-      <p>Target, reward XP, badge, dan status milestone dapat diatur tanpa mengubah source code.</p>
+      <p>Target, badge, dan status dapat dikelola Admin. Nilai XP ditentukan source code dan tidak dapat diubah dari panel.</p>
       <div className="cp-grid cp-admin-form">
         <label>Scope<select value={scope} disabled={Boolean(editingCode)} onChange={(event) => { const value = event.target.value; setScope(value); setMetricKey(value === "driver" ? "driver_race_starts" : "team_races"); }}>
           <option value="driver">Driver</option><option value="team">Team</option>
@@ -1030,14 +967,13 @@ function PollAdmin({
         </select></label>
         <label>Judul<input value={milestoneTitle} onChange={(event) => setMilestoneTitle(event.target.value)} maxLength={120} /></label>
         <label>Target<input type="number" min="1" step="1" value={target} onChange={(event) => setTarget(event.target.value)} /></label>
-        <label>Reward XP<input type="number" min="0" max="100000" step="1" value={scope === "team" ? "0" : reward} disabled={scope === "team"} onChange={(event) => setReward(event.target.value)} /></label>
         <label>Badge<select value={badgeCode} onChange={(event) => setBadgeCode(event.target.value)}>
           <option value="">Tanpa badge</option>{badgeOptions.map((badge) => <option key={badge.code} value={badge.code}>{badge.title}</option>)}
         </select></label>
       </div>
       <label>Deskripsi<textarea rows={2} value={milestoneDescription} onChange={(event) => setMilestoneDescription(event.target.value)} maxLength={500} /></label>
       <label className="cp-checkbox"><input type="checkbox" checked={active} onChange={(event) => setActive(event.target.checked)} /> Aktif</label>
-      <button onClick={() => void saveMilestone()}><Save size={15} /> {editingCode ? "Simpan perubahan" : "Tambah milestone"}</button>
+      <button onClick={() => void saveMilestone()} disabled={!editingCode}><Save size={15} /> Simpan perubahan</button>
       {editingCode && <button onClick={resetMilestone}>Batal edit</button>}
       <div className="cp-admin-list">
         {definitions.map((definition) => <div key={definition.id}>
@@ -1045,31 +981,6 @@ function PollAdmin({
           <button onClick={() => editMilestone(definition)}>Edit</button>
         </div>)}
       </div>
-    </div>
-
-    <div className="cp-admin-config">
-      <h4>XP Reward Configuration</h4>
-      <p>Reward berasal dari konfigurasi server. Nilai 0 menonaktifkan award untuk sumber tersebut.</p>
-      <div className="cp-grid cp-admin-form">
-        {rewardSettings.map((item) => <label key={item.source_type}>
-          {({ race_result: "Official race result", checkin: "Race check-in", quest: "Quest completion", shop_purchase: "Development shop purchase" } as Record<string, string>)[item.source_type] ?? item.source_type}
-          <input type="number" min="0" max="100000" step="1" value={rewardInputs[item.source_type] ?? "0"} onChange={(event) => setRewardInputs((current) => ({ ...current, [item.source_type]: event.target.value }))} />
-          <button onClick={() => void saveReward(item.source_type)}>Save reward</button>
-        </label>)}
-      </div>
-    </div>
-
-    <div className="cp-admin-config">
-      <h4>Manual XP Adjustment</h4>
-      <p>Setiap penyesuaian dicatat di ledger dengan reference unik dan alasan audit. Total XP tidak boleh menjadi negatif.</p>
-      <label>Cari member<input value={memberSearch} onChange={(event) => setMemberSearch(event.target.value)} placeholder="Nama karakter" /></label>
-      <button onClick={() => void searchMembers()} disabled={searchingMembers}><Users size={15} /> Cari member</button>
-      <label>Member<select value={adjustMember} onChange={(event) => setAdjustMember(event.target.value)}>
-        <option value="">Pilih member</option>{memberMatches.map((item) => <option key={item.id} value={item.id}>{item.character_name} · {item.role} · {item.member_code}</option>)}
-      </select></label>
-      <label>Jumlah XP (+/-)<input type="number" step="1" value={adjustAmount} onChange={(event) => setAdjustAmount(event.target.value)} /></label>
-      <label>Alasan<input value={adjustDescription} onChange={(event) => setAdjustDescription(event.target.value)} maxLength={240} /></label>
-      <button onClick={() => void adjustXp()}><Save size={15} /> Terapkan penyesuaian</button>
     </div>
 
     <div className="cp-admin-config">
