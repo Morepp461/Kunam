@@ -2543,7 +2543,7 @@ Perform a complete integration audit and regression suite for all nine facilitie
 - Both DBs now contain the three new migration names `member_profile_settings_rpc`, `member_profile_avatar_legacy_cleanup`, and `driver_market_value_transaction_dedupe`. Historical migration ledgers have pre-existing version/name divergence, including Testing-only race-engine test migrations; do not replay historical migrations blindly. Verify schema parity for each future change.
 - Testing currently has 26 Driver MV records; Production has no Driver records. No Testing business data was copied to Production.
 - GitHub Caleris CI run #5606 passed all steps, including TypeScript, production build, unit/schema validation, Playwright browser smoke tests, Market Value regression, profile privacy, and Supabase schema parity. The point.md update will trigger one final CI rerun. Remaining before release: merge after that CI passes and verify the Vercel Production deployment. Vercel environment settings must remain unchanged.
-- Priorities 1–5 have been merged and deployed successfully. Priority 6 XP Engine implementation and both-database migrations are now complete in the dedicated branch; final CI, merge, and Vercel release remain pending. After Priority 6 is released, continue the approved Team HQ audit priorities. Priorities 7–9 (Assets, Achievements/Badges expansion, Digital ID design system) remain deferred.
+- Priorities 1–5 and Priority 6 XP Engine have been merged and deployed successfully. Priority 6 release commit: ebd7dc801aa02460fe1f26723a0e1020b93efacd. The next approved implementation scope is the Team HQ audit priorities. Assets, Achievements/Badges expansion, and Digital ID design system remain deferred until the Team HQ priorities are complete.
 
 
 ## Priority 6 — XP Engine implementation and QA status — 26 November 2026
@@ -2626,15 +2626,18 @@ The following ten migration sources exist in this branch and have been applied s
 
 - All ten migrations applied successfully.
 - Production has no Driver/Team operational records in the audited scope, so the historical XP backfill correctly created no player XP rows. No Testing dummy data was copied.
-- Function-definition hashes for the 14 shared XP, milestone, race reconciliation, Admin adjustment, and economy transaction functions matched between Testing and Production before the final source-owned reward migrations. Re-run final parity check after the last migration.
+- Final post-migration parity check: all 20 core XP, milestone, race reconciliation, Admin adjustment, and economy transaction function definitions match between Testing and Production. All 9 XP/team-milestone trigger definitions also match. The legacy admin_inject_wallet_balance function body differs between environments, but execution is revoked for both authenticated and service_role in both databases.
 - The dedicated Admin clearing wallet exists once and is hidden from the public wallet directory; it starts at zero.
 
-### Release gate — still required
+### Release gate — completed 26 November 2026
 
-- [ ] Finish source QA and CI for the current branch, including TypeScript, production build, unit tests, schema/migration checks, and browser smoke tests.
-- [ ] Fix any QA/CI failure before merge.
-- [ ] Verify Testing/Production function-definition parity after all ten migrations.
-- [ ] Create/refresh the PR, merge to main only after CI is green.
-- [ ] Verify the new Vercel Production deployment is READY and serves the merged commit.
-- [ ] Do not change Vercel environment variables or project settings.
-- [ ] After Priority 6 is released, continue the approved Team HQ audit priorities. Do not start Assets, Achievement/Badge expansion, or Digital ID redesign before those priorities are complete.
+- [x] TypeScript, production build, unit/schema tests, migration/schema parity checks, and browser smoke tests passed in GitHub Actions CI run #5666 (44 steps, all successful).
+- [x] All ten XP migrations applied to Testing and Production.
+- [x] Final parity verified after all ten migrations: 20 core function definitions and 9 XP/team-milestone trigger definitions match across both databases.
+- [x] PR #399 merged into main. Release commit: `ebd7dc801aa02460fe1f26723a0e1020b93efacd`.
+- [x] Vercel Production deployment `dpl_7JVacj89xkzyWSCcUuDsxcfZmkes` reached **READY**, serving the merged main commit. Production aliases: `calerismasters.com`, `www.calerismasters.com`, and `calerismastersnewgen-mu.vercel.app`.
+- [x] Vercel environment variables and project settings were not changed.
+
+### Next approved priority
+
+Continue with the approved Team HQ audit priorities using a new implementation branch, with full dependency review, QA, both-database migrations, CI, merge, and Vercel release gates. Do not start Assets, Achievement/Badge expansion, or Digital ID redesign before the Team HQ priorities are complete.
