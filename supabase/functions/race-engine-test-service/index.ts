@@ -497,10 +497,15 @@ Deno.serve(async (req: Request) => {
         effectsByLevel: row.effects_by_level as Record<string, Record<string, number>>,
         updatedAt: row.updated_at
       }));
-      const hqLevels = hqFacilityKeys.map((facilityKey) => ({
-        facilityKey,
-        level: Number(hqInput[facilityKey] ?? 0)
-      }));
+      const hqLevels = hqFacilityKeys.map((facilityKey) => {
+        const raw = hqInput[facilityKey];
+        const input = raw !== null && typeof raw === "object" && !Array.isArray(raw) ? asRecord(raw) : {};
+        return {
+          facilityKey,
+          level: Number(input.level ?? raw ?? 0),
+          condition: Number(input.condition ?? 100)
+        };
+      });
       const hqResolution = resolveTeamHqRaceEffects(division, hqLevels, hqConfigs, new Date().toISOString());
       if (hqResolution.unresolvedFacilityKeys.length > 0) {
         throw new Error(`HQ belum siap untuk simulasi: ${hqResolution.unresolvedFacilityKeys.join(", ")} belum memiliki efek balap terkonfigurasi.`);
