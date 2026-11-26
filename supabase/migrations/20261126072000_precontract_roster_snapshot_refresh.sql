@@ -112,12 +112,14 @@ begin
         on conflict(round_id,member_id) do update set
           driver_name_snapshot=excluded.driver_name_snapshot,
           team_id_snapshot=excluded.team_id_snapshot,
-          team_name_snapshot=excluded.team_name_snapshot;
+          team_name_snapshot=excluded.team_name_snapshot,points_total=0;
 
         delete from public.license_final_standings fs
         using public.license_season_divisions sd
         where sd.id=fs.season_division_id and sd.season_id=v_season.id
           and sd.id<>v_division_id and fs.member_id=n.driver_member_id;
+        delete from public.license_final_standings
+        where season_division_id=v_division_id and member_id=n.driver_member_id;
         select coalesce(max(final_position),0)+1 into v_final_position
         from public.license_final_standings where season_division_id=v_division_id;
         insert into public.license_final_standings(
