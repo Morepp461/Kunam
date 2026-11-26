@@ -106,6 +106,38 @@ export default function DriverTransferMarket({session}:{session:Session}){
   if(error){setNotice(error.message);return}setNotice(action==="accept"?"Kontrak disepakati. Team Owner dapat melanjutkan registrasi Driver ke FIA.":action==="reject"?"Penawaran kontrak ditolak.":"Counter-offer gaji dikirim.");
   setFreeAgentCounterSalary("");setFreeAgentCounterNote("");await refresh();
  };
+ const lastPrecontractOffer=(id:string)=>precontractOffers.filter(o=>o.negotiation_id===id).sort((a,b)=>new Date(b.created_at).getTime()-new Date(a.created_at).getTime())[0];
+ const startPrecontract=async()=>{
+  if(!supabase||!precontractDriverId)return;
+  if(member?.role!=="Owner"||!ownTeamId){setNotice("Hanya Team Owner yang dapat memulai Pre-contract.");return}
+  const salary=Number(precontractSalary),duration=Number(precontractDuration);
+  if(!Number.isFinite(salary)||salary<=0||Math.round(salary*100)!==salary*100||duration<1||duration>5){setNotice("Gaji atau durasi Pre-contract tidak valid.");return}
+  setSaving(true);setNotice("");
+  const {error}=await supabase.rpc("member_start_driver_precontract",{p_driver_member_id:precontractDriverId,p_annual_salary:salary,p_duration_seasons:duration,p_note:precontractNote||null});
+  setSaving(false);
+  if(error){setNotice(error.message);return}
+  setNotice("Penawaran Pre-contract terkirim langsung ke Driver.");
+  setPrecontractDriverId("");setPrecontractSalary("");setPrecontractDuration("1");setPrecontractNote("");
+  await refresh();
+ };
+ const respondPrecontract=async(id:string,action:"accept"|"reject"|"counter")=>{
+  if(!supabase)return;
+  const salary=Number(precontractCounterSalary),duration=Number(precontractCounterDuration);
+  if(action==="counter"&&(!Number.isFinite(salary)||salary<=0||Math.round(salary*100)!==salary*100||duration<1||duration>5)){
+   setNotice("Gaji atau durasi counter-offer tidak valid.");return;
+  }
+  setSaving(true);setNotice("");
+  const {error}=await supabase.rpc("member_respond_driver_precontract",{
+   p_negotiation_id:id,p_action:action,p_annual_salary:action==="counter"?salary:null,
+   p_duration_seasons:action==="counter"?duration:null,p_note:action==="counter"?precontractCounterNote||null:null
+  });
+  setSaving(false);
+  if(error){setNotice(error.message);return}
+  setNotice(action==="signed"?"Pre-contract ditandatangani.":action==="reject"?"Pre-contract ditolak.":action==="accept"?"Pre-contract ditandatangani.":"Counter-offer Pre-contract terkirim.");
+  setPrecontractCounterId(null);setPrecontractCounterSalary("");setPrecontractCounterDuration("1");setPrecontractCounterNote("");
+  await refresh();
+ };
+ const minePrecontracts=precontracts.filter(n=>n.destination_team_id===ownTeamId||n.driver_member_id===member?.id);
  const mineFreeAgent=freeAgentNegotiations.filter(n=>n.team_id===ownTeamId||n.driver_member_id===member?.id);
  const mine=negotiations.filter(n=>n.buyer_team_id===ownTeamId||n.seller_team_id===ownTeamId);
  void setMoveType; void canRecruit; void teamDriverCount; void eligibleDrivers; void start; void startFreeAgent;
