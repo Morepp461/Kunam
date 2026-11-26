@@ -328,19 +328,21 @@ begin
   select coalesce(jsonb_agg(to_jsonb(x) order by x.created_at desc),'[]'::jsonb)
   into v_history
   from (
-    select 'xp'::text as kind,l.amount as signed_amount,l.description,l.created_at,l.metadata,l.source_id as reference
-    from public.caleris_xp_ledger l
-    where p_member_id is not null and l.member_id=p_member_id and l.source_type='admin_adjustment'
-    union all
-    select 'wallet'::text as kind,
-      case when t.destination_account_id=v_wallet_id then t.amount else -t.amount end as signed_amount,
-      t.description,t.created_at,t.metadata,t.idempotency_key as reference
-    from public.economy_transactions t
-    where t.event_type='admin_adjustment'
-      and (t.source_account_id=v_wallet_id or t.destination_account_id=v_wallet_id)
-  ) x
-  order by x.created_at desc
-  limit 30;
+    select * from (
+      select 'xp'::text as kind,l.amount as signed_amount,l.description,l.created_at,l.metadata,l.source_id as reference
+      from public.caleris_xp_ledger l
+      where p_member_id is not null and l.member_id=p_member_id and l.source_type='admin_adjustment'
+      union all
+      select 'wallet'::text as kind,
+        case when t.destination_account_id=v_wallet_id then t.amount else -t.amount end as signed_amount,
+        t.description,t.created_at,t.metadata,t.idempotency_key as reference
+      from public.economy_transactions t
+      where t.event_type='admin_adjustment'
+        and (t.source_account_id=v_wallet_id or t.destination_account_id=v_wallet_id)
+    ) entries
+    order by entries.created_at desc
+    limit 30
+  ) x;
   return v_history;
 end;
 $function$;
