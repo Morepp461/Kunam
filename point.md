@@ -2690,3 +2690,7 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - The same three migrations were applied to Production. Function-definition hashes for project start, purchase, capacity, and Admin config reader match Testing and Production. Production remains at 0 HQ facility rows and 0 purchased entitlements; no Testing data was copied.
 - New migration sources: `20261127130000_team_hq_project_slot_shop_and_dynamic_capacity.sql`, `20261127131000_team_hq_slot_shop_admin_config_read.sql`, and `20261127132000_team_hq_slot_purchase_ledger_compatibility.sql`.
 - Shop price and activation remain an Admin configuration step after deployment. The item cannot be purchased until those settings are supplied.
+
+- Additional QA caught a second hard-coded limit in the database trigger `enforce_team_hq_project_limit()`. It is now capacity-aware too, using the same Factory + Shop entitlement calculation while retaining the team-row lock against concurrent project creation.
+- Final rolled-back enforcement test purchased the Shop entitlement, set Factory LV6, inserted temporary projects up to four active projects, and confirmed a fifth project start is rejected. All test changes and ledger entries were rolled back.
+- Additional migration source: `20261127133000_team_hq_dynamic_project_limit_trigger.sql`. This trigger migration is applied to both Testing and Production.
