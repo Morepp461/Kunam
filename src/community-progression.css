@@ -74,6 +74,7 @@
 .cp-id-top{font-size:10px;letter-spacing:.15em;font-weight:800;color:#d3b875}
 .cp-id h1{font-size:clamp(26px,5vw,38px);margin:38px 0 6px;overflow-wrap:anywhere}
 .cp-id p{margin:5px 0;color:#c7c7c7}
+.cp-id-market-value{color:#f0d477!important;font-weight:800;letter-spacing:.02em}
 .cp-id-level{border-top:1px solid rgba(255,255,255,.2);margin-top:24px;padding-top:14px}
 .cp-id-bottom{margin-top:22px;color:#d3b875;font-size:12px}
 .cp-share{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid rgba(160,160,160,.2);border-radius:10px;padding:14px;margin-top:18px}

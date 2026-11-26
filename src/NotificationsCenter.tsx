@@ -52,12 +52,26 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
   if(requestError)setError(requestError.message);else{setItems(current=>current.map(item=>({...item,read_at:item.read_at||now})));setUnread(0);setError("")}
   setBusy(false);
  };
+ const deleteNotification=async(id:string)=>{
+  if(!supabase||!memberId||busy)return;
+  setBusy(true);
+  try{
+   const {error:requestError}=await supabase.rpc("member_delete_caleris_notification",{p_notification_id:id});
+   if(requestError)throw requestError;
+   const deleted=items.find(item=>item.id===id);setItems(current=>current.filter(item=>item.id!==id));if(deleted&&!deleted.read_at)setUnread(value=>Math.max(0,value-1));setError("");
+  }catch(error){setError(error instanceof Error?error.message:"Notifikasi gagal dihapus.");}
+  finally{setBusy(false)}
+ };
  const deleteAll=async()=>{
   if(!supabase||!memberId||busy||!items.length)return;
   if(!window.confirm("Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan."))return;
-  setBusy(true);const {error:requestError}=await supabase.from("caleris_notifications").delete().eq("member_id",memberId);
-  if(requestError)setError(requestError.message);else{setItems([]);setUnread(0);setError("")}
-  setBusy(false);
+  setBusy(true);
+  try{
+   const {error:requestError}=await supabase.rpc("member_delete_caleris_notifications");
+   if(requestError)throw requestError;
+   setItems([]);setUnread(0);setError("");
+  }catch(error){setError(error instanceof Error?error.message:"Semua notifikasi gagal dihapus.");}
+  finally{setBusy(false)}
  };
  if(!memberId)return null;
  return <div className="header-notifications" ref={root}>
@@ -72,6 +86,7 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
     {loading?<p className="header-notifications-empty">Memuat notifikasi...</p>:!items.length?<p className="header-notifications-empty">Belum ada notifikasi.</p>:items.map(item=><article className={"header-notification-item"+(item.read_at?" is-read":" is-unread")} key={item.id}>
      <Link to={destination(item,memberRole)} onClick={()=>{if(!item.read_at)void markRead(item.id);setOpen(false)}}><span className="header-notification-meta">{isWarningNotification(item)&&<CaleMascot designId="reaction_warning" size={28} className="header-notification-cale"/>}{item.category.replaceAll("_"," ").toUpperCase()} · {when(item.created_at)}</span><strong>{item.title}</strong>{item.body&&<p>{item.body}</p>}<span className="header-notification-link">Buka detail <ExternalLink size={12}/></span></Link>
      {!item.read_at&&<button type="button" aria-label="Tandai sudah dibaca" title="Tandai sudah dibaca" onClick={()=>void markRead(item.id)}><CheckCheck size={15}/></button>}
+     <button type="button" aria-label="Hapus notifikasi" title="Hapus notifikasi" disabled={busy} onClick={()=>void deleteNotification(item.id)}><Trash2 size={15}/></button>
     </article>)}
    </div>
   </section>}

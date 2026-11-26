@@ -54,6 +54,7 @@ export default function PublicMemberId() {
       <div className="cp-id-top"><span>CALERIS MASTERS</span><span>{String(card.theme || "classic").toUpperCase()}</span></div>
       <h1>{member.character_name}</h1>
       <p>{member.role} · {member.license || "UNLICENSED"}</p>
+      {member.role==="Driver"&&member.market_value_eur!=null&&<p className="cp-id-market-value">Market Value · {new Intl.NumberFormat("id-ID",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(member.market_value_eur))}</p>}
       <p>{member.team_name || "Independent"} · {member.member_code}</p>
       <div className="cp-id-bottom">{card.tagline || "CALERIS MASTERS Member"}</div>
     </section>

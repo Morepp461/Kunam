@@ -1960,3 +1960,77 @@ Nilai yang ditanam permanen dan divalidasi di backend:
 - Tidak ada halaman, RPC, atau hak akses Admin untuk mengubah konstanta tersebut. Admin hanya dapat memantau snapshot dan menjalankan pemeriksaan/recalculation operasional; kalkulasi normal tetap berjalan otomatis dari event engine dan scheduler.
 
 Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
+
+
+## CALERIS MASTERS Quality & UX Fixes — 26 November 2026
+
+### Scope approved by project owner
+
+1. Driver Market Value (MV) must be visible on the Driver public/member profile, Driver cards, and that Driver's Digital ID.
+2. Transfer Market license and nationality dropdowns must expose the complete available option sets, without accidental truncation or partial lists.
+3. Free Agent rows must provide a working recruitment action, following the existing eligibility and negotiation rules.
+4. Investigate recurring HQ upgrade Edge Function errors end-to-end in both Testing and Production: frontend invocation, request/response handling, Edge Function source/deployment, authorization, database RPC/schema/migrations, and logs. Fix the root cause without weakening authorization or duplicating economy transactions.
+5. Increase Driver Market Value Tier 1 base value from €10,000,000 to **€18,000,000**. Keep the value locked in code/migration, consistent with the immutable configuration decision in the prior Driver Market Engine release. Update derived calculations/tests and synchronize both databases where the stored fixed constant exists.
+6. Remove the obsolete notification dated the 20th from the actual notification source and prevent it from being regenerated. Preserve unrelated notifications and audit/history records unless the source proves they are obsolete duplicates.
+7. Add Indonesian and English language choices in Profile Settings. Default existing accounts to Indonesian; persist each member's explicit choice and apply it consistently across the application. Indonesian must be the default/full interface language, with English as the alternate. The About Us page is exempt and remains in its existing language/content.
+
+### Implementation constraints
+
+- Update this file before implementation and append verified progress/results here during the work.
+- Inspect current source, dependency graph, migrations, Edge Function deployment state, and both Supabase environments before changing code or schema.
+- Work on branch `fix/caleri-profile-market-language-hq-20261126`; merge only after QA and CI pass.
+- Any database change must be a versioned migration and applied to both Testing (`vxwvhyyvoipjwucbrvlu`) and Production (`asltczqrmoxnayusvjta`), with schema/migration parity verified.
+- Do not change Vercel environment variables.
+- Preserve existing transfer, loan, free-agent eligibility, HQ development costs, authorization, economy ledger, notification, and profile privacy rules.
+- No unrelated feature work.
+
+### Progress log
+
+- **26 November 2026 — Scope recorded:** all seven requested items above are recorded before implementation. Branch created from current `main`. User-provided video inspected: it shows Transfer Market and profile/registration navigation; no HQ upgrade error is visible in the supplied clip, so the recurring HQ error must be diagnosed from source and Supabase logs rather than inferred from that video.
+- **Implementation status:** pending source/dependency audit.
+
+
+### Progress update — audit checkpoint
+
+- **Confirmed:** the deployed `economy-workflows` Edge Function handles `upgrade_development_attribute` and calls the database RPC `member_upgrade_development_attribute`. The gateway validates JWT and forwards to that RPC; it returns database errors as HTTP 422.
+- **Confirmed:** Testing's deployed `economy-workflows` is version 11; Production is version 10. Both deployed source hashes are identical, so the version-number difference alone is not evidence of a source mismatch.
+- **Log check:** in the last 24-hour Edge Function gateway logs, Testing shows an OPTIONS preflight but no matching POST for `economy-workflows`; Production shows no matching calls. The uploaded video does not contain an HQ upgrade attempt/error. The exact failing request therefore is not yet established; continue with frontend call-site, database RPC definitions, PostgreSQL logs, and function deployment/source parity before selecting a fix.
+- **Next audit targets:** Team HQ upgrade UI and RPC `member_upgrade_development_attribute`, HQ lifecycle migrations, market/profile/Digital ID renderers, Transfer Market option sources, notification generation/deletion rules, and application locale architecture.
+
+
+### Progress update — source and database diagnosis
+
+- **Market Value:** Transfer Market already loads Driver MV from `member_get_driver_market_values()`; public profile currently receives character identity only from `member-directory`, and the public Digital ID RPC does not include MV. The missing surfaces are confirmed.
+- **Free Agent recruitment:** the page already computes eligible `freeAgents` and has a `startFreeAgent` negotiation handler, but no directory action opens the Free Agent recruitment form. The current final table action only renders Pre-contract for contracted Drivers.
+- **Incomplete dropdowns:** Transfer Market derives both license and nationality options from the current directory rows. License options must instead use the full salary-band catalog; nationality must use the existing complete country dataset already provided by `@countrystatecity/countries-browser`.
+- **HQ:** Team HQ upgrade is a direct authenticated RPC, `member_start_team_hq_project(text,text)`, not an Edge Function call. Both DBs grant EXECUTE to `authenticated`, deny `anon`, and have matching RPC definitions and populated HQ facility pricing. The frontend currently has no try/catch around the RPC promise. The 24-hour logs show the HQ completion cron running in both DBs; no HQ upgrade POST reaches `economy-workflows`. Add robust RPC error handling and validate the transaction/project lifecycle without changing wallet authorization or ledger semantics.
+- **Notifications:** `NotificationsCenter` currently hard-deletes notification rows. The reminder worker runs every five minutes and `enqueue_caleris_notification` uses the notification row itself as the idempotency record. A deleted reminder can therefore be recreated if its source event is still eligible. Implement durable per-member deletion tombstones and route individual/bulk deletion through a secure RPC. The global query found November 20 quest reminders, but did not establish which exact row belongs to the current account; do not delete other members' notifications.
+- **Language:** `profiles` currently has no language preference column and the project has no i18n dependency. Reuse the installed stack with a small application language runtime; add a persisted `preferred_language` setting (Indonesian default, English alternate), and explicitly bypass translation on `/about-us`.
+- **Dependency check:** no package/dependency upgrade is required for these changes. The existing country-state-city package supplies the complete country list.
+
+
+### Progress update — implementation and database migration
+
+- **Market Value baseline superseded:** Tier 1 base value is now **€18,000,000**. The original 10m migration remains unchanged as historical source; the new migration overrides the live locked constant. Existing values were recalculated with the already-approved 0.25 gradual-growth factor, preserving the existing growth model and history.
+- **Database migration applied to Testing and Production:** `preferred_language` added with default `id`; Digital ID RPC now returns Driver MV; notification deletion tombstones and authenticated delete RPCs added; direct authenticated DELETE on notifications revoked.
+- **Testing DB verification:** base value €18m; 26 Driver MV snapshots recalculated (current range approximately €2.03m–€8.75m); 10 expired quest-reminder rows tombstoned/removed; no expired quest reminders remain.
+- **Production DB verification:** base value €18m; no Driver MV snapshots exist yet, so no snapshots were fabricated; language column and notification tombstone/delete RPC permissions verified.
+- **Edge Function:** `member-directory` now includes MV in public Driver profile payload. Deployed to Testing v13 and Production v17 with identical source hash and the existing `verify_jwt=false` behavior preserved. No Supabase environment variables changed.
+- **Frontend implemented:** private Profile shows MV for Drivers; public member profile receives and displays MV; public Digital ID card displays MV; Transfer Market filters now use the complete license catalog and complete country dataset; eligible Free Agents now have a Team Owner-only recruitment action and salary-band form; Team HQ RPC failures are now caught and surfaced with database error details.
+- **Notification fix:** notification deletion now records durable tombstones before deleting, preventing the reminder worker from recreating the same notification. Individual and bulk deletion use authenticated RPCs. Expired quest reminders from the old date-20 batch were cleaned from both databases where their assignment had expired.
+- **HQ error audit:** the Team HQ upgrade path does not call an Edge Function; it invokes `member_start_team_hq_project` directly. No HQ request appears in the `economy-workflows` POST logs in either database. The only recorded Edge Function 400 in Testing during the inspected window was `race-engine-test-service`, separate from Team HQ; its latest scheduled background ticks are succeeding. Do not treat that unrelated test-service event as the HQ failure.
+- **Implementation status:** frontend QA, source checks, migration-ledger reconciliation, and CI still pending.
+
+
+### Progress update — public MV permission boundary correction
+
+- **Security review caught and corrected a service-role access mismatch before final QA:** the MV table intentionally denies direct SELECT to `service_role`. The public profile Edge Function therefore now calls a narrowly scoped `caleris_get_public_driver_market_value(uuid)` SECURITY DEFINER RPC instead of querying the protected table directly.
+- The new scoped RPC returns one MV only for a Driver whose linked profile is public/active/admin; EXECUTE is granted only to `service_role`, not `anon` or `authenticated`. This preserves the original MV privacy boundary.
+- The scoped RPC migration was applied to both databases. `member-directory` was redeployed with the corrected source to Testing v14 and Production v18; both have identical source hashes and retain `verify_jwt=false`.
+- Added regression assertions to prevent future direct service-role table reads and ensure the scoped RPC remains the only public profile MV path.
+
+
+### Progress update — date-20 notification cleanup
+
+- The remaining November 20 notifications in Testing were three `Quest baru tersedia` entries. Their linked quest assignments were all `expired` and had ended on November 20; all three belonged to one member account.
+- Added a narrowly scoped cleanup migration that tombstones and deletes only those three expired notifications. Quest assignment records and unrelated notifications are untouched. The migration was applied to both databases; Production had no matching rows.
