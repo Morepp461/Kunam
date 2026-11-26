@@ -27,11 +27,10 @@ export default function ShopPage({session}:{session:Session}){
   ]);
   if(profileError){setError(profileError.message);setLoading(false);return;}
   const adminAccess=Boolean(admin?.user_id);setIsAdmin(adminAccess);
-  let owner=false;
   if(profile?.member_id){
    const {data:member,error:memberError}=await supabase.from("members").select("role,team_id").eq("id",profile.member_id).maybeSingle();
    if(memberError){setError(memberError.message);setLoading(false);return;}
-   owner=member?.role==="Owner";setIsOwner(owner);
+   setIsOwner(member?.role==="Owner");
    if(member?.team_id){
     const {data,error:capacityError}=await supabase.rpc("member_get_team_hq_project_capacity");
     if(capacityError){setError(capacityError.message);setLoading(false);return;}
@@ -43,9 +42,6 @@ export default function ShopPage({session}:{session:Session}){
    if(configError){setError(configError.message);setLoading(false);return;}
    setPrice(config?.price_eur==null?"":String(config.price_eur));
    setActive(Boolean(config?.is_active));
-  }else if(capacity){
-   setPrice(capacity.shop_item_price_eur==null?"":String(capacity.shop_item_price_eur));
-   setActive(capacity.shop_item_active);
   }
   setLoading(false);
  },[session.user.id]);
