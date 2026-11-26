@@ -62,7 +62,7 @@ const ID_TO_EN: Record<string,string> = {
  "Semua negara":"All countries","Semua tim":"All teams","Semua pembalap":"All drivers","Cari":"Search","Cari pembalap...":"Search drivers...",
  "Cari pembalap / publik":"Search driver / public","Pemilik Tim":"Team Owner","Pembalap":"Driver","Tim":"Team","Pemilik":"Owner",
  "Anggota":"Member","Karakter":"Character","Divisi":"Division","Musim":"Season","Balapan":"Race","Putaran":"Round","Poin":"Points",
- "Klasemen":"Leaderboard","Statistik":"Statistics","Performa":"Performance","Pencapaian":"Achievement","Reputasi":"Reputation",
+ "Klasemen":"Leaderboard","Statistik":"Statistics","Performa":"Performance","Reputasi":"Reputation",
  "Aktivitas":"Activity","Kontrak":"Contract","Kemampuan":"Skill","Skor Lisensi":"License Score","Pengali Tier":"Tier Multiplier",
  "Faktor Pertumbuhan":"Growth Factor","Gaji":"Salary","Gaji tahunan":"Annual salary","Gaji tahunan terbaru":"Latest annual salary",
  "Tanggal penawaran":"Offer date","Terima penawaran gaji":"Accept salary","Penawaran balasan":"Counter-offer","Tolak":"Reject",
