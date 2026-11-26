@@ -2020,3 +2020,11 @@ Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
 - **Notification fix:** notification deletion now records durable tombstones before deleting, preventing the reminder worker from recreating the same notification. Individual and bulk deletion use authenticated RPCs. Expired quest reminders from the old date-20 batch were cleaned from both databases where their assignment had expired.
 - **HQ error audit:** the Team HQ upgrade path does not call an Edge Function; it invokes `member_start_team_hq_project` directly. No HQ request appears in the `economy-workflows` POST logs in either database. The only recorded Edge Function 400 in Testing during the inspected window was `race-engine-test-service`, separate from Team HQ; its latest scheduled background ticks are succeeding. Do not treat that unrelated test-service event as the HQ failure.
 - **Implementation status:** frontend QA, source checks, migration-ledger reconciliation, and CI still pending.
+
+
+### Progress update — public MV permission boundary correction
+
+- **Security review caught and corrected a service-role access mismatch before final QA:** the MV table intentionally denies direct SELECT to `service_role`. The public profile Edge Function therefore now calls a narrowly scoped `caleris_get_public_driver_market_value(uuid)` SECURITY DEFINER RPC instead of querying the protected table directly.
+- The new scoped RPC returns one MV only for a Driver whose linked profile is public/active/admin; EXECUTE is granted only to `service_role`, not `anon` or `authenticated`. This preserves the original MV privacy boundary.
+- The scoped RPC migration was applied to both databases. `member-directory` was redeployed with the corrected source to Testing v14 and Production v18; both have identical source hashes and retain `verify_jwt=false`.
+- Added regression assertions to prevent future direct service-role table reads and ensure the scoped RPC remains the only public profile MV path.
