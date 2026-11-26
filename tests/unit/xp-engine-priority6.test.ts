@@ -9,7 +9,7 @@ const permanentMilestones = readFileSync(
   new URL("../../supabase/migrations/20261126224000_xp_milestone_rewards_permanent.sql", import.meta.url),
   "utf8",
 );
-const adminMigration = readFileSync(
+const teamMilestones = readFileSync(\n  new URL("../../supabase/migrations/20261126225000_xp_team_milestone_owner_rewards.sql", import.meta.url),\n  "utf8",\n);\nconst raceBackfill = readFileSync(\n  new URL("../../supabase/migrations/20261126226000_xp_official_result_backfill.sql", import.meta.url),\n  "utf8",\n);\nconst adminMigration = readFileSync(
   new URL("../../supabase/migrations/20261126220000_admin_profile_xp_wallet_adjustments.sql", import.meta.url),
   "utf8",
 );
@@ -54,6 +54,19 @@ describe("CALERIS XP reward policy", () => {
     expect(permanentMilestones).not.toContain("values(p_member,-net_awarded");
     expect(permanentMilestones).not.toContain("total_xp:=total_xp-net_awarded");
     expect(permanentMilestones).not.toContain("completion_source:=d.code||");
+  });
+  it("awards team achievements once to the current Team Owner", () => {
+    expect(teamMilestones).toContain("when 'team_first_title' then 20");
+    expect(teamMilestones).toContain("when 'team_drivers_2' then 5");
+    expect(teamMilestones).toContain("private.caleris_team_milestone_xp_awards");
+    expect(teamMilestones).toContain("m.role='Owner'");
+    expect(teamMilestones).toContain("on conflict(team_id,milestone_id) do nothing");
+  });
+
+  it("backfills existing official race results without importing Testing data", () => {
+    expect(raceBackfill).toContain("rr.published_at is not null");
+    expect(raceBackfill).toContain("private.caleris_reconcile_race_xp(v_round.round_id)");
+    expect(raceBackfill).not.toContain("insert into public.members");
   });
 });
 
