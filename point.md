@@ -1960,3 +1960,31 @@ Nilai yang ditanam permanen dan divalidasi di backend:
 - Tidak ada halaman, RPC, atau hak akses Admin untuk mengubah konstanta tersebut. Admin hanya dapat memantau snapshot dan menjalankan pemeriksaan/recalculation operasional; kalkulasi normal tetap berjalan otomatis dari event engine dan scheduler.
 
 Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
+
+
+## CALERIS MASTERS Quality & UX Fixes — 26 November 2026
+
+### Scope approved by project owner
+
+1. Driver Market Value (MV) must be visible on the Driver public/member profile, Driver cards, and that Driver's Digital ID.
+2. Transfer Market license and nationality dropdowns must expose the complete available option sets, without accidental truncation or partial lists.
+3. Free Agent rows must provide a working recruitment action, following the existing eligibility and negotiation rules.
+4. Investigate recurring HQ upgrade Edge Function errors end-to-end in both Testing and Production: frontend invocation, request/response handling, Edge Function source/deployment, authorization, database RPC/schema/migrations, and logs. Fix the root cause without weakening authorization or duplicating economy transactions.
+5. Increase Driver Market Value Tier 1 base value from €10,000,000 to **€18,000,000**. Keep the value locked in code/migration, consistent with the immutable configuration decision in the prior Driver Market Engine release. Update derived calculations/tests and synchronize both databases where the stored fixed constant exists.
+6. Remove the obsolete notification dated the 20th from the actual notification source and prevent it from being regenerated. Preserve unrelated notifications and audit/history records unless the source proves they are obsolete duplicates.
+7. Add Indonesian and English language choices in Profile Settings. Default existing accounts to Indonesian; persist each member's explicit choice and apply it consistently across the application. Indonesian must be the default/full interface language, with English as the alternate. The About Us page is exempt and remains in its existing language/content.
+
+### Implementation constraints
+
+- Update this file before implementation and append verified progress/results here during the work.
+- Inspect current source, dependency graph, migrations, Edge Function deployment state, and both Supabase environments before changing code or schema.
+- Work on branch `fix/caleri-profile-market-language-hq-20261126`; merge only after QA and CI pass.
+- Any database change must be a versioned migration and applied to both Testing (`vxwvhyyvoipjwucbrvlu`) and Production (`asltczqrmoxnayusvjta`), with schema/migration parity verified.
+- Do not change Vercel environment variables.
+- Preserve existing transfer, loan, free-agent eligibility, HQ development costs, authorization, economy ledger, notification, and profile privacy rules.
+- No unrelated feature work.
+
+### Progress log
+
+- **26 November 2026 — Scope recorded:** all seven requested items above are recorded before implementation. Branch created from current `main`. User-provided video inspected: it shows Transfer Market and profile/registration navigation; no HQ upgrade error is visible in the supplied clip, so the recurring HQ error must be diagnosed from source and Supabase logs rather than inferred from that video.
+- **Implementation status:** pending source/dependency audit.
