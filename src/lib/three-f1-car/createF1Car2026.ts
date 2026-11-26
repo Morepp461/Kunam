@@ -13,6 +13,7 @@ import type { AeroMode, AssetLodTier, ChassisModuleId, LiveryId, TireCompoundId 
 import type { CrashEffectState, SponsorSlotConfig, SponsorSlotId } from './f1Decals';
 import { appearanceFromPreset, createF1MaterialLibrary } from './f1Materials';
 import type { F1AppearanceConfig, F1MaterialLibrary } from './f1Materials';
+import { createTeamLiveryDecalLayers } from './teamLiveryDecalLayers';
 
 export interface CreateF1CarOptions {
   livery?: LiveryId;
@@ -1208,6 +1209,7 @@ export function createF1Car2026(options: CreateF1CarOptions = {}): F1Car2026Asse
   let aeroBlend = targetAeroMode === 'x-mode' ? 1 : 0;
   let targetExplode = 0;
   let currentExplode = 0;
+  let teamDecalLayers = createTeamLiveryDecalLayers(rootGroup, initialAppearance.teamDecals ?? []);
   let currentCrashState: CrashEffectState = options.crashState ?? {
     decalPeel: 0,
     frontWingBreak: 'none',
@@ -1332,6 +1334,8 @@ export function createF1Car2026(options: CreateF1CarOptions = {}): F1Car2026Asse
     setAppearance(cfg: F1AppearanceConfig, onAsyncReady?: () => void) {
       materials.updateAppearance(cfg, onAsyncReady);
       applySponsorSlotsVisibility(cfg.sponsorSlots);
+      teamDecalLayers.dispose();
+      teamDecalLayers = createTeamLiveryDecalLayers(rootGroup, cfg.teamDecals ?? []);
     },
     setCrashState(state: CrashEffectState) {
       applyCrashGeometry(state);
@@ -1411,6 +1415,7 @@ export function createF1Car2026(options: CreateF1CarOptions = {}): F1Car2026Asse
       };
     },
     dispose() {
+      teamDecalLayers.dispose();
       geometriesToDispose.forEach((g) => g.dispose());
       materials.dispose();
     },
