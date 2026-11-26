@@ -18,7 +18,16 @@ begin
   for n in
     select pc.*
     from public.caleris_driver_precontract_negotiations pc
+    join public.contracts old_contract on old_contract.id=pc.origin_contract_id
+    join public.members driver on driver.id=pc.driver_member_id
     where pc.status='signed' and pc.contract_ends_on<v_season.starts_on
+      and old_contract.status='active' and old_contract.ends_on=pc.contract_ends_on
+      and driver.team_id=pc.origin_team_id
+      and v_season.id=(
+        select target.id from public.license_seasons target
+        where target.starts_on>pc.contract_ends_on and target.status in ('draft','active')
+        order by target.starts_on limit 1
+      )
     order by pc.contract_ends_on,pc.signed_at
     for update
   loop
@@ -133,6 +142,11 @@ as $$
       and pc.destination_team_id=c.team_id
       and pc.status in ('signed','activated')
       and s.starts_on>pc.contract_ends_on
+      and exists(select 1 from public.contracts old_contract
+        where old_contract.id=pc.origin_contract_id
+          and old_contract.ends_on=pc.contract_ends_on
+          and (pc.status='activated' or old_contract.status='active'))
+      and (pc.status='activated' or m.team_id=pc.origin_team_id)
     order by pc.signed_at desc
     limit 1
   ) precontract on true
