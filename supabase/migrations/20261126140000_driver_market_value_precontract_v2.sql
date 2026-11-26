@@ -258,9 +258,9 @@ begin
     v_performance:=case when v_max_points>0 then least(100,greatest(0,v_points/v_max_points*100)) else 0 end;
 
     select a.attributes into v_attributes from public.caleris_driver_attributes a where a.member_id=d.id;
-    select coalesce(avg(value::numeric),50) into v_skill
-    from jsonb_each_text(coalesce(v_attributes,'{}'::jsonb))
-    where value ~ '^-?[0-9]+([.][0-9]+)?$';
+    select coalesce(avg(attr.raw_value::numeric),50) into v_skill
+    from jsonb_each_text(coalesce(v_attributes,'{}'::jsonb)) as attr(key,raw_value)
+    where attr.raw_value ~ '^-?[0-9]+([.][0-9]+)?';
 
     select coalesce(sum(case e.finishing_position when 1 then 5 when 2 then 3 when 3 then 1 else 0 end),0)
       + count(*) filter(where rr.driver_of_day_member_id=d.id)
