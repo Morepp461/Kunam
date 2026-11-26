@@ -2254,3 +2254,94 @@ User-approved exception to the no-deduction rule:
 - Apply versioned database migrations to Testing and Production consistently after Testing QA passes. Do not change Vercel environment settings.
 - This is an Admin-only profile adjustment capability; do not add a global manual reward configuration page.
 
+
+
+### Team HQ total audit — approved priorities — 26 November 2026
+
+**User approval:** All findings and recommendations from the Team HQ audit are approved and must be treated as implementation priorities. This is a documentation decision only; do not treat approval as permission to bypass the normal branch, QA, migration, and release gates.
+
+#### Audit baseline and environment facts
+
+- Team HQ has nine configured facilities: Commercial Department, Data Analytics Center, Driver Development Center, Engineering Department, Factory, Marketing Department, Pit Crew Training Center, Pusat Riset & Pengembangan, and Simulator Facility.
+- Both Testing and Production contain the nine facility configuration rows, the Team HQ effect functions, and the main facility/project/attribute/reputation/fan-growth triggers. Both have an active cron job running `private.complete_due_team_hq_projects()` every minute.
+- At audit time, Testing contained 13 teams, 117 facility rows, and one in-progress `rd_center` level-1 project. Production contained zero teams, zero facility rows, and zero projects. Do not copy Testing teams, facilities, wallets, or dummy data into Production.
+- The Testing project was still in progress and the facility level remained 0; this is consistent with the construction lifecycle and must not be mistaken for a failed upgrade.
+- The UI's current ACTIVE indicator reflects whether a facility configuration is enabled, not whether the facility has been built or is operational. This distinction must be corrected.
+- Existing effect implementations are partial: some effects are already consumed by their target systems, while other calculated outputs have no verified downstream consumer. Do not describe all nine facilities as fully integrated until end-to-end tests prove it.
+
+#### Priority 1 — Complete maintenance lifecycle
+
+Implement a complete, auditable maintenance workflow for every facility:
+- Define and implement the maintenance-required condition threshold using the existing project configuration/data model; do not invent a new threshold without checking current config and established balancing rules.
+- Provide an authorized Team Owner workflow to initiate maintenance and show its cost, duration if applicable, current condition, and expected post-maintenance condition before confirmation.
+- Charge the correct Team Wallet through the existing authoritative economy transaction/ledger path. Do not directly mutate cached balance fields.
+- On successful completion, restore condition according to the approved maintenance rule, update `last_maintenance_at`, and preserve an immutable maintenance history.
+- Ensure condition affects facility effects consistently before, during, and after maintenance. Prevent maintenance from being charged twice through retries or concurrent requests.
+- Handle insufficient balance, invalid facility ownership, unauthorized actors, duplicate submissions, and maintenance requests while a facility project is already active.
+- Display maintenance status and action availability accurately in the Team HQ UI.
+
+#### Priority 2 — Complete Pusat Riset & Pengembangan integration with Development Engine
+
+The current R&D facility has verified effects for Aero Power and a team Development token-cost discount, but the audit did not find a complete direct research/capability effect matching the facility description. Complete the integration so the facility genuinely supports research and Development capability:
+- Trace the current Development Engine, its upgrade lifecycle, token/cash cost calculation, duration, validation, and authoritative RPCs before designing changes.
+- Define a concrete, measurable R&D effect that is consumed by the Development Engine, such as an approved improvement to research/development efficiency or capability. Reuse existing config fields where suitable; do not add arbitrary or duplicate modifiers.
+- Preserve existing Aero Power and token-cost effects unless a verified conflict requires a documented correction.
+- Scale the effect by facility level and condition, using the same authoritative Team HQ effect calculation as other facilities.
+- Ensure the effect applies only to the owning team's eligible Development operations and cannot be exploited through direct RPC calls.
+- Add tests proving that changing R&D level/condition changes the actual Development outcome, not merely a displayed bonus or an unused calculated field.
+
+#### Priority 3 — Connect Commercial Department sponsor attraction to Sponsor Engine
+
+- The audit found `sponsor_attraction_bonus_percent` in the Team HQ effect output but did not verify a downstream consumer in the Sponsor Engine.
+- Trace sponsor discovery, AI sponsor offer generation, eligibility, negotiation, and contract creation before implementation.
+- Integrate the bonus into the appropriate sponsor attraction/offer-generation calculation so a higher Commercial Department level can produce a measurable, explainable effect.
+- Apply facility condition and level consistently. Do not apply the same bonus twice or modify existing contract values/terms after a contract is signed unless existing sponsor rules explicitly require it.
+- Keep the existing sponsor tier, offer, negotiation, and contract constraints intact.
+- Add deterministic tests proving the bonus changes eligible sponsor discovery/offer outcomes and that zero-level/disabled/degraded facilities behave correctly.
+
+#### Priority 4 — Connect Data Analytics Center strategy analysis depth
+
+- The audit found `strategy_analysis_depth` calculated and returned by the HQ analytics report, but did not verify that it changes the actual Strategy Engine analysis.
+- Trace the existing strategy-analysis workflow and report consumers.
+- Integrate the effect into the real analysis depth/detail available to the team, not only into report metadata or a UI label.
+- Scale it by Data Analytics Center level and condition; preserve existing access/entitlement requirements for Data Analytics Center reports.
+- Do not grant report access merely because a calculated bonus exists. Keep facility entitlement and analytics access authorization separate.
+- Add tests proving that different facility levels/conditions produce the intended difference in actual analysis output, with no fabricated strategy data.
+
+#### Priority 5 — Correct facility lifecycle status in Team HQ UI
+
+Replace the ambiguous single ACTIVE label with clear lifecycle states:
+- **Enabled / Available:** facility is enabled in configuration and can be built or upgraded subject to eligibility.
+- **Not Built:** facility level is zero and no active project exists.
+- **Under Construction:** a valid active project exists for that facility.
+- **Operational:** facility construction is complete, its level is above zero, and it is available for use.
+- **Maintenance Required:** condition has reached the configured maintenance threshold or maintenance is otherwise required.
+- If multiple conditions overlap, show the primary lifecycle state plus a separate maintenance warning where useful; do not hide an active construction state.
+- UI status must derive from authoritative facility/project/condition data, not merely `config.is_enabled`.
+- Ensure status refreshes after project start/completion, maintenance, configuration changes, and page reload.
+
+#### Priority 6 — End-to-end verification of all nine facilities
+
+Perform a complete integration audit and regression suite for all nine facilities:
+- Commercial Department: commercial credibility, sponsor attraction, and any merchandise-related effects; verify each output has a real consumer.
+- Data Analytics Center: report entitlement/access, analysis window, and strategy analysis depth.
+- Driver Development Center: driver Development efficiency/cost effect and its actual Development Engine consumer.
+- Engineering Department: Reliability attribute bonus and the authoritative attribute update path.
+- Factory: merchandise production capacity and production validation.
+- Marketing Department: fan growth, fanbase/reputation effects, and merchandise demand.
+- Pit Crew Training Center: Pit Stop Efficiency cash-upgrade discount and economy ledger.
+- Pusat Riset & Pengembangan: Aero Power bonus plus the completed Development Engine integration above.
+- Simulator Facility: Race Pace and Qualifying Pace bonuses and authoritative attribute update path.
+- For each effect, verify level scaling, condition scaling, disabled configuration, level zero, ownership/team scope, recalculation after upgrades/config edits, and no duplicate application.
+- Verify trigger execution, function privileges, RLS/security boundaries, and transaction rollback behavior. A calculated value or trigger's existence alone is not proof of a working feature.
+- Add automated regression tests for effect calculations and target-engine outcomes. Use controlled Testing transactions/fixtures and roll back destructive test operations.
+
+#### Database, dependency, and release requirements
+
+- Before changing implementation, inspect the exact frontend, RPCs, SQL functions/triggers, configuration schema, effect consumers, wallet ledger, cron lifecycle, and dependency graph. Stop and report if a proposed change risks breaking existing stable economy, Development, Sponsor, Strategy, or race systems.
+- Keep all Team HQ schema changes in versioned Supabase migrations. Apply and verify on Testing first, then synchronize the same migration source/schema to Production after QA. Never manually rewrite migration history.
+- Production currently has zero teams and zero facility rows while Testing has 13 teams and 117 facility rows. Preserve this separation; never copy Testing/dummy operational data into Production.
+- Do not change Vercel environment variables or settings.
+- Run TypeScript/application checks, production build, unit/regression tests, project validation, Supabase schema/migration parity checks, and relevant authenticated end-to-end tests. Do not report browser E2E as passed if the environment prevents it from running.
+- Work on a new dedicated branch. Merge into `main) only after QA and CI pass, then verify the Vercel Production deployment.
+- This section records the approved Team HQ work scope and priorities; it does not claim that the above fixes have already been implemented.
