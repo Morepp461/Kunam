@@ -216,15 +216,14 @@ Deno.serve(async (req: Request) => {
           let marketValueEur: number | null = null;
           if (m.role === "Driver") {
             const { data: marketValue, error: marketValueError } = await admin
-              .from("caleris_driver_market_values")
-              .select("market_value_eur")
-              .eq("member_id", p.member_id)
-              .maybeSingle();
+              .rpc("caleris_get_public_driver_market_value", { p_member_id: p.member_id });
             if (marketValueError) {
+              // Market Value is optional profile enrichment. A read failure must not
+              // make the member's otherwise-public identity/profile unavailable.
               console.error("Public driver market value lookup failed:", marketValueError.message);
-              return respond(500, { error: "Market Value Driver gagal dimuat." });
+            } else {
+              marketValueEur = marketValue == null ? null : Number(marketValue);
             }
-            marketValueEur = marketValue ? Number(marketValue.market_value_eur) : null;
           }
           character = { character_name: m.character_name, role: m.role, license: m.license, team_name: teamName, team_id: m.team_id, market_value_eur: marketValueEur };
         }

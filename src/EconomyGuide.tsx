@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { BadgeDollarSign, Banknote, Building2, Coins, Gauge, ShieldCheck, Trophy, Wallet, Eye, X } from "lucide-react";
+import { BadgeDollarSign, Banknote, Coins, Gauge, ShieldCheck, Trophy, Wallet, Eye, X } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import "./economy-guide.css";
 
 type TaxRule = { id:string; tax_scope:"member"|"team"; label:string; minimum_base:number|string; rate_percent:number|string; is_active:boolean; sort_order:number };
 type PrizeRule={division_key:string;recipient_type:"driver"|"team";final_position:number;prize_amount:number|string;is_active:boolean};
@@ -15,6 +16,7 @@ export default function EconomyGuide() {
   const [prizeLoading,setPrizeLoading]=useState(true); 
   const [prizeError,setPrizeError]=useState("");
   const [selectedPrize,setSelectedPrize]=useState<{division:string;type:"driver"|"team"}|null>(null);
+   const [marketValueDetailsOpen,setMarketValueDetailsOpen]=useState(false);
   const [taxError,setTaxError]=useState("");
   useEffect(()=>{
     let active=true;
@@ -133,14 +135,39 @@ export default function EconomyGuide() {
       <article className="economy-guide-card"><span className="economy-guide-icon"><Wallet size={19}/></span><h2>Gaji Driver per Lisensi</h2><p>Rentang gaji tahunan per season mengikuti lisensi aktif dan divalidasi saat kontrak maupun negosiasi.</p><div className="economy-guide-values">
        <div><span>Bronze</span><strong>€5.000.000 – €7.500.000</strong></div><div><span>Silver</span><strong>€7.600.000 – €12.000.000</strong></div><div><span>Gold</span><strong>€12.100.000 – €22.500.000</strong></div><div><span>Super License</span><strong>€22.600.000 – €45.000.000</strong></div>
       </div><small>Gaji tahunan dibayar bertahap pada akhir setiap Race Period.</small></article>
-      <article className="economy-guide-card"><span className="economy-guide-icon"><Building2 size={19}/></span><h2>Driver Loan</h2><p>Driver Loan tetap aktif. Fasilitas ini berbeda dari Cash Loan yang sudah dinonaktifkan.</p><div className="economy-guide-values"><div><span>Durasi</span><strong>1 season penuh</strong></div><div><span>Fee</span><strong>Team peminjam → Team asal</strong></div><div><span>Salary share</span><strong>0–100% · kelipatan 10%</strong></div><div><span>Payroll</span><strong>Dibagi antar kedua Team</strong></div></div><small>Hanya untuk Team affiliate, melalui persetujuan FIA. Driver otomatis kembali setelah masa pinjaman berakhir.</small></article>
-      <article className="economy-guide-card"><span className="economy-guide-icon"><Coins size={19}/></span><h2>Sponsorship</h2><p>Nilai kontrak mengikuti offer dan hasil negosiasi. Pembayaran kontrak serta bonus target masuk ke Team Wallet.</p><div className="economy-guide-values"><div><span>Title Partner · Tier 1</span><strong>Maks. 2 Team / season</strong></div><div><span>Sponsor Tier lain</span><strong>Maks. 3 Team / season</strong></div><div><span>Counter Owner</span><strong>Maks. 3 kali</strong></div><div><span>Bonus target</span><strong>Maks. 50% nilai kontrak</strong></div></div><small>Kapasitas brand tersedia kembali setelah kontrak terkait berakhir. Pembayaran kontrak melalui sistem keuangan pusat.</small></article>
+      <article className="economy-guide-card"><span className="economy-guide-icon"><Coins size={19}/></span><h2>Driver Market Value</h2><p>MV adalah referensi nilai pasar Driver di Transfer Market, bukan harga transfer wajib, minimum, atau maksimum.</p><div className="economy-guide-values"><div><span>Base Value · Tier 1</span><strong>{money(18_000_000)}</strong></div><div><span>Growth Factor</span><strong>25%</strong></div><div><span>Premio · Tier 1</span><strong>×1,00</strong></div><div><span>Zwei · Tier 2</span><strong>×0,85</strong></div></div><button className="economy-guide-view-all" onClick={()=>setMarketValueDetailsOpen(true)}><Eye size={14}/> Detail perhitungan Market Value</button><small>MV dapat naik atau turun mengikuti skor Driver dan disesuaikan bertahap menuju Target MV.</small></article>
       <article className="economy-guide-card"><span className="economy-guide-icon"><BadgeDollarSign size={19}/></span><h2>Team Owner Profit Share</h2><p>Di akhir season, sistem menghitung profit bersih positif setiap Team Wallet.</p><div className="economy-guide-highlight"><strong>10%</strong><span>Profit positif Team dibayarkan ke Team Owner Wallet</span></div><small>Jika profit nol atau negatif, tidak ada pembagian. Pencairan setelah seluruh divisi selesai dan Prizepool berhasil dibayarkan.</small></article>
     </section>
     <section className="economy-guide-note">
       <Banknote size={18}/>
       <div><strong>Alur pengelolaan keuangan</strong><p>Semua nominal menggunakan Euro (€). Saldo awal berasal dari VreeoBank dan hanya diberikan satu kali. Reward race diproses dari hasil resmi terkonfirmasi. Penyesuaian Admin wajib melalui wallet ledger dengan alasan dan jejak audit. Driver Transfer Tax telah dihapus; skema Driver Loan tetap terpisah dari pinjaman saldo ke VreeoBank.</p></div>
     </section>
+    {marketValueDetailsOpen&&<div className="economy-guide-modal-backdrop" role="presentation" onClick={()=>setMarketValueDetailsOpen(false)}>
+      <section className="economy-guide-modal" role="dialog" aria-modal="true" aria-labelledby="market-value-details-title" onClick={e=>e.stopPropagation()}>
+       <header><div><span className="section-eyebrow">DRIVER VALUATION ENGINE</span><h2 id="market-value-details-title">Perhitungan Market Value</h2></div><button className="economy-guide-modal-close" onClick={()=>setMarketValueDetailsOpen(false)} aria-label="Tutup"><X size={18}/></button></header>
+       <p>Market Value dihitung dari Base Value, skor gabungan tujuh komponen, dan multiplier divisi. Nilai akhir bergerak bertahap menuju Target MV.</p>
+       <div className="economy-guide-highlight"><strong>Target MV = €18.000.000 × (MV Score ÷ 100) × Tier Multiplier</strong><span>MV baru = MV lama + (Target MV − MV lama) × 0,25</span></div>
+       <h3>Bobot Market Value Score</h3>
+       <div className="economy-guide-values">
+        <div><span>License · 10%</span><strong>Bronze 25 · Silver 50 · Gold 75 · Super License 100</strong></div>
+        <div><span>Contract · 10%</span><strong>100 jika memiliki kontrak aktif, selain itu 0</strong></div>
+        <div><span>Performance · 20%</span><strong>Poin klasemen resmi dibandingkan maksimum poin kalender race, termasuk pole bonus</strong></div>
+        <div><span>Overall Skill · 20%</span><strong>Rata-rata nilai seluruh atribut Driver yang tersimpan</strong></div>
+        <div><span>Achievement · 10%</span><strong>Poin P1/P2/P3 dan Driver of the Day dibandingkan maksimum kalender season</strong></div>
+        <div><span>Activity · 10%</span><strong>4 poin per race round yang memiliki check-in, maksimal 100</strong></div>
+        <div><span>Reputation · 20%</span><strong>Skor reputasi Driver, dibatasi pada rentang 0–100</strong></div>
+       </div>
+       <h3>Tier dan nilai awal</h3>
+       <div className="economy-guide-values">
+        <div><span>Tier 1 · Premio</span><strong>×1,00</strong></div>
+        <div><span>Tier 2 · Zwei</span><strong>×0,85</strong></div>
+        <div><span>Tier 3</span><strong>×0,70</strong></div>
+        <div><span>Tier 4</span><strong>×0,60</strong></div>
+       </div>
+       <p>Driver baru memulai dari License Score × Base Value × multiplier divisi asal. Setelah data performa dan faktor lainnya tersedia, MV bergerak menuju Target MV menggunakan Growth Factor 0,25. Karena itu, MV bisa naik maupun turun; Base Value bukan jaminan nilai minimum.</p>
+       <small>Aturan relasi untuk tier masa depan: MV Tier N tidak boleh melampaui MV terendah pada Tier N−2. Saat ini divisi aktif hanya Premio dan Zwei, sehingga batas relasi tersebut belum berlaku.</small>
+      </section>
+     </div>}
     {selectedPrize&&<div className="economy-guide-modal-backdrop" role="presentation" onClick={()=>setSelectedPrize(null)}>
       <section className="economy-guide-modal" role="dialog" aria-modal="true" aria-label="Detail Prizepool" onClick={e=>e.stopPropagation()}>
        <header><div><span className="section-eyebrow">FULL PRIZEPOOL</span><h2>{selectedPrize.division==="premio"?"Premio":"Zwei"} · {prizeLabel(selectedPrize.type)}</h2></div><button className="economy-guide-modal-close" onClick={()=>setSelectedPrize(null)} aria-label="Tutup"><X size={18}/></button></header>
