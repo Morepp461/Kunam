@@ -10,7 +10,7 @@ const design = {
   teamWordmark: "CALERIS RACING",
   sponsors: ["TITLE SPONSOR", "MAJOR PARTNER", "OFFICIAL PARTNER"] as [string, string, string],
   logoDataUrl: "data:image/webp;base64,AA==",
-  decals: [{ id: "decal-12", color: "#ffffff", scale: 1, rotation: 0, x: 50, y: 50, surface: "sidepod" }],
+  decals: [{ id: "decal-12", color: "#ffffff", scale: 1, rotation: 0, x: 50, y: 50, surface: "sidepod" as const }],
   sponsorPlacements: { title: "title", major: "major", partner: "other" } as Record<string, "title" | "major" | "other">,
 };
 
