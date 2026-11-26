@@ -2,14 +2,13 @@ import * as THREE from 'three';
 import type { LiveryPreset, TireCompoundSpec } from './f1Chassis2026Spec';
 import {
   SPONSOR_SLOTS,
-  SponsorSlotConfig,
-  SponsorSlotId,
   createDefaultSponsorSlots,
   drawBodyLiveryCanvas,
   drawSponsorSlotCanvas,
   normalizeHexColor,
   sanitizeCarNumber,
 } from './f1Decals';
+import type { SponsorSlotConfig, SponsorSlotId } from './f1Decals';
 
 export interface F1AppearanceConfig {
   primaryHex: string;
