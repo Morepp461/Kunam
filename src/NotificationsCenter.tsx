@@ -54,16 +54,24 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
  };
  const deleteNotification=async(id:string)=>{
   if(!supabase||!memberId||busy)return;
-  setBusy(true);const {error:requestError}=await supabase.rpc("member_delete_caleris_notification",{p_notification_id:id});
-  if(requestError)setError(requestError.message);else{const deleted=items.find(item=>item.id===id);setItems(current=>current.filter(item=>item.id!==id));if(deleted&&!deleted.read_at)setUnread(value=>Math.max(0,value-1));setError("")}
-  setBusy(false);
+  setBusy(true);
+  try{
+   const {error:requestError}=await supabase.rpc("member_delete_caleris_notification",{p_notification_id:id});
+   if(requestError)throw requestError;
+   const deleted=items.find(item=>item.id===id);setItems(current=>current.filter(item=>item.id!==id));if(deleted&&!deleted.read_at)setUnread(value=>Math.max(0,value-1));setError("");
+  }catch(error){setError(error instanceof Error?error.message:"Notifikasi gagal dihapus.");}
+  finally{setBusy(false)}
  };
  const deleteAll=async()=>{
   if(!supabase||!memberId||busy||!items.length)return;
   if(!window.confirm("Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan."))return;
-  setBusy(true);const {error:requestError}=await supabase.rpc("member_delete_caleris_notifications");
-  if(requestError)setError(requestError.message);else{setItems([]);setUnread(0);setError("")}
-  setBusy(false);
+  setBusy(true);
+  try{
+   const {error:requestError}=await supabase.rpc("member_delete_caleris_notifications");
+   if(requestError)throw requestError;
+   setItems([]);setUnread(0);setError("");
+  }catch(error){setError(error instanceof Error?error.message:"Semua notifikasi gagal dihapus.");}
+  finally{setBusy(false)}
  };
  if(!memberId)return null;
  return <div className="header-notifications" ref={root}>
