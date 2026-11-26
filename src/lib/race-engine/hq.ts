@@ -10,7 +10,8 @@ export const RACE_RELEVANT_HQ_FACILITY_KEYS = [
 export const RACE_HQ_EFFECT_KEYS = [
   "race_pace_bonus",
   "reliability_bonus",
-  "aero_power_bonus"
+  "aero_power_bonus",
+  "pit_stop_efficiency_bonus"
 ] as const;
 
 export type TeamHqDivision = "premio" | "zwei";
@@ -19,6 +20,7 @@ export type RaceHqEffectKey = (typeof RACE_HQ_EFFECT_KEYS)[number];
 export interface TeamHqFacilityLevelInput {
   readonly facilityKey: string;
   readonly level: number;
+  readonly condition?: number;
 }
 
 export interface TeamHqFacilityConfigInput {
@@ -33,6 +35,7 @@ export interface TeamHqFacilityConfigInput {
 export interface TeamHqFacilityAppliedSnapshot {
   readonly facilityKey: string;
   readonly level: number;
+  readonly condition: number;
   readonly configUpdatedAt: string;
   readonly maximumLevel: number;
   readonly isEnabled: boolean;
@@ -78,6 +81,7 @@ export function validateTeamHqRaceEffectSnapshot(snapshot: TeamHqRaceEffectSnaps
     }
     if (!validTimestamp(facility.configUpdatedAt)) errors.push(`HQ config revision timestamp is invalid for ${facility.facilityKey}`);
     if (!Number.isInteger(facility.maximumLevel) || facility.maximumLevel < 0 || facility.level > facility.maximumLevel) errors.push(`HQ snapshot configured maximum is invalid for ${facility.facilityKey}`);
+    if (!Number.isFinite(facility.condition) || facility.condition < 0 || facility.condition > 100) errors.push(`HQ snapshot condition for ${facility.facilityKey} is invalid`);
     if (facility.level > 0 && !facility.isEnabled) errors.push(`HQ facility ${facility.facilityKey} is disabled`);
     for (const [key, value] of Object.entries(facility.appliedEffects)) {
       if (!(RACE_HQ_EFFECT_KEYS as readonly string[]).includes(key) || !Number.isFinite(value)) {
@@ -131,6 +135,10 @@ export function resolveTeamHqRaceEffects(
     if (!Number.isInteger(item.level) || item.level < 0 || item.level > maximum) {
       throw new Error(`HQ facility ${item.facilityKey} level is outside its configured division limit`);
     }
+    const condition = item.condition ?? 100;
+    if (!Number.isFinite(condition) || condition < 0 || condition > 100) {
+      throw new Error(`HQ facility ${item.facilityKey} condition must be between 0 and 100`);
+    }
     levelByKey.set(item.facilityKey, item.level);
   }
 
@@ -140,6 +148,8 @@ export function resolveTeamHqRaceEffects(
 
   for (const facilityKey of RACE_RELEVANT_HQ_FACILITY_KEYS) {
     const level = levelByKey.get(facilityKey) ?? 0;
+    const input = levels.find((item) => item.facilityKey === facilityKey);
+    const condition = input?.condition ?? 100;
     const config = configByKey.get(facilityKey);
     if (!config) {
       if (level > 0) unresolved.push(facilityKey);
@@ -147,6 +157,14 @@ export function resolveTeamHqRaceEffects(
     }
     if (level === 0) continue;
     if (!config.isEnabled) { unresolved.push(facilityKey); continue; }
+    if (condition <= 0) {
+      facilities.push(Object.freeze({
+        facilityKey, level, condition, configUpdatedAt: config.updatedAt,
+        maximumLevel: division === "premio" ? config.maxLevelPremio : config.maxLevelZwei,
+        isEnabled: config.isEnabled, appliedEffects: Object.freeze({})
+      }));
+      continue;
+    }
 
     const configured = config.effectsByLevel[String(level)] ?? {};
     const applied: Partial<Record<RaceHqEffectKey, number>> = {};
@@ -154,14 +172,16 @@ export function resolveTeamHqRaceEffects(
       const value = configured[effectKey];
       if (value === undefined) continue;
       if (!Number.isFinite(value)) throw new Error(`HQ effect ${facilityKey}.${effectKey} must be finite`);
-      applied[effectKey] = value;
-      effects[effectKey] = (effects[effectKey] ?? 0) + value;
+      const conditionScaledValue = value * condition / 100;
+      applied[effectKey] = conditionScaledValue;
+      effects[effectKey] = (effects[effectKey] ?? 0) + conditionScaledValue;
     }
 
     if (Object.keys(applied).length === 0) unresolved.push(facilityKey);
     facilities.push(Object.freeze({
       facilityKey,
       level,
+      condition,
       configUpdatedAt: config.updatedAt,
       maximumLevel: division === "premio" ? config.maxLevelPremio : config.maxLevelZwei,
       isEnabled: config.isEnabled,
