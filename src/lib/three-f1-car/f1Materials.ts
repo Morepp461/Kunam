@@ -1,8 +1,5 @@
 import * as THREE from 'three';
-import {
-  LiveryPreset,
-  TireCompoundSpec,
-} from './f1Chassis2026Spec';
+import type { LiveryPreset, TireCompoundSpec } from './f1Chassis2026Spec';
 import {
   SPONSOR_SLOTS,
   SponsorSlotConfig,
