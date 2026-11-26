@@ -1830,3 +1830,10 @@ Release completed: PR #372 merged to main at `ac105f341fa069924d5d08275955b5e6ea
 - The first selected decal preset is mapped to the chassis. Arbitrary multi-decal atlas positions are not claimed to match the 2026 model UV layout until that model-specific mapping is verified.
 - The earlier 2025 GLB was only an inspected intake asset; it was never committed to the app repository or hosted in Supabase Storage. No GLB binary was deleted. The new model is procedural runtime geometry, not a prebuilt GLB file.
 - No database migration is required. Physical Android browser testing for WebGL stability, GPU load, frame pacing, and memory remains outstanding.
+
+
+### 2026 Team Livery Decal Projection Update
+- Saved custom decal layers are projected onto the matching 2026 chassis surfaces: left/right sidepods, nose, front-wing flaps, and rear-wing mainplane.
+- All stored layers are preserved and rendered, with a bounded maximum of 50 decals. Old decal geometry and textures are disposed before rebuilding after design changes.
+- Projection uses the actual 2026 mesh geometry and does not change the persisted V1 livery schema or require a database migration.
+- Browser CI validates mapping and build. Final GPU/frame-pacing acceptance on physical Android devices remains a manual device test.
