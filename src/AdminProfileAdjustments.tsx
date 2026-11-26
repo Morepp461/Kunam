@@ -18,6 +18,7 @@ type HistoryRow={
  signed_amount:number;
  description:string;
  created_at:string;
+ reference?:string;
  metadata?:Record<string,unknown>;
 };
 
