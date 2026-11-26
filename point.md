@@ -2022,3 +2022,17 @@ Release gate remains closed:
 - Reproduce and resolve the Team HQ upgrade error.
 - Reconcile database migration files missing from current `main` before schema-parity QA. Current database ledgers are ahead of the migration files visible on `main`; no migration history was rewritten.
 - Run project CI, full QA, schema parity, merge to `main`, deploy `member-directory` to Production, and verify Vercel Production.
+
+
+### QA update — 26 November 2026
+
+Local validation on the execution branch:
+- `npm run check`: PASS.
+- `npm run build`: PASS (existing Rollup annotation and large-chunk warnings remain).
+- `npm run test`: PASS — 42 test files, 226 tests.
+- `python3 -B scripts/validate.py`: PASS.
+- Playwright E2E was attempted but could not launch Chromium in the Vercel sandbox because its browser/system dependency installation was blocked by the sandbox's package-manager lock. This is an environment limitation, not a passing E2E result.
+- GitHub PR #396 is draft-only for review/CI feedback. It must not be merged while the remaining scope gates are open.
+- Testing Edge Function `member-directory` is version 15 and ACTIVE. Production remains on its previous version pending the release gate.
+
+Still not complete: full bilingual UI translation, reproducible Team HQ upgrade error diagnosis/fix, E2E/CI confirmation, migration-source reconciliation, production Edge Function rollout, merge, and Vercel Production verification.
