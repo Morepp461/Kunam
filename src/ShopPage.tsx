@@ -3,6 +3,7 @@ import {ArrowLeft,ShoppingBag,Lock,CheckCircle2} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
+import "./team-hq.css";
 
 type Capacity={base_limit:number;factory_bonus:number;shop_bonus:number;active_projects:number;max_projects:number;shop_item_owned:boolean;shop_item_active:boolean;shop_item_price_eur:number|null};
 const money=(value:number)=>"€ "+Number(value||0).toLocaleString("id-ID",{maximumFractionDigits:2});
