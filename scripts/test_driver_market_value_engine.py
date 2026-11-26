@@ -85,7 +85,8 @@ assert 'market_value_eur' in DIRECTORY
 assert 'getCountries' in TRANSFER
 assert 'licenseOptions' in TRANSFER and 'nationalityOptions' in TRANSFER
 assert 'freeAgents.some' in TRANSFER and 'startFreeAgent' in TRANSFER
-assert 'Hanya Team Owner' in MARKET
+assert 'member_start_free_agent_contract_negotiation' in MARKET
+assert 'member?.role==="Owner"' in TRANSFER
 
 # Language preference is persisted and applied globally, except About Us.
 assert 'preferred_language' in APP and 'LanguageRuntime' in APP
