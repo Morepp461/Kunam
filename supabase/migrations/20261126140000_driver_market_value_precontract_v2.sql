@@ -261,6 +261,7 @@ begin
     select coalesce(avg(attr.raw_value::numeric),50) into v_skill
     from jsonb_each_text(coalesce(v_attributes,'{}'::jsonb)) as attr(key,raw_value)
     where attr.raw_value ~ '^-?[0-9]+([.][0-9]+)?';
+    v_skill:=greatest(0,least(100,coalesce(v_skill,50)));
 
     select coalesce(sum(case e.finishing_position when 1 then 5 when 2 then 3 when 3 then 1 else 0 end),0)
       + count(*) filter(where rr.driver_of_day_member_id=d.id)
