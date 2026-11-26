@@ -38,6 +38,17 @@ describe("team livery to 2026 chassis mapping", () => {
     expect(appearance.sponsorSlots["slot-7"].customText).toBe("Official Partner");
   });
 
+  it("preserves every decal surface and placement for 3D projection", () => {
+    const layers = [
+      { id: "decal-01", color: "#ffffff", scale: 1, rotation: 0, x: 18, y: 42, surface: "sidepod" as const },
+      { id: "decal-12", color: "#ffcc33", scale: 0.8, rotation: 24, x: 72, y: 35, surface: "nose" as const },
+      { id: "decal-23", color: "#111111", scale: 1.2, rotation: -12, x: 28, y: 60, surface: "frontWing" as const },
+      { id: "decal-34", color: "#cc2222", scale: 0.9, rotation: 8, x: 80, y: 50, surface: "rearWing" as const },
+    ];
+    const appearance = buildF1Appearance({ ...design, decals: layers }, []);
+    expect(appearance.teamDecals).toEqual(layers);
+  });
+
   it("uses a compatible visual preset when no custom decal layer exists", () => {
     const appearance = buildF1Appearance({ ...design, decals: [], pattern: "carbon" }, []);
     expect(appearance.decalId).toBe("decal-06");
