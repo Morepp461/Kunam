@@ -1,7 +1,7 @@
 .about-page{--about-red:#a52d32;--about-gold:#c6a56a;color:#f2f0eb;background:#101112;overflow:hidden}
 .about-page *{box-sizing:border-box}
 .about-page em{font-style:normal;color:#c6a56a}
-.about-hero{min-height:590px;position:relative;display:flex;align-items:center;padding:clamp(42px,8vw,112px);background:#111 url("/assets/Background%203.png") center 42%/cover no-repeat;isolation:isolate}
+.about-hero{min-height:590px;position:relative;display:flex;align-items:center;padding:clamp(42px,8vw,112px);background:#111 url("/assets/Background%203.webp") center 42%/cover no-repeat;isolation:isolate}
 .about-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,9,10,.96) 0%,rgba(8,9,10,.82) 48%,rgba(8,9,10,.28) 100%),linear-gradient(0deg,#101112 0%,transparent 34%);z-index:-1}
 .about-hero-content{max-width:760px;position:relative;z-index:1}
 .about-kicker,.about-eyebrow,.about-section-label,.about-scroll-link,.about-founder-role,.about-founder-number,.about-timeline article small,.about-footnote{font-family:Inter,Arial,sans-serif;font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
