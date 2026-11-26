@@ -9,6 +9,7 @@ ROSTER = (ROOT / "supabase/migrations/20261126065827_precontract_season_roster_i
 ROSTER_SNAPSHOT = (ROOT / "supabase/migrations/20261126070004_precontract_roster_snapshot_refresh.sql").read_text(encoding="utf-8")
 LOCKED_CONFIG = (ROOT / "supabase/migrations/20261126072000_lock_driver_market_engine_decisions.sql").read_text(encoding="utf-8")
 BASE_VALUE_UPDATE = (ROOT / "supabase/migrations/20261126130000_driver_market_value_base_18m_and_hq_two_active_projects.sql").read_text(encoding="utf-8")
+RECALC = (ROOT / "supabase/migrations/20261126140000_recalculate_driver_market_values_after_base_18m.sql").read_text(encoding="utf-8")
 PROFILE = (ROOT / "src/ProfileModule.tsx").read_text(encoding="utf-8")
 DIGITAL_ID = (ROOT / "src/PublicMemberId.tsx").read_text(encoding="utf-8")
 DRIVER_CARD = (ROOT / "src/DriverExhibition.tsx").read_text(encoding="utf-8")
@@ -68,6 +69,7 @@ assert 'baseValue:18000000' in ADMIN
 assert 'base_value_eur=18000000' in BASE_VALUE_UPDATE
 assert 'caleris_team_hq_one_active_project_per_team' in BASE_VALUE_UPDATE
 assert 'caleris_team_hq_one_active_project_per_facility' in BASE_VALUE_UPDATE
+assert "recalculate_driver_market_values(null,'base_value_change_18m')" in RECALC
 assert 'admin_recalculate_driver_market_values' in ADMIN
 
 # Pre-contract is separate from existing permanent transfer and loan workflows.
