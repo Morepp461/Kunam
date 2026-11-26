@@ -1960,3 +1960,21 @@ Nilai yang ditanam permanen dan divalidasi di backend:
 - Tidak ada halaman, RPC, atau hak akses Admin untuk mengubah konstanta tersebut. Admin hanya dapat memantau snapshot dan menjalankan pemeriksaan/recalculation operasional; kalkulasi normal tetap berjalan otomatis dari event engine dan scheduler.
 
 Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
+
+
+---
+
+## EXECUTION CHECKPOINT — 7 APPROVED REPAIRS (26 NOVEMBER 2026)
+
+Scope locked to the following seven items only:
+1. Display Driver Market Value on member profile, Driver cards, and public Digital ID.
+2. Show complete License and Nationality options in Transfer Market filters.
+3. Correct Free Agent recruitment action availability and authorization.
+4. Diagnose and fix recurring Team HQ upgrade Edge Function/RPC errors in Testing and Production.
+5. Set immutable Tier 1 Driver Market Value Base Value to EUR 18,000,000 and recalculate according to the approved engine rules.
+6. Ensure deleted notifications (including legacy notifications dated the 20th) stay deleted and are not recreated by retries/realtime refresh.
+7. Add Indonesian and English language selection in Profile Settings; default Indonesian, while About Us remains excluded from forced Indonesian translation.
+
+Execution branch: `fix/seven-point-market-profile-hq-language-20261126` (created from `main`).
+
+Progress at start: scope and branch recorded. Implementation, database verification/migrations, QA, CI, merge, and Vercel Production deployment are pending. No Vercel environment settings may be changed. Do not add unrelated work.
