@@ -158,3 +158,11 @@ for fragment in (
 assert "avatarSrc?: string" in MASCOT
 assert ASSISTANT.count("avatarSrc={avatarSrc}") == 2, "Trigger and expanded panel must use the same page avatar"
 print("Page-specific official Cale avatar mapping checks passed: all mapped assets exist and both assistant views use the active page pose.")
+
+# Keep the expanded assistant character at the established large scale,
+# with a smaller but still prominent responsive size on narrow screens.
+assert 'size="var(--cale-assistant-avatar-size, 180px)"' in ASSISTANT
+assert ".cale-assistant__character{\n  --cale-assistant-avatar-size: 180px;" in GUIDE_CSS
+assert "@media(max-width:560px)" in GUIDE_CSS
+assert "--cale-assistant-avatar-size: 130px;" in GUIDE_CSS
+print("Cale Assistant avatar sizing checks passed: 180px desktop and 130px mobile.")
