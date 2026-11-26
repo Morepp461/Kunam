@@ -20,7 +20,7 @@ type Team = { id: string; name: string; division_key: string | null };
 
 const money = (value: number) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value);
 const divisionMax = (division: string | null) => division?.toLowerCase().includes("zwei") ? 6 : 8;
-const HQ_EFFECT_LABELS: Record<string, { label: string; unit: string; integer?: boolean }> = {
+const HQ_EFFECT_LABELS: Record<string, { label: string; unit: string; integer?: boolean; pending?: boolean }> = {
   fan_growth_bonus_percent: { label: "Fan growth", unit: "%" },
   fanbase_reputation_bonus: { label: "Fan reputation", unit: "" },
   commercial_credibility_bonus: { label: "Commercial credibility", unit: "" },
@@ -35,7 +35,8 @@ const HQ_EFFECT_LABELS: Record<string, { label: string; unit: string; integer?: 
   driver_development_efficiency_bonus_percent: { label: "Driver Development efficiency", unit: "%" },
   research_efficiency_bonus_percent: { label: "Research efficiency", unit: "%" },
   analytics_round_window: { label: "Analysis window", unit: " rounds", integer: true },
-  strategy_analysis_depth: { label: "Analysis detail", unit: " rounds", integer: true }
+  strategy_analysis_depth: { label: "Analysis detail", unit: " rounds", integer: true },
+  factory_production_capacity_bonus: { label: "Production capacity", unit: " slot", integer: true, pending: true }
 };
 const formatEffectValue = (value: number, integer = false) => {
   const normalized = integer ? Math.round(value) : Math.round(value * 100) / 100;
@@ -239,9 +240,9 @@ export default function TeamHQ() {
                 const scaled = raw * facility.condition / 100;
                 const value = definition.integer ? Math.round(scaled) : scaled;
                 if (value <= 0) return [];
-                return [{ key, label: definition.label, value: formatEffectValue(value, definition.integer), unit: definition.unit }];
+                return [{ key, label: definition.label, value: formatEffectValue(value, definition.integer), unit: definition.unit, pending: definition.pending ?? false }];
               });
-              return <div className="team-hq-active-effects"><span>ACTIVE EFFECTS · CONDITION SCALED</span>{effects.length ? <div>{effects.map(effect => <small key={effect.key}>{effect.label} <strong>+{effect.value}{effect.unit}</strong></small>)}</div> : <small>No active effect at current condition.</small>}</div>;
+              return <div className="team-hq-active-effects"><span>ACTIVE EFFECTS · CONDITION SCALED</span>{effects.length ? <div>{effects.map(effect => <small key={effect.key}>{effect.label} <strong>+{effect.value}{effect.unit}</strong>{effect.pending && <em>Slot mapping pending</em>}</small>)}</div> : <small>No active effect at current condition.</small>}</div>;
             })()}
             {facility && facility.condition < 50 && isOwner && (() => { const restoreLevel = facility.maintenance_restore_level ?? level; const base = Number(config.maintenance_by_level?.[String(restoreLevel)] ?? 0); const cost = Math.round(base * (100 - facility.condition) * 100) / 10000; return <div className="team-hq-maintenance-panel"><div className="team-hq-meta"><span>Biaya maintenance ({100 - facility.condition}% pemulihan)</span><strong>€{money(cost)}</strong></div><small>Level yang dipulihkan: {restoreLevel} · Kondisi kembali ke 100%</small><button className="team-hq-maintenance-action" disabled={submittingMaintenance === config.facility_key} onClick={() => void payMaintenance(config.facility_key)}>{submittingMaintenance === config.facility_key ? "Memproses..." : "Bayar maintenance"}</button></div>; })()}</>}
           {team && maintenanceRequired && activeProject && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance tersedia di bawah 50% condition</small>}
