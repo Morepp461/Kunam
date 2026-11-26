@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, RefreshCw, Save, ShieldCheck, Wrench } from "lucide-react";
+import { Building2, RefreshCw, Wrench } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { TeamProfileLink } from "./EntityProfileLink";
 import TeamMerchandise from "./TeamMerchandise";
-import { parseTeamHqConfigJson, teamHqFacilityConfigSchema } from "./lib/teamHqValidation";
 import "./team-hq.css";
 
 type FacilityConfig = {
@@ -15,17 +14,9 @@ type FacilityConfig = {
   effects_by_level: Record<string, unknown>;
   maintenance_required: boolean; unlock_rules: Record<string, unknown>;
 };
-type Facility = { id: string; team_id: string; facility_key: string; level: number; condition: number; asset_value: number; last_maintenance_at: string | null };
+type Facility = { id: string; team_id: string; facility_key: string; level: number; condition: number; asset_value: number; last_maintenance_at: string | null; last_condition_decay_at: string | null; maintenance_restore_level: number | null };
 type Project = { id: string; facility_key: string; target_level: number; status: string; cost: number; started_at: string | null; completes_at: string | null; completed_at: string | null; created_at: string };
 type Team = { id: string; name: string; division_key: string | null };
-
-const jsonFields = [
-  ["construction_cost_by_level", "Biaya konstruksi per level"],
-  ["construction_days_by_level", "Durasi konstruksi (hari)"],
-  ["maintenance_by_level", "Maintenance per level"],
-  ["effects_by_level", "Efek per level"],
-  ["unlock_rules", "Aturan unlock"]
-] as const;
 
 const money = (value: number) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value);
 const divisionMax = (division: string | null) => division?.toLowerCase().includes("zwei") ? 6 : 8;
@@ -41,15 +32,12 @@ export default function TeamHQ() {
   const [isMerchOwner, setIsMerchOwner] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsError, setAnalyticsError] = useState("");
-  const [editing, setEditing] = useState<string | null>(null);
-  const [draft, setDraft] = useState<FacilityConfig | null>(null);
-  const [jsonDraft, setJsonDraft] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirmConfig, setConfirmConfig] = useState<FacilityConfig | null>(null);
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
+  const [submittingMaintenance, setSubmittingMaintenance] = useState<string | null>(null);
   const [clock, setClock] = useState(Date.now());
 
   const load = useCallback(async () => {
@@ -151,38 +139,23 @@ export default function TeamHQ() {
     }
   };
 
-  const beginEdit = (config: FacilityConfig) => {
-    setEditing(config.facility_key); setDraft({ ...config });
-    setJsonDraft(Object.fromEntries(jsonFields.map(([key]) => [key, JSON.stringify(config[key] ?? {}, null, 2)])));
-    setNotice(""); setError("");
-  };
-  const saveConfig = async () => {
-    if (!supabase || !draft) return;
-    let parsed: Record<string, unknown>;
+  const payMaintenance = async (facilityKey: string) => {
+    if (!supabase || submittingMaintenance) return;
+    setSubmittingMaintenance(facilityKey); setError(""); setNotice("");
     try {
-      parsed = parseTeamHqConfigJson(jsonDraft);
-    } catch (validationError) {
-      setError(validationError instanceof Error ? validationError.message : "Format JSON konfigurasi tidak valid.");
-      return;
+      const { data, error: maintenanceError } = await supabase.rpc("member_pay_team_hq_maintenance", {
+        p_facility_key: facilityKey,
+        p_idempotency_key: crypto.randomUUID()
+      });
+      if (maintenanceError) throw maintenanceError;
+      const result = data as { amount?: number; restored_level?: number };
+      setNotice(`Maintenance berhasil dibayar: €${money(Number(result?.amount ?? 0))}. Fasilitas kembali ke level ${result?.restored_level ?? "sebelumnya"} dengan kondisi 100%.`);
+      await load();
+    } catch (maintenanceError) {
+      setError(maintenanceError instanceof Error ? maintenanceError.message : "Pembayaran maintenance gagal diproses.");
+    } finally {
+      setSubmittingMaintenance(null);
     }
-    const validation = teamHqFacilityConfigSchema.safeParse({ ...draft, ...parsed });
-    if (!validation.success) {
-      setError(validation.error.issues.map(issue => issue.message).join(" "));
-      return;
-    }
-    if (draft.max_level_premio < 1 || draft.max_level_premio > 8 || draft.max_level_zwei < 1 || draft.max_level_zwei > 6) {
-      setError("Batas level harus 1–8 untuk Premio dan 1–6 untuk Zwei."); return;
-    }
-    setSaving(true); setError("");
-    const { error: saveError } = await supabase.from("caleris_team_hq_facility_configs").update({
-      title: draft.title.trim(), description: draft.description.trim(), is_enabled: draft.is_enabled,
-      max_level_premio: draft.max_level_premio, max_level_zwei: draft.max_level_zwei,
-      maintenance_required: draft.maintenance_required, ...parsed,
-      updated_at: new Date().toISOString()
-    }).eq("facility_key", draft.facility_key);
-    setSaving(false);
-    if (saveError) setError(saveError.message);
-    else { setNotice("Konfigurasi fasilitas berhasil disimpan."); setEditing(null); setDraft(null); await load(); }
   };
 
   if (loading) return <section className="workspace team-hq"><p>Memuat Team HQ...</p></section>;
@@ -204,9 +177,8 @@ export default function TeamHQ() {
         return <article className="team-hq-card" key={config.facility_key}>
           <div className="team-hq-card-top"><span className="team-hq-facility-icon"><Building2 size={18}/></span><span className={config.is_enabled ? "team-hq-status" : "team-hq-status disabled"}>{config.is_enabled ? "ACTIVE" : "DISABLED"}</span></div>
           <h3>{config.title}</h3><p>{config.description}</p>
-          {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div></>}
+          {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div>{facility && facility.condition < 50 && isOwner && (() => { const restoreLevel = facility.maintenance_restore_level ?? level; const base = Number(config.maintenance_by_level?.[String(restoreLevel)] ?? 0); const cost = Math.round(base * (100 - facility.condition) * 100) / 10000; return <div className="team-hq-maintenance-panel"><div className="team-hq-meta"><span>Biaya maintenance ({100 - facility.condition}% pemulihan)</span><strong>€{money(cost)}</strong></div><small>Level yang dipulihkan: {restoreLevel} · Kondisi kembali ke 100%</small><button className="team-hq-maintenance-action" disabled={submittingMaintenance === config.facility_key} onClick={() => void payMaintenance(config.facility_key)}>{submittingMaintenance === config.facility_key ? "Memproses..." : "Bayar maintenance"}</button></div>; })()}</>}
           {config.maintenance_required && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance diperlukan</small>}
-          {isAdmin && <button className="team-hq-edit" onClick={() => beginEdit(config)}>Edit configuration</button>}
           {team && (() => {
             const activeProject = activeProjects.find(p => p.facility_key === config.facility_key);
             const nextLevel = level + 1;
@@ -247,15 +219,5 @@ export default function TeamHQ() {
     <TeamMerchandise teamId={team?.id ?? null} isOwner={isMerchOwner} isAdmin={isAdmin} />
     {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">CONSTRUCTION PIPELINE</span><h2>Project History</h2></div><span className="empty-tag">LATEST 10</span></div>{projects.length ? projects.map(project => <div className="team-hq-project-row" key={project.id}><strong>{configs.find(c => c.facility_key === project.facility_key)?.title ?? project.facility_key}</strong><span>Target level {project.target_level}</span><span>{project.status.replaceAll("_"," ")}</span><span>€{money(project.cost)}</span></div>) : <p className="team-hq-empty">Belum ada proyek pembangunan atau upgrade.</p>}</section>}
     {confirmConfig && team && <div className="team-hq-modal-backdrop" role="presentation" onClick={() => !submittingUpgrade && setConfirmConfig(null)}><section className="team-hq-confirm" role="dialog" aria-modal="true" aria-labelledby="team-hq-confirm-title" onClick={e => e.stopPropagation()}><span className="section-eyebrow">KONFIRMASI UPGRADE</span><h2 id="team-hq-confirm-title">{confirmConfig.title}</h2><p>Pastikan rincian pembangunan fasilitas berikut sudah benar.</p><div className="team-hq-confirm-row"><span>Level</span><strong>{(facilityMap.get(confirmConfig.facility_key)?.level ?? 0)} → {(facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1}</strong></div><div className="team-hq-confirm-row"><span>Biaya</span><strong>€{money(Number(confirmConfig.construction_cost_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0))}</strong></div><div className="team-hq-confirm-row"><span>Durasi</span><strong>{confirmConfig.construction_days_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0} hari</strong></div><div className="team-hq-confirm-row"><span>Pembayaran</span><strong>Team Wallet → VreeoBank</strong></div><p className="team-hq-confirm-note">Pembayaran dilakukan langsung saat proyek dimulai dan tidak dapat dibatalkan melalui halaman ini.</p><div className="team-hq-actions"><button className="team-hq-cancel" disabled={submittingUpgrade} onClick={() => setConfirmConfig(null)}>Kembali</button><button className="team-hq-save" disabled={submittingUpgrade} onClick={() => void startUpgrade()}>{submittingUpgrade ? "Memproses..." : "Konfirmasi & mulai upgrade"}</button></div></section></div>}
-    {editing && draft && <div className="team-hq-editor"><div className="team-hq-section-title"><div><span className="section-eyebrow">FIA CONTROL</span><h2>Edit {draft.title}</h2></div></div>
-      <label>Nama fasilitas<input value={draft.title} onChange={e => setDraft(v => v ? { ...v, title: e.target.value } : v)}/></label>
-      <label>Deskripsi<textarea value={draft.description} onChange={e => setDraft(v => v ? { ...v, description: e.target.value } : v)}/></label>
-      <div className="team-hq-form-grid"><label>Max level Premio<input type="number" min="1" max="8" value={draft.max_level_premio} onChange={e => setDraft(v => v ? { ...v, max_level_premio: Number(e.target.value) } : v)}/></label><label>Max level Zwei<input type="number" min="1" max="6" value={draft.max_level_zwei} onChange={e => setDraft(v => v ? { ...v, max_level_zwei: Number(e.target.value) } : v)}/></label></div>
-      <label className="team-hq-check"><input type="checkbox" checked={draft.is_enabled} onChange={e => setDraft(v => v ? { ...v, is_enabled: e.target.checked } : v)}/> Facility enabled</label>
-      <label className="team-hq-check"><input type="checkbox" checked={draft.maintenance_required} onChange={e => setDraft(v => v ? { ...v, maintenance_required: e.target.checked } : v)}/> Maintenance required</label>
-      {jsonFields.map(([key,label]) => <label key={key}>{label}<textarea className="team-hq-json" spellCheck={false} value={jsonDraft[key] ?? "{}"} onChange={e => setJsonDraft(v => ({ ...v, [key]: e.target.value }))}/></label>)}
-      <div className="team-hq-actions"><button onClick={() => { setEditing(null); setDraft(null); }} className="team-hq-cancel">Batal</button><button onClick={() => void saveConfig()} disabled={saving} className="team-hq-save"><Save size={15}/>{saving ? "Menyimpan..." : "Simpan konfigurasi"}</button></div>
-      <p className="team-hq-footnote"><ShieldCheck size={14}/> Biaya, durasi, maintenance, efek, dan unlock disimpan sebagai konfigurasi FIA. Tidak ada nilai ekonomi default yang dikarang.</p>
-    </div>}
   </section>;
 }
