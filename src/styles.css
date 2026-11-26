@@ -656,3 +656,5 @@ body.readable-site-backdrop .scene:after{
 @media(prefers-reduced-transparency:reduce){
  body.readable-site-backdrop .scene:after{backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(3,5,7,.68)}
 }
+
+.header-notification-delete{display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;width:30px;height:30px;border:1px solid rgba(255,255,255,.12);border-radius:6px;background:transparent;color:var(--muted,#9b9b9b);cursor:pointer;transition:color .15s ease,border-color .15s ease,background .15s ease}.header-notification-delete:hover{color:#f0a1a1;border-color:rgba(220,100,100,.45);background:rgba(220,100,100,.08)}.header-notification-delete:disabled{opacity:.4;cursor:not-allowed}

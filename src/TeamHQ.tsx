@@ -130,7 +130,7 @@ export default function TeamHQ() {
       p_idempotency_key: crypto.randomUUID()
     });
     setSubmittingUpgrade(false);
-    if (upgradeError) { setError(upgradeError.message); return; }
+    if (upgradeError) { setError([upgradeError.message, upgradeError.details, upgradeError.hint, upgradeError.code ? "Kode: " + upgradeError.code : ""].filter(Boolean).join(" · ")); return; }
     setConfirmConfig(null);
     setNotice("Proyek upgrade berhasil dimulai. Biaya telah dipindahkan ke VreeoBank.");
     await load();

@@ -55,6 +55,7 @@ export default function PublicMemberId() {
       <h1>{member.character_name}</h1>
       <p>{member.role} · {member.license || "UNLICENSED"}</p>
       <p>{member.team_name || "Independent"} · {member.member_code}</p>
+      {member.role==="Driver"&&member.market_value_eur!=null&&<p className="cp-id-market-value">MARKET VALUE · € {Number(member.market_value_eur).toLocaleString("id-ID",{maximumFractionDigits:0})}</p>}
       <div className="cp-id-bottom">{card.tagline || "CALERIS MASTERS Member"}</div>
     </section>
     <section className="cp-section cp-public-progress">
