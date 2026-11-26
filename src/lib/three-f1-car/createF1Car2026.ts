@@ -1,12 +1,7 @@
 import * as THREE from 'three';
 import {
-  AeroMode,
-  AssetLodTier,
   CHASSIS_MODULES,
-  ChassisModuleId,
   F1_2026_DIMENSIONS,
-  LiveryId,
-  TireCompoundId,
   computeAckermannSteerAngles,
   getAeroFlapAngles,
   getLiveryPreset,
@@ -14,13 +9,10 @@ import {
   getTireCompound,
   speedKmhToWheelOmega,
 } from './f1Chassis2026Spec';
-import { CrashEffectState, SponsorSlotConfig, SponsorSlotId } from './f1Decals';
-import {
-  F1AppearanceConfig,
-  F1MaterialLibrary,
-  appearanceFromPreset,
-  createF1MaterialLibrary,
-} from './f1Materials';
+import type { AeroMode, AssetLodTier, ChassisModuleId, LiveryId, TireCompoundId } from './f1Chassis2026Spec';
+import type { CrashEffectState, SponsorSlotConfig, SponsorSlotId } from './f1Decals';
+import { appearanceFromPreset, createF1MaterialLibrary } from './f1Materials';
+import type { F1AppearanceConfig, F1MaterialLibrary } from './f1Materials';
 
 export interface CreateF1CarOptions {
   livery?: LiveryId;
