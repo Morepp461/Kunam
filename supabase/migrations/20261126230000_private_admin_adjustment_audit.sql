@@ -177,7 +177,7 @@ begin
   v_result:=private.post_economy_transaction(
     v_source,v_destination,p_amount,'admin_adjustment',
     'Admin profile wallet adjustment',
-    btrim(p_idempotency_key),v_actor,
+    btrim(p_idempotency_key),null,
     jsonb_build_object(
       'purpose','admin_profile_wallet_adjustment',
       'operation',p_operation,
