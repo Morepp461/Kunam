@@ -2001,3 +2001,24 @@ Still pending:
 - Backfill tombstones for the specific legacy notifications dated 20 November only after confirming the exact target rows and idempotency keys.
 - Run full TypeScript/build/unit/e2e and Supabase schema-parity QA, deploy the updated `member-directory` Edge Function to Testing then Production, merge only after CI passes, and verify Vercel Production deployment.
 - No Vercel environment variables/settings were changed.
+
+
+### Progress update 2 — 26 November 2026
+
+Additional implementation and verification:
+- Public Driver profile: `member-directory` now includes the Driver's Market Value from the existing `caleris_driver_market_values` table in its service-role profile response; the public profile card displays it. The function was deployed to Testing as `member-directory` version 15, with `verify_jwt=false` preserved from its existing configuration. Production deployment is pending QA/merge.
+- Public Digital ID already returned `member.market_value_eur` from `caleris_get_public_digital_id()`; the UI now displays that field. No new public RPC/grant was added. The general MV listing RPC remains authenticated-only.
+- Free Agent recruitment form is shown only to Team Owner accounts when the team has fewer than two Drivers and eligible Free Agents exist. Salary band is validated in the UI and again by the existing database RPC.
+- License filtering normalizes the legacy `A` value to Super License so the complete list remains functional.
+- Profile Settings now includes Bahasa Indonesia / English selection and persists to the existing `profiles.preferred_language` column. The column already exists in both databases, is NOT NULL, and defaults to `id`; no migration is needed. Full translation coverage across the application is still pending and must not be described as complete.
+- Team HQ logs for Testing show successful reads of facility/config/project data, but no recorded request to `member_start_team_hq_project` and no matching Postgres error in the available log window. The current page invokes the RPC directly; it does not invoke a Supabase Edge Function. The reported upgrade failure therefore remains unreproduced and must be retested with the actual authenticated upgrade action before any speculative DB change.
+- No notification rows dated 20 November 2026 currently exist in either database. The client bulk-delete path is corrected to use the tombstone RPC; no broad historical data deletion was performed.
+- Team HQ Production data remains empty (0 teams/facilities/team wallets); Testing has 13 teams. Do not backfill Production with Testing data.
+
+Base Value override: the approved Tier 1 Base Value is **EUR 18,000,000**. This supersedes all earlier EUR 10,000,000 wording in the historical decision log. Both database config rows already hold EUR 18,000,000.
+
+Release gate remains closed:
+- Complete full bilingual translation (About Us excluded).
+- Reproduce and resolve the Team HQ upgrade error.
+- Reconcile database migration files missing from current `main` before schema-parity QA. Current database ledgers are ahead of the migration files visible on `main`; no migration history was rewritten.
+- Run project CI, full QA, schema parity, merge to `main`, deploy `member-directory` to Production, and verify Vercel Production.
