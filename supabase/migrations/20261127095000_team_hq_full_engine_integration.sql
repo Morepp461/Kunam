@@ -135,6 +135,9 @@ begin
   elsif position(v_new_block in v_definition) = 0 then
     raise exception 'Development upgrade cash discount changed; review before applying HQ condition scaling.';
   end if;
+  v_definition := replace(v_definition, E'\n v_cash_cost:=round(v_delta*v_cash_rate,2);', E'\n  v_cash_cost:=round(v_delta*v_cash_rate,2);');
+  v_definition := replace(v_definition, E'\n if p_scope=''team'' and p_attribute_key=''pit_stop_efficiency'' then', E'\n  if p_scope=''team'' and p_attribute_key=''pit_stop_efficiency'' then');
+  v_definition := replace(v_definition, E'\n \n  if p_scope=''driver''', E'\n  \n  if p_scope=''driver''');
   execute v_definition;
 end;
 $patch$;;;
