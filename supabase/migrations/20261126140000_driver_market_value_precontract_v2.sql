@@ -115,7 +115,7 @@ begin
   end if;
   select sum(value::numeric) into v_total from jsonb_each_text(p_weights);
   if v_total<>100 or (select count(*) from jsonb_object_keys(p_weights))<>7 then
-    raise exception 'Bobot tujuh komponen harus berjumlah tepat 100%.';
+    raise exception 'Bobot tujuh komponen harus berjumlah tepat 100 persen.';
   end if;
   if exists(select 1 from jsonb_each_text(p_weights) x where x.value::numeric<0 or x.value::numeric>100) then
     raise exception 'Bobot komponen harus berada pada rentang 0–100.';
@@ -461,7 +461,7 @@ begin
     order by starts_on desc,created_at desc limit 1;
   if not found then raise exception 'Tidak ada Season aktif.'; end if;
   if v_today < v_season.starts_on + ceil((v_season.ends_on-v_season.starts_on+1)::numeric/2)::integer then
-    raise exception 'Pre-contract baru terbuka setelah 50% durasi kalender Season berlalu.';
+    raise exception 'Pre-contract baru terbuka setelah 50 persen durasi kalender Season berlalu.';
   end if;
   select * into v_contract from public.contracts
     where member_id=v_driver.id and team_id=v_driver.team_id and status='active'
