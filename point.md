@@ -1880,7 +1880,7 @@ Definisi komponen:
 - Perubahan nilai bertahap:
   `MVbaru = MVlama + (TargetMV - MVlama) × GrowthFactor`
 - Growth Factor ditetapkan permanen sebesar 0,25 untuk penyesuaian bertahap menuju Target MV.
-- Base Value untuk tier tertinggi (Tier 1) ditetapkan awal sebesar **€10.000.000**.
+- Base Value Tier 1 saat ini **€18.000.000**. Angka awal €10.000.000 telah disupersesi oleh keputusan terbaru.
 - Tier menggunakan Tier Multiplier tetap sesuai tabel keputusan. Pemetaan divisi aktif mengikuti tier resmi: Caleris Premio = Tier 1 dan Caleris Zwei = Tier 2.
 - Nilai awal Tier Multiplier yang disetujui:
   | Tier | Multiplier |
@@ -1951,7 +1951,7 @@ Keputusan terbaru pemilik proyek: **Driver Market Value Engine tidak menyediakan
 
 Nilai yang ditanam permanen dan divalidasi di backend:
 - Bobot: License 10%, Contract 10%, Performance 20%, Overall Skill 20%, Achievement 10%, Activity 10%, Reputation 20%.
-- Base Value Tier 1: €10.000.000.
+- Base Value Tier 1: €18.000.000 (keputusan terbaru).
 - Growth Factor: 0,25.
 - Tier Multiplier: Tier 1 = 1,00; Tier 2 = 0,85; Tier 3 = 0,70; Tier 4 = 0,60.
 - Pemetaan divisi aktif: Caleris Premio = Tier 1; Caleris Zwei = Tier 2.
@@ -1979,7 +1979,7 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
    - Perbaiki akar masalah error berulang, bukan hanya teks error frontend. Pertahankan idempotency, wallet ledger, validasi level/divisi, batas proyek aktif, dan settlement VreeoBank.
    - Catat bukti hasil pemeriksaan kedua database dan regression test upgrade.
 5. **Driver Market Value base value**
-   - Naikkan Base Value Tier 1 dari €10.000.000 menjadi **€18.000.000**.
+   - Kunci Base Value Tier 1 pada **€18.000.000**.
    - Keputusan ini menggantikan angka €10 juta pada bagian keputusan MV sebelumnya. Nilai tetap immutable/hard-coded di backend dan tampilan Admin read-only harus ikut diperbarui. Migrasi harus memperbarui konstanta secara aman tanpa menghapus histori/snapshot.
 6. **Notification tanggal 20**
    - Telusuri sumber notifikasi/reminder tanggal 20 yang masih muncul setelah dihapus. Hapus/disable sumber aktifnya di database/scheduler dan cegah notifikasi lama muncul kembali akibat cache, job berulang, atau sinkronisasi. Jangan menghapus notifikasi lain yang masih valid.
@@ -2015,14 +2015,25 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
 - **Team HQ:** halaman `src/TeamHQ.tsx` memanggil RPC `member_start_team_hq_project` secara langsung; tombol upgrade tidak memanggil Edge Function. Kedua database memiliki RPC yang sama, tetapi index `caleris_team_hq_one_active_project_per_team` masih membatasi satu proyek aktif per tim, sementara RPC/UI dan aturan produk mengizinkan dua proyek aktif. Ini adalah konflik schema yang terkonfirmasi dan harus diperbaiki. Log 24 jam yang diperiksa belum menunjukkan error spesifik Team HQ; jangan mengklaim akar error lain tanpa bukti log tambahan.
 - **Notifikasi:** kedua database telah memiliki tabel tombstone dan RPC delete satu/semua notifikasi. Perlu verifikasi bahwa `enqueue_caleris_notification` memeriksa tombstone sebelum membuat ulang notifikasi, dan UI memakai RPC delete tersebut, bukan DELETE langsung.
 - **Driver MV:** RPC `caleris_get_public_digital_id` di kedua database sudah mengembalikan `market_value_eur` untuk Driver, tetapi komponen `src/PublicMemberId.tsx` belum merender field itu. RPC `caleris_get_public_driver_market_value(uuid)` ada, tetapi belum dapat dieksekusi role authenticated; profil privat harus menggunakan jalur aman yang hanya mengembalikan MV milik akun sendiri.
-- **HQ error log:** tidak ditemukan error log yang secara eksplisit menyebut Team HQ pada query log 24 jam yang tersedia. Ditemukan error lain terkait signature `member_start_driver_move` dan error aggregate `array_agg`; keduanya perlu dipetakan ke sumbernya sebelum dinyatakan terkait HQ.
+- **HQ error log:** tidak ditemukan error log yang secara eksplisit menyebut Team HQ pada query log 24 jam yang tersedia. Error signature `member_start_driver_move` yang ditemukan berasal dari jalur transfer, bukan Team HQ. Query audit `array_agg` yang gagal adalah kesalahan query audit karena `pg_get_functiondef` dipanggil pada aggregate, bukan error aplikasi.
 - **Notification scheduler:** kedua database menjalankan `caleris-notification-reminders` setiap 5 menit. Ini membuat pemeriksaan tombstone pada enqueue wajib untuk mencegah reminder yang dihapus muncul lagi.
 
 
 ### Audit findings tambahan — 26 November 2026
-- **Base Value:** nilai `base_value_eur` pada Testing dan Production sudah €18.000.000, tetapi source `20261126072000_lock_driver_market_engine_decisions.sql` dan UI Admin di branch main masih menulis €10.000.000. Ini drift source-vs-database yang wajib direkonsiliasi; jangan menurunkan nilai database kembali ke €10 juta.
+- **Base Value:** Testing dan Production sudah €18.000.000. Migration `20261126072000` adalah histori nilai awal €10 juta; migration `20261126130000` menjadi override final €18 juta dan UI Admin read-only ikut menampilkan €18 juta.
 - **Public Driver Profile:** Edge Function `member-directory` yang sedang aktif di kedua database sudah memuat lookup MV untuk profil publik, dengan SHA yang sama. Source file pada main belum memuat perubahan tersebut; source harus disinkronkan dengan deployment aktif sebelum perubahan berikutnya.
 - **Free Agent:** RPC database telah membatasi inisiator hanya Team Owner dan hanya tim dengan kurang dari dua Driver. Implementasi UI sudah memiliki fungsi `startFreeAgent`, tetapi tidak pernah dirender; tombol rekrut memang tidak tersedia. Filter lisensi dan nationality saat ini hanya membangun opsi dari nilai yang kebetulan ada di hasil directory, bukan daftar lengkap.
 - **Notifications:** komponen `NotificationsCenter` masih menjalankan DELETE langsung pada tabel, melewati RPC tombstone yang sudah tersedia. Tombstone dan enqueue guard sudah ada di kedua DB; UI harus memakai RPC delete satuan/semua agar notifikasi yang dihapus tidak dibuat ulang.
 - **Bahasa:** kedua DB sudah memiliki `profiles.preferred_language` dengan nilai valid `id/en` dan default `id`, tetapi kolom belum dipakai oleh Account Settings maupun UI. Perubahan harus menghubungkan preferensi ini ke seluruh antarmuka.
 - **Migration ledger:** kedua DB sudah mencatat migration `20261126100000`, `20261126110000`, dan `20261126120000`, sedangkan file-file tersebut tidak ada di tree main. File sumber harus direkonsiliasi di branch; migration `20261126120000` bernama `cleanup_expired_quest_notifications_20261120` perlu diperiksa agar pembersihan notifikasi tanggal 20 tidak diasumsikan berhasil tanpa verifikasi data.
+
+
+### Implementasi perbaikan — 26 November 2026 (branch aktif)
+- Market Value ditampilkan pada halaman profil sendiri, profil publik, detail card Driver (hanya panel detail setelah card dipilih), dan Digital ID publik. Data profil publik disinkronkan dengan source Edge Function `member-directory` yang sudah terpasang di kedua database.
+- Base Value Tier 1 dikunci €18.000.000 pada Admin UI read-only dan migration override baru. Tidak mengubah bobot, multiplier, growth factor, atau skor lisensi yang telah dikunci.
+- Transfer Market: dropdown lisensi memakai semua tier salary-band yang dikonfigurasi, dropdown nationality memuat seluruh negara dari dependency yang sudah digunakan aplikasi, dan filter lisensi menormalkan alias Super License.
+- Free Agent: tombol Rekrut tersedia di directory hanya untuk Team Owner dengan roster kurang dari dua Driver. Form memakai rentang gaji lisensi, memanggil RPC negosiasi Free Agent yang sudah ada, dan tidak mengenakan transfer fee. Tombol transfer generik di profil publik disembunyikan untuk Driver tanpa tim agar tidak memanggil permanent-transfer RPC yang salah.
+- Team HQ: halaman menggunakan RPC langsung, bukan Edge Function. Migration baru menghapus unique index satu proyek aktif per tim, menggantinya dengan unique per-fasilitas, dan tetap mempertahankan batas maksimal dua proyek aktif di RPC/trigger. UI kini menampilkan message, details, hint, dan SQLSTATE bila RPC gagal.
+- Notifications: penghapusan satuan dan semua notifikasi memakai RPC tombstone; tombol buka notification center memuat ulang daftar agar notifikasi lama yang sudah dibersihkan tidak tertahan di state UI.
+- Bahasa: pengaturan profil menyimpan `preferred_language` (`id` / `en`), default Bahasa Indonesia. Bridge menerapkan kamus terjemahan ke teks UI dinamis; halaman About Us dikecualikan dan tetap Inggris.
+- Migration source `20261126100000`, `20261126110000`, dan `20261126120000` direkonsiliasi dengan ledger yang sudah ada di kedua database. Migration `20261126130000` menunggu penerapan dan verifikasi di Testing serta Production sebelum merge.
