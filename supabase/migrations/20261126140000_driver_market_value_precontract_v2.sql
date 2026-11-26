@@ -669,7 +669,7 @@ begin
   end if;
   return null;
 end;
-$;
+$$;
 revoke all on function private.refresh_driver_market_after_change() from public,anon,authenticated,service_role;
 
 drop trigger if exists caleris_mv_attributes_refresh on public.caleris_driver_attributes;
