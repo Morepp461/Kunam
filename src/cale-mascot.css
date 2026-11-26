@@ -43,3 +43,29 @@
 .cale-assistant__body{min-height:0;overflow:auto;grid-template-columns:minmax(90px,30%) minmax(0,1fr);align-items:start}
 .cale-assistant__character{max-width:100%}
 @media(min-width:900px){.cale-assistant__panel{box-shadow:0 24px 70px rgba(0,0,0,.58)}.cale-assistant__body{gap:18px;padding:18px 20px 22px}.cale-assistant__copy p{font-size:13px}.cale-assistant__guide-list{font-size:12px;max-height:420px}}
+
+
+/* Restore the larger assistant character scale while keeping the panel responsive. */
+.cale-assistant__body{
+  grid-template-columns: minmax(0, var(--cale-assistant-avatar-size, 180px)) minmax(0, 1fr);
+}
+.cale-assistant__character{
+  --cale-assistant-avatar-size: 180px;
+  width: var(--cale-assistant-avatar-size);
+  max-height: none;
+}
+.cale-assistant__character .cale-mascot__art{
+  height: calc(var(--cale-assistant-avatar-size) * 1.5);
+}
+@media(max-width:560px){
+  .cale-assistant__body{
+    grid-template-columns: minmax(0, 130px) minmax(0, 1fr);
+  }
+  .cale-assistant__character{
+    --cale-assistant-avatar-size: 130px;
+    width: var(--cale-assistant-avatar-size);
+  }
+  .cale-assistant__character .cale-mascot__art{
+    height: 195px;
+  }
+}
