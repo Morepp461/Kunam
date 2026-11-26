@@ -2148,3 +2148,21 @@ After adding detailed Team HQ RPC diagnostics, validation was repeated on the la
 - Team HQ controlled rollback RPC test: PASS on Testing; no persistent mutation.
 - Browser E2E remains blocked by the Vercel sandbox's Chromium/system dependency installation issue; it is not marked as passed.
 - The profile language setting currently persists the selected `id` / `en` preference and document locale. Translation of all application screens is not complete.
+
+
+### Release candidate verification — 26 November 2026
+
+- Root cause of the recurring HQ upgrade failure is confirmed: the previous partial index allowed only one active HQ project per team, while the product/RPC permits two concurrent projects. The index is now unique per `(team_id, facility_key)`; the existing RPC/trigger still enforces the global two-project limit.
+- Testing controlled regression: created a temporary first active project inside a transaction, then called the authenticated Owner RPC to start a second project on a different facility. RPC returned `status=started`; the enclosing transaction was rolled back. No persistent test project or wallet transaction was retained.
+- Production and Testing both now show only `caleris_team_hq_one_active_project_per_facility`; the conflicting per-team index is absent.
+- Both DBs: Base Value EUR 18,000,000; language constraint `id/en`; notification enqueue tombstone guard active. Testing has 26 recalculated MV snapshots; Production has zero because it currently has no Driver records.
+- All five missing migration sources from versions 20261126100000 through 20261126140000 have been restored into this branch to reconcile the source repository with the already-applied Testing/Production migration ledgers. No migration was re-applied and no ledger was rewritten.
+- `member-directory` version 15 is ACTIVE on Testing. Production Edge Function deployment remains a release step.
+- Local QA on latest branch: TypeScript PASS; production build PASS; 42 unit-test files / 226 tests PASS; static regression scripts PASS.
+- GitHub Actions **Caleris CI run #5544**: SUCCESS. All 44 job steps passed, including dependency gates, Deno checks, TypeScript, production build, unit/schema tests, Playwright browser smoke tests, all regression suites, and Supabase schema parity guard.
+- Vercel environment variables were not changed. Vercel Production remains configured to use the Testing Supabase project as currently specified; this was read-only verified and intentionally left unchanged.
+
+### Remaining release actions
+- Deploy the verified `member-directory` Edge Function to Production so both Supabase projects have the same source/version.
+- Merge the ready-for-review PR to `main` after confirming PR head is the CI-passing commit.
+- Verify Vercel Production deployment is READY and run production-domain smoke checks.
