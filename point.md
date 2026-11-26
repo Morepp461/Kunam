@@ -2588,14 +2588,14 @@ Perform a complete integration audit and regression suite for all nine facilitie
 - Driver and Team Owner profiles support personal XP and personal wallet add/subtract.
 - Team profiles support Team Wallet add/subtract. Teams do not receive personal XP.
 - Every adjustment requires a reason, an explicit before/after confirmation, and an idempotency key.
-- The Admin-only history shows signed XP/Wallet changes and their audit descriptions.
+- The Admin-only history shows signed XP/Wallet changes and their audit descriptions. Reasons and actor IDs are stored only in private Admin audit tables; public XP ledger descriptions and wallet transaction metadata are generic and do not expose internal Admin reasons or actor IDs.
 - Wallet adjustments use the existing double-entry economy transaction service and a dedicated hidden admin_adjustment_clearing system wallet. VreeoBank and Sponsor Source balances are not changed by this profile adjustment path.
 - The XP ledger has a database-level BEFORE UPDATE/DELETE guard and direct INSERT/UPDATE/DELETE privileges are revoked from clients and service_role. All XP changes are compensating append-only entries. Direct milestone reward-definition writes are also revoked. caleris_set_xp_reward is no longer executable by clients. caleris_admin_save_milestone ignores caller-supplied XP and uses the fixed source-code reward map; an active milestone without a source reward is rejected.
 - The older duplicate Manual XP Adjustment and XP Reward Configuration panels were removed from Community Progression Admin. The legacy global Wallet Injection panel was removed from AdminAdjustmentCenter, and the old admin_inject_wallet_balance RPC was disabled so the previous VreeoBank-funded path cannot be called by clients.
 
 ### Supabase migrations applied to both databases
 
-The following nine migration sources exist in this branch and have been applied successfully to Testing and Production, in order:
+The following ten migration sources exist in this branch and have been applied successfully to Testing and Production, in order:
 
 1. 20261126210000_xp_engine_priority6_completion.sql
 2. 20261126220000_admin_profile_xp_wallet_adjustments.sql
@@ -2606,6 +2606,7 @@ The following nine migration sources exist in this branch and have been applied 
 7. 20261126227000_lock_xp_rewards_to_source_code.sql
 8. 20261126228000_disable_legacy_vreeobank_wallet_injection.sql
 9. 20261126229000_xp_ledger_append_only_guard.sql
+10. 20261126230000_private_admin_adjustment_audit.sql
 
 ### QA evidence
 
@@ -2617,13 +2618,13 @@ The following nine migration sources exist in this branch and have been applied 
 - Race official-results backfill: 600 per-entry state rows and 150 race award ledger rows, net 2,600 race XP. Repeated reconciliation and milestone refresh were idempotent: ledger count remained 410 before/after both refresh passes.
 - Achievement backfill: 260 milestone ledger rows, including 62 Team milestone awards to 12 Team Owners. No negative milestone ledger entries.
 - Total after backfill: **410 XP ledger rows**, net **4,718 XP** across 24 Drivers and 12 Owners. These are existing Testing records only.
-- Admin profile tests passed for Driver, Team Owner, and Team wallet targets; XP add/subtract, wallet add/subtract, snapshot and history RPCs all worked inside rolled-back transactions. Non-Admin access and VreeoBank targeting were denied. VreeoBank and target wallet balances were unchanged after the add/subtract pair; clearing wallet returned to zero.
+- Admin profile tests passed for Driver, Team Owner, and Team wallet targets; XP add/subtract, wallet add/subtract, snapshot and history RPCs all worked inside rolled-back transactions. A privacy smoke test confirmed public ledger/wallet rows contain only generic descriptions and no actor/reason, while the Admin-only history RPC returns the private reason and actor audit details. Non-Admin access and VreeoBank targeting were denied. VreeoBank and target wallet balances were unchanged after the add/subtract pair; clearing wallet returned to zero.
 - Passing an attempted Admin milestone XP value of 999 still saved the fixed 5 XP for career_first_podium. Admin XP reward settings read/update privileges, direct milestone update, direct XP ledger insert, and caleris_set_xp_reward execution are all denied.
 - All test mutations were rolled back except the deliberate Testing-only milestone/race historical backfill described above.
 
 **Production database caleris-masters-newgen:**
 
-- All nine migrations applied successfully.
+- All ten migrations applied successfully.
 - Production has no Driver/Team operational records in the audited scope, so the historical XP backfill correctly created no player XP rows. No Testing dummy data was copied.
 - Function-definition hashes for the 14 shared XP, milestone, race reconciliation, Admin adjustment, and economy transaction functions matched between Testing and Production before the final source-owned reward migrations. Re-run final parity check after the last migration.
 - The dedicated Admin clearing wallet exists once and is hidden from the public wallet directory; it starts at zero.
@@ -2632,7 +2633,7 @@ The following nine migration sources exist in this branch and have been applied 
 
 - [ ] Finish source QA and CI for the current branch, including TypeScript, production build, unit tests, schema/migration checks, and browser smoke tests.
 - [ ] Fix any QA/CI failure before merge.
-- [ ] Verify Testing/Production function-definition parity after all nine migrations.
+- [ ] Verify Testing/Production function-definition parity after all ten migrations.
 - [ ] Create/refresh the PR, merge to main only after CI is green.
 - [ ] Verify the new Vercel Production deployment is READY and serves the merged commit.
 - [ ] Do not change Vercel environment variables or project settings.
