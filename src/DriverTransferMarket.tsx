@@ -97,6 +97,8 @@ export default function DriverTransferMarket({session}:{session:Session}){
  const selectedFreeAgent=freeAgents.find(d=>d.id===freeAgentId);
  const selectedFreeAgentBand=salaryBands.find(b=>b.license_label.toLowerCase()===licenseLabel(selectedFreeAgent?.license||"").toLowerCase());
  const startFreeAgent=async()=>{
+  if(member?.role!=="Owner"||!ownTeamId){setNotice("Hanya Team Owner yang dapat merekrut Free Agent.");return}
+  if(teamDriverCount>=2){setNotice("Roster tim sudah mencapai batas dua Driver.");return}
   if(!supabase||!freeAgentId||!freeAgentSalary)return;const amount=Number(freeAgentSalary);
   if(!selectedFreeAgentBand||!Number.isFinite(amount)||amount<selectedFreeAgentBand.salary_min_eur||amount>selectedFreeAgentBand.salary_max_eur){setNotice("Gaji harus sesuai rentang lisensi Driver.");return}
   setSaving(true);setNotice("");const {error}=await supabase.rpc("member_start_free_agent_contract_negotiation",{p_driver_member_id:freeAgentId,p_annual_salary:amount,p_note:freeAgentNote||null});setSaving(false);
