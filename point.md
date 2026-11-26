@@ -2036,4 +2036,11 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
 - Team HQ: halaman menggunakan RPC langsung, bukan Edge Function. Migration baru menghapus unique index satu proyek aktif per tim, menggantinya dengan unique per-fasilitas, dan tetap mempertahankan batas maksimal dua proyek aktif di RPC/trigger. UI kini menampilkan message, details, hint, dan SQLSTATE bila RPC gagal.
 - Notifications: penghapusan satuan dan semua notifikasi memakai RPC tombstone; tombol buka notification center memuat ulang daftar agar notifikasi lama yang sudah dibersihkan tidak tertahan di state UI.
 - Bahasa: pengaturan profil menyimpan `preferred_language` (`id` / `en`), default Bahasa Indonesia. Bridge menerapkan kamus terjemahan ke teks UI dinamis; halaman About Us dikecualikan dan tetap Inggris.
-- Migration source `20261126100000`, `20261126110000`, dan `20261126120000` direkonsiliasi dengan ledger yang sudah ada di kedua database. Migration `20261126130000` menunggu penerapan dan verifikasi di Testing serta Production sebelum merge.
+- Migration source `20261126100000`, `20261126110000`, dan `20261126120000` direkonsiliasi dengan ledger kedua database. Migration `20261126130000` sudah diterapkan di Testing dan Production; metadata ledger kedua database diseragamkan ke versi `20261126130000`.
+
+### Verifikasi database setelah migration — 26 November 2026
+- Testing dan Production: `base_value_eur=18000000`, trigger immutable Driver Market Value aktif kembali, index lama `caleris_team_hq_one_active_project_per_team` tidak ada, index baru `caleris_team_hq_one_active_project_per_facility` aktif.
+- Kedua database: `profiles.preferred_language` tersedia dengan constraint hanya `id` / `en`; RPC penghapusan notifikasi dan Market Value memiliki grant sesuai role.
+- Kedua database: `member_start_team_hq_project` tetap membatasi maksimal dua proyek aktif per tim; unique index kini hanya mencegah dua proyek aktif pada fasilitas yang sama.
+- Notifikasi tanggal 20 November: tidak ada row notifikasi tanggal 20 pada Testing maupun Production. Testing menyimpan tombstone penghapusan; Production belum memiliki data notifikasi.
+- Edge Function `member-directory` di Testing dan Production sudah memiliki implementasi Market Value dengan source hash yang sama; source repository kini diselaraskan dengan versi terpasang.
