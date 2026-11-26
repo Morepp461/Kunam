@@ -8,10 +8,10 @@
 .cale-mascot__caption strong{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
 .cale-mascot__caption span{font-size:11px;line-height:1.45;color:var(--text-secondary,#a9a39a)}
 .cale-assistant{position:fixed;right:18px;bottom:18px;z-index:90;display:flex;flex-direction:column;align-items:flex-end;gap:12px;pointer-events:none}
-.cale-assistant__trigger{pointer-events:auto;display:flex;align-items:center;justify-content:center;gap:8px;width:150px;height:240px;min-height:240px;padding:12px 10px;border:1px solid rgba(214,184,94,.62);border-radius:18px;background:linear-gradient(145deg,rgba(22,22,24,.98),rgba(8,8,9,.98));box-shadow:0 8px 26px rgba(0,0,0,.38);color:#e6c76d;cursor:pointer}
-.cale-assistant__trigger-art{width:80px;--cale-size:80px;flex:0 0 80px}
+.cale-assistant__trigger{position:relative;pointer-events:auto;display:block;width:88px;height:144px;min-height:144px;padding:0;overflow:visible;border:1px solid rgba(214,184,94,.62);border-radius:18px;background:linear-gradient(145deg,rgba(22,22,24,.98),rgba(8,8,9,.98));box-shadow:0 8px 26px rgba(0,0,0,.38);color:#e6c76d;cursor:pointer}
+.cale-assistant__trigger-art{position:absolute;left:-9px;bottom:5px;width:110px;--cale-size:110px;flex:0 0 110px;max-width:none;transform:scale(1.08);transform-origin:center bottom;pointer-events:none}
 .cale-assistant__trigger-art .cale-mascot__marker{display:none}
-.cale-assistant__trigger-label{font-size:10px;font-weight:900;letter-spacing:.1em;writing-mode:vertical-rl;transform:rotate(180deg)}
+.cale-assistant__trigger-label{position:absolute;right:7px;top:50%;font-size:10px;font-weight:900;letter-spacing:.1em;writing-mode:vertical-rl;transform:translateY(-50%) rotate(180deg);pointer-events:none}
 .cale-assistant__panel{pointer-events:auto;width:min(370px,calc(100vw - 28px));overflow:hidden;border:1px solid rgba(214,184,94,.55);border-radius:18px;background:linear-gradient(145deg,rgba(23,23,25,.99),rgba(9,9,10,.99));box-shadow:0 18px 48px rgba(0,0,0,.48);color:#f4f0e7}
 .cale-assistant__header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(214,184,94,.2)}
 .cale-assistant__eyebrow{color:#d8b95c;font-size:9px;font-weight:800;letter-spacing:.16em}
@@ -25,7 +25,7 @@
 .cale-assistant__copy strong{font-size:13px;color:#e8cb72}
 .cale-assistant__copy p{margin:7px 0;font-size:12px;line-height:1.55;color:#e9e5dc}
 .cale-assistant__copy small{display:block;font-size:10px;line-height:1.5;color:#aaa49b}
-@media(max-width:560px){.cale-assistant{right:12px;bottom:12px}.cale-assistant__panel{width:min(350px,calc(100vw - 24px))}.cale-assistant__body{grid-template-columns:94px minmax(0,1fr);gap:9px;padding:12px}.cale-assistant__character{--cale-size:94px;width:94px}.cale-assistant__trigger{width:140px;height:220px;min-height:220px;padding:10px 8px}.cale-assistant__trigger-art{width:72px;--cale-size:72px;flex-basis:72px}}
+@media(max-width:560px){.cale-assistant{right:12px;bottom:12px}.cale-assistant__panel{width:min(350px,calc(100vw - 24px))}.cale-assistant__body{grid-template-columns:94px minmax(0,1fr);gap:9px;padding:12px}.cale-assistant__character{--cale-size:94px;width:94px}.cale-assistant__trigger{width:88px;height:144px;min-height:144px}.cale-assistant__trigger-art{left:-9px;bottom:5px;width:110px;--cale-size:110px;flex-basis:110px;transform:scale(1.08)}}
 
 .header-notification-cale{display:inline-flex!important;vertical-align:middle;width:24px!important;height:28px;margin:0 5px 0 0;overflow:hidden}
 .header-notification-cale .cale-mascot__art{width:100%;height:100%;align-items:flex-end}
