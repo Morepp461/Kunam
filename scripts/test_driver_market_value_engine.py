@@ -21,7 +21,7 @@ for fragment in ('Tier 1 | 1,00', 'Tier 2 | 0,85', 'Tier 3 | 0,70', 'Tier 4 | 0,
 
 # Scoring formula and data sources.
 for fragment in (
-    "Base Value Tier 1", "Growth Factor", "initial_license_scores",
+    "base_value_eur", "growth_factor", "initial_license_scores",
     "public.caleris_driver_attributes", "public.caleris_driver_reputation",
     "public.license_round_standings", "public.license_daily_checkins",
     "rr.driver_of_day_member_id=d.id", "e.finishing_position when 1 then 5 when 2 then 3 when 3 then 1",
