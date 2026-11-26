@@ -142,7 +142,7 @@ describe("Admin profile adjustment safeguards", () => {
     expect(privateAdminAudit).toContain("private.caleris_admin_wallet_adjustment_audit");
     expect(privateAdminAudit).toContain("XP balance adjustment by CALERIS administration");
     expect(privateAdminAudit).toContain("'Admin profile wallet adjustment'");
-    expect(privateAdminAudit).toContain("v_reason");
+    expect(privateAdminAudit).toContain("reason text not null");
     expect(privateAdminAudit).toContain("a.reason as description");
     expect(privateAdminAudit).toContain("a.actor_id");
   });
