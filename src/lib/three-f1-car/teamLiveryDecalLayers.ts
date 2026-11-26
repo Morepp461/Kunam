@@ -35,6 +35,7 @@ function addProjectedDecal(
   root: THREE.Group,
   target: THREE.Mesh,
   decal: TeamLiveryDecal,
+  texture: THREE.CanvasTexture,
   position: THREE.Vector3,
   orientation: THREE.Euler,
   size: THREE.Vector3,
@@ -53,7 +54,6 @@ function addProjectedDecal(
       geometry.dispose();
       return null;
     }
-    const texture = makeDecalTexture(decal);
     const material = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
@@ -94,6 +94,8 @@ export function createTeamLiveryDecalLayers(
       .filter((mesh): mesh is THREE.Mesh => Boolean(mesh));
     if (!targets.length) continue;
 
+    const texture = makeDecalTexture(decal);
+    let layerAdded = false;
     const scale = THREE.MathUtils.clamp(Number(decal.scale) || 1, 0.2, 2);
     const x = normalized(decal.x);
     const y = normalized(decal.y);
@@ -116,12 +118,17 @@ export function createTeamLiveryDecalLayers(
           root,
           target,
           decal,
+          texture,
           position,
           new THREE.Euler(0, side > 0 ? Math.PI / 2 : -Math.PI / 2, 0),
           size,
         );
-        if (layer) layers.push(layer);
+        if (layer) {
+          layers.push(layer);
+          layerAdded = true;
+        }
       }
+      if (!layerAdded) texture.dispose();
       continue;
     }
 
@@ -149,20 +156,26 @@ export function createTeamLiveryDecalLayers(
       root,
       target,
       decal,
+      texture,
       position,
       new THREE.Euler(-Math.PI / 2, 0, 0),
       size,
     );
     if (layer) layers.push(layer);
+    else texture.dispose();
   }
 
   return {
     count: layers.length,
     dispose() {
+      const disposedTextures = new Set<THREE.CanvasTexture>();
       for (const layer of layers) {
         root.remove(layer.mesh);
         layer.geometry.dispose();
-        layer.texture.dispose();
+        if (!disposedTextures.has(layer.texture)) {
+          disposedTextures.add(layer.texture);
+          layer.texture.dispose();
+        }
         const material = layer.mesh.material;
         if (Array.isArray(material)) material.forEach((entry) => entry.dispose());
         else material.dispose();
