@@ -68,5 +68,6 @@ export function buildF1Appearance(
     roughness: 0.24,
     clearcoat: 0.95,
     rimAccent: design.accentColor,
+    teamDecals: design.decals.map((decal) => ({ ...decal })),
   };
 }
