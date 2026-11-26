@@ -39,7 +39,7 @@ export default function DriverTransferMarket({session}:{session:Session}){
   if(!supabase)return;setLoading(true);setNotice("");
   const {data:p,error:pe}=await supabase.from("profiles").select("member_id").eq("user_id",session.user.id).maybeSingle();
   if(pe){setMember(null);setLoading(false);setNotice(pe.message);return}
-  const [m,t,n,o,a,ownMemberQ,w,fn,fo,sb]=await Promise.all([
+  const [m,t,n,o,a,ownMemberQ,w,fn,fo,sb,mv,pc,po]=await Promise.all([
    supabase.from("caleris_driver_market_directory").select("id,character_name,role,team_id,license,nationality,attributes,contract_ends_on,market_status,public_member_id").order("character_name"),
    supabase.from("caleris_team_directory").select("id,name,division_key").order("name"),
    supabase.from("caleris_driver_move_negotiations").select("*").order("created_at",{ascending:false}),
@@ -49,11 +49,14 @@ export default function DriverTransferMarket({session}:{session:Session}){
    supabase.rpc("member_get_transfer_window_status"),
    supabase.from("caleris_free_agent_contract_negotiations").select("*").order("created_at",{ascending:false}),
    supabase.from("caleris_free_agent_contract_offers").select("*").order("created_at",{ascending:true}),
-   supabase.from("caleris_driver_salary_bands").select("license_label,license_tier,salary_min_eur,salary_max_eur,sort_order").order("sort_order")
+   supabase.from("caleris_driver_salary_bands").select("license_label,license_tier,salary_min_eur,salary_max_eur,sort_order").order("sort_order"),
+   supabase.rpc("member_get_driver_market_values"),
+   supabase.from("caleris_driver_precontract_negotiations").select("*").order("created_at",{ascending:false}),
+   supabase.from("caleris_driver_precontract_offers").select("*").order("created_at",{ascending:true})
   ]);
-  const err=[m.error,t.error,n.error,o.error,a.error,ownMemberQ.error,w.error,fn.error,fo.error,sb.error].find(Boolean);if(err)setNotice(err.message);
+  const err=[m.error,t.error,n.error,o.error,a.error,ownMemberQ.error,w.error,fn.error,fo.error,sb.error,mv.error,pc.error,po.error].find(Boolean);if(err)setNotice(err.message);
   const allMembers=(m.data||[]) as Member[];setMembers(allMembers);setMember((ownMemberQ.data||null) as Member|null);
-  setTeams((t.data||[]) as Team[]);setNegotiations((n.data||[]) as Negotiation[]);setOffers((o.data||[]) as Offer[]);setAffiliations((a.data||[]) as Affiliation[]);setTransferWindow((w.data||null) as TransferWindow|null);setFreeAgentNegotiations((fn.data||[]) as FreeAgentNegotiation[]);setFreeAgentOffers((fo.data||[]) as FreeAgentOffer[]);setSalaryBands((sb.data||[]) as SalaryBand[]);setLoading(false);
+  setTeams((t.data||[]) as Team[]);setNegotiations((n.data||[]) as Negotiation[]);setOffers((o.data||[]) as Offer[]);setAffiliations((a.data||[]) as Affiliation[]);setTransferWindow((w.data||null) as TransferWindow|null);setFreeAgentNegotiations((fn.data||[]) as FreeAgentNegotiation[]);setFreeAgentOffers((fo.data||[]) as FreeAgentOffer[]);setSalaryBands((sb.data||[]) as SalaryBand[]);setMarketValues(Object.fromEntries(((mv.data||[]) as {member_id:string;market_value_eur:number}[]).map(v=>[v.member_id,Number(v.market_value_eur)])));setPrecontracts((pc.data||[]) as PrecontractNegotiation[]);setPrecontractOffers((po.data||[]) as PrecontractOffer[]);setLoading(false);
  },[session.user.id]);
  useEffect(()=>{void refresh()},[refresh]);
  const ownTeamId=member?.team_id||"";
