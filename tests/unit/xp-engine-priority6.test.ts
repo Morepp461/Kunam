@@ -16,11 +16,20 @@ const teamMilestones = readFileSync(
 const raceBackfill = readFileSync(
   new URL("../../supabase/migrations/20261126226000_xp_official_result_backfill.sql", import.meta.url),
   "utf8",
-);\nconst adminMigration = readFileSync(
+);
+const adminMigration = readFileSync(
   new URL("../../supabase/migrations/20261126220000_admin_profile_xp_wallet_adjustments.sql", import.meta.url),
   "utf8",
 );
-const communityUi = readFileSync(\n  new URL("../../src/CommunityProgression.tsx", import.meta.url),\n  "utf8",\n);\nconst fixedRewardMigration = readFileSync(\n  new URL("../../supabase/migrations/20261126227000_lock_xp_rewards_to_source_code.sql", import.meta.url),\n  "utf8",\n);\nconst adminUi = readFileSync(
+const communityUi = readFileSync(
+  new URL("../../src/CommunityProgression.tsx", import.meta.url),
+  "utf8",
+);
+const fixedRewardMigration = readFileSync(
+  new URL("../../supabase/migrations/20261126227000_lock_xp_rewards_to_source_code.sql", import.meta.url),
+  "utf8",
+);
+const adminUi = readFileSync(
   new URL("../../src/AdminProfileAdjustments.tsx", import.meta.url),
   "utf8",
 );
