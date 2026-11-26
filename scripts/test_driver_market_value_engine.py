@@ -6,6 +6,7 @@ MARKET = (ROOT / "supabase/migrations/20261126063949_driver_market_value_precont
 LIFECYCLE = (ROOT / "supabase/migrations/20261126064512_driver_market_precontract_lifecycle_fix.sql").read_text(encoding="utf-8")
 CONTRACT_SYNC = (ROOT / "supabase/migrations/20261126065318_precontract_season_contract_sync.sql").read_text(encoding="utf-8")
 ROSTER = (ROOT / "supabase/migrations/20261126065827_precontract_season_roster_integration.sql").read_text(encoding="utf-8")
+ROSTER_SNAPSHOT = (ROOT / "supabase/migrations/20261126070004_precontract_roster_snapshot_refresh.sql").read_text(encoding="utf-8")
 TIER = (ROOT / "supabase/migrations/20261126064645_driver_market_tier_relation.sql").read_text(encoding="utf-8")
 NORMALIZATION = (ROOT / "supabase/migrations/20261126065153_driver_market_scoring_normalization.sql").read_text(encoding="utf-8")
 TRANSFER = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
@@ -66,6 +67,9 @@ assert "private.prepare_driver_precontracts_for_season" in ROSTER
 assert "pc.status in ('signed','activated')" in ROSTER
 assert "precontract.destination_team_id" in ROSTER
 assert "private.sync_season_roster(v_season.id)" in ROSTER
+assert "license_season_roster_snapshots" in ROSTER_SNAPSHOT
+assert "license_round_standings" in ROSTER_SNAPSHOT
+assert "license_final_standings" in ROSTER_SNAPSHOT
 
 # Relative tier relationship: a driver may exceed the adjacent tier, not two tiers above.
 assert "where up.tier_number=mv.tier_number-2" in TIER
