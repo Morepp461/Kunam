@@ -52,6 +52,13 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
   if(requestError)setError(requestError.message);else{setItems(current=>current.map(item=>({...item,read_at:item.read_at||now})));setUnread(0);setError("")}
   setBusy(false);
  };
+ const deleteOne=async(id:string)=>{
+  if(!supabase||!memberId||busy)return;
+  setBusy(true);const deletedItem=items.find(item=>item.id===id);
+  const {error:requestError}=await supabase.rpc("member_delete_caleris_notification",{p_notification_id:id});
+  if(requestError)setError(requestError.message);else{setItems(current=>current.filter(item=>item.id!==id));if(deletedItem&&!deletedItem.read_at)setUnread(value=>Math.max(0,value-1));setError("")}
+  setBusy(false);
+ };
  const deleteAll=async()=>{
   if(!supabase||!memberId||busy||!items.length)return;
   if(!window.confirm("Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan."))return;
@@ -61,7 +68,7 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
  };
  if(!memberId)return null;
  return <div className="header-notifications" ref={root}>
-  <button className="header-notifications-trigger" type="button" aria-label={unread?unread+" notifikasi belum dibaca":"Notifikasi"} aria-haspopup="dialog" aria-expanded={open} onClick={()=>setOpen(value=>!value)}>
+  <button className="header-notifications-trigger" type="button" aria-label={unread?unread+" notifikasi belum dibaca":"Notifikasi"} aria-haspopup="dialog" aria-expanded={open} onClick={()=>{const next=!open;setOpen(next);if(next)void load()}}>
    <Bell size={19}/>{unread>0&&<span className="header-notifications-count">{unread>99?"99+":unread}</span>}
   </button>
   {open&&<section className="header-notifications-popover" role="dialog" aria-label="Notifikasi CALERIS MASTERS">
@@ -71,7 +78,7 @@ export default function NotificationsCenter({memberId,memberRole}:{memberId:stri
    <div className="header-notifications-list">
     {loading?<p className="header-notifications-empty">Memuat notifikasi...</p>:!items.length?<p className="header-notifications-empty">Belum ada notifikasi.</p>:items.map(item=><article className={"header-notification-item"+(item.read_at?" is-read":" is-unread")} key={item.id}>
      <Link to={destination(item,memberRole)} onClick={()=>{if(!item.read_at)void markRead(item.id);setOpen(false)}}><span className="header-notification-meta">{isWarningNotification(item)&&<CaleMascot designId="reaction_warning" size={28} className="header-notification-cale"/>}{item.category.replaceAll("_"," ").toUpperCase()} · {when(item.created_at)}</span><strong>{item.title}</strong>{item.body&&<p>{item.body}</p>}<span className="header-notification-link">Buka detail <ExternalLink size={12}/></span></Link>
-     {!item.read_at&&<button type="button" aria-label="Tandai sudah dibaca" title="Tandai sudah dibaca" onClick={()=>void markRead(item.id)}><CheckCheck size={15}/></button>}
+     {!item.read_at&&<button type="button" aria-label="Tandai sudah dibaca" title="Tandai sudah dibaca" onClick={()=>void markRead(item.id)}><CheckCheck size={15}/></button>}<button type="button" className="header-notification-delete" aria-label="Hapus notifikasi" title="Hapus notifikasi" disabled={busy} onClick={()=>void deleteOne(item.id)}><Trash2 size={15}/></button>
     </article>)}
    </div>
   </section>}
