@@ -222,12 +222,10 @@ declare
   v_replacement text;
 begin
   v_definition := pg_get_functiondef('public.member_start_team_hq_project(text,text)'::regprocedure);
-  v_original := 'if v_cost is null or v_cost<=0 or v_days is null or v_days<=0 then raise exception ''Harga atau durasi level berikutnya belum dikonfigurasi FIA.''; end if;
-  select * into v_wallet';
+  v_original := 'if v_cost is null or v_cost<=0 or v_days is null or v_days<=0 then raise exception ''Harga atau durasi level berikutnya belum dikonfigurasi FIA.''; end if;';
   v_replacement := 'if v_cost is null or v_cost<=0 or v_days is null or v_days<=0 then raise exception ''Harga atau durasi level berikutnya belum dikonfigurasi FIA.''; end if;
   if v_facility.maintenance_restore_level is not null then raise exception ''Bayar maintenance sebelum memulai upgrade fasilitas yang terdegradasi.''; end if;
-  if v_facility.condition <= v_days then raise exception ''Condition fasilitas terlalu rendah untuk durasi proyek ini. Bayar maintenance sebelum upgrade.''; end if;
-  select * into v_wallet';
+  if v_facility.condition <= v_days then raise exception ''Condition fasilitas terlalu rendah untuk durasi proyek ini. Bayar maintenance sebelum upgrade.''; end if;';
   if position(v_original in v_definition) = 0 then
     raise exception 'Team HQ project start function changed; review maintenance/upgrade safety gate.';
   end if;
