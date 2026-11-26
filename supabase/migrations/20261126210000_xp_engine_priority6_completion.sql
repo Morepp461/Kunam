@@ -424,7 +424,7 @@ begin
   v_source:=replace(v_source,'if coalesce(d.xp_reward,0)>0 then','if public.caleris_milestone_reward_xp(d.code)>0 then');
   v_source:=replace(v_source,'values(p_member,d.xp_reward,','values(p_member,public.caleris_milestone_reward_xp(d.code),');
   v_source:=replace(v_source,'total_xp:=total_xp+d.xp_reward;','total_xp:=total_xp+public.caleris_milestone_reward_xp(d.code);');
-  v_source:=regexp_replace(v_source,'completion_source:=d.code\\|\\|[^;]*;','completion_source:=d.code;','g');
+  v_source:=regexp_replace(v_source,'completion_source:=d.code[|][|][^;]*;','completion_source:=d.code;','g');
   v_source:=regexp_replace(
     v_source,
     'if net_awarded>0 then[[:space:]]*insert[^;]*on conflict[^;]*;[[:space:]]*total_xp:=total_xp-net_awarded;[[:space:]]*end if;',
