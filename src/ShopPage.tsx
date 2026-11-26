@@ -1,5 +1,5 @@
 import {useCallback,useEffect,useState} from "react";
-import {ArrowLeft,Clock3,ShoppingBag,Lock,CheckCircle2} from "lucide-react";
+import {ArrowLeft,ShoppingBag,Lock,CheckCircle2} from "lucide-react";
 import {Link} from "react-router-dom";
 import type {Session} from "@supabase/supabase-js";
 import {supabase} from "./lib/supabase";
