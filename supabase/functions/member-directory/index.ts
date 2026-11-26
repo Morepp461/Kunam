@@ -213,7 +213,20 @@ Deno.serve(async (req: Request) => {
             const { data: team } = await admin.from("teams").select("name").eq("id", m.team_id).maybeSingle();
             teamName = team?.name ?? null;
           }
-          character = { character_name: m.character_name, role: m.role, license: m.license, team_name: teamName, team_id: m.team_id };
+          let marketValueEur: number | null = null;
+          if (m.role === "Driver") {
+            const { data: marketValue, error: marketValueError } = await admin
+              .from("caleris_driver_market_values")
+              .select("market_value_eur")
+              .eq("member_id", p.member_id)
+              .maybeSingle();
+            if (marketValueError) {
+              console.error("Public driver market value lookup failed:", marketValueError.message);
+              return respond(500, { error: "Market Value Driver gagal dimuat." });
+            }
+            marketValueEur = marketValue ? Number(marketValue.market_value_eur) : null;
+          }
+          character = { character_name: m.character_name, role: m.role, license: m.license, team_name: teamName, team_id: m.team_id, market_value_eur: marketValueEur };
         }
       }
       return respond(200, { profile: publicProfile, character });
