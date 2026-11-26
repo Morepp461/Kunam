@@ -98,3 +98,8 @@
 @media(max-width:1000px){.team-merch-store-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:700px){.team-merch-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.team-merch-store-card{min-height:135px;padding:14px}.team-merch-modal-backdrop{padding:8px}.team-merch-modal{max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 16px)!important;width:calc(100vw - 16px)!important;height:calc(100dvh - 16px)!important}.team-merch-modal-header{padding:18px 16px 14px 46px}.team-merch-modal-body{padding:16px}.team-merch-report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:390px){.team-merch-market-strip span{font-size:10px;padding:8px}.team-merch-form-grid,.team-merch-repeat-form{grid-template-columns:1fr}.team-merch-report-grid{grid-template-columns:1fr 1fr}}
+
+.team-hq-maintenance-panel{display:grid;gap:7px;margin-top:12px;padding:11px;border:1px solid rgba(220,170,95,.28);border-radius:10px;background:rgba(220,170,95,.06)}
+.team-hq-maintenance-panel>small{font-size:10px;color:var(--muted,#aaa)}
+.team-hq-maintenance-action{width:100%;padding:9px 11px;border:1px solid #94713e;border-radius:8px;background:rgba(148,113,62,.2);color:inherit;font-weight:700;font-size:11px;cursor:pointer}
+.team-hq-maintenance-action:disabled{opacity:.55;cursor:wait}
