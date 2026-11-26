@@ -280,7 +280,29 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "payroll period":"periode penggajian","PAYROLL CONTRIBUTION":"KONTRIBUSI PENGGAJIAN","Engine Market":"Pasar Mesin",
  "Memuat Engine Market...":"Memuat Pasar Mesin...","AVAILABLE ENGINE":"MESIN TERSEDIA",
  "DIVISION MAX LEVEL":"LEVEL MAKSIMUM DIVISI","Asset value":"Nilai aset","Edit configuration":"Ubah konfigurasi",
- "UPGRADE BERIKUTNYA · LEVEL":"PENINGKATAN BERIKUTNYA · LEVEL"
+ "UPGRADE BERIKUTNYA · LEVEL":"PENINGKATAN BERIKUTNYA · LEVEL", "DNF records":"Catatan DNF","Project History":"Riwayat Proyek","Target level":"Level target",
+ "KONFIRMASI UPGRADE":"KONFIRMASI PENINGKATAN","Max level Premio":"Level maksimum Premio",
+ "Max level Zwei":"Level maksimum Zwei","Facility enabled":"Fasilitas aktif","Publish Team Vacancy":"Publikasikan Lowongan Tim",
+ "Salary maximum (€)":"Gaji maksimum (€)","Advert title":"Judul iklan","Open seats":"Slot tersedia",
+ "Available from":"Tersedia mulai","Custom Team Livery":"Livery Tim Kustom","TEAM LIVERY · JSON V1":"LIVERY TIM · JSON V1",
+ "Split / two-tone":"Terpisah / dua warna","Team wordmark":"Tulisan nama tim","SELECTED DECAL #":"STIKER TERPILIH #",
+ "Export":"Ekspor","Import":"Impor","05 / 3D APPLICATION":"05 / APLIKASI 3D",
+ "Loading official merchandise...":"Memuat merchandise resmi...","BRAND ECONOMY · OFFICIAL STORE":"EKONOMI MEREK · TOKO RESMI",
+ "Team Merchandise":"Merchandise Tim",
+ "Manufacture carefully. Price strategically. Unsold inventory ties up your capital.":"Produksi dengan cermat. Tetapkan harga secara strategis. Stok yang tidak terjual akan menahan modalmu.",
+ "Produce this item":"Produksi barang ini","View catalog":"Lihat katalog","Sales report":"Laporan penjualan",
+ "OFFICIAL TEAM STORE":"TOKO RESMI TIM","Reference price:":"Harga acuan:",
+ "Choose a selling price and production quantity. Production cost is charged immediately; stock becomes available after the production timer ends.":"Pilih harga jual dan jumlah produksi. Biaya produksi langsung dibebankan; stok tersedia setelah waktu produksi selesai.",
+ "Unit production cost":"Biaya produksi per unit","Price demand factor":"Faktor permintaan harga",
+ "Selling below production cost creates a loss on every unit sold.":"Menjual di bawah biaya produksi menyebabkan kerugian pada setiap unit yang terjual.",
+ "This price is far above the market reference and may sharply reduce demand.":"Harga ini jauh di atas acuan pasar dan dapat menurunkan permintaan secara drastis.",
+ "Potential demand is influenced by fanbase, general-public reach from reputation, fan sentiment, product appeal, HQ effects and price elasticity. No sales are guaranteed.":"Potensi permintaan dipengaruhi basis penggemar, jangkauan masyarakat umum dari reputasi, sentimen penggemar, daya tarik produk, efek HQ, dan elastisitas harga. Penjualan tidak dijamin.",
+ "units are being manufactured.":"unit sedang diproduksi.","Production cost":"Biaya produksi","Available stock":"Stok tersedia",
+ "Current selling price":"Harga jual saat ini","Updated after each official race":"Diperbarui setelah setiap balapan resmi",
+ "No customer reviews yet. Reviews appear after the next official race settlement.":"Belum ada ulasan pelanggan. Ulasan akan muncul setelah penyelesaian balapan resmi berikutnya.",
+ "Current unit cost:":"Biaya per unit saat ini:","OFFICIAL SPONSORS":"SPONSOR RESMI","Official Sponsors":"Sponsor Resmi",
+ "Season Engine":"Mesin Musim","Team Take Over":"Pengambilalihan Tim","Memuat Team Take Over...":"Memuat Pengambilalihan Tim...",
+ "ACQUISITION OFFER":"PENAWARAN AKUISISI","Offer price (€)":"Harga penawaran (€)","Counter-offer (€)":"Penawaran balasan (€)"
 };
 const EXTRA_ID_TO_EN: Record<string,string> = Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english]));
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
