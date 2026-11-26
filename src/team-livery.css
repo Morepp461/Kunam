@@ -24,3 +24,5 @@
 .team-livery-3d{touch-action:none;cursor:grab}
 .team-livery-3d:active{cursor:grabbing}
 @media(max-width:520px){.team-livery-decal-grid{grid-template-columns:repeat(4,minmax(0,1fr));max-height:220px}.team-livery-decal-controls{grid-template-columns:1fr}.team-livery-decal-controls .action{grid-column:auto}}
+
+.team-livery-3d{touch-action:pan-y;cursor:grab}.team-livery-3d canvas{touch-action:pan-y}.team-livery-3d-error{position:absolute;z-index:2;inset:0;display:grid;place-content:center;padding:24px;background:rgba(12,15,19,.94);color:#f0d59a;font-size:11px;line-height:1.6;text-align:center}
