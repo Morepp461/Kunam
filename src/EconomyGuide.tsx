@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BadgeDollarSign, Banknote, Coins, Gauge, ShieldCheck, Trophy, Wallet, Eye, X } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import "./economy-guide.css";
 
 type TaxRule = { id:string; tax_scope:"member"|"team"; label:string; minimum_base:number|string; rate_percent:number|string; is_active:boolean; sort_order:number };
 type PrizeRule={division_key:string;recipient_type:"driver"|"team";final_position:number;prize_amount:number|string;is_active:boolean};
