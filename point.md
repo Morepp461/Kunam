@@ -1837,3 +1837,92 @@ Release completed: PR #372 merged to main at `ac105f341fa069924d5d08275955b5e6ea
 - All stored layers are preserved and rendered, with a bounded maximum of 50 decals. Old decal geometry and textures are disposed before rebuilding after design changes.
 - Projection uses the actual 2026 mesh geometry and does not change the persisted V1 livery schema or require a database migration.
 - Browser CI validates mapping and build. Final GPU/frame-pacing acceptance on physical Android devices remains a manual device test.
+
+---
+
+## DRIVER MARKET VALUE ENGINE & TRANSFER MARKET UPGRADE — DECISION LOG (26 NOVEMBER 2026)
+
+Dokumen ini mencatat keputusan produk yang telah disetujui. Bagian ini adalah spesifikasi keputusan, bukan pernyataan bahwa implementasi sudah selesai.
+
+### 1. Tujuan Driver Market Value (MV)
+- Setiap Driver memiliki nilai pasar dinamis dalam Euro (€).
+- MV menjadi referensi nilai Driver di Transfer Market, bukan harga transfer wajib, batas minimum, atau batas maksimum.
+- Nilai dapat naik atau turun berdasarkan performa, perkembangan atribut, aktivitas, reputasi, lisensi, dan status kontrak.
+- MV dapat berubah setelah hasil race, perubahan data yang relevan, dan kalkulasi harian.
+- Frontend hanya menampilkan MV terkini. Snapshot, riwayat, dan rincian kalkulasi disimpan di backend dan tidak ditampilkan sebagai riwayat publik.
+
+### 2. Komposisi Market Value Score
+Bobot awal yang telah disepakati berjumlah 100%:
+| Komponen | Bobot |
+|---|---:|
+| License | 10% |
+| Contract | 10% |
+| Performance | 20% |
+| Overall Skill | 20% |
+| Achievement | 10% |
+| Activity | 10% |
+| Reputation | 20% |
+
+Definisi komponen:
+- **License (10%)**: skor berdasarkan lisensi Driver. Skala/konversi lisensi harus dapat dikonfigurasi, tidak ditanam permanen di kode.
+- **Contract (10%)**: mencerminkan status kontrak aktif Driver.
+- **Performance (20%)**: persentase poin aktual Driver dibandingkan total poin maksimum yang tersedia pada kalender/round yang relevan. Pembagi harus berasal dari maksimum poin yang benar-benar tersedia, bukan total poin milik Driver sendiri.
+- **Overall Skill (20%)**: rata-rata delapan atribut Driver yang sudah digunakan sistem.
+- **Achievement (10%)**: akumulasi prestasi dalam satu Season, lalu dinormalisasi ke skala 0–100. Poin prestasi yang disepakati: P1 = +5, P2 = +3, P3 = +1, Driver of the Day = +1.
+- **Activity (10%)**: +4 poin untuk setiap kehadiran/check-in race round yang valid. Maksimum 25 round menghasilkan 100 poin.
+- **Reputation (20%)**: menggunakan skor final dari sistem `caleris_driver_reputation`, bukan membuat sistem reputasi baru.
+
+### 3. Formula dan konfigurasi MV
+- Rumus target:
+  `TargetMV = BaseValue × (MVScore / 100) × TierMultiplier`
+- Perubahan nilai bertahap:
+  `MVbaru = MVlama + (TargetMV - MVlama) × GrowthFactor`
+- Growth Factor mengatur kecepatan penyesuaian menuju Target MV dan harus dapat diedit Admin.
+- Base Value untuk tier tertinggi (Tier 1) ditetapkan awal sebesar **€10.000.000**.
+- Tier di bawahnya menggunakan Tier Multiplier. Nilai multiplier dapat dikonfigurasi Admin dan tidak boleh bergantung pada nama divisi yang di-hardcode.
+- Struktur divisi harus fleksibel untuk penambahan divisi baru di masa depan. Urutan tier ditentukan dari konfigurasi/urutan divisi yang sah, bukan perbandingan UUID.
+- Bobot seluruh komponen harus berjumlah tepat 100%. Base Value, Growth Factor, Tier Multiplier, dan konversi skor lisensi harus dapat diedit melalui konfigurasi Admin.
+- Driver baru yang belum memiliki histori performa memulai MV dari **License + Division Tier** (pilihan B yang disetujui). Sistem tidak boleh mensyaratkan histori race untuk membuat nilai awal.
+
+### 4. Relasi MV antar-tier
+- Tier/divisi memengaruhi MV melalui Tier Multiplier, tetapi bukan batas harga kaku.
+- Driver tier lebih rendah yang sangat kuat boleh memiliki MV sedikit lebih tinggi daripada Driver tier tepat di atasnya yang performanya buruk.
+- Driver hanya boleh melampaui MV Driver dari maksimal satu tier di atasnya. Aturan ini adalah batas relasi/perbandingan antar-tier, bukan ceiling nominal statis.
+- Driver Loan tetap memakai tier asal/home division Driver, bukan tier tim peminjam/host.
+
+### 5. Transfer Market: penggunaan MV
+- MV ditampilkan sebagai referensi nilai Driver di direktori/market.
+- Nilai transfer aktual tetap hasil negosiasi antar pihak. MV tidak otomatis menjadi harga wajib.
+- Alur Permanent Transfer aktif dan Driver Loan yang sudah ada harus tetap berjalan tanpa regresi.
+- Kewenangan memulai proses perekrutan/transfer tim berada pada Team Owner. Principal dan Agent tidak ikut dalam alur baru yang disepakati di bawah ini.
+
+### 6. Pre-Contract / pendekatan sebelum kontrak berakhir
+- Pre-contract mulai tersedia ketika **50% durasi kalender Season yang aktif telah berlalu/tersisa sesuai ambang 50% yang disepakati**. Perhitungan menggunakan tanggal mulai dan tanggal akhir Season, bukan jumlah race round.
+- Hanya Team Owner dari tim calon tujuan yang boleh memulai pendekatan.
+- Negosiasi dilakukan langsung antara Team Owner tim tujuan dan Driver. Tidak melibatkan Principal maupun Agent.
+- Team Owner tim asal hanya menerima notifikasi, tidak diminta menyetujui atau memveto negosiasi.
+- Teks notifikasi kepada Team Owner tim asal harus persis:
+  “Kontrak driver A segera berakhir, dia sedang bernegosiasi dengan tim lain saat ini, segera ajukan kontrak baru atau biarkan dia pergi secara gratis”
+- Beberapa negosiasi pre-contract dengan tim berbeda boleh berlangsung bersamaan selama Driver belum menandatangani kontrak dengan salah satu tim.
+- Ketika Driver telah menandatangani satu kontrak, negosiasi pre-contract lain yang masih terbuka harus ditangani/ditutup secara konsisten agar tidak menghasilkan lebih dari satu kontrak baru.
+- Perpindahan tim baru efektif setelah kontrak Driver dengan tim lama berakhir.
+- Pre-contract yang selesai tidak mengenakan transfer fee.
+
+### 7. Free Agent recruitment
+- Driver tanpa tim (Free Agent) dapat direkrut oleh tim mana pun.
+- Tidak ada transfer fee untuk merekrut Free Agent.
+- Negosiasi gaji dan kontrak tetap wajib dilakukan. Gratis berarti tanpa biaya transfer, bukan otomatis gratis gaji.
+- Persetujuan mantan Team Owner tidak diperlukan.
+- Hak memulai negosiasi rekrutmen tim tetap hanya pada Team Owner.
+- Setelah kesepakatan kontrak, proses registrasi Driver mengikuti alur registrasi/FIA yang berlaku di sistem.
+
+### 8. Batasan implementasi dan integritas data
+- Jangan merusak atau mengganti alur transfer aktif dan Driver Loan yang sudah ada.
+- Negosiasi pre-contract harus memiliki lifecycle/penyimpanan terpisah dari negosiasi transfer aktif apabila constraint lama hanya mengizinkan satu transfer terbuka per Driver. Jangan melemahkan constraint transfer/loan lama untuk mengakomodasi pre-contract.
+- Semua pemeriksaan otorisasi dilakukan di backend/RPC, bukan hanya menyembunyikan tombol di frontend.
+- Peran FIA tidak otomatis disamakan dengan Admin untuk konfigurasi MV. Hak Admin harus mengikuti sumber otorisasi Admin yang benar.
+- Snapshot dan histori MV disimpan di backend untuk audit dan kalkulasi; UI publik hanya menampilkan nilai terkini.
+- Migrasi harus diuji terlebih dahulu pada Testing, diverifikasi sinkron dengan Production, lalu diterapkan ke Production melalui prosedur migrasi yang benar. Jangan memasukkan dummy/test data ke Production.
+- Sebelum implementasi, periksa schema aktual, fungsi/RPC yang sudah ada, constraint, role/permission, dependency frontend, dan migrasi di kedua database. Jangan mengasumsikan nama kolom atau fungsi.
+- Keputusan di dokumen ini belum berarti fitur telah diimplementasikan, diuji, di-merge, atau di-deploy.
+
