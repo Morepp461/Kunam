@@ -2543,4 +2543,95 @@ Perform a complete integration audit and regression suite for all nine facilitie
 - Both DBs now contain the three new migration names `member_profile_settings_rpc`, `member_profile_avatar_legacy_cleanup`, and `driver_market_value_transaction_dedupe`. Historical migration ledgers have pre-existing version/name divergence, including Testing-only race-engine test migrations; do not replay historical migrations blindly. Verify schema parity for each future change.
 - Testing currently has 26 Driver MV records; Production has no Driver records. No Testing business data was copied to Production.
 - GitHub Caleris CI run #5606 passed all steps, including TypeScript, production build, unit/schema validation, Playwright browser smoke tests, Market Value regression, profile privacy, and Supabase schema parity. The point.md update will trigger one final CI rerun. Remaining before release: merge after that CI passes and verify the Vercel Production deployment. Vercel environment settings must remain unchanged.
-- After priorities 1–5 are released, continue Priority 6 XP Engine, then the approved Team HQ audit priorities. Priorities 7–9 (Assets, Achievements/Badges expansion, Digital ID design system) remain deferred until the approved earlier priorities are complete.
+- Priorities 1–5 have been merged and deployed successfully. Priority 6 XP Engine implementation and both-database migrations are now complete in the dedicated branch; final CI, merge, and Vercel release remain pending. After Priority 6 is released, continue the approved Team HQ audit priorities. Priorities 7–9 (Assets, Achievements/Badges expansion, Digital ID design system) remain deferred.
+
+
+## Priority 6 — XP Engine implementation and QA status — 26 November 2026
+
+**Implementation branch:** feat/xp-engine-priority-6-20261126. This branch was created from the current main after Priority 1–5 were merged. No XP implementation has been merged to main yet.
+
+### Approved reward rules implemented
+
+- Quest XP is awarded only after the authoritative quest claim has successfully paid the reward:
+  - Easy: **5 XP**
+  - Normal: **10 XP**
+  - Hard: **15 XP**
+- Official race classification:
+  - P1: **20 XP**
+  - P2: **15 XP**
+  - P3: **12 XP**
+  - Official pole position: **+5 XP**, independent of finishing position. A driver can receive P1 + Pole = 25 XP.
+- Successful all-role race check-in: **10 XP**.
+- Regular Shop: **0 XP** until eligible items exist.
+- Development Shop: **0 XP**.
+- Every active Driver and Team milestone has a fixed reward in the **5–20 XP** range. Rewards are code-owned constants, not Admin configuration.
+- Team milestones award the current Team Owner once per team/milestone. The recipient is recorded permanently so ownership changes or repeated refreshes cannot re-award the same achievement.
+- Achievement XP is permanent. It is never removed when a metric later falls below its milestone threshold.
+- The only automatic XP deduction is for official race-result corrections or cancellations. Reconciliation applies the difference from the previously credited race XP; unpublishing/voiding a result reverses only the XP previously credited for that result. Pole corrections remove or add the +5 component independently.
+- Admin emergency XP adjustment is available only through the profile adjustment control, with signed add/subtract, a required reason, explicit confirmation, and audit metadata. Total XP cannot become negative.
+- XP reward configuration is hardcoded in source. Admin cannot change XP reward amounts from Community Progression configuration.
+
+### Engine integration
+
+- Community Progression remains the sole XP source of truth: the append-only XP ledger drives total XP, level, milestone progress, achievements, and Activity Feed. No second XP balance was introduced.
+- Quest trigger is tied to reward_status='paid' and paid_at, not merely quest completion.
+- Check-in trigger uses the canonical caleris_member_race_checkins table for all roles; the legacy Driver-only license check-in trigger is removed to prevent duplicate awards.
+- Race XP is reconciled from official published result rows and their finishing positions/pole member. A private per-entry award-state table tracks credited XP and correction revision. Deferred triggers reconcile result publication, correction, cancellation, entry deletion/reassignment, and round lifecycle changes.
+- Unique ledger references and the reconciliation state prevent retries, double-clicks, repeated publication, or repeated refresh from awarding duplicate XP.
+- Development Shop XP trigger is removed. Shop purchase reward settings are not read by the award engine.
+- Driver and Team milestone rewards use deterministic source IDs. Achievement rewards cannot be clawed back; race corrections use the distinct race_result_correction ledger source type.
+- Existing official race results and already-earned Driver/Team milestones are backfilled using each database's own records. No Testing data is copied to Production.
+
+### Admin profile adjustment controls
+
+- Added one **Edit / Adjust** control on public Driver/Owner profiles and Team profiles. The component is server-authorized and remains invisible to non-Admins.
+- Driver and Team Owner profiles support personal XP and personal wallet add/subtract.
+- Team profiles support Team Wallet add/subtract. Teams do not receive personal XP.
+- Every adjustment requires a reason, an explicit before/after confirmation, and an idempotency key.
+- The Admin-only history shows signed XP/Wallet changes and their audit descriptions.
+- Wallet adjustments use the existing double-entry economy transaction service and a dedicated hidden admin_adjustment_clearing system wallet. VreeoBank and Sponsor Source balances are not changed by this profile adjustment path.
+- Direct authenticated writes to the XP ledger and milestone reward definitions are revoked. caleris_set_xp_reward is no longer executable by clients. caleris_admin_save_milestone ignores caller-supplied XP and uses the fixed source-code reward map; an active milestone without a source reward is rejected.
+- The older duplicate Manual XP Adjustment and XP Reward Configuration panels were removed from Community Progression Admin.
+
+### Supabase migrations applied to both databases
+
+The following migration sources exist in this branch and have been applied successfully to Testing and Production, in order:
+
+1. 20261126210000_xp_engine_priority6_completion.sql
+2. 20261126220000_admin_profile_xp_wallet_adjustments.sql
+3. 20261126223000_fix_admin_profile_adjustment_history.sql
+4. 20261126224000_xp_milestone_rewards_permanent.sql
+5. 20261126225000_xp_team_milestone_owner_rewards.sql
+6. 20261126226000_xp_official_result_backfill.sql
+7. 20261126227000_lock_xp_rewards_to_source_code.sql
+
+### QA evidence
+
+**Testing database caleris-masters-testing:**
+
+- Quest transaction tests: Easy 5, Normal 10, Hard 15; repeated claim timestamp update still produced exactly one ledger row.
+- Race check-in test: 10 XP; Development Shop XP trigger count is 0.
+- Race result test: P1 + Pole = 25, P2 = 15, P3 = 12. Pole reassignment and result unpublication generated only the expected race correction deltas; the credited state returned to zero. All mutation tests were rolled back.
+- Race official-results backfill: 600 per-entry state rows and 150 race award ledger rows, net 2,600 race XP. Repeated reconciliation and milestone refresh were idempotent: ledger count remained 410 before/after both refresh passes.
+- Achievement backfill: 260 milestone ledger rows, including 62 Team milestone awards to 12 Team Owners. No negative milestone ledger entries.
+- Total after backfill: **410 XP ledger rows**, net **4,718 XP** across 24 Drivers and 12 Owners. These are existing Testing records only.
+- Admin profile tests passed for Driver, Team Owner, and Team wallet targets; XP add/subtract, wallet add/subtract, snapshot and history RPCs all worked inside rolled-back transactions. VreeoBank and target wallet balances were unchanged after the add/subtract pair; clearing wallet returned to zero.
+- Passing an attempted Admin milestone XP value of 999 still saved the fixed 5 XP for career_first_podium. Admin XP reward settings read/update privileges, direct milestone update, direct XP ledger insert, and caleris_set_xp_reward execution are all denied.
+- All test mutations were rolled back except the deliberate Testing-only milestone/race historical backfill described above.
+
+**Production database caleris-masters-newgen:**
+
+- All eight migrations applied successfully.
+- Production has no Driver/Team operational records in the audited scope, so the historical XP backfill correctly created no player XP rows. No Testing dummy data was copied.
+- Function-definition hashes for the 14 shared XP, milestone, race reconciliation, Admin adjustment, and economy transaction functions matched between Testing and Production before the final source-owned reward migrations. Re-run final parity check after the last migration.
+- The dedicated Admin clearing wallet exists once and is hidden from the public wallet directory; it starts at zero.
+
+### Release gate — still required
+
+- [ ] Finish source QA and CI for the current branch, including TypeScript, production build, unit tests, schema/migration checks, and browser smoke tests.
+- [ ] Fix any QA/CI failure before merge.
+- [ ] Verify Testing/Production function-definition parity after all eight migrations.
+- [ ] Create/refresh the PR, merge to main only after CI is green.
+- [ ] Verify the new Vercel Production deployment is READY and serves the merged commit.
+- [ ] Do not change Vercel environment variables or project settings.
+- [ ] After Priority 6 is released, continue the approved Team HQ audit priorities. Do not start Assets, Achievement/Badge expansion, or Digital ID redesign before those priorities are complete.
