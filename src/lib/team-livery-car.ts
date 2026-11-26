@@ -1,4 +1,5 @@
 import { createDefaultSponsorSlots, type SponsorSlotId } from "./three-f1-car/f1Decals";
+import type { TeamLiveryDecal } from "./team-livery-decals";
 import type { F1AppearanceConfig } from "./three-f1-car/f1Materials";
 
 export type TeamCarLiveryDesign = {
@@ -10,7 +11,7 @@ export type TeamCarLiveryDesign = {
   teamWordmark: string;
   sponsors: [string, string, string];
   logoDataUrl: string | null;
-  decals: Array<{ id: string; color: string; scale: number; rotation: number; x: number; y: number; surface: string }>;
+  decals: TeamLiveryDecal[];
   sponsorPlacements: Record<string, "title" | "major" | "other">;
 };
 
@@ -68,5 +69,6 @@ export function buildF1Appearance(
     roughness: 0.24,
     clearcoat: 0.95,
     rimAccent: design.accentColor,
+    teamDecals: design.decals.map((decal) => ({ ...decal })),
   };
 }

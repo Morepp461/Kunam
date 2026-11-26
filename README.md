@@ -30,7 +30,7 @@
 - Team Livery and Public Team Profile share the original procedural 2026 single-seater chassis generator from the 3d-F1-car source repository, rendered with the game-low LOD for mobile-conscious use.
 - Team main/secondary/accent colors, car number, team logo, and active sponsor placement labels are applied from the existing saved livery and sponsor records.
 - The chassis is generated at runtime with the existing Three.js dependency; it is not a prebuilt GLB and requires no new dependency or database migration.
-- The existing V1 decal atlas and saved multi-decal layers remain intact. The current chassis maps the first selected decal preset; exact per-surface multi-decal placement remains gated on a verified model-specific UV contract.
+- The existing V1 decal atlas and saved multi-decal layers remain intact. Every saved decal is projected onto its matching 2026 chassis surface (sidepods, nose, front wing, and rear wing) using the model's actual geometry; decal layers are rebuilt and disposed safely when the design changes.
 
 ### 3D Driver Exhibition
 
@@ -1403,3 +1403,10 @@ The approved Economy & Competition scope is released. Unrelated backlog work rem
 - Each official merchandise settlement creates one fan review per active product from an 18-comment pool (six positive, six neutral, six negative). Ratings are 4–5, 3, and 0–2 respectively.
 - Merchandise production remains integrated with the existing Team Owner daily quest and does not create a separate quest progression path.
 - Team Owner production is idempotent. Production completion is finalized on dashboard refresh and before each official race settlement. The existing Team Owner daily production quest is activated automatically from system defaults and continues using the existing quest rewards/progress flow.
+
+
+### 2026 Team Livery Decal Projection Update
+- Saved custom decal layers are projected onto the matching 2026 chassis surfaces: left/right sidepods, nose, front-wing flaps, and rear-wing mainplane.
+- All stored layers are preserved and rendered, with a bounded maximum of 50 decals. Old decal geometry and textures are disposed before rebuilding after design changes.
+- Projection uses the actual 2026 mesh geometry and does not change the persisted V1 livery schema or require a database migration.
+- Browser CI validates mapping and build. Final GPU/frame-pacing acceptance on physical Android devices remains a manual device test.

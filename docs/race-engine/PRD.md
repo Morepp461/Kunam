@@ -521,3 +521,10 @@ Acceptance requires Android browser QA on representative low/mid-range devices, 
 - The 2025 Abu Saif GLB was never hosted in the repository or Supabase Storage; no production GLB file was deleted. The new chassis is procedural runtime geometry, not a replacement GLB binary.
 - Existing V1 atlas data and multi-decal layers remain stored. Only the first selected decal preset is projected onto the new chassis until the model-specific surface/UV contract is verified.
 - Android physical-device WebGL/GPU/memory acceptance remains a manual release gate.
+
+
+### 2026 Team Livery Decal Projection Update
+- Saved custom decal layers are projected onto the matching 2026 chassis surfaces: left/right sidepods, nose, front-wing flaps, and rear-wing mainplane.
+- All stored layers are preserved and rendered, with a bounded maximum of 50 decals. Old decal geometry and textures are disposed before rebuilding after design changes.
+- Projection uses the actual 2026 mesh geometry and does not change the persisted V1 livery schema or require a database migration.
+- Browser CI validates mapping and build. Final GPU/frame-pacing acceptance on physical Android devices remains a manual device test.
