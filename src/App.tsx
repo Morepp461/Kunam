@@ -132,7 +132,7 @@ function Application(){
   if(account?.account_status==="suspended"){
    const {data:banSync}=await supabase.rpc("member_sync_expired_ban");
    if(banSync==="restored"){
-    const {data:restored}=await supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",userId).maybeSingle();
+    const {data:restored}=await supabase.from("profiles").select("user_id,member_id,public_member_id,avatar_url,avatar_path,web_nickname,driver_nickname,first_name,last_name,date_of_birth,nationality,hometown,preferred_role,preferred_language,account_status,onboarding_completed,privacy_accepted_at").eq("user_id",userId).maybeSingle();
     account=restored as AccountProfile|null;
    }
   }
