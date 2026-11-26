@@ -71,8 +71,8 @@ export default function ShopPage({session}:{session:Session}){
  };
 
  const itemOwned=Boolean(capacity?.shop_item_owned);
- const itemActive=Boolean(capacity?.shop_item_active);
- const itemPrice=capacity?.shop_item_price_eur??null;
+ const itemActive=capacity ? Boolean(capacity.shop_item_active) : isAdmin && active;
+ const itemPrice=capacity?.shop_item_price_eur??(isAdmin&&price?Number(price):null);
 
  return <section className="workspace development-shop-page">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
