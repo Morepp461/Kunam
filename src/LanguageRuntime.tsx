@@ -80,6 +80,49 @@ const translations: Array<[string, string]> = [
   ["Terms and Conditions", "Syarat dan Ketentuan"], ["Privacy Policy", "Kebijakan Privasi"],
   ["User Guide", "Panduan Pengguna"], ["How it works", "Cara kerja"], ["About", "Tentang"],
   ["Directory", "Direktori"], ["Market", "Pasar"], ["Driver of the Day", "Pembalap Terbaik"],
+  ["Delete notification", "Hapus notifikasi"], ["Account preferences", "Preferensi akun"],
+  ["Main Event · Recruitment", "Acara Utama · Rekrutmen"], ["Main Event · Team Market", "Acara Utama · Bursa Tim"],
+  ["Main Event · Driver Market", "Acara Utama · Bursa Pembalap"], ["Driver Center", "Pusat Pembalap"],
+  ["Team Management", "Manajemen Tim"], ["FIA Control", "Kontrol FIA"], ["Administration", "Administrasi"],
+  ["Quick Access", "Akses Cepat"], ["Navigation", "Navigasi"], ["Pages", "Halaman"],
+  ["Race Calendar", "Kalender Balapan"], ["Race Results", "Hasil Balapan"], ["Race Schedule", "Jadwal Balapan"],
+  ["Team Standings", "Klasemen Tim"], ["Driver Standings", "Klasemen Pembalap"],
+  ["No data available", "Data belum tersedia"], ["No results found", "Tidak ada hasil ditemukan"],
+  ["No members found", "Tidak ada anggota ditemukan"], ["No drivers found", "Tidak ada pembalap ditemukan"],
+  ["No teams found", "Tidak ada tim ditemukan"], ["Something went wrong", "Terjadi kesalahan"],
+  ["Please try again", "Silakan coba lagi"], ["Try again", "Coba lagi"], ["View all", "Lihat semua"],
+  ["View details", "Lihat detail"], ["Show more", "Tampilkan lebih banyak"], ["Show less", "Tampilkan lebih sedikit"],
+  ["Open menu", "Buka menu"], ["Close menu", "Tutup menu"], ["Sign in", "Masuk"],
+  ["Sign out", "Keluar"], ["Log in", "Masuk"], ["Log out", "Keluar"], ["Create account", "Buat akun"],
+  ["Forgot password?", "Lupa kata sandi?"], ["Reset password", "Atur ulang kata sandi"],
+  ["Account status", "Status akun"], ["Public visibility", "Visibilitas publik"],
+  ["Character profile", "Profil karakter"], ["Member profile", "Profil member"],
+  ["Driver profile", "Profil pembalap"], ["Team profile", "Profil tim"],
+  ["Total Drivers", "Total Pembalap"], ["Total Teams", "Total Tim"], ["Total Members", "Total Anggota"],
+  ["Current Season", "Musim Saat Ini"], ["Current Round", "Putaran Saat Ini"],
+  ["Active Season", "Musim Aktif"], ["Upcoming Race", "Balapan Berikutnya"],
+  ["Latest Results", "Hasil Terbaru"], ["Recent Activity", "Aktivitas Terbaru"],
+  ["System Status", "Status Sistem"], ["Last updated", "Terakhir diperbarui"],
+  ["Last update", "Pembaruan terakhir"], ["Updated at", "Diperbarui pada"],
+  ["No active season", "Tidak ada musim aktif"], ["No active round", "Tidak ada putaran aktif"],
+  ["Season Progress", "Progres Musim"], ["Race Progress", "Progres Balapan"],
+  ["Team Details", "Detail Tim"], ["Driver Details", "Detail Pembalap"],
+  ["Account Details", "Detail Akun"], ["Personal Details", "Data Pribadi"],
+  ["Public Member Directory", "Direktori Member Publik"], ["Driver Market", "Bursa Pembalap"],
+  ["Team Market", "Bursa Tim"], ["Free Agent", "Agen Bebas"], ["Permanent Transfer", "Transfer Permanen"],
+  ["Loan Request", "Permintaan Peminjaman"], ["Transfer Request", "Permintaan Transfer"],
+  ["Contract Offer", "Penawaran Kontrak"], ["Contract Status", "Status Kontrak"],
+  ["Current Contract", "Kontrak Saat Ini"], ["Contract End", "Akhir Kontrak"],
+  ["Offer History", "Riwayat Penawaran"], ["Negotiation History", "Riwayat Negosiasi"],
+  ["Team HQ Upgrade", "Upgrade Markas Tim"], ["Upgrade Project", "Proyek Upgrade"],
+  ["Construction Cost", "Biaya Pembangunan"], ["Construction Duration", "Durasi Pembangunan"],
+  ["Project Status", "Status Proyek"], ["Facility Level", "Level Fasilitas"],
+  ["Current Balance", "Saldo Saat Ini"], ["Available Balance", "Saldo Tersedia"],
+  ["Insufficient balance", "Saldo tidak mencukupi"], ["Transaction History", "Riwayat Transaksi"],
+  ["Transaction Details", "Detail Transaksi"], ["Transaction Status", "Status Transaksi"],
+  ["Date Created", "Tanggal Dibuat"], ["Created at", "Dibuat pada"],
+  ["Updated at", "Diperbarui pada"], ["No notifications", "Tidak ada notifikasi"],
+  ["Delete notification", "Hapus notifikasi"], ["Mark as read", "Tandai sudah dibaca"]
   ["Digital ID", "ID Digital"], ["Main Event", "Acara Utama"], ["Recruitment", "Rekrutmen"],
   ["Team Market", "Bursa Tim"], ["Official Notice", "Pengumuman Resmi"], ["Circuit Database", "Database Sirkuit"],
   ["Driver Ranking", "Peringkat Pembalap"], ["Rookie of the Season", "Rookie Terbaik Musim Ini"],
@@ -162,7 +205,7 @@ export default function LanguageRuntime({ language, pathname }: { language: Cale
         originals.current.set(node, source);
       }
       const tag = node.parentElement?.tagName ?? "";
-      const allowTokens = ["BUTTON","LABEL","H1","H2","H3","H4","TH","OPTION","SMALL","STRONG","SPAN"].includes(tag);
+      const allowTokens = ["BUTTON","LABEL","H1","H2","H3","H4","TH","OPTION","SMALL","STRONG","SPAN","A"].includes(tag) || Boolean(node.parentElement?.closest(".page-description,.panel-note,.section-description,.empty-state,.empty-panel,.settings-note,.workspace-note"));
       const next = aboutUs ? source : translate(source, language, allowTokens);
       lastRendered.current.set(node, next);
       if (current !== next) node.nodeValue = next;
