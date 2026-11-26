@@ -77,7 +77,7 @@ assert "min(up.market_value_eur)" in TIER
 assert "tier_relation_cap" in TIER
 assert "lower(e.key)=lower(v_license_key)" in NORMALIZATION
 assert "v_achievement_max:=v_round_count*6" in NORMALIZATION
-assert "and exists(select 1 from public.caleris_race_results" not in NORMALIZATION
+assert "v_new_achievement text:= $new$select count(*) into v_round_count" in NORMALIZATION
 assert "p_weights ?& array['license','contract','performance','skill','achievement','activity','reputation']" in NORMALIZATION
 
 # UI integration and role boundary.
