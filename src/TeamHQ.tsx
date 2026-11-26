@@ -30,6 +30,7 @@ export default function TeamHQ() {
   const [isFia, setIsFia] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isOwner, setIsOwner] = useState(false);
+  const [isDemolitionOwner, setIsDemolitionOwner] = useState(false);
   const [isMerchOwner, setIsMerchOwner] = useState(false);
   const [analytics, setAnalytics] = useState<any>(null);
   const [analyticsError, setAnalyticsError] = useState("");
@@ -37,8 +38,10 @@ export default function TeamHQ() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [confirmConfig, setConfirmConfig] = useState<FacilityConfig | null>(null);
+  const [confirmDemolition, setConfirmDemolition] = useState<FacilityConfig | null>(null);
   const [submittingUpgrade, setSubmittingUpgrade] = useState(false);
   const [submittingMaintenance, setSubmittingMaintenance] = useState<string | null>(null);
+  const [submittingDemolition, setSubmittingDemolition] = useState(false);
   const [clock, setClock] = useState(Date.now());
 
   const load = useCallback(async () => {
@@ -54,13 +57,14 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsMerchOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsDemolitionOwner(false); setIsDemolitionOwner(false); setIsMerchOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
     setIsFia(Boolean(adminResult.data?.user_id) || role === "FIA");
     setIsAdmin(Boolean(adminResult.data?.user_id));
     setIsOwner(role === "Owner" || role === "Principal");
+    setIsDemolitionOwner(role === "Owner");
     setIsMerchOwner(role === "Owner");
     if (!member?.team_id) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsMerchOwner(false); setLoading(false); return; }
     const [teamResult, facilityResult, projectResult, auditResult] = await Promise.all([
@@ -162,6 +166,25 @@ export default function TeamHQ() {
     }
   };
 
+  const demolishFacility = async () => {
+    if (!supabase || !confirmDemolition || !isDemolitionOwner || submittingDemolition) return;
+    setSubmittingDemolition(true); setError(""); setNotice("");
+    try {
+      const { error: demolitionError } = await supabase.rpc("member_demolish_team_hq_facility", {
+        p_facility_key: confirmDemolition.facility_key,
+        p_idempotency_key: crypto.randomUUID()
+      });
+      if (demolitionError) throw demolitionError;
+      setConfirmDemolition(null);
+      setNotice("Fasilitas berhasil dibongkar. Tidak ada pengembalian biaya.");
+      await load();
+    } catch (demolitionError) {
+      setError(demolitionError instanceof Error ? demolitionError.message : "Pembongkaran fasilitas gagal.");
+    } finally {
+      setSubmittingDemolition(false);
+    }
+  };
+
   if (loading) return <section className="workspace team-hq"><p>Memuat Team HQ...</p></section>;
   if (error && !team && !isFia) return <section className="workspace team-hq"><h1>Team HQ</h1><p className="team-hq-error">{error}</p></section>;
 
@@ -178,17 +201,21 @@ export default function TeamHQ() {
         const facility = facilityMap.get(config.facility_key);
         const level = facility?.level ?? 0;
         const limit = team ? (team.division_key?.toLowerCase().includes("zwei") ? config.max_level_zwei : config.max_level_premio) : config.max_level_premio;
+        const activeProject = activeProjects.find(p => p.facility_key === config.facility_key);
+        const maintenanceRequired = Boolean(facility && (facility.condition < 50 || facility.maintenance_restore_level !== null));
+        const lifecycleStatus = !config.is_enabled ? "DISABLED" : !team ? "ENABLED / AVAILABLE" : activeProject ? "UNDER CONSTRUCTION" : maintenanceRequired ? "MAINTENANCE REQUIRED" : level > 0 ? "OPERATIONAL" : "NOT BUILT";
+        const lifecycleClass = lifecycleStatus.toLowerCase().replaceAll(" / ","-").replaceAll(" ","-");
         return <article className="team-hq-card" key={config.facility_key}>
-          <div className="team-hq-card-top"><span className="team-hq-facility-icon"><Building2 size={18}/></span><span className={config.is_enabled ? "team-hq-status" : "team-hq-status disabled"}>{config.is_enabled ? "ACTIVE" : "DISABLED"}</span></div>
+          <div className="team-hq-card-top"><span className="team-hq-facility-icon"><Building2 size={18}/></span><span className={"team-hq-status " + lifecycleClass}>{lifecycleStatus}</span></div>
+          {team && <small className="team-hq-config-state">{config.is_enabled ? "Enabled / Available" : "Configuration disabled"}</small>}
           <h3>{config.title}</h3><p>{config.description}</p>
           {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div>{facility && facility.condition < 50 && isOwner && (() => { const restoreLevel = facility.maintenance_restore_level ?? level; const base = Number(config.maintenance_by_level?.[String(restoreLevel)] ?? 0); const cost = Math.round(base * (100 - facility.condition) * 100) / 10000; return <div className="team-hq-maintenance-panel"><div className="team-hq-meta"><span>Biaya maintenance ({100 - facility.condition}% pemulihan)</span><strong>€{money(cost)}</strong></div><small>Level yang dipulihkan: {restoreLevel} · Kondisi kembali ke 100%</small><button className="team-hq-maintenance-action" disabled={submittingMaintenance === config.facility_key} onClick={() => void payMaintenance(config.facility_key)}>{submittingMaintenance === config.facility_key ? "Memproses..." : "Bayar maintenance"}</button></div>; })()}</>}
-          {config.maintenance_required && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance diperlukan</small>}
+          {team && maintenanceRequired && activeProject && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance tersedia di bawah 50% condition</small>}
           {team && (() => {
-            const activeProject = activeProjects.find(p => p.facility_key === config.facility_key);
-            const nextLevel = level + 1;
+            const nextLevel = level + 1;}
             const nextCost = Number(config.construction_cost_by_level?.[String(nextLevel)] ?? 0);
             const nextDays = Number(config.construction_days_by_level?.[String(nextLevel)] ?? 0);
-            const canUpgrade = isOwner && config.is_enabled && level < limit && nextCost > 0 && nextDays > 0 && !activeProject && activeProjects.length < 2;
+            const canUpgrade = isOwner && config.is_enabled && level < limit && nextCost > 0 && nextDays > 0 && !activeProject && activeProjects.length < 2 && facility?.maintenance_restore_level == null && Number(facility?.condition ?? 100) > nextDays;
             return <>
               {level < limit && <div className="team-hq-upgrade-info">
                 <div><span>UPGRADE BERIKUTNYA · LEVEL {nextLevel}</span><strong>€{money(nextCost)}</strong></div>
@@ -199,8 +226,10 @@ export default function TeamHQ() {
                 <div className="team-hq-progress team-hq-progress-construction"><i style={{ width: progressFor(activeProject) + "%" }}/></div>
                 <div className="team-hq-timer">{activeProject.completes_at ? (new Date(activeProject.completes_at).getTime() > clock ? "Sisa " + formatRemaining(new Date(activeProject.completes_at).getTime() - clock) : "Menunggu penyelesaian otomatis") : "Menunggu jadwal pengerjaan"}</div>
               </div>}
-              {isOwner && level < limit && <button className="team-hq-upgrade" disabled={!canUpgrade} onClick={() => setConfirmConfig(config)}> {activeProject ? "Sedang diupgrade" : activeProjects.length >= 2 ? "Slot proyek penuh" : "Upgrade fasilitas"} </button>}
+              {isOwner && level < limit && <button className="team-hq-upgrade" disabled={!canUpgrade} onClick={() => setConfirmConfig(config)}> {activeProject ? "Sedang diupgrade" : activeProjects.length >= 2 ? "Slot proyek penuh" : facility?.maintenance_restore_level != null || Number(facility?.condition ?? 100) <= nextDays ? "Maintenance sebelum upgrade" : "Upgrade fasilitas"} </button>}
               {isOwner && level >= limit && <small className="team-hq-lock-note">Level maksimum divisi tercapai.</small>}
+              {isDemolitionOwner && facility && !activeProject && (level > 0 || facility.maintenance_restore_level !== null) && <button className="team-hq-demolish" disabled={submittingDemolition} onClick={() => setConfirmDemolition(config)}>Bongkar fasilitas</button>}
+            </>;
             </>;
           })()}
         </article>;
@@ -219,10 +248,16 @@ export default function TeamHQ() {
         <div className="team-hq-project-row"><strong>{analytics.metrics?.fastest_laps ?? 0}</strong><span>Fastest laps</span></div>
         <div className="team-hq-project-row"><strong>{analytics.metrics?.dnf_count ?? 0}</strong><span>DNF records</span></div>
       </div> : <p className="team-hq-empty">{analytics?.message || "Upgrade Data Analytics Center untuk membuka analisis performa berdasarkan hasil race resmi."}</p>}
+      {analytics?.unlocked && <div className="team-hq-analysis-detail">
+        <div className="team-hq-section-title"><div><span className="section-eyebrow">RACE EXECUTION DETAIL</span><h3>Strategy Analysis · Depth {analytics.strategy_analysis?.depth ?? 0}</h3></div><span className="empty-tag">{analytics.strategy_analysis?.rounds?.length ?? 0} ROUNDS</span></div>
+        {analytics.strategy_analysis?.rounds?.length ? analytics.strategy_analysis.rounds.map((round: any) => <div className="team-hq-project-row" key={round.round_id}><strong>{new Date(round.published_at).toLocaleDateString("id-ID")}</strong><span>Grid {round.average_grid ?? "—"} → Finish {round.average_finish ?? "—"}</span><span>{round.positions_gained > 0 ? "+" : ""}{round.positions_gained ?? 0} positions</span><span>Finish {round.finish_rate_percent ?? 0}%</span></div>) : <p className="team-hq-empty">Belum ada hasil race resmi untuk dianalisis pada depth saat ini.</p>}
+        {analytics.strategy_analysis?.pit_strategy_telemetry_available === false && <small className="team-hq-analysis-note">Analisis ini memakai hasil race resmi. Data pit stop dan tyre compound belum tersimpan pada hasil resmi, jadi tidak ada prediksi strategi pit yang dibuat.</small>}
+      </div>}
     </section>}
     <TeamMerchandise teamId={team?.id ?? null} isOwner={isMerchOwner} isAdmin={isAdmin} />
     {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">CONSTRUCTION PIPELINE</span><h2>Project History</h2></div><span className="empty-tag">LATEST 10</span></div>{projects.length ? projects.map(project => <div className="team-hq-project-row" key={project.id}><strong>{configs.find(c => c.facility_key === project.facility_key)?.title ?? project.facility_key}</strong><span>Target level {project.target_level}</span><span>{project.status.replaceAll("_"," ")}</span><span>€{money(project.cost)}</span></div>) : <p className="team-hq-empty">Belum ada proyek pembangunan atau upgrade.</p>}</section>}
-    {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">OPERATIONAL RECORDS</span><h2>HQ Activity History</h2></div><span className="empty-tag">CURRENT SEASON · LATEST 30</span></div>{auditLogs.length ? auditLogs.map(log => <div className="team-hq-project-row" key={log.id}><strong>{configs.find(c => c.facility_key === log.facility_key)?.title ?? log.facility_key}</strong><span>{({condition_decay:"Condition turun",level_degraded:"Level menurun",maintenance:"Maintenance dibayar",project_started:"Proyek dimulai",project_completed:"Proyek selesai"} as Record<string,string>)[log.event_type] ?? log.event_type}</span><span>{log.previous_condition != null ? `${log.previous_condition}% → ${log.new_condition}%` : log.metadata?.target_level ? `Target LV ${log.metadata.target_level}` : "—"}</span><span>{new Date(log.created_at).toLocaleString("id-ID")}</span></div>) : <p className="team-hq-empty">Belum ada aktivitas HQ pada season ini.</p>}</section>}
+    {team && <section className="team-hq-projects"><div className="team-hq-section-title"><div><span className="section-eyebrow">OPERATIONAL RECORDS</span><h2>HQ Activity History</h2></div><span className="empty-tag">CURRENT SEASON · LATEST 30</span></div>{auditLogs.length ? auditLogs.map(log => <div className="team-hq-project-row" key={log.id}><strong>{configs.find(c => c.facility_key === log.facility_key)?.title ?? log.facility_key}</strong><span>{({facility_created:"Fasilitas dibuat",condition_decay:"Condition turun",level_degraded:"Level menurun",maintenance:"Maintenance dibayar",project_started:"Proyek dimulai",project_completed:"Proyek selesai",demolition:"Fasilitas dibongkar"} as Record<string,string>)[log.event_type] ?? log.event_type}</span><span>{log.previous_condition != null ? `${log.previous_condition}% → ${log.new_condition}%` : log.metadata?.target_level ? `Target LV ${log.metadata.target_level}` : "—"}</span><span>{new Date(log.created_at).toLocaleString("id-ID")}</span></div>) : <p className="team-hq-empty">Belum ada aktivitas HQ pada season ini.</p>}</section>}
+    {confirmDemolition && team && <div className="team-hq-modal-backdrop" role="presentation" onClick={() => !submittingDemolition && setConfirmDemolition(null)}><section className="team-hq-confirm" role="dialog" aria-modal="true" aria-labelledby="team-hq-demolish-title" onClick={e => e.stopPropagation()}><span className="section-eyebrow">KONFIRMASI PEMBONGKARAN</span><h2 id="team-hq-demolish-title">{confirmDemolition.title}</h2><p>Pembongkaran menghapus level fasilitas dan nilai aset HQ dari valuasi tim. Biaya pembangunan sebelumnya tidak dikembalikan.</p><div className="team-hq-confirm-row"><span>Level saat ini</span><strong>{facilityMap.get(confirmDemolition.facility_key)?.level ?? 0}</strong></div><div className="team-hq-confirm-row"><span>Asset value dihapus</span><strong>€{money(Number(facilityMap.get(confirmDemolition.facility_key)?.asset_value ?? 0))}</strong></div><div className="team-hq-actions"><button className="team-hq-cancel" disabled={submittingDemolition} onClick={() => setConfirmDemolition(null)}>Batal</button><button className="team-hq-demolish-confirm" disabled={submittingDemolition} onClick={() => void demolishFacility()}>{submittingDemolition ? "Memproses..." : "Konfirmasi pembongkaran"}</button></div></section></div>}
     {confirmConfig && team && <div className="team-hq-modal-backdrop" role="presentation" onClick={() => !submittingUpgrade && setConfirmConfig(null)}><section className="team-hq-confirm" role="dialog" aria-modal="true" aria-labelledby="team-hq-confirm-title" onClick={e => e.stopPropagation()}><span className="section-eyebrow">KONFIRMASI UPGRADE</span><h2 id="team-hq-confirm-title">{confirmConfig.title}</h2><p>Pastikan rincian pembangunan fasilitas berikut sudah benar.</p><div className="team-hq-confirm-row"><span>Level</span><strong>{(facilityMap.get(confirmConfig.facility_key)?.level ?? 0)} → {(facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1}</strong></div><div className="team-hq-confirm-row"><span>Biaya</span><strong>€{money(Number(confirmConfig.construction_cost_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0))}</strong></div><div className="team-hq-confirm-row"><span>Durasi</span><strong>{confirmConfig.construction_days_by_level?.[String((facilityMap.get(confirmConfig.facility_key)?.level ?? 0) + 1)] ?? 0} hari</strong></div><div className="team-hq-confirm-row"><span>Pembayaran</span><strong>Team Wallet → VreeoBank</strong></div><p className="team-hq-confirm-note">Pembayaran dilakukan langsung saat proyek dimulai dan tidak dapat dibatalkan melalui halaman ini.</p><div className="team-hq-actions"><button className="team-hq-cancel" disabled={submittingUpgrade} onClick={() => setConfirmConfig(null)}>Kembali</button><button className="team-hq-save" disabled={submittingUpgrade} onClick={() => void startUpgrade()}>{submittingUpgrade ? "Memproses..." : "Konfirmasi & mulai upgrade"}</button></div></section></div>}
   </section>;
 }
