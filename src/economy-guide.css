@@ -36,3 +36,16 @@
 .economy-guide-modal-close{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text)}
 @media(max-width:900px){.economy-guide-prize-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.economy-guide-prize-grid{grid-template-columns:1fr}}
+
+
+/* Extended content layout for the Driver Market Value calculation modal. */
+.economy-guide-modal{display:grid;gap:15px;width:min(100%,760px);max-height:min(88dvh,900px);padding:clamp(16px,3vw,26px)}
+.economy-guide-modal>header{align-items:flex-start;margin-bottom:0}
+.economy-guide-modal>header>div{display:grid;gap:4px}
+.economy-guide-modal>p{margin:0;color:var(--muted,rgba(244,243,239,.62));font-size:12px;line-height:1.65}
+.economy-guide-modal h3{margin:3px 0 -6px;color:#e2cb83;font:700 15px 'Barlow Condensed',sans-serif;letter-spacing:.08em;text-transform:uppercase}
+.economy-guide-modal .economy-guide-highlight{padding:12px 14px;border:1px solid rgba(215,190,117,.22);border-radius:10px;background:rgba(215,190,117,.055)}
+.economy-guide-modal .economy-guide-highlight strong{font-size:16px;line-height:1.5;overflow-wrap:anywhere}
+.economy-guide-modal .economy-guide-values>div{display:grid;grid-template-columns:minmax(105px,.7fr) minmax(0,1.3fr);align-items:start;gap:12px}
+.economy-guide-modal .economy-guide-values strong{font-size:11px;line-height:1.5;white-space:normal}
+@media(max-width:600px){.economy-guide-modal-backdrop{padding:8px}.economy-guide-modal{max-height:92dvh;padding:15px}.economy-guide-modal .economy-guide-values>div{grid-template-columns:1fr;gap:4px}.economy-guide-modal .economy-guide-values strong{text-align:left}}
