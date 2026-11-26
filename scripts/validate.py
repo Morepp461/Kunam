@@ -9,7 +9,7 @@ def main():
         "src/App.tsx", "src/MainLayout.tsx", "src/AboutUs.tsx", "src/about-us.css", "src/DashboardModule.tsx", "src/ProfileModule.tsx", "src/lib/stage5QueryPlan.ts", "src/styles.css", "src/lib/supabase.ts",
         "src/vite-env.d.ts", "supabase/SETUP.sql",
         "assets/Background 2.png",
-        "assets/Untitled design_20261103_142659_0000.png",
+        "assets/VREEO.ID.webp",
         "assets/Add a heading_20260907_003952_0000.png",
     ]
     for item in required:
@@ -95,7 +95,7 @@ def main():
     styles = (ROOT / "src/styles.css").read_text(encoding="utf-8")
     sql = (ROOT / "supabase/SETUP.sql").read_text(encoding="utf-8")
     assert 'provider:"discord"' in app
-    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%203.png" alt=""/>' in layout_module
+    assert '<div className="scene" aria-hidden="true"><img className="scene-image" src="/assets/Background%203.webp" alt=""/>' in layout_module
     assert "data-member=" not in app
     assert '"/rules"' in app or 'path="/rules"' in app
     assert 'path="/privacy-policy"' in app and 'path="/terms-and-conditions"' in app
