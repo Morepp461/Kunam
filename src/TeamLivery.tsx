@@ -55,6 +55,14 @@ export function normalizeTeamLiveryDesign(input:unknown):Design{
     logoDataUrl:logo,decals,sponsorPlacements
   };
 }
+function drawSponsorText(ctx:CanvasRenderingContext2D,names:string[],x:number,y:number,w:number,h:number,size:number){
+  const clean=names.filter(Boolean).slice(0,3);
+  if(!clean.length)return;
+  ctx.save();ctx.fillStyle="#F5F0E5";ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.font=`900 ${size}px Arial, sans-serif`;
+  clean.forEach((name,i)=>ctx.fillText(name.toUpperCase(),x+w/2,y+h*(i+1)/(clean.length+1),w*.9));
+  ctx.restore();
+}
 function paintAtlas(canvas:HTMLCanvasElement,d:Design,sponsors:Sponsor[],selectedIndex:number|null){
   const ctx=canvas.getContext("2d");if(!ctx)return;
   ctx.fillStyle="#080A0D";ctx.fillRect(0,0,1024,1024);
