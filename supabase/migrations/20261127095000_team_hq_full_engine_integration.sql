@@ -108,26 +108,36 @@ begin
   v_definition := pg_get_functiondef('public.member_upgrade_development_attribute(uuid,text,text,numeric,text)'::regprocedure);
   v_definition := replace(v_definition, 'v_pit_crew_level integer:=0;', 'v_pit_crew_level numeric:=0;');
 
-  v_old_block := 'select coalesce(level,0) into v_pit_crew_level
-    from public.caleris_team_hq_facilities
-    where team_id=v_member.team_id and facility_key=''pit_crew_training_center'';';
-  v_new_block := 'v_pit_crew_level:=least(8,greatest(0,coalesce((private.team_hq_effects_for_team(v_member.team_id)->>''pit_stop_efficiency_bonus'')::numeric,0)));';
+  v_old_block := $old1$if p_scope='team' and p_attribute_key='pit_stop_efficiency' then
+    v_pit_crew_level:=least(8,greatest(0,coalesce((private.team_hq_effects_for_team(v_member.team_id)->>'pit_stop_efficiency_bonus')::numeric,0)));
+    if v_pit_crew_level>0 then
+      v_cash_cost:=round(v_cash_cost*power(0.9::numeric,v_pit_crew_level),2);
+    end if;
+  end if;$old1$;
+
+  v_old_block := case when position(v_old_block in v_definition) > 0 then v_old_block else
+    $old2$if p_scope='team' and p_attribute_key='pit_stop_efficiency' then
+  v_pit_crew_level:=least(8,greatest(0,coalesce((private.team_hq_effects_for_team(v_member.team_id)->>'pit_stop_efficiency_bonus')::numeric,0)));
+  v_pit_crew_level:=least(8,greatest(0,coalesce(v_pit_crew_level,0)));
+  if v_pit_crew_level>0 then v_cash_cost:=round(v_cash_cost*power(0.9::numeric,v_pit_crew_level),2); end if;
+ end if;$old2$
+  end;
+
+  v_new_block := $new$if p_scope='team' and p_attribute_key='pit_stop_efficiency' then
+    v_pit_crew_level:=least(8,greatest(0,coalesce((private.team_hq_effects_for_team(v_member.team_id)->>'pit_stop_efficiency_bonus')::numeric,0)));
+    if v_pit_crew_level>0 then
+      v_cash_cost:=round(v_cash_cost*power(0.9::numeric,v_pit_crew_level),2);
+    end if;
+  end if;$new$;
 
   if position(v_old_block in v_definition) > 0 then
     v_definition := replace(v_definition, v_old_block, v_new_block);
-  else
-    v_old_block := 'select coalesce(level,0) into v_pit_crew_level from public.caleris_team_hq_facilities where team_id=v_member.team_id and facility_key=''pit_crew_training_center'';';
-    if position(v_old_block in v_definition) > 0 then
-      v_definition := replace(v_definition, v_old_block, v_new_block);
-    end if;
-  end if;
-
-  if position('private.team_hq_effects_for_team(v_member.team_id)' in v_definition) = 0 then
+  elsif position(v_new_block in v_definition) = 0 then
     raise exception 'Development upgrade cash discount changed; review before applying HQ condition scaling.';
   end if;
   execute v_definition;
 end;
-$patch$;;
+$patch$;;;
 
 -- Read-only, team-scoped HQ Development bonuses for accurate client previews.
 create or replace function public.member_get_team_hq_development_effects()
