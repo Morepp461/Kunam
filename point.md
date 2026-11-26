@@ -1988,3 +1988,11 @@ Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
 
 - **26 November 2026 — Scope recorded:** all seven requested items above are recorded before implementation. Branch created from current `main`. User-provided video inspected: it shows Transfer Market and profile/registration navigation; no HQ upgrade error is visible in the supplied clip, so the recurring HQ error must be diagnosed from source and Supabase logs rather than inferred from that video.
 - **Implementation status:** pending source/dependency audit.
+
+
+### Progress update — audit checkpoint
+
+- **Confirmed:** the deployed `economy-workflows` Edge Function handles `upgrade_development_attribute` and calls the database RPC `member_upgrade_development_attribute`. The gateway validates JWT and forwards to that RPC; it returns database errors as HTTP 422.
+- **Confirmed:** Testing's deployed `economy-workflows` is version 11; Production is version 10. Both deployed source hashes are identical, so the version-number difference alone is not evidence of a source mismatch.
+- **Log check:** in the last 24-hour Edge Function gateway logs, Testing shows an OPTIONS preflight but no matching POST for `economy-workflows`; Production shows no matching calls. The uploaded video does not contain an HQ upgrade attempt/error. The exact failing request therefore is not yet established; continue with frontend call-site, database RPC definitions, PostgreSQL logs, and function deployment/source parity before selecting a fix.
+- **Next audit targets:** Team HQ upgrade UI and RPC `member_upgrade_development_attribute`, HQ lifecycle migrations, market/profile/Digital ID renderers, Transfer Market option sources, notification generation/deletion rules, and application locale architecture.
