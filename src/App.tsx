@@ -116,6 +116,7 @@ function Application(){
  const location=useLocation();const {toast,loading}=useUI();
  const sessionUserIdRef=useRef<string|null>(null);
  const userId=session?.user.id??null;
+ useEffect(()=>{document.documentElement.lang=profile?.preferred_language==="en"?"en":"id";},[profile?.preferred_language]);
  const refreshProfile=useCallback(async()=>{
   if(!supabase||!userId){setProfile(null);setIsAdmin(false);setIsPrimaryOwner(false);setPanelAccess(NO_PANEL_ACCESS);setProfileReady(true);return;}
   setProfileReady(false);
