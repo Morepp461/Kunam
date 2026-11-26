@@ -9,6 +9,7 @@ ROSTER = (ROOT / "supabase/migrations/20261126065827_precontract_season_roster_i
 ROSTER_SNAPSHOT = (ROOT / "supabase/migrations/20261126070004_precontract_roster_snapshot_refresh.sql").read_text(encoding="utf-8")
 LOCKED_CONFIG = (ROOT / "supabase/migrations/20261126072000_lock_driver_market_engine_decisions.sql").read_text(encoding="utf-8")
 MARKET_LANGUAGE_NOTIFICATIONS = (ROOT / "supabase/migrations/20261126100000_profile_market_language_notification_tombstones.sql").read_text(encoding="utf-8")
+PUBLIC_MV_RPC = (ROOT / "supabase/migrations/20261126110000_public_driver_market_value_rpc.sql").read_text(encoding="utf-8")
 DIGITAL_ID = (ROOT / "src/PublicMemberId.tsx").read_text(encoding="utf-8")
 LANGUAGE = (ROOT / "src/LanguageRuntime.tsx").read_text(encoding="utf-8")
 NOTIFICATIONS = (ROOT / "src/NotificationsCenter.tsx").read_text(encoding="utf-8")
@@ -69,6 +70,10 @@ assert "market_value_eur" in MARKET_LANGUAGE_NOTIFICATIONS
 assert "preferred_language text not null default 'id'" in MARKET_LANGUAGE_NOTIFICATIONS
 assert "member_delete_caleris_notification" in MARKET_LANGUAGE_NOTIFICATIONS
 assert "caleris_notification_deletion_tombstones" in MARKET_LANGUAGE_NOTIFICATIONS
+assert "caleris_get_public_driver_market_value" in PUBLIC_MV_RPC
+assert "grant execute on function public.caleris_get_public_driver_market_value(uuid) to service_role" in PUBLIC_MV_RPC
+assert 'admin.rpc(' in DIRECTORY and 'caleris_get_public_driver_market_value' in DIRECTORY
+assert '.from("caleris_driver_market_values")' not in DIRECTORY
 
 # Driver MV appears on private/public profiles and the public Digital ID card.
 assert 'Market Value' in APP and 'character.market_value_eur' in APP
