@@ -67,7 +67,12 @@ export function F1Car2026Preview({ design, sponsors }: Props) {
       const room = new RoomEnvironment();
       environmentTarget = pmrem.fromScene(room, 0.04);
       scene.environment = environmentTarget.texture;
-      room.dispose();
+      room.traverse((object) => {
+        const mesh = object as THREE.Mesh;
+        mesh.geometry?.dispose();
+        if (Array.isArray(mesh.material)) mesh.material.forEach((material) => material.dispose());
+        else mesh.material?.dispose();
+      });
       pmrem.dispose();
 
       scene.add(new THREE.HemisphereLight(0xffffff, 0x202630, 1.7));
