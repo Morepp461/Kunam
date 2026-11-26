@@ -7,6 +7,7 @@ LIFECYCLE = (ROOT / "supabase/migrations/20261126064512_driver_market_precontrac
 CONTRACT_SYNC = (ROOT / "supabase/migrations/20261126065318_precontract_season_contract_sync.sql").read_text(encoding="utf-8")
 ROSTER = (ROOT / "supabase/migrations/20261126065827_precontract_season_roster_integration.sql").read_text(encoding="utf-8")
 ROSTER_SNAPSHOT = (ROOT / "supabase/migrations/20261126070004_precontract_roster_snapshot_refresh.sql").read_text(encoding="utf-8")
+LOCKED_CONFIG = (ROOT / "supabase/migrations/20261126072000_lock_driver_market_engine_decisions.sql").read_text(encoding="utf-8")
 TIER = (ROOT / "supabase/migrations/20261126064645_driver_market_tier_relation.sql").read_text(encoding="utf-8")
 NORMALIZATION = (ROOT / "supabase/migrations/20261126065153_driver_market_scoring_normalization.sql").read_text(encoding="utf-8")
 TRANSFER = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
@@ -35,13 +36,25 @@ assert "returns table(member_id uuid, market_value_eur numeric)" in member_read
 assert "breakdown" not in member_read.lower()
 assert "revoke all on public.caleris_driver_market_config,public.caleris_driver_market_values,public.caleris_driver_market_value_history" in MARKET
 
-# Admin configuration and backend authorization.
+# Driver Market Value decisions are immutable; Admin only monitors the engine.
 for fragment in (
-    "public.admin_configure_driver_market", "public.site_admins",
-    "v_total<>100", "Tier 1 harus menggunakan multiplier 1,00",
-    "p_tier_order", "p_initial_license_scores",
+    "weights='{\"license\":10,\"contract\":10,\"performance\":20,\"skill\":20,\"achievement\":10,\"activity\":10,\"reputation\":20}'::jsonb",
+    "base_value_eur=10000000",
+    "growth_factor=0.25",
+    "tier_multipliers='{\"1\":1.00,\"2\":0.85,\"3\":0.70,\"4\":0.60}'::jsonb",
+    "tier_order='{\"premio\":1,\"zwei\":2}'::jsonb",
+    "initial_license_scores='{\"Bronze\":25,\"Silver\":50,\"Gold\":75,\"Super License\":100}'::jsonb",
+    "before insert or update or delete",
+    "public.admin_configure_driver_market(jsonb,numeric,numeric,jsonb,jsonb,jsonb)",
+    "drop function if exists public.admin_configure_driver_market",
+    "drop function if exists public.admin_get_driver_market_config",
 ):
-    assert fragment in MARKET, f"Missing Admin config/security validation: {fragment}"
+    assert fragment in LOCKED_CONFIG, f"Missing locked Market Value decision: {fragment}"
+assert 'admin_configure_driver_market' not in ADMIN
+assert 'admin_get_driver_market_config' not in ADMIN
+assert '<input' not in ADMIN
+assert 'fixedConfig' in ADMIN
+assert 'admin_recalculate_driver_market_values' in ADMIN
 
 # Pre-contract is separate from existing permanent transfer and loan workflows.
 for fragment in (
@@ -89,7 +102,6 @@ assert 'Market Value</th>' in TRANSFER
 assert 'AdminDriverMarketEngine' in APP
 assert '/admin/driver-market-engine' in APP
 assert '/admin/driver-market-engine' in NAV
-assert 'admin_configure_driver_market' in ADMIN
 assert 'admin_recalculate_driver_market_values' in ADMIN
 assert "MV Score" not in ADMIN
 

@@ -1864,7 +1864,7 @@ Bobot awal yang telah disepakati berjumlah 100%:
 | Reputation | 20% |
 
 Definisi komponen:
-- **License (10%)**: skor berdasarkan lisensi Driver. Skala/konversi lisensi harus dapat dikonfigurasi, tidak ditanam permanen di kode.
+- **License (10%)**: skor berdasarkan lisensi Driver dengan konversi tetap: Bronze 25, Silver 50, Gold 75, Super License 100.
 - **Contract (10%)**: mencerminkan status kontrak aktif Driver.
 - **Performance (20%)**: persentase poin aktual Driver dibandingkan total poin maksimum yang tersedia pada kalender/round yang relevan. Pembagi harus berasal dari maksimum poin yang benar-benar tersedia, bukan total poin milik Driver sendiri.
 - **Overall Skill (20%)**: rata-rata delapan atribut Driver yang sudah digunakan sistem.
@@ -1879,9 +1879,9 @@ Definisi komponen:
   `TargetMV = BaseValue × (MVScore / 100) × TierMultiplier`
 - Perubahan nilai bertahap:
   `MVbaru = MVlama + (TargetMV - MVlama) × GrowthFactor`
-- Growth Factor mengatur kecepatan penyesuaian menuju Target MV dan harus dapat diedit Admin.
+- Growth Factor ditetapkan permanen sebesar 0,25 untuk penyesuaian bertahap menuju Target MV.
 - Base Value untuk tier tertinggi (Tier 1) ditetapkan awal sebesar **€10.000.000**.
-- Tier di bawahnya menggunakan Tier Multiplier. Nilai multiplier dapat dikonfigurasi Admin dan tidak boleh bergantung pada nama divisi yang di-hardcode.
+- Tier menggunakan Tier Multiplier tetap sesuai tabel keputusan. Pemetaan divisi aktif mengikuti tier resmi: Caleris Premio = Tier 1 dan Caleris Zwei = Tier 2.
 - Nilai awal Tier Multiplier yang disetujui:
   | Tier | Multiplier |
   |---|---:|
@@ -1896,8 +1896,8 @@ Definisi komponen:
   | Silver | 50 |
   | Gold | 75 |
   | Super License | 100 |
-- Struktur divisi harus fleksibel untuk penambahan divisi baru di masa depan. Urutan tier ditentukan dari konfigurasi/urutan divisi yang sah, bukan perbandingan UUID.
-- Bobot seluruh komponen harus berjumlah tepat 100%. Base Value, Growth Factor, Tier Multiplier, dan konversi skor lisensi harus dapat diedit melalui konfigurasi Admin.
+- Struktur divisi tetap mendukung penambahan di masa depan, tetapi penetapan tier divisi baru harus dilakukan melalui perubahan kode/migrasi yang disetujui, bukan konfigurasi manual Admin. Urutan tier berasal dari definisi tier resmi engine, bukan perbandingan UUID.
+- Bobot, Base Value, Growth Factor, Tier Multiplier, urutan tier, dan konversi skor lisensi merupakan konstanta engine yang ditanam di backend dan tidak menyediakan konfigurasi manual Admin.
 - Driver baru yang belum memiliki histori performa memulai MV dari **License + Division Tier** (pilihan B yang disetujui). Sistem tidak boleh mensyaratkan histori race untuk membuat nilai awal.
 
 ### 4. Relasi MV antar-tier
@@ -1943,3 +1943,20 @@ Definisi komponen:
 - Sebelum implementasi, periksa schema aktual, fungsi/RPC yang sudah ada, constraint, role/permission, dependency frontend, dan migrasi di kedua database. Jangan mengasumsikan nama kolom atau fungsi.
 - Keputusan di dokumen ini belum berarti fitur telah diimplementasikan, diuji, di-merge, atau di-deploy.
 
+
+
+## Driver Market Value — Fixed Engine Decisions (26 November 2026)
+
+Keputusan terbaru pemilik proyek: **Driver Market Value Engine tidak menyediakan konfigurasi manual.** Bagian lama yang menyebut nilai dapat diedit Admin dinyatakan superseded oleh keputusan ini.
+
+Nilai yang ditanam permanen dan divalidasi di backend:
+- Bobot: License 10%, Contract 10%, Performance 20%, Overall Skill 20%, Achievement 10%, Activity 10%, Reputation 20%.
+- Base Value Tier 1: €10.000.000.
+- Growth Factor: 0,25.
+- Tier Multiplier: Tier 1 = 1,00; Tier 2 = 0,85; Tier 3 = 0,70; Tier 4 = 0,60.
+- Pemetaan divisi aktif: Caleris Premio = Tier 1; Caleris Zwei = Tier 2.
+- License Score: Bronze = 25; Silver = 50; Gold = 75; Super License = 100.
+- Formula, initial value, home-division rule, tier relationship cap, and all Pre-contract/transfer rules remain as defined in the Driver Market Value and Pre-contract sections above.
+- Tidak ada halaman, RPC, atau hak akses Admin untuk mengubah konstanta tersebut. Admin hanya dapat memantau snapshot dan menjalankan pemeriksaan/recalculation operasional; kalkulasi normal tetap berjalan otomatis dari event engine dan scheduler.
+
+Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
