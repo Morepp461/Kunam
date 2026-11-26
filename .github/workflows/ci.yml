@@ -43,6 +43,8 @@ jobs:
       - name: Browser smoke tests
         run: npm run test:e2e
       - run: python3 -B scripts/validate.py
+      - name: PageSpeed optimized asset regression checks
+        run: python3 -B scripts/test_pagespeed_webp_assets.py
       - name: Paddock Access CORS regression checks
         run: python3 -B scripts/test_paddock_access_cors.py
       - name: Pre-launch CORS, privacy consent, and legal sitemap checks
