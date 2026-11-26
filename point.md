@@ -2190,3 +2190,23 @@ On `fix/finalize-bilingual-ui-coverage-20261126`:
 - All targeted CALERIS regression scripts: PASS (profile directory, Driver Market Value, Edge Function auth, Member Directory rate limits, controls/navigation, Driver contracts, engine integrations, economy).
 - Static JSX language audit excluding About Us: only technical/role/API terminology remains untranslated (Admin, Email, Token, Authorization/Bearer); those are intentional technical labels.
 - No dependency was added; existing language preference column and existing React/TypeScript stack are reused.
+
+
+### XP policy clarification — 26 November 2026
+
+User-approved exception to the no-deduction rule:
+
+- **XP deductions are allowed only when reconciling an official race result that was previously awarded and is subsequently corrected, unpublished, or cancelled/voided.**
+- This is a narrow exception. Quest XP, race check-in XP, achievement XP, Shop XP, and all other XP sources remain non-reversible and cannot be manually deducted.
+- For a corrected race result, calculate the member's eligible award from the latest authoritative published result and compare it with the net XP already credited for that same race-result source.
+  - If the corrected award is higher, credit only the positive difference.
+  - If the corrected award is lower, debit only the difference attributable to that race-result award.
+  - If the result is cancelled/voided or no longer qualifies, reverse the race-result award attributable to that result.
+  - If the correction changes Pole status, include/remove the +5 Pole component in the same reconciliation.
+- Every correction/reversal must be an auditable ledger entry linked to the original award, race/result ID, corrected result version, actor/system event, reason, and timestamp. Never delete or overwrite the original ledger entry.
+- Reconciliation must be idempotent and transaction-safe. Repeated publication, correction, cancellation, retries, and concurrent events must not double-credit or double-debit.
+- A reversal must never exceed the unreversed XP previously awarded for that same race-result source. It must not affect XP earned from quests, check-ins, achievements, or other races.
+- The member's cumulative XP and level must be recalculated from the authoritative net ledger after the race-result correction. Community Progression totals, level, activity feed, and milestone progress must stay consistent.
+- No Admin manual XP debit is introduced. The exception is executed only by the trusted race-result correction/reconciliation flow.
+- This clarification supersedes the earlier no-clawback wording in Priority 6 **only for official race-result corrections/cancellations**. All other no-deduction protections remain in force.
+
