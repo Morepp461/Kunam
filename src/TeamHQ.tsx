@@ -247,7 +247,7 @@ export default function TeamHQ() {
             {facility && facility.condition < 50 && isOwner && (() => { const restoreLevel = facility.maintenance_restore_level ?? level; const base = Number(config.maintenance_by_level?.[String(restoreLevel)] ?? 0); const cost = Math.round(base * (100 - facility.condition) * 100) / 10000; return <div className="team-hq-maintenance-panel"><div className="team-hq-meta"><span>Biaya maintenance ({100 - facility.condition}% pemulihan)</span><strong>€{money(cost)}</strong></div><small>Level yang dipulihkan: {restoreLevel} · Kondisi kembali ke 100%</small><button className="team-hq-maintenance-action" disabled={submittingMaintenance === config.facility_key} onClick={() => void payMaintenance(config.facility_key)}>{submittingMaintenance === config.facility_key ? "Memproses..." : "Bayar maintenance"}</button></div>; })()}</>}
           {team && maintenanceRequired && activeProject && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance tersedia di bawah 50% condition</small>}
           {team && (() => {
-            const nextLevel = level + 1;}
+            const nextLevel = level + 1;
             const nextCost = Number(config.construction_cost_by_level?.[String(nextLevel)] ?? 0);
             const nextDays = Number(config.construction_days_by_level?.[String(nextLevel)] ?? 0);
             const canUpgrade = isOwner && config.is_enabled && level < limit && nextCost > 0 && nextDays > 0 && !activeProject && activeProjects.length < 2 && facility?.maintenance_restore_level == null && Number(facility?.condition ?? 100) > nextDays;
@@ -264,7 +264,6 @@ export default function TeamHQ() {
               {isOwner && level < limit && <button className="team-hq-upgrade" disabled={!canUpgrade} onClick={() => setConfirmConfig(config)}> {activeProject ? "Sedang diupgrade" : activeProjects.length >= 2 ? "Slot proyek penuh" : facility?.maintenance_restore_level != null || Number(facility?.condition ?? 100) <= nextDays ? "Maintenance sebelum upgrade" : "Upgrade fasilitas"} </button>}
               {isOwner && level >= limit && <small className="team-hq-lock-note">Level maksimum divisi tercapai.</small>}
               {isDemolitionOwner && facility && !activeProject && (level > 0 || facility.maintenance_restore_level !== null) && <button className="team-hq-demolish" disabled={submittingDemolition} onClick={() => setConfirmDemolition(config)}>Bongkar fasilitas</button>}
-            </>;
             </>;
           })()}
         </article>;
