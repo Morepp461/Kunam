@@ -11,6 +11,9 @@ describe("CALERIS UI language", () => {
     expect(translateUiText("Daily Check-in Reward", "id")).toBe("Hadiah Check-in Harian");
     expect(translateUiText("Team Wallet", "id")).toBe("Dompet Tim");
     expect(translateUiText("Hadiah Check-in Harian", "en")).toBe("Daily Check-in Reward");
+    expect(translateUiText("The race begins here", "id")).toBe("Balapan dimulai di sini");
+    expect(translateUiText("Balapan dimulai di sini", "en")).toBe("The race begins here");
+    expect(translateUiText("English", "id")).toBe("Bahasa Inggris");
   });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
