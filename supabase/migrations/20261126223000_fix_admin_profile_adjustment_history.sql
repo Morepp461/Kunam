@@ -1,3 +1,5 @@
+begin;
+
 create or replace function public.caleris_admin_get_profile_adjustment_history(
   p_member_id uuid,
   p_team_id uuid
@@ -49,3 +51,11 @@ begin
     order by entries.created_at desc
     limit 30
   ) x;
+  return v_history;
+end;
+$function$;
+
+revoke all on function public.caleris_admin_get_profile_adjustment_history(uuid,uuid) from public,anon,service_role;
+grant execute on function public.caleris_admin_get_profile_adjustment_history(uuid,uuid) to authenticated;
+
+commit;
