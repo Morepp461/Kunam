@@ -102,7 +102,16 @@ export function translateUiText(value: string, language: UiLanguage): string {
   let result = value;
   const entries = Object.entries(dictionary).sort((a, b) => b[0].length - a[0].length);
   for (const [source, replacement] of entries) {
-    const escaped = source.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    if (!source.includes(" ")) {
+      const trimmed = result.trim();
+      if (trimmed.toLowerCase() !== source.toLowerCase()) continue;
+      const start = result.indexOf(trimmed);
+      result = result.slice(0, start) + preserveCase(replacement, trimmed) + result.slice(start + trimmed.length);
+      continue;
+    }
+    const escaped = source.replace(/[.*+?^$()|[\]\\]/g, "\\    const escaped = source.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    const pattern = new RegExp("(^|[^A-Za-z0-9])(" + escaped + ")(?=$|[^A-Za-z0-9])", "gi");
+    result = result.replace(pattern, (_match, prefix: string, matched: string) => prefix + preserveCase(replacement, matched));");
     const pattern = new RegExp("(^|[^A-Za-z0-9])(" + escaped + ")(?=$|[^A-Za-z0-9])", "gi");
     result = result.replace(pattern, (_match, prefix: string, matched: string) => prefix + preserveCase(replacement, matched));
   }
