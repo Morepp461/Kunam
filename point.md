@@ -2008,3 +2008,12 @@ Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementas
 - [ ] QA/CI lulus.
 - [ ] Merge ke main.
 - [ ] Vercel Production READY dan smoke test.
+
+
+### Audit findings — 26 November 2026 (in progress)
+- **Repository/database drift:** kedua database telah memiliki migration ledger `20261126100000_profile_market_language_notification_tombstones` dan `20261126110000_public_driver_market_value_rpc`, tetapi kedua file migration belum ada pada tree `main`. Schema aktual juga sudah memiliki `profiles.preferred_language`, tabel `caleris_notification_deletion_tombstones`, RPC delete notifikasi bertombstone, RPC pembacaan MV Digital ID, serta RPC MV Driver. Perubahan yang sudah terpasang ini wajib direkonsiliasi menjadi file migration versioned di branch agar source repo dan database tidak drift.
+- **Team HQ:** halaman `src/TeamHQ.tsx` memanggil RPC `member_start_team_hq_project` secara langsung; tombol upgrade tidak memanggil Edge Function. Kedua database memiliki RPC yang sama, tetapi index `caleris_team_hq_one_active_project_per_team` masih membatasi satu proyek aktif per tim, sementara RPC/UI dan aturan produk mengizinkan dua proyek aktif. Ini adalah konflik schema yang terkonfirmasi dan harus diperbaiki. Log 24 jam yang diperiksa belum menunjukkan error spesifik Team HQ; jangan mengklaim akar error lain tanpa bukti log tambahan.
+- **Notifikasi:** kedua database telah memiliki tabel tombstone dan RPC delete satu/semua notifikasi. Perlu verifikasi bahwa `enqueue_caleris_notification` memeriksa tombstone sebelum membuat ulang notifikasi, dan UI memakai RPC delete tersebut, bukan DELETE langsung.
+- **Driver MV:** RPC `caleris_get_public_digital_id` di kedua database sudah mengembalikan `market_value_eur` untuk Driver, tetapi komponen `src/PublicMemberId.tsx` belum merender field itu. RPC `caleris_get_public_driver_market_value(uuid)` ada, tetapi belum dapat dieksekusi role authenticated; profil privat harus menggunakan jalur aman yang hanya mengembalikan MV milik akun sendiri.
+- **HQ error log:** tidak ditemukan error log yang secara eksplisit menyebut Team HQ pada query log 24 jam yang tersedia. Ditemukan error lain terkait signature `member_start_driver_move` dan error aggregate `array_agg`; keduanya perlu dipetakan ke sumbernya sebelum dinyatakan terkait HQ.
+- **Notification scheduler:** kedua database menjalankan `caleris-notification-reminders` setiap 5 menit. Ini membuat pemeriksaan tombstone pada enqueue wajib untuk mencegah reminder yang dihapus muncul lagi.
