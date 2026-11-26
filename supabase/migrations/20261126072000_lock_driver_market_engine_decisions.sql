@@ -32,8 +32,8 @@ before insert or update or delete on public.caleris_driver_market_config
 for each row execute function private.guard_driver_market_config_immutable();
 
 revoke all on public.caleris_driver_market_config from public,anon,authenticated,service_role;
-revoke all on function public.admin_configure_driver_market(jsonb,numeric,jsonb,jsonb,jsonb,jsonb) from public,anon,authenticated,service_role;
-drop function if exists public.admin_configure_driver_market(jsonb,numeric,jsonb,jsonb,jsonb,jsonb);
+revoke all on function public.admin_configure_driver_market(jsonb,numeric,numeric,jsonb,jsonb,jsonb) from public,anon,authenticated,service_role;
+drop function if exists public.admin_configure_driver_market(jsonb,numeric,numeric,jsonb,jsonb,jsonb);
 revoke all on function public.admin_get_driver_market_config() from public,anon,authenticated,service_role;
 drop function if exists public.admin_get_driver_market_config();
 
