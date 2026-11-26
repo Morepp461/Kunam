@@ -7,7 +7,7 @@ const translations: Array<[string, string]> = [
   ["Transfer Market", "Bursa Transfer"], ["Team HQ", "Markas Tim"], ["Driver", "Pembalap"],
   ["Drivers", "Para Pembalap"], ["Free Agent", "Agen Bebas"], ["License", "Lisensi"],
   ["Nationality", "Kewarganegaraan"], ["Independent", "Independen"], ["Under Contract", "Terikat Kontrak"],
-  ["Account Settings", "Pengaturan Akun"], ["My Profile", "Profil Saya"], ["Profile", "Profil"],
+  ["Account Settings", "Pengaturan Akun"], ["English", "Bahasa Inggris"], ["My Profile", "Profil Saya"], ["Profile", "Profil"],
   ["Account", "Akun"], ["Settings", "Pengaturan"], ["Shop", "Toko"], ["Driver Recruitment", "Rekrutmen Pembalap"],
   ["Public member profile", "Profil member publik"], ["Public identity card and earned achievements.", "Kartu identitas publik dan pencapaian yang diraih."],
   ["Account Progression", "Perkembangan Akun"], ["Completed Career Milestones", "Pencapaian Karier Selesai"],
