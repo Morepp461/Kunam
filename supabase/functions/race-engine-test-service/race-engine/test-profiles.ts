@@ -1,15 +1,15 @@
-import { RACE_ATTRIBUTE_DEFINITIONS } from "./attributes.ts";
-import { createCalibratedPerformanceModel } from "./calibration.ts";
-import type { RacePhysicsCalibrationProfile } from "./calibration.ts";
-import type { CarSetupCalibration } from "./setup.ts";
-import { createIncidentModel } from "./incidents.ts";
-import type { IncidentCalibrationProfile, IncidentType, RaceControlProfile } from "./incidents.ts";
-import { createPitStrategyModel } from "./pit-strategy.ts";
-import { createTyreSimulationModel, TYRE_COMPOUNDS } from "./tyres.ts";
-import type { TyreDegradationProfile, TyreSegmentEnvironment } from "./tyres.ts";
-import { createWeatherSimulationModel } from "./weather.ts";
-import type { WeatherEvolutionProfile, WeatherInput } from "./weather.ts";
-import type { RaceStartSnapshot } from "./contracts.ts";
+import { RACE_ATTRIBUTE_DEFINITIONS } from "./attributes";
+import { createCalibratedPerformanceModel } from "./calibration";
+import type { RacePhysicsCalibrationProfile } from "./calibration";
+import type { CarSetupCalibration } from "./setup";
+import { createIncidentModel } from "./incidents";
+import type { IncidentCalibrationProfile, IncidentType, RaceControlProfile } from "./incidents";
+import { createPitStrategyModel } from "./pit-strategy";
+import { createTyreSimulationModel, TYRE_COMPOUNDS } from "./tyres";
+import type { TyreDegradationProfile, TyreSegmentEnvironment } from "./tyres";
+import { createWeatherSimulationModel } from "./weather";
+import type { WeatherEvolutionProfile, WeatherInput } from "./weather";
+import type { RaceStartSnapshot } from "./contracts";
 
 /**
  * Synthetic-only profiles for the Admin Race Engine Lab.
@@ -84,7 +84,8 @@ export function createRaceEngineTestModels(
     hqEffects: {
       race_pace_bonus: { segment_pace_ms_per_point: -0.002 },
       reliability_bonus: { mechanical_failure_probability_per_point: -0.00002 },
-      aero_power_bonus: { high_speed_pace_ms_per_point: -0.002 }
+      aero_power_bonus: { high_speed_pace_ms_per_point: -0.002 },
+      pit_stop_efficiency_bonus: { pit_stop_time_ms_per_point: -25 }
     },
     carSetup: carSetupCalibration
   };
