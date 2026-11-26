@@ -2045,3 +2045,15 @@ Still not complete: full bilingual UI translation, reproducible Team HQ upgrade 
 - Testing has complete facility pricing/duration values for every enabled facility level checked. The configured RPC was executed as the existing Testing Team Owner inside an explicit SQL transaction and returned `status=started`; the transaction was rolled back immediately. No wallet debit, project, or economy transaction was retained.
 - Available request logs show successful Team HQ facility/config/project reads but no failed upgrade RPC request. The recurring error has therefore not been reproduced. Do not alter the stable HQ database engine without an actual failing request/error code.
 - Vercel Production environment variables are intentionally configured to use the Testing Supabase project (the variable comments explicitly state this). This was inspected read-only and left unchanged, per instruction. Production Supabase currently has no teams or HQ facility rows; do not copy Testing data there.
+
+
+### QA update 2 — 26 November 2026
+
+After adding detailed Team HQ RPC diagnostics, validation was repeated on the latest branch head:
+- `npm run check`: PASS.
+- `npm run build`: PASS.
+- `npm run test`: PASS — 42 files / 226 tests.
+- Targeted static regression scripts: PASS — profile directory links, Driver Market Value engine, Edge Function auth boundaries, Member Directory rate limits, CALERIS controls/navigation, Driver contract requests, engine integrations, economy regressions, and project validation.
+- Team HQ controlled rollback RPC test: PASS on Testing; no persistent mutation.
+- Browser E2E remains blocked by the Vercel sandbox's Chromium/system dependency installation issue; it is not marked as passed.
+- The profile language setting currently persists the selected `id` / `en` preference and document locale. Translation of all application screens is not complete.
