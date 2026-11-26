@@ -6,7 +6,7 @@ import { optimizeImageToWebp } from "./lib/imageOptimization";
 import { validateTeamLiveryDesign } from "./lib/team-livery";
 import { drawTeamLiveryDecal, TEAM_LIVERY_DECAL_CATALOG, type DecalSurface, type TeamLiveryDecal } from "./lib/team-livery-decals";
 import "./team-livery.css";
-import { F1Car2026Preview } from "./F1Car2026Preview";
+import { F1Car2026Preview } from "./TeamLiveryCarPreview3D";
 
 type SponsorPlacement = "title" | "major" | "other";
 export type Sponsor = { id:string; name:string; logo_url:string|null; tier_key:string|null };
