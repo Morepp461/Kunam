@@ -1960,3 +1960,51 @@ Nilai yang ditanam permanen dan divalidasi di backend:
 - Tidak ada halaman, RPC, atau hak akses Admin untuk mengubah konstanta tersebut. Admin hanya dapat memantau snapshot dan menjalankan pemeriksaan/recalculation operasional; kalkulasi normal tetap berjalan otomatis dari event engine dan scheduler.
 
 Migration: `20261126072000_lock_driver_market_engine_decisions.sql`.
+
+
+## FOLLOW-UP FIXES — DRIVER MARKET, HQ, NOTIFICATIONS & BILINGUAL UI (26 NOVEMBER 2026)
+
+Status awal: scope disetujui dan branch kerja dibuat. Setiap temuan, implementasi, QA, migrasi, merge, dan deployment wajib dicatat di bagian ini selama pengerjaan.
+
+### Scope yang wajib diselesaikan
+1. **Driver Market Value visibility**
+   - Tampilkan Market Value terbaru pada halaman profil Driver, Driver Card, dan Digital ID/halaman verifikasi publik.
+   - Ikuti aturan privasi Digital ID yang sudah ada. MV hanya ditampilkan jika kartu/halaman tersebut memang publik; jangan membocorkan profil privat.
+2. **Transfer Market filters**
+   - Dropdown License dan Nationality harus memuat seluruh opsi valid dari sumber data resmi/enum yang digunakan aplikasi, bukan daftar parsial atau hardcoded yang tidak lengkap.
+3. **Free Agent recruitment**
+   - Pastikan Driver Free Agent memiliki aksi Rekrut yang terlihat dan berfungsi bagi Team Owner yang berhak. Jangan tampilkan aksi untuk role yang tidak berwenang; pertahankan alur negosiasi gaji/kontrak, tanpa transfer fee, dan registrasi FIA yang berlaku.
+4. **Team HQ upgrade reliability**
+   - Audit seluruh jalur upgrade HQ, RPC, Edge Function terkait, trigger, scheduler/cron, grants/RLS, schema, dan log di Testing serta Production.
+   - Perbaiki akar masalah error berulang, bukan hanya teks error frontend. Pertahankan idempotency, wallet ledger, validasi level/divisi, batas proyek aktif, dan settlement VreeoBank.
+   - Catat bukti hasil pemeriksaan kedua database dan regression test upgrade.
+5. **Driver Market Value base value**
+   - Naikkan Base Value Tier 1 dari €10.000.000 menjadi **€18.000.000**.
+   - Keputusan ini menggantikan angka €10 juta pada bagian keputusan MV sebelumnya. Nilai tetap immutable/hard-coded di backend dan tampilan Admin read-only harus ikut diperbarui. Migrasi harus memperbarui konstanta secara aman tanpa menghapus histori/snapshot.
+6. **Notification tanggal 20**
+   - Telusuri sumber notifikasi/reminder tanggal 20 yang masih muncul setelah dihapus. Hapus/disable sumber aktifnya di database/scheduler dan cegah notifikasi lama muncul kembali akibat cache, job berulang, atau sinkronisasi. Jangan menghapus notifikasi lain yang masih valid.
+7. **Pilihan bahasa aplikasi**
+   - Tambahkan pilihan Bahasa Indonesia dan English pada Pengaturan Profil.
+   - Simpan preferensi bahasa per pengguna dan terapkan konsisten pada seluruh UI aplikasi, termasuk navigasi, tombol, label, validasi, toast, modal, empty/loading/error states, dan notifikasi yang dibuat aplikasi.
+   - Bahasa default: Bahasa Indonesia. Pilihan English menerjemahkan UI aplikasi.
+   - Halaman About Us tetap menggunakan bahasa Inggris sesuai pengecualian pemilik proyek, terlepas dari preferensi bahasa.
+   - Jangan mengubah konten user-generated atau data historis secara otomatis; terjemahkan hanya antarmuka dan konten sistem yang memang dikelola aplikasi.
+
+### Ketentuan pengerjaan
+- Periksa dependency, implementasi, schema, migrasi, policies, dan test yang sudah ada sebelum mengubah kode. Jangan mengganti arsitektur yang sudah berjalan tanpa bukti masalah.
+- Branch kerja: `fix/caleris-market-hq-i18n-20261126`, dibuat dari main commit `1b6542f9628507c0e5ff9ae360d60360f30c4e9a`.
+- Update bagian progress ini setiap ada hasil nyata. Jangan menandai item selesai sebelum implementasi dan QA membuktikannya.
+- Semua migrasi disimpan di `supabase/migrations/`, diuji pada Testing, lalu diterapkan dan diverifikasi pada Production. Kedua migration ledger dan schema harus sinkron dengan main.
+- Jalankan TypeScript, production build, unit/schema tests, regression scripts, Playwright/browser smoke tests, dan CI yang relevan. Perbaiki kegagalan sebelum merge.
+- Merge ke main hanya setelah QA/CI lulus. Pastikan Vercel Production deployment berstatus READY dan alias production aktif. Jangan mengubah Vercel environment variables.
+
+### Progress pengerjaan
+- [x] Scope delapan poin dicatat di point.md sebelum implementasi.
+- [x] Branch kerja dibuat dari main commit `1b6542f9628507c0e5ff9ae360d60360f30c4e9a`.
+- [ ] Audit dependency dan pemetaan file/komponen terkait seluruh scope.
+- [ ] Implementasi dan regression tests.
+- [ ] Migrasi Testing + verifikasi.
+- [ ] Migrasi Production + verifikasi.
+- [ ] QA/CI lulus.
+- [ ] Merge ke main.
+- [ ] Vercel Production READY dan smoke test.
