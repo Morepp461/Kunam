@@ -1880,6 +1880,20 @@ Definisi komponen:
 - Growth Factor mengatur kecepatan penyesuaian menuju Target MV dan harus dapat diedit Admin.
 - Base Value untuk tier tertinggi (Tier 1) ditetapkan awal sebesar **€10.000.000**.
 - Tier di bawahnya menggunakan Tier Multiplier. Nilai multiplier dapat dikonfigurasi Admin dan tidak boleh bergantung pada nama divisi yang di-hardcode.
+- Nilai awal Tier Multiplier yang disetujui:
+  | Tier | Multiplier |
+  |---|---:|
+  | Tier 1 | 1,00 |
+  | Tier 2 | 0,85 |
+  | Tier 3 | 0,70 |
+  | Tier 4 | 0,60 |
+- Konversi skor lisensi awal yang disetujui:
+  | Lisensi | Score |
+  |---|---:|
+  | Bronze | 25 |
+  | Silver | 50 |
+  | Gold | 75 |
+  | Super License | 100 |
 - Struktur divisi harus fleksibel untuk penambahan divisi baru di masa depan. Urutan tier ditentukan dari konfigurasi/urutan divisi yang sah, bukan perbandingan UUID.
 - Bobot seluruh komponen harus berjumlah tepat 100%. Base Value, Growth Factor, Tier Multiplier, dan konversi skor lisensi harus dapat diedit melalui konfigurasi Admin.
 - Driver baru yang belum memiliki histori performa memulai MV dari **License + Division Tier** (pilihan B yang disetujui). Sistem tidak boleh mensyaratkan histori race untuk membuat nilai awal.
