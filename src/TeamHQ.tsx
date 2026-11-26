@@ -79,7 +79,7 @@ export default function TeamHQ() {
     if (configResult.error) setError(configResult.error.message);
     else setConfigs((configResult.data ?? []) as FacilityConfig[]);
     const memberId = profileResult.data?.member_id;
-    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsDemolitionOwner(false); setIsDemolitionOwner(false); setIsMerchOwner(false); setLoading(false); return; }
+    if (!memberId) { setTeam(null); setFacilities([]); setProjects([]); setAuditLogs([]); setIsFia(Boolean(adminResult.data?.user_id)); setIsAdmin(Boolean(adminResult.data?.user_id)); setIsOwner(false); setIsDemolitionOwner(false); setIsMerchOwner(false); setLoading(false); return; }
     const { data: member, error: memberError } = await supabase.from("members").select("id,team_id,role").eq("id", memberId).maybeSingle();
     if (memberError) setError(memberError.message);
     const role = String(member?.role ?? "");
@@ -212,12 +212,13 @@ export default function TeamHQ() {
 
   return <section className="workspace team-hq">
     <div className="team-hq-heading">
-      <div><span className="section-eyebrow">TEAM MANAGEMENT · HEADQUARTERS</span><h1>Team HQ</h1><p>{team ? <><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>{" · "}{team.division_key ?? "Division belum ditetapkan"}</> : isFia ? "FIA Configuration Center" : "Akun ini belum terhubung ke tim."}</p></div>
+      <div><span className="section-eyebrow">TEAM MANAGEMENT · HEADQUARTERS</span><h1>Team HQ</h1><p>{team ? <><TeamProfileLink teamId={team.id}>{team.name}</TeamProfileLink>{" · "}{team.division_key ?? "Division belum ditetapkan"}</> : isFia ? "FIA Facility Oversight" : "Akun ini belum terhubung ke tim."}</p></div>
       <button className="team-hq-refresh" onClick={() => void load()}><RefreshCw size={15}/> Refresh</button>
     </div>
     {error && <p className="team-hq-error">{error}</p>}{notice && <p className="team-hq-notice">{notice}</p>}
     {team && <div className="team-hq-summary"><div><span>DIVISION MAX LEVEL</span><strong>{maxLevel}</strong></div><div><span>FACILITIES</span><strong>{facilities.length}/{configs.length}</strong></div><div><span>ACTIVE PROJECT</span><strong>{activeProjects.length}/2</strong></div></div>}
-    <div className="team-hq-section-title"><div><span className="section-eyebrow">FACILITY DIRECTORY</span><h2>{isFia ? "Facility Configuration" : "Facilities"}</h2></div><span className="empty-tag">9 FACILITIES</span></div>
+    {team && <div className="team-hq-maintenance-reminder"><Wrench size={14}/><span>End Season adalah pengingat maintenance, bukan batas wajib. Maintenance bisa dibayar kapan saja saat condition fasilitas di bawah 50%.</span></div>}
+    <div className="team-hq-section-title"><div><span className="section-eyebrow">FACILITY DIRECTORY</span><h2>{isFia ? "Facility Oversight" : "Facilities"}</h2></div><span className="empty-tag">9 FACILITIES</span></div>
     <div className="team-hq-grid">
       {configs.map((config) => {
         const facility = facilityMap.get(config.facility_key);
