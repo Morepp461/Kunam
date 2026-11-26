@@ -7,15 +7,18 @@ const textStates = new WeakMap<Text, TextState>();
 const attributeStates = new WeakMap<Element, Map<string, TextState>>();
 const attributes = ["placeholder", "aria-label", "title"];
 
-function shouldSkip(element: Element) {
+function shouldSkipText(element: Element) {
   return Boolean(element.closest("script,style,code,pre,textarea,input,svg,[contenteditable='true'],[data-no-translate]"));
+}
+function shouldSkipAttribute(element: Element) {
+  return Boolean(element.closest("script,style,code,pre,svg,[contenteditable='true'],[data-no-translate]"));
 }
 function applyText(node: Text, language: UiLanguage) {
   const parent = node.parentElement;
   if (!parent) return;
   const previous = textStates.get(node);
   const source = previous && node.data === previous.translated ? previous.source : node.data;
-  if (shouldSkip(parent)) {
+  if (shouldSkipText(parent)) {
     if (previous) node.data = source;
     textStates.delete(node);
     return;
@@ -31,7 +34,7 @@ function applyAttribute(element: Element, name: string, language: UiLanguage) {
   if (!states) { states = new Map(); attributeStates.set(element, states); }
   const previous = states.get(name);
   const source = previous && current === previous.translated ? previous.source : current;
-  if (shouldSkip(element)) {
+  if (shouldSkipAttribute(element)) {
     if (previous) element.setAttribute(name, source);
     states.delete(name);
     return;
