@@ -3,6 +3,7 @@ import { Link,useParams } from "react-router-dom";
 import { ChevronLeft,LoaderCircle,Users,UserCircle,Shield,Flag,Palette } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { MemberProfileLink } from "./EntityProfileLink";
+import AdminProfileAdjustments from "./AdminProfileAdjustments";
 import { Preview3D, normalizeTeamLiveryDesign, type Sponsor } from "./TeamLivery";
 import type { Design } from "./TeamLivery";
 import "./public-team-profile.css";
@@ -16,6 +17,7 @@ export default function PublicTeamProfile(){
  return <section className="workspace public-team-profile"><Link className="back-link" to="/main-event/global/team-list"><ChevronLeft size={16}/> Team List</Link>
   <div className="public-team-hero"><span className="section-eyebrow">CALERIS MASTERS · TEAM PROFILE</span>{busy?<div className="center-state"><LoaderCircle className="spin"/><p>Mempersiapkan Data...</p></div>:error?<div className="workspace-card"><Users size={28}/><h2>Profil tim tidak tersedia</h2><p>{error}</p></div>:team&&<><div className="public-team-title"><div className="public-team-mark"><Shield size={30}/></div><div><h1>{team.name}</h1><p><Flag size={13}/> {team.division_key||"Belum terdaftar di divisi"}</p></div></div><p className="public-team-id">TEAM PROFILE · {team.id}</p></>}</div>
   {team&&!busy&&!error&&<div className="public-team-content">
+   <AdminProfileAdjustments teamId={team.id} targetLabel={team.name}/>
    {livery&&<section className="workspace-card public-team-livery"><div className="section-title-row"><div><span className="section-eyebrow">TEAM IDENTITY</span><h2><Palette size={17}/> Official Team Livery</h2><p>Warna, nomor mobil, sponsor aktif, dan identitas visual tim</p></div></div><Preview3D design={livery} sponsors={sponsors}/><div className="public-team-sponsor-strip">{sponsors.map(sponsor=><div className="public-team-sponsor" key={sponsor.id}>{sponsor.logo_url?<img src={sponsor.logo_url} alt={sponsor.name} loading="lazy"/>:<strong>{sponsor.name}</strong>}</div>)}</div></section>}
    <div className="workspace-card public-team-roster"><div className="section-title-row"><div><span className="section-eyebrow">OFFICIAL ROSTER</span><h2>Anggota Tim</h2><p>{roster.length} member terdaftar</p></div></div>
     {roster.length?<div className="public-team-roster-grid">{roster.map(member=><article className="public-team-member" key={member.member_id}><div className="public-team-avatar">{member.avatar_url?<img src={member.avatar_url} alt=""/>:<UserCircle size={32}/>}</div><div className="public-team-member-copy"><strong>{member.public_member_id?<MemberProfileLink memberId={member.public_member_id}>{member.display_name||member.character_name||"Member"}</MemberProfileLink>:(member.display_name||member.character_name||"Member")}</strong><small>{member.role||"Member"}{member.license?" · "+member.license:""}</small></div></article>)}</div>:<p className="public-team-empty">Belum ada anggota tim yang terhubung ke profil publik.</p>}
