@@ -39,7 +39,7 @@ export default function ShopPage({session}:{session:Session}){
    }else setCapacity(null);
   }else{setIsOwner(false);setCapacity(null)}
   if(adminAccess){
-   const {data,error:configError}=await supabase.rpc("admin_get_team_hq_slot_shop_config");
+   const {data:config,error:configError}=await supabase.rpc("admin_get_team_hq_slot_shop_config");
    if(configError){setError(configError.message);setLoading(false);return;}
    setPrice(config?.price_eur==null?"":String(config.price_eur));
    setActive(Boolean(config?.is_active));
