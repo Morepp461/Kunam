@@ -22,6 +22,7 @@ describe("team livery to 2026 chassis mapping", () => {
     expect(appearance.accentHex).toBe(design.accentColor);
     expect(appearance.carNumber).toBe("16");
     expect(appearance.decalId).toBe("decal-12");
+    expect(appearance.teamDecals).toEqual(design.decals);
     expect(appearance.sponsorSlots["slot-1"].customText).toBe("CALERIS RACING");
     expect(appearance.sponsorSlots["slot-1"].logoDataUrl).toBe(design.logoDataUrl);
   });
