@@ -2615,7 +2615,7 @@ The following migration sources exist in this branch and have been applied succe
 - Race official-results backfill: 600 per-entry state rows and 150 race award ledger rows, net 2,600 race XP. Repeated reconciliation and milestone refresh were idempotent: ledger count remained 410 before/after both refresh passes.
 - Achievement backfill: 260 milestone ledger rows, including 62 Team milestone awards to 12 Team Owners. No negative milestone ledger entries.
 - Total after backfill: **410 XP ledger rows**, net **4,718 XP** across 24 Drivers and 12 Owners. These are existing Testing records only.
-- Admin profile tests passed for Driver, Team Owner, and Team wallet targets; XP add/subtract, wallet add/subtract, snapshot and history RPCs all worked inside rolled-back transactions. VreeoBank and target wallet balances were unchanged after the add/subtract pair; clearing wallet returned to zero.
+- Admin profile tests passed for Driver, Team Owner, and Team wallet targets; XP add/subtract, wallet add/subtract, snapshot and history RPCs all worked inside rolled-back transactions. Non-Admin access and VreeoBank targeting were denied. VreeoBank and target wallet balances were unchanged after the add/subtract pair; clearing wallet returned to zero.
 - Passing an attempted Admin milestone XP value of 999 still saved the fixed 5 XP for career_first_podium. Admin XP reward settings read/update privileges, direct milestone update, direct XP ledger insert, and caleris_set_xp_reward execution are all denied.
 - All test mutations were rolled back except the deliberate Testing-only milestone/race historical backfill described above.
 
