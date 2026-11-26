@@ -20,6 +20,27 @@ type Team = { id: string; name: string; division_key: string | null };
 
 const money = (value: number) => new Intl.NumberFormat("id-ID", { maximumFractionDigits: 0 }).format(value);
 const divisionMax = (division: string | null) => division?.toLowerCase().includes("zwei") ? 6 : 8;
+const HQ_EFFECT_LABELS: Record<string, { label: string; unit: string; integer?: boolean }> = {
+  fan_growth_bonus_percent: { label: "Fan growth", unit: "%" },
+  fanbase_reputation_bonus: { label: "Fan reputation", unit: "" },
+  commercial_credibility_bonus: { label: "Commercial credibility", unit: "" },
+  merchandise_demand_bonus_percent: { label: "Merchandise demand", unit: "%" },
+  merchandise_capacity_bonus_percent: { label: "Merchandise capacity", unit: "%" },
+  sponsor_attraction_bonus_percent: { label: "Sponsor attraction", unit: "%" },
+  pit_stop_efficiency_bonus: { label: "Pit Stop Efficiency", unit: "" },
+  qualifying_pace_bonus: { label: "Qualifying Pace", unit: "" },
+  race_pace_bonus: { label: "Race Pace", unit: "" },
+  reliability_bonus: { label: "Reliability", unit: "" },
+  aero_power_bonus: { label: "Aero Power", unit: "" },
+  driver_development_efficiency_bonus_percent: { label: "Driver Development efficiency", unit: "%" },
+  research_efficiency_bonus_percent: { label: "Research efficiency", unit: "%" },
+  analytics_round_window: { label: "Analysis window", unit: " rounds", integer: true },
+  strategy_analysis_depth: { label: "Analysis detail", unit: " rounds", integer: true }
+};
+const formatEffectValue = (value: number, integer = false) => {
+  const normalized = integer ? Math.round(value) : Math.round(value * 100) / 100;
+  return normalized.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+};
 
 export default function TeamHQ() {
   const [team, setTeam] = useState<Team | null>(null);
@@ -209,7 +230,20 @@ export default function TeamHQ() {
           <div className="team-hq-card-top"><span className="team-hq-facility-icon"><Building2 size={18}/></span><span className={"team-hq-status " + lifecycleClass}>{lifecycleStatus}</span></div>
           {team && <small className="team-hq-config-state">{config.is_enabled ? "Enabled / Available" : "Configuration disabled"}</small>}
           <h3>{config.title}</h3><p>{config.description}</p>
-          {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div>{facility && facility.condition < 50 && isOwner && (() => { const restoreLevel = facility.maintenance_restore_level ?? level; const base = Number(config.maintenance_by_level?.[String(restoreLevel)] ?? 0); const cost = Math.round(base * (100 - facility.condition) * 100) / 10000; return <div className="team-hq-maintenance-panel"><div className="team-hq-meta"><span>Biaya maintenance ({100 - facility.condition}% pemulihan)</span><strong>€{money(cost)}</strong></div><small>Level yang dipulihkan: {restoreLevel} · Kondisi kembali ke 100%</small><button className="team-hq-maintenance-action" disabled={submittingMaintenance === config.facility_key} onClick={() => void payMaintenance(config.facility_key)}>{submittingMaintenance === config.facility_key ? "Memproses..." : "Bayar maintenance"}</button></div>; })()}</>}
+          {team && <><div className="team-hq-level"><span>LEVEL</span><strong>{level}<small> / {limit}</small></strong></div><div className="team-hq-progress"><i style={{ width: Math.min(100, level / limit * 100) + "%" }}/></div><div className="team-hq-meta"><span>Condition</span><strong>{facility ? facility.condition + "%" : "Belum dibangun"}</strong></div><div className="team-hq-meta"><span>Asset value</span><strong>{facility ? "€" + money(facility.asset_value) : "—"}</strong></div>
+            {level > 0 && facility && config.is_enabled && (() => {
+              const configured = (config.effects_by_level?.[String(level)] ?? {}) as Record<string, unknown>;
+              const effects = Object.entries(configured).flatMap(([key, raw]) => {
+                const definition = HQ_EFFECT_LABELS[key];
+                if (!definition || typeof raw !== "number" || !Number.isFinite(raw)) return [];
+                const scaled = raw * facility.condition / 100;
+                const value = definition.integer ? Math.round(scaled) : scaled;
+                if (value <= 0) return [];
+                return [{ key, label: definition.label, value: formatEffectValue(value, definition.integer), unit: definition.unit }];
+              });
+              return <div className="team-hq-active-effects"><span>ACTIVE EFFECTS · CONDITION SCALED</span>{effects.length ? <div>{effects.map(effect => <small key={effect.key}>{effect.label} <strong>+{effect.value}{effect.unit}</strong></small>)}</div> : <small>No active effect at current condition.</small>}</div>;
+            })()}
+            {facility && facility.condition < 50 && isOwner && (() => { const restoreLevel = facility.maintenance_restore_level ?? level; const base = Number(config.maintenance_by_level?.[String(restoreLevel)] ?? 0); const cost = Math.round(base * (100 - facility.condition) * 100) / 10000; return <div className="team-hq-maintenance-panel"><div className="team-hq-meta"><span>Biaya maintenance ({100 - facility.condition}% pemulihan)</span><strong>€{money(cost)}</strong></div><small>Level yang dipulihkan: {restoreLevel} · Kondisi kembali ke 100%</small><button className="team-hq-maintenance-action" disabled={submittingMaintenance === config.facility_key} onClick={() => void payMaintenance(config.facility_key)}>{submittingMaintenance === config.facility_key ? "Memproses..." : "Bayar maintenance"}</button></div>; })()}</>}
           {team && maintenanceRequired && activeProject && <small className="team-hq-maintenance"><Wrench size={12}/> Maintenance tersedia di bawah 50% condition</small>}
           {team && (() => {
             const nextLevel = level + 1;}
