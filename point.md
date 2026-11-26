@@ -1896,7 +1896,7 @@ Definisi komponen:
   | Silver | 50 |
   | Gold | 75 |
   | Super License | 100 |
-- Struktur divisi harus fleksibel untuk penambahan divisi baru di masa depan. Urutan tier ditentukan dari konfigurasi/urutan divisi yang sah, bukan perbandingan UUID.
+- Struktur divisi tetap mendukung penambahan di masa depan, tetapi penetapan tier divisi baru harus dilakukan melalui perubahan kode/migrasi yang disetujui, bukan konfigurasi manual Admin. Urutan tier berasal dari definisi tier resmi engine, bukan perbandingan UUID.
 - Bobot, Base Value, Growth Factor, Tier Multiplier, urutan tier, dan konversi skor lisensi merupakan konstanta engine yang ditanam di backend dan tidak menyediakan konfigurasi manual Admin.
 - Driver baru yang belum memiliki histori performa memulai MV dari **License + Division Tier** (pilihan B yang disetujui). Sistem tidak boleh mensyaratkan histori race untuk membuat nilai awal.
 
