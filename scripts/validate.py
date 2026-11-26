@@ -9,7 +9,7 @@ def main():
         "src/App.tsx", "src/MainLayout.tsx", "src/AboutUs.tsx", "src/about-us.css", "src/DashboardModule.tsx", "src/ProfileModule.tsx", "src/lib/stage5QueryPlan.ts", "src/styles.css", "src/lib/supabase.ts",
         "src/vite-env.d.ts", "supabase/SETUP.sql",
         "assets/Background 2.png",
-        "assets/Untitled design_20261103_142659_0000.png",
+        "assets/VREEO.ID.webp",
         "assets/Add a heading_20260907_003952_0000.png",
     ]
     for item in required:
