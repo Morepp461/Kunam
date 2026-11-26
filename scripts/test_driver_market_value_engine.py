@@ -5,6 +5,7 @@ POINTS = (ROOT / "point.md").read_text(encoding="utf-8")
 MARKET = (ROOT / "supabase/migrations/20261126063949_driver_market_value_precontract_engine_final.sql").read_text(encoding="utf-8")
 LIFECYCLE = (ROOT / "supabase/migrations/20261126064512_driver_market_precontract_lifecycle_fix.sql").read_text(encoding="utf-8")
 TIER = (ROOT / "supabase/migrations/20261126064645_driver_market_tier_relation.sql").read_text(encoding="utf-8")
+NORMALIZATION = (ROOT / "supabase/migrations/20261126065000_driver_market_scoring_normalization.sql").read_text(encoding="utf-8")
 TRANSFER = (ROOT / "src/DriverTransferMarket.tsx").read_text(encoding="utf-8")
 ADMIN = (ROOT / "src/AdminDriverMarketEngine.tsx").read_text(encoding="utf-8")
 APP = (ROOT / "src/App.tsx").read_text(encoding="utf-8")
@@ -62,6 +63,10 @@ assert "n.duration_seasons::text||' Season'" in LIFECYCLE
 assert "where up.tier_number=mv.tier_number-2" in TIER
 assert "min(up.market_value_eur)" in TIER
 assert "tier_relation_cap" in TIER
+assert "lower(e.key)=lower(v_license_key)" in NORMALIZATION
+assert "v_achievement_max:=v_round_count*6" in NORMALIZATION
+assert "and exists(select 1 from public.caleris_race_results" not in NORMALIZATION
+assert "p_weights ?& array['license','contract','performance','skill','achievement','activity','reputation']" in NORMALIZATION
 
 # UI integration and role boundary.
 assert 'supabase.rpc("member_get_driver_market_values")' in TRANSFER
@@ -74,5 +79,6 @@ assert '/admin/driver-market-engine' in APP
 assert '/admin/driver-market-engine' in NAV
 assert 'admin_configure_driver_market' in ADMIN
 assert 'admin_recalculate_driver_market_values' in ADMIN
+assert "MV Score" not in ADMIN
 
 print("Driver Market Value and Pre-contract regression checks passed.")
