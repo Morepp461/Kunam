@@ -77,7 +77,7 @@ export default function ShopPage({session}:{session:Session}){
 
  return <section className="workspace development-shop-page">
   <Link className="back-link" to="/dashboard"><ArrowLeft size={16}/> Dashboard</Link>
-  <header className="page-heading"><span className="section-eyebrow">CALERIS MARKETPLACE</span><h1 className="page-title">Shop</h1><p className="page-description">Item permanen untuk pengembangan fasilitas dan operasional tim.</p></header>
+  <header className="page-heading"><span className="section-eyebrow">CALERIS MARKETPLACE</span><h1 className="page-title">Shop</h1><p className="page-description">Item permanen untuk pengembangan fasilitas dan operasional tim. Development Token tidak dapat dibeli dari Shop; DDP/TDP tetap diperoleh melalui reward dan mekanik Development.</p></header>
   {error&&<p className="team-hq-error" role="alert">{error}</p>}
   {notice&&<p className="team-hq-notice" role="status">{notice}</p>}
   {loading?<section className="workspace-card shop-upcoming-card"><span className="section-eyebrow">CALERIS MARKETPLACE</span><p>Memuat katalog Shop...</p></section>:<>
