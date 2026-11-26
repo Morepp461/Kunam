@@ -125,12 +125,18 @@ export function createTeamLiveryDecalLayers(
       continue;
     }
 
-    const target = targets[0];
+    let target = targets[0];
+    let surfaceX = x;
+    if (decal.surface === "frontWing" && targets.length > 1) {
+      const useLeftHalf = x < 0.5;
+      target = targets.find((mesh) => mesh.name.endsWith(useLeftHalf ? "_L" : "_R")) ?? targets[0];
+      surfaceX = useLeftHalf ? x * 2 : (x - 0.5) * 2;
+    }
     const bounds = new THREE.Box3().setFromObject(target);
     const width = Math.max(0.07, bounds.max.x - bounds.min.x);
     const depth = Math.max(0.07, bounds.max.z - bounds.min.z);
     const position = new THREE.Vector3(
-      THREE.MathUtils.lerp(bounds.min.x, bounds.max.x, x),
+      THREE.MathUtils.lerp(bounds.min.x, bounds.max.x, surfaceX),
       bounds.max.y + 0.008,
       THREE.MathUtils.lerp(bounds.max.z, bounds.min.z, y),
     );
