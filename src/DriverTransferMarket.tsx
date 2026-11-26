@@ -15,6 +15,8 @@ type TransferWindow={is_open:boolean;period_type:string|null;period_title:string
 type SalaryBand={license_label:string;license_tier:string;salary_min_eur:number;salary_max_eur:number;sort_order:number};
 type FreeAgentNegotiation={id:string;season_id:string;team_id:string;driver_member_id:string;annual_salary:number;status:string;created_at:string};
 type FreeAgentOffer={id:string;negotiation_id:string;offered_by_member_id:string;annual_salary:number;note:string|null;response:string;created_at:string};
+type PrecontractNegotiation={id:string;season_id:string;driver_member_id:string;origin_team_id:string;destination_team_id:string;contract_ends_on:string;annual_salary:number;duration_seasons:number;status:string};
+type PrecontractOffer={id:string;negotiation_id:string;offered_by_member_id:string;annual_salary:number;duration_seasons:number;note:string|null;response:string;created_at:string};
 const cash=(n:number)=>"€ "+Number(n||0).toLocaleString("id-ID",{maximumFractionDigits:2});
 const licenseLabel=(value:string|null|undefined)=>String(value||"").trim().toUpperCase()==="A"?"Super License":value||"Belum ditetapkan";
 export default function DriverTransferMarket({session}:{session:Session}){
@@ -22,6 +24,13 @@ export default function DriverTransferMarket({session}:{session:Session}){
  const [search,setSearch]=useState(""),[filterLicense,setFilterLicense]=useState(""),[filterAttribute,setFilterAttribute]=useState(""),[minimumAttribute,setMinimumAttribute]=useState(""),[filterTeam,setFilterTeam]=useState(""),[filterNationality,setFilterNationality]=useState(""),[filterStatus,setFilterStatus]=useState(""),[contractRemaining,setContractRemaining]=useState("");
  const [negotiations,setNegotiations]=useState<Negotiation[]>([]),[offers,setOffers]=useState<Offer[]>([]),[affiliations,setAffiliations]=useState<Affiliation[]>([]);
  const [freeAgentNegotiations,setFreeAgentNegotiations]=useState<FreeAgentNegotiation[]>([]),[freeAgentOffers,setFreeAgentOffers]=useState<FreeAgentOffer[]>([]),[salaryBands,setSalaryBands]=useState<SalaryBand[]>([]);
+ const [marketValues,setMarketValues]=useState<Record<string,number>>({});
+ const [precontracts,setPrecontracts]=useState<PrecontractNegotiation[]>([]),[precontractOffers,setPrecontractOffers]=useState<PrecontractOffer[]>([]);
+ const [precontractDriverId,setPrecontractDriverId]=useState("");
+ const [precontractSalary,setPrecontractSalary]=useState("");
+ const [precontractDuration,setPrecontractDuration]=useState("1");
+ const [precontractNote,setPrecontractNote]=useState("");
+ const [precontractCounterId,setPrecontractCounterId]=useState<string|null>(null),[precontractCounterSalary,setPrecontractCounterSalary]=useState(""),[precontractCounterDuration,setPrecontractCounterDuration]=useState("1"),[precontractCounterNote,setPrecontractCounterNote]=useState("");
  const [driverId,setDriverId]=useState(""),[freeAgentId,setFreeAgentId]=useState(""),[freeAgentSalary,setFreeAgentSalary]=useState(""),[freeAgentNote,setFreeAgentNote]=useState(""),[freeAgentCounterSalary,setFreeAgentCounterSalary]=useState(""),[freeAgentCounterNote,setFreeAgentCounterNote]=useState(""),[moveType,setMoveType]=useState<"transfer"|"loan">("transfer"),[offerAmount,setOfferAmount]=useState(""),[loanStart,setLoanStart]=useState(""),[loanEnd,setLoanEnd]=useState(""),[loanShare,setLoanShare]=useState(""),[note,setNote]=useState("");
  const [counterId,setCounterId]=useState<string|null>(null),[counterAmount,setCounterAmount]=useState(""),[counterType,setCounterType]=useState<"transfer"|"loan">("transfer"),[counterStart,setCounterStart]=useState(""),[counterEnd,setCounterEnd]=useState(""),[counterShare,setCounterShare]=useState(""),[counterNote,setCounterNote]=useState("");
  const [loading,setLoading]=useState(true),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
