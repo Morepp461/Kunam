@@ -2036,3 +2036,12 @@ Local validation on the execution branch:
 - Testing Edge Function `member-directory` is version 15 and ACTIVE. Production remains on its previous version pending the release gate.
 
 Still not complete: full bilingual UI translation, reproducible Team HQ upgrade error diagnosis/fix, E2E/CI confirmation, migration-source reconciliation, production Edge Function rollout, merge, and Vercel Production verification.
+
+
+### Team HQ controlled test — 26 November 2026
+
+- Confirmed the UI calls `public.member_start_team_hq_project(text,text)` directly; there is no Edge Function invocation in `src/TeamHQ.tsx`.
+- The function signature matches the frontend payload, and its `private.post_economy_transaction` dependency signature matches exactly in both databases.
+- Testing has complete facility pricing/duration values for every enabled facility level checked. The configured RPC was executed as the existing Testing Team Owner inside an explicit SQL transaction and returned `status=started`; the transaction was rolled back immediately. No wallet debit, project, or economy transaction was retained.
+- Available request logs show successful Team HQ facility/config/project reads but no failed upgrade RPC request. The recurring error has therefore not been reproduced. Do not alter the stable HQ database engine without an actual failing request/error code.
+- Vercel Production environment variables are intentionally configured to use the Testing Supabase project (the variable comments explicitly state this). This was inspected read-only and left unchanged, per instruction. Production Supabase currently has no teams or HQ facility rows; do not copy Testing data there.
