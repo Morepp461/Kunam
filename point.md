@@ -1869,7 +1869,9 @@ Definisi komponen:
 - **Performance (20%)**: persentase poin aktual Driver dibandingkan total poin maksimum yang tersedia pada kalender/round yang relevan. Pembagi harus berasal dari maksimum poin yang benar-benar tersedia, bukan total poin milik Driver sendiri.
 - **Overall Skill (20%)**: rata-rata delapan atribut Driver yang sudah digunakan sistem.
 - **Achievement (10%)**: akumulasi prestasi dalam satu Season, lalu dinormalisasi ke skala 0–100. Poin prestasi yang disepakati: P1 = +5, P2 = +3, P3 = +1, Driver of the Day = +1.
+  - Normalisasi menggunakan total race round terjadwal dalam Season home division × 6 poin maksimum per round (P1 + Driver of the Day), bukan hanya round yang sudah selesai.
 - **Activity (10%)**: +4 poin untuk setiap kehadiran/check-in race round yang valid. Maksimum 25 round menghasilkan 100 poin.
+  - Sumber absensi adalah `license_daily_checkins`, yang dibuat dari race check-in Driver valid melalui trigger lisensi yang sudah ada.
 - **Reputation (20%)**: menggunakan skor final dari sistem `caleris_driver_reputation`, bukan membuat sistem reputasi baru.
 
 ### 3. Formula dan konfigurasi MV
@@ -1880,6 +1882,20 @@ Definisi komponen:
 - Growth Factor mengatur kecepatan penyesuaian menuju Target MV dan harus dapat diedit Admin.
 - Base Value untuk tier tertinggi (Tier 1) ditetapkan awal sebesar **€10.000.000**.
 - Tier di bawahnya menggunakan Tier Multiplier. Nilai multiplier dapat dikonfigurasi Admin dan tidak boleh bergantung pada nama divisi yang di-hardcode.
+- Nilai awal Tier Multiplier yang disetujui:
+  | Tier | Multiplier |
+  |---|---:|
+  | Tier 1 | 1,00 |
+  | Tier 2 | 0,85 |
+  | Tier 3 | 0,70 |
+  | Tier 4 | 0,60 |
+- Konversi skor lisensi awal yang disetujui:
+  | Lisensi | Score |
+  |---|---:|
+  | Bronze | 25 |
+  | Silver | 50 |
+  | Gold | 75 |
+  | Super License | 100 |
 - Struktur divisi harus fleksibel untuk penambahan divisi baru di masa depan. Urutan tier ditentukan dari konfigurasi/urutan divisi yang sah, bukan perbandingan UUID.
 - Bobot seluruh komponen harus berjumlah tepat 100%. Base Value, Growth Factor, Tier Multiplier, dan konversi skor lisensi harus dapat diedit melalui konfigurasi Admin.
 - Driver baru yang belum memiliki histori performa memulai MV dari **License + Division Tier** (pilihan B yang disetujui). Sistem tidak boleh mensyaratkan histori race untuk membuat nilai awal.
@@ -1888,6 +1904,7 @@ Definisi komponen:
 - Tier/divisi memengaruhi MV melalui Tier Multiplier, tetapi bukan batas harga kaku.
 - Driver tier lebih rendah yang sangat kuat boleh memiliki MV sedikit lebih tinggi daripada Driver tier tepat di atasnya yang performanya buruk.
 - Driver hanya boleh melampaui MV Driver dari maksimal satu tier di atasnya. Aturan ini adalah batas relasi/perbandingan antar-tier, bukan ceiling nominal statis.
+- Implementasi relasi dinamis: MV Driver Tier N tidak boleh melebihi MV terendah Driver pada Tier N-2. Driver tetap boleh melampaui MV Driver pada Tier N-1. Tidak ada ceiling nominal statis.
 - Driver Loan tetap memakai tier asal/home division Driver, bukan tier tim peminjam/host.
 
 ### 5. Transfer Market: penggunaan MV

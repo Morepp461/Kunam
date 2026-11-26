@@ -87,6 +87,8 @@ jobs:
         run: python3 -B scripts/test_edge_function_auth_boundaries.py
       - name: Driver contract request workflow checks
         run: python3 -B scripts/test_driver_contract_requests.py
+      - name: Driver Market Value and Pre-contract regression checks
+        run: python3 -B scripts/test_driver_market_value_engine.py
       - name: Admin Manage User security checks
         run: python3 -B scripts/test_admin_manage_user.py
       - name: Team inactivity freeze and compensation checks

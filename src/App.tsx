@@ -18,6 +18,7 @@ import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 import { optimizeImageToWebp, formatImageBytes } from "./lib/imageOptimization";
 
 import "./license-engine.css";
+import "./driver-market-value.css";
 import "./admin-configuration.css";
 import "./economy-engine.css";
 import "./quest-engine.css";
@@ -51,6 +52,7 @@ const PublicMemberId = lazy(() => import("./PublicMemberId"));
 const Stage5Panel = lazy(() => import("./Stage5Panel"));
 const AdminConfiguration = lazy(() => import("./AdminConfiguration"));
 const AdminLicenseEngine = lazy(() => import("./AdminLicenseEngine"));
+const AdminDriverMarketEngine = lazy(() => import("./AdminDriverMarketEngine"));
 const AdminPrizepool = lazy(() => import("./AdminPrizepool"));
 const AdminEconomyEngine = lazy(() => import("./AdminEconomyEngine"));
 const AdminAdjustmentCenter = lazy(() => import("./AdminAdjustmentCenter"));
@@ -184,6 +186,7 @@ function Application(){
   <Route path="/admin/configuration" element={session&&!needsPaddockAccess&&isAdmin?<AdminConfiguration session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/prizepool" element={session&&!needsPaddockAccess&&isAdmin?<AdminPrizepool session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/license-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminLicenseEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/admin/driver-market-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminDriverMarketEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/economy-engine" element={session&&!needsPaddockAccess&&isAdmin?<AdminEconomyEngine session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/adjustments" element={session&&!needsPaddockAccess&&isAdmin?<AdminAdjustmentCenter session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/admin/data-adjustments" element={session&&!needsPaddockAccess&&isAdmin?<Navigate to="/admin/adjustments" replace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
@@ -227,6 +230,7 @@ function Application(){
    <Route path="/fia-panel/circuit-pool-input" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.fia_panel)?<CircuitPoolInput/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/job-search" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<JobSearch/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
    <Route path="/main-event/take-over" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<TeamTakeoverMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
+  <Route path="/transfer-market" element={<Navigate to="/main-event/transfer-market" replace/>}/>
   <Route path="/main-event/transfer-market" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.main_event)?<DriverTransferMarket session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/main-event/registration" element={session&&!isAdmin&&panelAccess.member_role===null?<Navigate to="/paddock-access" replace/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/team-panel/driver-registration" element={session&&!needsPaddockAccess&&(isAdmin||panelAccess.member_role==="Owner")?<TeamDriverApplications/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
