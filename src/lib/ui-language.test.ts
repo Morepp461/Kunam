@@ -323,6 +323,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers license check-in and Live Race testing UI", () => {
+    const cases = [
+      ["Check-in tersedia setelah Admin mendaftarkan driver ke divisi season aktif.", "Check-in becomes available after Admin registers the Driver in the active season division."],
+      ["Tombol absen hanya muncul pada tanggal race yang dijadwalkan. Hari tanpa race tidak dihitung sebagai absen.", "The check-in button only appears on scheduled race dates. Days without races do not count as absences."],
+      ["Jalankan simulasi deterministik, simpan checkpoint, dan uji pemulihan sesi dari web.", "Run a deterministic simulation, save checkpoints, and test session recovery from the web."],
+      ["Sesi simulasi berhasil dibuat di database testing. Belum ada data produksi yang disentuh.", "Simulation session successfully created in the testing database. No production data was touched."],
+      ["Simulasi selesai. Klasifikasi final dan event sudah tersimpan di Supabase testing.", "Simulation completed. Final classification and events have been saved to Supabase Testing."],
+      ["TRACK WETNESS", "KONDISI BASAH LINTASAN"],
+      ["Server-authorized control command", "Perintah Kontrol yang Diotorisasi Server"],
+      ["PENDING ADMIN RATIFICATION", "MENUNGGU PENGESAHAN ADMIN"],
+      ["SCORE LEDGER", "BUKU BESAR POIN"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
