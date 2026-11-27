@@ -340,6 +340,24 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers PWA install, privacy, OCR, replay, and role panels", () => {
+    const cases = [
+      ["Akses lebih cepat dari layar utama HP.", "Faster access from your phone's home screen."],
+      ["Penjelasan mengenai data yang diproses ketika kamu mengakses dan menggunakan CALERIS MASTERS.", "An explanation of the data processed when you access and use CALERIS MASTERS."],
+      ["Kami tidak menjual data pribadi pengguna sebagai produk data.", "We do not sell users' personal data as a data product."],
+      ["Pilih gambar PNG, JPG, atau WEBP.", "Choose a PNG, JPG, or WEBP image."],
+      ["OCR gagal membaca gambar. Coba screenshot dengan resolusi lebih tinggi.", "OCR could not read the image. Try a higher-resolution screenshot."],
+      ["WebGL tidak tersedia atau dinonaktifkan pada browser ini.", "WebGL is unavailable or disabled in this browser."],
+      ["Akun ini belum terhubung ke data Driver.", "This account is not linked to Driver data."],
+      ["Banding terkirim ke FIA Appeal Room.", "Appeal sent to FIA Appeal Room."],
+      ["OFFICIAL DRIVER PROFILE", "PROFIL RESMI PEMBALAP"],
+      ["TOTAL WALLET BALANCE", "TOTAL SALDO DOMPET"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
