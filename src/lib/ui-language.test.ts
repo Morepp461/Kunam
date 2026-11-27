@@ -32,6 +32,38 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers circuit, finance, race control, and public profile copy", () => {
+    const cases = [
+      ["CALERIS PRIVATE COLLECTION", "KOLEKSI PRIBADI CALERIS"],
+      ["Saldo EUR milik member", "Member's EUR balance"],
+      ["FINANCIAL CENTRE · VREEOBANK", "PUSAT KEUANGAN · VREEOBANK"],
+      ["Nominal pinjaman (€)", "Loan amount (€)"],
+      ["Real circuit · provenance required", "Sirkuit nyata · sumber asal wajib dicantumkan"],
+      ["Advanced specifications · surface, pit lane, DRS, track limits", "Spesifikasi lanjutan · permukaan, pit lane, DRS, batas lintasan"],
+      ["Live draft diagnostics", "Diagnostik draf langsung"],
+      ["Track length", "Panjang lintasan"],
+      ["MAIN EVENT · CIRCUIT DATABASE", "MAIN EVENT · DATABASE SIRKUIT"],
+      ["Data provider *", "Penyedia data *"],
+      ["Annual salary (€)", "Gaji tahunan (€)"],
+      ["FIA PANEL · EVENT CONTROL", "PANEL FIA · KONTROL EVENT"],
+      ["Issue fine", "Terbitkan denda"],
+      ["MAIN EVENT · RECRUITMENT", "MAIN EVENT · REKRUTMEN"],
+      ["Opsional · sesuai kebutuhan tim", "Optional · based on team needs"],
+      ["DRIVER PANEL · LICENSE", "PANEL PEMBALAP · LISENSI"],
+      ["CALERIS RACE CONTROL · PHASE 4", "KONTROL BALAP CALERIS · FASE 4"],
+      ["TEST ENVIRONMENT · SYNTHETIC DATA ONLY", "LINGKUNGAN UJI · HANYA DATA SINTETIS"],
+      ["Test scale · 0–100", "Skala pengujian · 0–100"],
+      ["OWNER REPUTATION", "REPUTASI PEMILIK"],
+      ["Reputasi pribadi Owner. Skor Team dan Driver tetap dihitung terpisah.", "The Owner's personal reputation. Team and Driver scores are still calculated separately."],
+      ["CALERIS MASTERS · TEAM PROFILE", "CALERIS MASTERS · PROFIL TIM"],
+      ["RESET HARIAN", "DAILY RESET"],
+      ["DAILY BONUS · REWARDED ADS", "BONUS HARIAN · IKLAN BERHADIAH"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates English interface labels to Indonesian", () => {
     expect(translateUiText("Transfer Market", "id")).toBe("Bursa Transfer");
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");
