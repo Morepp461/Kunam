@@ -17,6 +17,8 @@ assert "score between 0 and 100" in migration
 assert "financial_health_score_snapshot" in migration
 assert "contract_stability_score_snapshot" in migration
 assert "caleris_owner_takeover_tenure_sync" in migration
+assert "caleris_owner_reputation_appeal_event" in migration
+assert "a.status='approved'" in migration
 assert "caleris_owner_member_tenure_sync" in migration
 
 # Approved six-part weighting, including current owned asset market value.
