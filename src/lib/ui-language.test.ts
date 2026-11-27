@@ -140,6 +140,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Discord broadcast, Driver Exhibition, and Training Centre", () => {
+    const cases = [
+      ["Kirim pengumuman resmi CALERIS ke channel Discord yang terhubung.", "Send official CALERIS announcements to the connected Discord channel."],
+      ["Notifikasi berhasil dikirim ke Discord.", "Notification sent to Discord successfully."],
+      ["Statistik belum tersedia pada hasil pertandingan yang dipublikasikan.", "Statistics are not yet available in the published match results."],
+      ["Belum ada driver yang terdaftar di divisi ini.", "No drivers are registered in this division yet."],
+      ["WebGL tidak tersedia pada perangkat ini.", "WebGL is not available on this device."],
+      ["Training hanya tersedia untuk role Driver.", "Training is only available for the Driver role."],
+      ["Latihan berhasil. Atribut mendapatkan peningkatan.", "Training successful. Attributes have increased."],
+      ["Training Centre", "Pusat Pelatihan"],
+      ["REGISTERED DRIVERS", "PEMBALAP TERDAFTAR"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
