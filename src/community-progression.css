@@ -159,21 +159,21 @@
 /* License family: four different card structures. */
 .cp-id-template--license_bronze{--id-accent:#b37c53;grid-template-areas:"personal personal brand" "photo main seal";border-style:double!important;background:linear-gradient(115deg,#2a1c17,#111013 64%)!important}
 .cp-id-template--license_bronze:after{width:240px;height:240px;border-style:dashed;right:-105px;bottom:-145px}
-.cp-id-template--license_silver{--id-accent:#b7c0ca;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"brand personal personal" "seal main photo";border-radius:18px!important;background:linear-gradient(145deg,#242a31,#0c1015 72%)!important}
+.cp-id-template--license_silver{--id-accent:#b7c0ca;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border-radius:18px!important;background:linear-gradient(145deg,#242a31,#0c1015 72%)!important}
 .cp-id-template--license_silver:before{inset:5px;border:3px double color-mix(in srgb,var(--id-accent) 55%,transparent)}
 .cp-id-template--license_gold{--id-accent:#d6b45e;grid-template-columns:118px 72px minmax(0,1fr);grid-template-areas:"personal brand brand" "photo seal main";border-radius:3px!important;background:linear-gradient(125deg,#302613,#11100d 70%)!important}
 .cp-id-template--license_gold:after{width:160px;height:160px;border-width:8px;right:-80px;bottom:-90px}
-.cp-id-template--license_super_license{--id-accent:#e2d5b4;grid-template-columns:minmax(0,1fr) 126px 70px;grid-template-areas:"brand personal personal" "main photo seal";border-radius:22px 5px 22px 5px!important;background:linear-gradient(120deg,#302f31,#09090a 65%)!important}
+.cp-id-template--license_super_license{--id-accent:#e2d5b4;grid-template-columns:70px 126px minmax(0,1fr);grid-template-areas:"personal personal brand" "seal photo main";border-radius:22px 5px 22px 5px!important;background:linear-gradient(120deg,#302f31,#09090a 65%)!important}
 .cp-id-template--license_super_license:before{inset:12px;border:1px solid var(--id-accent);border-radius:16px 2px}
 
 /* Reputation family: five editorial and performance-led layouts. */
 .cp-id-template--reputation_developing{--id-accent:#9c9b83;grid-template-areas:"personal personal brand" "photo main seal";background:linear-gradient(120deg,#25251f,#0d0e0c 70%)!important}
 .cp-id-template--reputation_developing:after{width:300px;height:80px;right:-100px;bottom:12px;transform:rotate(-24deg);border-top:1px solid var(--id-accent)}
-.cp-id-template--reputation_established{--id-accent:#7eaa9c;grid-template-columns:126px minmax(0,1fr) 70px;grid-template-areas:"brand personal personal" "photo main seal";border-radius:18px 18px 4px 4px!important;background:linear-gradient(145deg,#152722,#0b1010 72%)!important}
+.cp-id-template--reputation_established{--id-accent:#7eaa9c;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border-radius:18px 18px 4px 4px!important;background:linear-gradient(145deg,#152722,#0b1010 72%)!important}
 .cp-id-template--reputation_established:before{inset:0 0 auto;height:5px;background:var(--id-accent);border:0;border-radius:0}
 .cp-id-template--reputation_competitive{--id-accent:#d2a45e;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border-radius:5px!important;background:linear-gradient(135deg,#302318,#0d0b09 72%)!important}
 .cp-id-template--reputation_competitive:after{width:210px;height:210px;right:-100px;bottom:-110px;transform:rotate(45deg);border-width:5px}
-.cp-id-template--reputation_top{--id-accent:#bd7d87;grid-template-columns:minmax(0,1fr) 126px 70px;grid-template-areas:"brand personal personal" "main photo seal";border-radius:14px!important;background:linear-gradient(130deg,#2d1c22,#100d10 72%)!important}
+.cp-id-template--reputation_top{--id-accent:#bd7d87;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border-radius:14px!important;background:linear-gradient(130deg,#2d1c22,#100d10 72%)!important}
 .cp-id-template--reputation_top:before{inset:12px 12px 12px 22px;border-left:4px solid var(--id-accent);border-top:0;border-bottom:0;border-right:0;border-radius:0}
 .cp-id-template--reputation_elite{--id-accent:#e4d7a4;grid-template-columns:126px 70px minmax(0,1fr);grid-template-areas:"personal personal brand" "photo seal main";border:3px double var(--id-accent)!important;border-radius:2px!important;background:radial-gradient(ellipse at 80% 20%,#49402b 0,#14120e 50%,#09090a 100%)!important}
 .cp-id-template--reputation_elite:after{width:200px;height:200px;right:-80px;bottom:-125px;border-width:10px;transform:rotate(45deg)}
@@ -181,11 +181,11 @@
 /* Division family: five paddock-inspired frames, ready for future division tiers. */
 .cp-id-template--division_tier_1{--id-accent:#bd9a56;grid-template-areas:"personal personal brand" "photo main seal";background:linear-gradient(120deg,#2c2020,#0d0d10 70%)!important}
 .cp-id-template--division_tier_1:before{inset:0 0 auto;height:7px;background:var(--id-accent);border:0;border-radius:0}
-.cp-id-template--division_tier_2{--id-accent:#a5a9b0;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"brand personal personal" "seal main photo";border-radius:16px 3px!important;background:linear-gradient(135deg,#20252c,#0c0e12 70%)!important}
+.cp-id-template--division_tier_2{--id-accent:#a5a9b0;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border-radius:16px 3px!important;background:linear-gradient(135deg,#20252c,#0c0e12 70%)!important}
 .cp-id-template--division_tier_2:after{width:240px;height:50px;right:-80px;bottom:25px;transform:rotate(-18deg);border-top:4px solid var(--id-accent)}
 .cp-id-template--division_tier_3{--id-accent:#a9a27e;grid-template-columns:minmax(0,1fr) 126px 70px;grid-template-areas:"personal personal brand" "main photo seal";border-radius:4px 16px 4px 16px!important;background:linear-gradient(145deg,#292719,#0b0c0b 75%)!important}
 .cp-id-template--division_tier_3:before{inset:14px;border:1px dashed var(--id-accent);border-radius:0}
-.cp-id-template--division_tier_4{--id-accent:#9d7f9d;grid-template-columns:126px 70px minmax(0,1fr);grid-template-areas:"brand personal personal" "photo seal main";border-radius:20px 5px!important;background:linear-gradient(130deg,#281f2b,#0b0b10 72%)!important}
+.cp-id-template--division_tier_4{--id-accent:#9d7f9d;grid-template-columns:126px 70px minmax(0,1fr);grid-template-areas:"personal personal brand" "photo seal main";border-radius:20px 5px!important;background:linear-gradient(130deg,#281f2b,#0b0b10 72%)!important}
 .cp-id-template--division_tier_4:after{width:130px;height:240px;right:18px;bottom:-120px;transform:rotate(28deg);border-width:4px}
 .cp-id-template--division_tier_5{--id-accent:#d6c6a2;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border:3px double var(--id-accent)!important;border-radius:2px!important;background:linear-gradient(120deg,#282625,#0a0a0a 68%)!important}
 .cp-id-template--division_tier_5:before{inset:9px;border:1px solid var(--id-accent);border-radius:0}
