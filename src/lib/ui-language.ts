@@ -381,7 +381,6 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "Official top-three results":"Hasil tiga besar resmi","Championship Points":"Poin Kejuaraan",
   "Completed rounds only":"Hanya putaran yang selesai","Season Titles":"Gelar Musim","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI",
 
-  "TIER 1":"TINGKAT 1",
   "TIER 2":"TINGKAT 2",
   "TIER 3":"TINGKAT 3",
   "TIER 4":"TINGKAT 4",
