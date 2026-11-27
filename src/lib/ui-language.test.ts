@@ -1,6 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { translateUiText } from "./ui-language";
+import { CALE_GUIDE_ID_TO_EN, translateUiText } from "./ui-language";
+import { getCalePageGuidesForAudit } from "../cale/pageGuides";
 describe("CALERIS UI language", () => {
+  it("audits every unique Cale page guide for English coverage", () => {
+    const guides = getCalePageGuidesForAudit();
+    expect(guides).toHaveLength(88);
+    for (const page of guides) {
+      for (const text of [page.purpose, ...page.sections]) {
+        expect(translateUiText(text, "en"), `Untranslated Cale guide copy: ${text}`).not.toBe(text);
+      }
+    }
+  });
+
+  it("translates every registered Cale page-guide phrase in both directions", () => {
+    const entries = Object.entries(CALE_GUIDE_ID_TO_EN);
+    expect(entries.length).toBeGreaterThanOrEqual(250);
+    for (const [indonesian, english] of entries) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+
   it("covers the final admin, sponsor, calendar, and intelligence page audit", () => {
     const cases = [
       ["ADMIN CONTROL · DATA MIGRATION", "KONTROL ADMIN · MIGRASI DATA"],
