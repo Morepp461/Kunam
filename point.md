@@ -3008,3 +3008,18 @@ Do not make these core infrastructure dependencies. Consider them only if the fr
 - Review the current license and provider terms before implementation, especially for icon collections and hosted services.
 - Do not add dependencies just because they appear in this list. Check the existing stack and feature scope first, then add only what solves a verified need.
 - No dependency, application code, Supabase schema, migration, environment variable, or deployment configuration was changed as part of this documentation update.
+
+---
+
+## Free Technology Adoption — first implementation (28 November 2026)
+
+- Work branch: `feat/free-tech-stack-integration-20261128`; PR #417.
+- Replaced the Community Hub Digital ID QR image's QuickChart URL with browser-local PNG generation using the open-source `qrcode` package (`qrcode@1.5.4`, `@types/qrcode@1.5.5`). The encoded canonical member verification URL is no longer sent to an external QR endpoint.
+- Added `src/lib/qr-code.ts` and unit tests for PNG data URL generation and empty-input rejection.
+- Added monthly Dependabot updates for npm dependencies and GitHub Actions in `.github/dependabot.yml`.
+- Added a local Lighthouse CI configuration in `.lighthouserc.json` and the `npm run audit:lighthouse` command. Reports are written to the local filesystem; no hosted report-upload service is configured.
+- Dependency scope was deliberately kept narrow. DiceBear is deferred because the current profile flow already uses uploaded portraits with an initials fallback; Iconify is deferred because Lucide React is already the established icon system; Chart.js/Recharts are deferred because no distinct chart implementation target was identified; DOMPurify is deferred because Yearbook HTML values are escaped through the existing `escapeHtml()` helper; TanStack Table is deferred until a specific data-heavy table is migrated. No parallel UI systems were introduced.
+- No Supabase schema, data, migration, Edge Function, environment variable, or Vercel project setting was changed.
+- Caleris CI passed on implementation commit `3299ce2d1cd0adee977023cf596beb7e04c72380` (run `46049843363`), including TypeScript, production build, unit/schema tests, Playwright smoke, project validation, existing regression suites, and Supabase migration parity.
+- Vercel Preview reached `READY` for implementation commit `3299ce2d1cd0adee977023cf596beb7e04c72380`.
+- Production merge and deployment remain pending.
