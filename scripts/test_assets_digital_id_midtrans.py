@@ -88,6 +88,8 @@ assert "Add%20a%20heading_20260907_003952_0000.png" in community
 assert "profile-avatars" in public_id
 assert "Add%20a%20heading_20260907_003952_0000.png" in public_id
 assert "public_visible" in achievement_sql
+assert "grid-template-columns:82px minmax(0,1fr) 76px" in digital_css
+assert ".cp-id-template .cp-id-brand img{width:65px;height:36px}" in digital_css
 
 # Paid Shop: fixed IDR price, inactive by default, no legacy EUR wallet purchase.
 assert "price_idr=29900" in midtrans_sql
