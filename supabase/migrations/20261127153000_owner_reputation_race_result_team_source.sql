@@ -48,15 +48,16 @@ begin
   if tg_op='DELETE' then
     v_round_id:=old.round_id;
     v_member_id:=old.member_id;
+    select coalesce(old.team_id_snapshot,re.team_id) into v_team_id
+    from public.caleris_race_result_entries re
+    where re.round_id=v_round_id and re.member_id=v_member_id;
   else
     v_round_id:=new.round_id;
     v_member_id:=new.member_id;
+    select coalesce(new.team_id_snapshot,re.team_id) into v_team_id
+    from public.caleris_race_result_entries re
+    where re.round_id=v_round_id and re.member_id=v_member_id;
   end if;
-  select coalesce(rs.team_id_snapshot,re.team_id) into v_team_id
-  from public.license_round_standings rs
-  left join public.caleris_race_result_entries re
-    on re.round_id=rs.round_id and re.member_id=rs.member_id
-  where rs.round_id=v_round_id and rs.member_id=v_member_id;
   perform private.caleris_refresh_owner_reputation_for_team(v_team_id,'round_standing_'||lower(tg_op));
   if tg_op='UPDATE' then
     select coalesce(old.team_id_snapshot,re.team_id) into v_team_id
