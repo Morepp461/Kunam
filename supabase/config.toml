@@ -28,3 +28,8 @@ verify_jwt = false
 # Discord announcements are authenticated in-function and restricted to FIA/Admin.
 [functions.caleris-discord-notify]
 verify_jwt = true
+
+
+# The webhook endpoint validates Midtrans signatures and transaction status in-function.
+[functions.midtrans-hq-shop]
+verify_jwt = false
