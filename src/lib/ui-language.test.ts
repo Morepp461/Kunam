@@ -173,6 +173,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers main navigation, check-in, and panel directory labels", () => {
+    const cases = [
+      ["Ringkasan aktivitas dan perjalananmu.", "A summary of your activity and journey."],
+      ["Kirim bug report dan pantau tiket bantuan.", "Submit bug reports and track support tickets."],
+      ["Cari halaman...", "Search pages..."],
+      ["Memeriksa jadwal race...", "Checking race schedule..."],
+      ["Check-in berhasil. Reward:", "Check-in successful. Reward:"],
+      ["Hapus semua notifikasi? Tindakan ini tidak dapat dibatalkan.", "Delete all notifications? This action cannot be undone."],
+      ["Database sirkuit Caleris Masters.", "Caleris Masters circuit database."],
+      ["DRIVER PANEL", "PANEL PEMBALAP"],
+      ["Community Hub", "Pusat Komunitas"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
