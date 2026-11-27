@@ -3,10 +3,11 @@ import TeamHQ from "./TeamHQ";
 import DiscordBroadcastPanel from "./DiscordBroadcastPanel";
 import CalerisEcosystem from "./CalerisEcosystem";
 import TeamSummary from "./TeamSummary";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabase";
-import CompetitionCharts, { type CompetitionChartMode } from "./CompetitionCharts";
+import type { CompetitionChartMode } from "./CompetitionCharts";
+const CompetitionCharts = lazy(() => import("./CompetitionCharts"));
 import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import {
   Activity, ArrowLeft, ArrowUpRight, BarChart3, CalendarDays,
@@ -178,7 +179,7 @@ export default function PanelPage() {
     if(detail){
       const selected=cards.find(card=>card[0]===detail);
       const chartPages=["driver-ranking","team-ranking","engine-ranking","statistic","comparison"];
-      return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><CompetitionCharts mode={detail as CompetitionChartMode} divisionKey={tab.path}/></>:detail==="driver-list"?<LiveEntityDirectory kind="drivers"/>:detail==="team-list"?<LiveEntityDirectory kind="teams"/>:detail==="rookie-of-the-season"?<EmptyPanel title="Data rookie belum tersedia" body="Rookie of the Season akan menampilkan data resmi setelah sumber klasemen dan status rookie terhubung."/>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
+      return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><Suspense fallback={<div className="workspace-card"><p className="muted">Memuat grafik...</p></div>}><CompetitionCharts mode={detail as CompetitionChartMode} divisionKey={tab.path}/></Suspense></>:detail==="driver-list"?<LiveEntityDirectory kind="drivers"/>:detail==="team-list"?<LiveEntityDirectory kind="teams"/>:detail==="rookie-of-the-season"?<EmptyPanel title="Data rookie belum tersedia" body="Rookie of the Season akan menampilkan data resmi setelah sumber klasemen dan status rookie terhubung."/>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
     }
     return <section className="workspace"><Heading eyebrow="Main Event" title={title} description={tab.description}/><CardGrid items={cards as any} base={base}/></section>;
   }
