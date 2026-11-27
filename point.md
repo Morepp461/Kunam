@@ -2747,28 +2747,29 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - **Individual asset tax is removed.** Personal Assets purchases and ownership have no individual tax. Only Team tax remains in the Team economy; do not charge personal asset owners or reinterpret this as an individual wealth tax. If a tax applies to Team-owned assets elsewhere in the Team economy, assess it per season rather than as a one-time purchase tax. Assets in this individual-owned marketplace are not Team-owned.
 - Assets must not affect gameplay, Team performance, Race Engine simulation, official results, or other competitive outcomes.
 - No manual Admin configuration for catalog categories, tiers, products, prices, valuations, reputation formulas, or tax rules. These are fixed, version-controlled system definitions and changes require reviewed source changes and migrations when needed.
-- Suggested catalog tiers and initial virtual EUR prices are recorded below as a proposal only. They are not production catalog data until the proposal is explicitly approved. Do not silently activate unapproved products.
+- The five-tier catalog names and initial virtual EUR prices below are **approved**. The tier names are fictional brand-style/parody labels for the CALERIS universe, not real manufacturer affiliations.
+- These names and prices are the version-controlled catalog baseline. Do not add an Admin configuration screen for them; changes require reviewed source changes and migrations when needed.
 
 
-#### Proposed Assets catalog tiers and prices (virtual EUR)
+#### Approved Assets catalog tiers and prices (virtual EUR)
 
-These are initial balancing recommendations, not yet approved catalog entries. Each row is a generic product tier with a suggested starting price; individual product variants can sit within the tier after the catalog is approved.
+Each cell is shown as **fictional brand-style name (asset class) — initial price**. The Cars names are exactly the five labels supplied by the owner.
 
 | Catalog | Tier 1 | Tier 2 | Tier 3 | Tier 4 | Tier 5 |
-|---|---:|---:|---:|---:|---:|
-| Motorcycles | Scooter — €100,000 | Street — €300,000 | Sport — €750,000 | Superbike — €2,000,000 | Premium/Heritage — €5,000,000 |
-| Cars | Compact — €250,000 | Executive — €750,000 | Sports — €2,000,000 | Supercar — €6,000,000 | Hypercar — €15,000,000 |
-| Ships | Personal Watercraft — €500,000 | Speedboat — €2,000,000 | Yacht — €7,500,000 | Superyacht — €25,000,000 | Megayacht — €60,000,000 |
-| Aircraft/Jets | Helicopter — €1,500,000 | Propeller Aircraft — €5,000,000 | Light Jet — €15,000,000 | Midsize Jet — €40,000,000 | Long-range Jet — €100,000,000 |
-| Houses | Compact House — €300,000 | Family House — €900,000 | Premium House — €2,500,000 | Mansion — €7,500,000 | Estate — €20,000,000 |
-| Apartments | Studio — €100,000 | One-bedroom — €300,000 | Two-bedroom — €750,000 | Penthouse — €2,000,000 | Luxury Penthouse — €5,000,000 |
-| Hotels | Boutique — €5,000,000 | Business — €15,000,000 | Resort — €40,000,000 | Grand Hotel — €100,000,000 | Iconic/Luxury — €250,000,000 |
-| Wristwatches | Entry — €25,000 | Classic — €100,000 | Luxury — €350,000 | Haute Horlogerie — €1,500,000 | Collector — €5,000,000 |
+|---|---|---|---|---|---|
+| Motorcycles | Yamaho (Scooter) — €100,000 | Hondai (Street) — €300,000 | Kawasuki (Sport) — €750,000 | Ducatti (Superbike) — €2,000,000 | Harleydavon (Premium/Heritage) — €5,000,000 |
+| Cars | Avanzo (Compact) — €250,000 | Hyande (Executive) — €750,000 | GTW (Sports) — €2,000,000 | Lambegini (Supercar) — €6,000,000 | Farrara (Hypercar) — €15,000,000 |
+| Ships | Yamaro (Personal Watercraft) — €500,000 | Baylinor (Speedboat) — €2,000,000 | Benetau (Yacht) — €7,500,000 | Sunseeka (Superyacht) — €25,000,000 | Azimutti (Megayacht) — €60,000,000 |
+| Aircraft/Jets | Robinsun (Helicopter) — €1,500,000 | Sessna (Propeller Aircraft) — €5,000,000 | Pilatuz (Light Jet) — €15,000,000 | Bombardair (Midsize Jet) — €40,000,000 | Gulfstreama (Long-range Jet) — €100,000,000 |
+| Houses | Ikeva (Compact House) — €300,000 | Lennora (Family House) — €900,000 | Damacor (Premium House) — €2,500,000 | Mansorya (Mansion) — €7,500,000 | Emaara (Estate) — €20,000,000 |
+| Apartments | Studiora (Studio) — €100,000 | Apartella (One-bedroom) — €300,000 | Urbanova (Two-bedroom) — €750,000 | Penthara (Penthouse) — €2,000,000 | Skylofto (Luxury Penthouse) — €5,000,000 |
+| Hotels | Hiltona (Boutique) — €5,000,000 | Marriota (Business) — €15,000,000 | Hyatton (Resort) — €40,000,000 | Ritz-Carlona (Grand Hotel) — €100,000,000 | Four Seasona (Iconic/Luxury) — €250,000,000 |
+| Wristwatches | Casiora (Entry) — €25,000 | Seikora (Classic) — €100,000 | Tag Heura (Luxury) — €350,000 | Rolexx (Haute Horlogerie) — €1,500,000 | Pateka (Collector) — €5,000,000 |
 
 - Other approved asset categories must receive their own five-tier ladder and prices through a reviewed source change; do not automatically duplicate another catalog's tiers.
 - Initial prices are virtual EUR, not real-money prices. The real-money Shop must never display or sell these Assets.
 - Use these prices as each item's initial market valuation unless a later approved valuation model is specified. A member's reputation contribution is calculated from current owned market value, not the sum of asking prices on active listings.
-- Revisit the ladder against live wallet distribution, quest income, payroll, and existing balance circulation before enabling purchases. If testing shows early-tier assets are trivial relative to normal income, rebalance the source constants before Production release.
+- Before enabling purchases, validate this approved ladder against live wallet distribution, quest income, payroll, and existing balance circulation. If testing shows early-tier assets are trivial relative to normal income, report the measured imbalance and obtain approval before changing these approved prices.
 - Seasonal Team tax remains a separate Team-economy rule. This Assets marketplace does not add a personal tax or a tax configuration screen.
 
 ### Achievements and Badges
@@ -2798,4 +2799,4 @@ These are initial balancing recommendations, not yet approved catalog entries. E
 - Run automated browser coverage across supported browser engines where CI supports them; do not claim every browser is supported unless verified.
 - Owner will perform the physical Android acceptance pass using the prepared checklist. Browser CI is not a substitute for physical-device GPU, touch, and memory verification.
 - No second clarification batch is planned. Where an exact numeric/catalog decision remains unapproved, preserve a proposal or inactive state rather than silently activating it.
-- Assets catalog tier names and virtual EUR prices in this document are proposals pending explicit approval; the diminishing-returns asset reputation formula and removal of individual asset tax are approved.
+- Assets catalog tier names and virtual EUR prices in this document are approved. The diminishing-returns asset reputation formula and removal of individual asset tax are also approved.
