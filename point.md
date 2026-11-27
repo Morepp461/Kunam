@@ -2737,14 +2737,39 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 ### Assets Marketplace
 
 - Assets are available to all member roles and belong to the individual member who purchases them, never to a Team.
-- Catalog categories currently specified in the project are motorcycles, cars, ships, aircraft/jets, houses, apartments, hotels, and other approved assets. Add **wristwatches** as an additional category.
+- Assets have a dedicated page and marketplace route at `/assets`. They must not appear in the paid Shop page, paid Shop catalog, or paid Shop purchase flow.
+- The **Shop page is exclusively for real-money paid items** (currently the Additional HQ Project Slot at Rp29.900 through Midtrans). Virtual-balance Assets purchases must never be routed through Shop.
+- Catalog categories: motorcycles, cars, ships, aircraft/jets, houses, apartments, hotels, wristwatches, and other separately approved assets.
 - Each catalog has its own tier structure. The catalog is an always-available marketplace: stock does not deplete and no finite inventory is required.
-- Members purchase assets using their virtual in-game balance. Owned assets may be listed and traded through a marketplace flow; ownership and every purchase, listing, sale, transfer, and tax event must have auditable history.
-- Asset value contributes to the owner's reputation: a higher-priced asset must contribute more reputation than a lower-priced asset.
-- Asset tax is assessed per season, not as a one-time purchase tax.
+- Members purchase Assets using their virtual in-game balance (EUR). Owned assets may be listed and traded through the Assets marketplace; ownership and every purchase, listing, sale, transfer, and applicable team-tax event must have auditable history.
+- Asset value contributes to the owner's existing reputation score using the approved diminishing-returns formula below. Higher total market value contributes more reputation, but the asset contribution is capped at +10 points.
+- **Approved asset reputation formula:** let V be the combined current market value of all assets still owned by the member, in EUR. Asset reputation bonus = `min(10, floor(2 * log2(1 + V / 10,000,000)))`. Use authoritative catalog/valuation data, not user-entered listing prices or historical spend. Recalculate when ownership or market valuation changes. Do not create a separate reputation balance or overwrite the existing reputation engine.
+- **Individual asset tax is removed.** Personal Assets purchases and ownership have no individual tax. Only Team tax remains in the Team economy; do not charge personal asset owners or reinterpret this as an individual wealth tax. If a tax applies to Team-owned assets elsewhere in the Team economy, assess it per season rather than as a one-time purchase tax. Assets in this individual-owned marketplace are not Team-owned.
 - Assets must not affect gameplay, Team performance, Race Engine simulation, official results, or other competitive outcomes.
-- Admin must be able to manage catalog categories, tier definitions, products, prices, asset valuations, reputation conversion rules, and seasonal asset-tax rules.
-- The repository currently documents the category list and a motorcycle-tier example, but does not contain the full per-category item/tier ladder or numeric reputation/tax rates. Do not invent catalog products, tier names, thresholds, rates, or conversion formulas. Keep these values configurable and inactive/unconfigured until supported by an approved source/configuration.
+- No manual Admin configuration for catalog categories, tiers, products, prices, valuations, reputation formulas, or tax rules. These are fixed, version-controlled system definitions and changes require reviewed source changes and migrations when needed.
+- Suggested catalog tiers and initial virtual EUR prices are recorded below as a proposal only. They are not production catalog data until the proposal is explicitly approved. Do not silently activate unapproved products.
+
+
+#### Proposed Assets catalog tiers and prices (virtual EUR)
+
+These are initial balancing recommendations, not yet approved catalog entries. Each row is a generic product tier with a suggested starting price; individual product variants can sit within the tier after the catalog is approved.
+
+| Catalog | Tier 1 | Tier 2 | Tier 3 | Tier 4 | Tier 5 |
+|---|---:|---:|---:|---:|---:|
+| Motorcycles | Scooter — €100,000 | Street — €300,000 | Sport — €750,000 | Superbike — €2,000,000 | Premium/Heritage — €5,000,000 |
+| Cars | Compact — €250,000 | Executive — €750,000 | Sports — €2,000,000 | Supercar — €6,000,000 | Hypercar — €15,000,000 |
+| Ships | Personal Watercraft — €500,000 | Speedboat — €2,000,000 | Yacht — €7,500,000 | Superyacht — €25,000,000 | Megayacht — €60,000,000 |
+| Aircraft/Jets | Helicopter — €1,500,000 | Propeller Aircraft — €5,000,000 | Light Jet — €15,000,000 | Midsize Jet — €40,000,000 | Long-range Jet — €100,000,000 |
+| Houses | Compact House — €300,000 | Family House — €900,000 | Premium House — €2,500,000 | Mansion — €7,500,000 | Estate — €20,000,000 |
+| Apartments | Studio — €100,000 | One-bedroom — €300,000 | Two-bedroom — €750,000 | Penthouse — €2,000,000 | Luxury Penthouse — €5,000,000 |
+| Hotels | Boutique — €5,000,000 | Business — €15,000,000 | Resort — €40,000,000 | Grand Hotel — €100,000,000 | Iconic/Luxury — €250,000,000 |
+| Wristwatches | Entry — €25,000 | Classic — €100,000 | Luxury — €350,000 | Haute Horlogerie — €1,500,000 | Collector — €5,000,000 |
+
+- Other approved asset categories must receive their own five-tier ladder and prices through a reviewed source change; do not automatically duplicate another catalog's tiers.
+- Initial prices are virtual EUR, not real-money prices. The real-money Shop must never display or sell these Assets.
+- Use these prices as each item's initial market valuation unless a later approved valuation model is specified. A member's reputation contribution is calculated from current owned market value, not the sum of asking prices on active listings.
+- Revisit the ladder against live wallet distribution, quest income, payroll, and existing balance circulation before enabling purchases. If testing shows early-tier assets are trivial relative to normal income, rebalance the source constants before Production release.
+- Seasonal Team tax remains a separate Team-economy rule. This Assets marketplace does not add a personal tax or a tax configuration screen.
 
 ### Achievements and Badges
 
@@ -2772,4 +2797,5 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Contract acceptance walkthrough must cover Driver request, Owner offer, Driver acceptance/rejection, contract activation/renewal, salary/payment lifecycle, and contract ending.
 - Run automated browser coverage across supported browser engines where CI supports them; do not claim every browser is supported unless verified.
 - Owner will perform the physical Android acceptance pass using the prepared checklist. Browser CI is not a substitute for physical-device GPU, touch, and memory verification.
-- No second clarification batch is planned. Where the repository does not contain an exact numeric/catalog decision, preserve a configurable, inactive state rather than inventing a value.
+- No second clarification batch is planned. Where an exact numeric/catalog decision remains unapproved, preserve a proposal or inactive state rather than silently activating it.
+- Assets catalog tier names and virtual EUR prices in this document are proposals pending explicit approval; the diminishing-returns asset reputation formula and removal of individual asset tax are approved.
