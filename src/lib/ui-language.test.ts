@@ -371,6 +371,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers team job adverts and country/city selectors", () => {
+    const cases = [
+      ["Memuat identitas tim...", "Loading team identity..."],
+      ["Halaman ini hanya tersedia untuk Team Owner yang terhubung dengan tim.", "This page is only available to Team Owners linked to a team."],
+      ["Rentang gaji harus sesuai lisensi minimum dan batas maksimum Super License.", "The salary range must match the minimum license and the Super License maximum."],
+      ["Informasi tambahan (opsional)", "Additional information (optional)"],
+      ["Daftar negara gagal dimuat. Periksa koneksi lalu muat ulang halaman.", "Failed to load the country list. Check your connection and reload the page."],
+      ["Pilih nationality terlebih dahulu", "Select nationality first"],
+      ["Place Job Advert", "Pasang Iklan Lowongan"],
+      ["RECRUITMENT FORM", "FORMULIR REKRUTMEN"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
