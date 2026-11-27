@@ -271,6 +271,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Brand Ecosystem sponsor configuration and negotiation", () => {
+    const cases = [
+      ["Memuat Brand Ecosystem...", "Loading Brand Ecosystem..."],
+      ["Logo saat ini tersedia. Pilih file baru bila ingin menggantinya.", "The current logo is available. Choose a new file if you want to replace it."],
+      ["Pembayaran sponsorship didanai VreeoBank dan dicatat melalui Economy Ledger.", "Sponsorship payments are funded by VreeoBank and recorded through the Economy Ledger."],
+      ["Belum ada sponsor offer untuk tim ini.", "There are no sponsor offers for this team."],
+      ["Sponsor sedang memproses counter secara otomatis.", "The sponsor is processing the counter-offer automatically."],
+      ["Sponsor dan logo berhasil disimpan.", "Sponsor and logo saved successfully."],
+      ["SPONSOR DATABASE", "DATABASE SPONSOR"],
+      ["AI SPONSOR MATCHING", "PENCOCOKAN SPONSOR AI"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
