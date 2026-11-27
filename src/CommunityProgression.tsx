@@ -4,6 +4,7 @@ import {
   RefreshCw, Save, Share2, ShieldCheck, Target, TrendingUp, Users, Vote
 } from "lucide-react";
 import { supabase } from "./lib/supabase";
+import { generateCalerisQrCode } from "./lib/qr-code";
 import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import {
   buildYearbookPrintHtml,
@@ -63,6 +64,8 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [polls, setPolls] = useState<any[]>([]);
   const [tab, setTab] = useState("overview");
   const [id, setId] = useState<any>({ template_key: "", selected_badges: [], tagline: "", public_visible: false });
+  const [qrDataUrl, setQrDataUrl] = useState("");
+  const [qrError, setQrError] = useState(false);
   const [idTemplates, setIdTemplates] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,9 +280,16 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const shareUrl = member?.member_code
     ? `${window.location.origin}/member-id/${encodeURIComponent(member.member_code)}`
     : "";
-  const qrUrl = shareUrl
-    ? `https://quickchart.io/qr?text=${encodeURIComponent(shareUrl)}&size=240&margin=2`
-    : "";
+  useEffect(() => {
+    let active = true;
+    setQrDataUrl("");
+    setQrError(false);
+    if (!shareUrl) return () => { active = false; };
+    void generateCalerisQrCode(shareUrl)
+      .then((dataUrl) => { if (active) setQrDataUrl(dataUrl); })
+      .catch(() => { if (active) setQrError(true); });
+    return () => { active = false; };
+  }, [shareUrl]);
 
   const copyShareUrl = async () => {
     if (!shareUrl) return;
@@ -673,7 +683,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
         <button onClick={() => void saveId()} disabled={!id.template_key || !idTemplates.some((item: any) => item.template_key === id.template_key && item.unlocked)}><Save size={15} /> Save Digital ID</button>
         {id.public_visible && shareUrl && <div className="cp-share">
           <div><strong>Public verification link</strong><p>{shareUrl}</p><button onClick={() => void copyShareUrl()}><Copy size={15} /> Copy link</button><button onClick={() => void shareDigitalId()}><Share2 size={15} /> Share ID</button></div>
-          <img src={qrUrl} alt="QR code for public CALERIS member ID" loading="lazy" />
+          {qrDataUrl ? <img src={qrDataUrl} alt="QR code for public CALERIS member ID" /> : <span className="cp-muted" role="status">{qrError ? "QR code gagal dibuat. Gunakan tautan verifikasi." : "Menyiapkan QR code..."}</span>}
         </div>}
         {!id.public_visible && <p className="cp-muted">Public verification dinonaktifkan. Link dan QR tidak akan menampilkan kartu ini.</p>}
       </section>}
