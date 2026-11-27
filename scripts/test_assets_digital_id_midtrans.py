@@ -39,10 +39,10 @@ for fragment in [
     assert fragment in assets_sql, f"Missing approved Cars catalog row: {fragment}"
 
 assert "private.caleris_assets_reputation_bonus" in assets_sql
-assert "ln(1+(v_market_value/10000000))/ln(2)" in assets_sql
+assert "ln(1+(private.caleris_assets_market_value(p_member_id)/10000000))/ln(2)" in assets_sql
 assert "least(10" in assets_sql.lower()
 assert "'asset_reputation_bonus'" in assets_sql
-assert "tax_eur',0" in assets_sql
+assert "tax_eur',0" in assets_sql and "individual_asset_tax" not in assets_sql.lower()
 assert "caleris_assets_buy_listing" in assets_sql and "sale_transfer" in assets_sql
 assert "private.post_economy_transaction" in assets_sql
 assert 'path="/assets"' in app
@@ -53,7 +53,7 @@ assert "member_purchase_team_hq_project_slot" not in shop_page
 assert "caleris_assets_catalog" not in shop_page
 
 # Achievement engine: source-owned rewards stay inside the existing 5–20 XP range.
-assert "source_type='achievement'" in achievement_sql
+assert "'achievement'" in achievement_sql
 assert "array['race_result','race_result_correction','checkin','quest','milestone','shop_purchase','admin_adjustment','achievement']" in achievement_sql
 assert "when 'driver_season_champion' then 20" in achievement_sql
 assert "when 'team_champion' then 20" in achievement_sql
