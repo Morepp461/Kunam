@@ -3018,11 +3018,11 @@ Do not make these core infrastructure dependencies. Consider them only if the fr
 - Added `src/lib/qr-code.ts` and unit tests for PNG data URL generation and empty-input rejection.
 - Added monthly Dependabot updates for npm dependencies and GitHub Actions in `.github/dependabot.yml`.
 - Added a local Lighthouse CI configuration in `.lighthouserc.json` and the `npm run audit:lighthouse` command. Reports are written to the local filesystem; no hosted report-upload service is configured.
-- Dependency scope was deliberately kept narrow. DiceBear is deferred because the current profile flow already uses uploaded portraits with an initials fallback; Iconify is deferred because Lucide React is already the established icon system; Chart.js/Recharts are deferred because no distinct chart implementation target was identified; DOMPurify is deferred because Yearbook HTML values are escaped through the existing `escapeHtml()` helper; TanStack Table is deferred until a specific data-heavy table is migrated. No parallel UI systems were introduced.
+- Dependency scope in the first adoption pass was deliberately kept narrow. The later product clarification established concrete needs for DiceBear profile avatars and Recharts statistics/comparison, so both are implemented in the follow-up section below. Iconify remains deferred because Lucide React is already the established icon system; Chart.js is not installed because Recharts is the selected chart library; DOMPurify remains deferred because Yearbook HTML values are escaped through the existing `escapeHtml()` helper; TanStack Table remains deferred until a specific data-heavy table is migrated. No parallel UI systems were introduced.
 - No Supabase schema, data, migration, Edge Function, environment variable, or Vercel project setting was changed.
 - Caleris CI passed on implementation commit `3299ce2d1cd0adee977023cf596beb7e04c72380` (run `46049843363`), including TypeScript, production build, unit/schema tests, Playwright smoke, project validation, existing regression suites, and Supabase migration parity.
 - Vercel Preview reached `READY` for implementation commit `3299ce2d1cd0adee977023cf596beb7e04c72380`.
-- Production merge and deployment remain pending.
+- The first-pass changes were subsequently merged and production deployment was verified through PR #417.
 
 
 ---
@@ -3031,9 +3031,9 @@ Do not make these core infrastructure dependencies. Consider them only if the fr
 
 - Work branch: `feat/dicebear-recharts-integration-20261128`, based on `main` commit `a7bd7b96c4c61d6e623dcd01db83b70552bd8587`.
 - DiceBear uses local packages `@dicebear/core@10.7.0` and `@dicebear/styles@10.6.0`; no hosted avatar API is called. Account settings provides six CC0 1.0 styles: Lorelei, Notionists, Open Peeps, Pixel Art, Thumbs, and Blobs. Users can customize the deterministic seed and preview a style before applying it.
-- Selected DiceBear SVGs are rasterized to WebP in the browser and uploaded to the existing private `profile-avatars` bucket. The existing `member_update_profile_settings` RPC remains the profile persistence path; manual photo upload remains available. No database schema, storage policy, or migration change is required.
+- Selected DiceBear SVGs are rasterized to WebP in the browser and uploaded to the existing private `profile-avatars` bucket. The existing `member_update_profile_settings` RPC remains the profile persistence path; manual photo upload remains available. Browser WebP output is verified before upload. No database schema, storage policy, or migration change is required.
 - Recharts `3.11.1` is the sole chart library; Chart.js is intentionally not installed. `react-is@19.1.1` matches the repository's React version.
-- Former chart placeholders are replaced with official season visualizations sourced from `caleris_get_season_community_data`: Driver Ranking, Team Ranking, race starts/wins by round, and Driver Comparison (points versus wins). The latest active season is preferred; the latest completed season is used only when no active season exists. Premio/Zwei views filter by their official division names.
-- Engine Ranking remains an explicit no-data state because the current source does not provide an authoritative engine ranking. No simulated or fabricated values are displayed.
+- Former chart placeholders are replaced with official season visualizations sourced from `caleris_get_season_community_data`: Driver Ranking, Team Ranking, race starts/wins by round, and Driver Comparison (points versus wins). Driver/team labels resolve through the existing `caler is_driver_market_directory` and `caleris_team_directory` read models, with official result snapshots as fallbacks. The latest active season is preferred; the latest completed season is used only when no active season exists. Premio/Zwei views filter by their official division names.
+- Recharts and DiceBear modules are lazy-loaded so their code and style definitions are not added to the initial application bundle. Engine Ranking remains an explicit no-data state because the current source does not provide an authoritative engine ranking. No simulated or fabricated values are displayed.
 - No Supabase schema, data, migration, Edge Function, environment variable, or Vercel project setting was changed.
-- Validation and release status: implementation commit and CI/Preview/Production checks pending.
+- Release gate: merge only after full CI and Vercel Preview checks pass. No Supabase migration or production data change is needed.
