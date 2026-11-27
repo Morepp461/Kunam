@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { translateUiText } from "./ui-language";
+import { CALE_GUIDE_ID_TO_EN, translateUiText } from "./ui-language";
 describe("CALERIS UI language", () => {
+  it("translates every registered Cale page-guide phrase in both directions", () => {
+    const entries = Object.entries(CALE_GUIDE_ID_TO_EN);
+    expect(entries.length).toBeGreaterThanOrEqual(250);
+    for (const [indonesian, english] of entries) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+
   it("covers the final admin, sponsor, calendar, and intelligence page audit", () => {
     const cases = [
       ["ADMIN CONTROL · DATA MIGRATION", "KONTROL ADMIN · MIGRASI DATA"],
