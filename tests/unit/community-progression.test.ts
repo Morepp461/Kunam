@@ -132,15 +132,20 @@ describe("Yearbook output", () => {
 });
 
 
-describe("Digital ID theme dropdown", () => {
-  it("renders one custom theme picker and no native select in the Digital ID editor", () => {
+describe("Digital ID template selector", () => {
+  it("renders unlocked data-driven templates and limits personalization to tagline and earned badges", () => {
     const source = readFileSync(new URL("../../src/CommunityProgression.tsx", import.meta.url), "utf8");
     const identitySection = source.split('{tab === "identity" && <section')[1]?.split('{tab === "yearbook"')[0] ?? "";
     expect(identitySection).toContain('className="cp-section cp-digital-id-editor"');
     expect(identitySection).not.toMatch(/<select\\b/);
-    expect(identitySection.match(/className="cp-theme-trigger"/g)).toHaveLength(1);
-    expect(identitySection).toContain('["classic","premio","zwei","gold"]');
+    expect(identitySection).toContain('className="cp-id-template-picker"');
+    expect(identitySection).toContain('className="cp-id-template-options"');
+    expect(identitySection).toContain('idTemplates.map((template: any)');
+    expect(identitySection).toContain('disabled={!template.unlocked}');
+    expect(identitySection).toContain('maximum 3');
+    expect(identitySection).toContain('Public verification page');
     const css = readFileSync(new URL("../../src/community-progression.css", import.meta.url), "utf8");
-    expect(css).toContain(".cp-digital-id-editor select{display:none!important");
+    expect(css).toContain(".cp-id-template-options");
+    expect(css).toContain(".cp-id-template--license_bronze");
   });
 });
