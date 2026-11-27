@@ -157,6 +157,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers economy guide, FIA operations, data export, and job search", () => {
+    const cases = [
+      ["Gaji tahunan dibayar bertahap pada akhir setiap Race Period.", "Annual salaries are paid in installments at the end of each Race Period."],
+      ["Belum ada tier Wealth Tax aktif untuk Team.", "There are no active Wealth Tax tiers for Teams."],
+      ["Input klasifikasi, fastest lap, pole, dan hasil resmi race.", "Enter classification, fastest lap, pole, and official race results."],
+      ["Driver Loan disetujui. Aktivasi menunggu tanggal mulai dan saldo tim peminjam.", "Driver Loan approved. Activation awaits the start date and the borrowing team's balance."],
+      ["Akses export hanya untuk Admin dan FIA.", "Export access is limited to Admin and FIA."],
+      ["Tidak ada lowongan yang sesuai filter.", "No job listings match the filters."],
+      ["OFFICIAL DATA SNAPSHOT", "SNAPSHOT DATA RESMI"],
+      ["DRIVER VALUATION ENGINE", "MESIN VALUASI PEMBALAP"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
