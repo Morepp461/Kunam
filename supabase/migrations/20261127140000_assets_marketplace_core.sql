@@ -313,15 +313,18 @@ declare
   v_member_id uuid:=(select public.caleris_current_member_id());
   v_wallet_id uuid;
   v_wallet_balance numeric:=0;
+  v_member_role text;
   v_payload jsonb;
 begin
   if (select auth.uid()) is null or v_member_id is null then raise exception 'member_profile_required'; end if;
+  select role into v_member_role from public.members where id=v_member_id;
   v_wallet_id:=private.caleris_assets_member_wallet(v_member_id);
   if v_wallet_id is not null then
     select balance into v_wallet_balance from public.economy_wallet_accounts where id=v_wallet_id and is_active;
   end if;
   select jsonb_build_object(
     'member_id',v_member_id,
+    'member_role',v_member_role,
     'wallet_available',v_wallet_id is not null,
     'wallet_balance',coalesce(v_wallet_balance,0),
     'asset_market_value_eur',private.caleris_assets_market_value(v_member_id),
