@@ -2947,3 +2947,19 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - No new dependency, Supabase schema/data change, migration, Edge Function change, or database write. Production and Testing databases remain unchanged.
 - No Vercel environment variables or project settings changed.
 - GitHub Actions CI and Vercel Production deployment are pending.
+
+
+---
+
+## Cale Assistant — complete bilingual guide audit (27 November 2026)
+
+- Work branch: `fix/cale-assistant-bilingual-guides-20261127`, created from the latest `main` commit `922e4fb62249be5d69e723a97b56483f917ee99e`.
+- Audited the Cale guide source at `src/cale/pageGuides.ts`. The repository contains 88 unique concrete guide definitions across route, panel, and Admin guide catalogs, plus shared fallback guide copy. This is broader than the earlier 76-guide inventory; the implementation and regression audit cover all 88 unique definitions found in the current source.
+- Added 288 exact Indonesian → English guide-copy mappings in the existing `src/lib/ui-language.ts` dictionary and derived the reverse English → Indonesian entries from the same source map. Existing translation behavior and `UiLanguageBridge` remain the single translation system.
+- Cale guide titles, descriptions, and instructional bullets continue to use the existing page-guide source. The existing MutationObserver-based bridge translates dynamically mounted Cale content using the new mappings; no parallel language state or new translation runtime was introduced.
+- Added a catalog export used only to enumerate unique guide definitions in regression tests. Added tests for every guide description and instructional section, plus bidirectional checks for all 288 explicit guide mappings.
+- About Us remains intentionally English-only; its existing `isAboutUs` exclusion in `UiLanguageBridge` is unchanged.
+- Dependency review: no package or lockfile changes and no new dependency.
+- Supabase: no schema, data, migration, Edge Function, or database write. Production and Testing remain unchanged.
+- Vercel: no environment variable or project setting changes.
+- QA, PR merge, post-merge main CI, and Vercel Production deployment are pending.
