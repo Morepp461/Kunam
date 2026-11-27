@@ -7,6 +7,7 @@ def read(path: str) -> str:
 
 migration = read("supabase/migrations/20261127150000_owner_reputation_engine.sql")
 achievement_migration = read("supabase/migrations/20261127151000_owner_reputation_round_based_achievement.sql")
+backfill_migration = read("supabase/migrations/20261127152000_owner_reputation_round_scoring_backfill.sql")
 profile = read("src/ProfileModule.tsx")
 workflow = read(".github/workflows/ci.yml")
 
@@ -23,6 +24,7 @@ assert "a.status='approved'" in migration
 assert "license_round_standings" in achievement_migration
 assert "team_id_snapshot" in achievement_migration
 assert "caleris_owner_reputation_round_standing_event" in achievement_migration
+assert "owner_reputation_round_scoring_backfill" in backfill_migration
 assert "caleris_owner_member_tenure_sync" in migration
 
 # Approved six-part weighting, including current owned asset market value.
