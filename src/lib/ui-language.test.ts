@@ -128,6 +128,27 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers app shell, admin access, and Member ID management copy", () => {
+    const cases = [
+      ["A world where every decision shapes your career. Join the grid, develop your team, and write your own motorsport story.", "Dunia tempat setiap keputusan membentuk kariermu. Bergabunglah di grid, kembangkan timmu, dan tulis kisah motorsport-mu sendiri."],
+      ["PILIH TANGGAL LAHIR", "SELECT DATE OF BIRTH"],
+      ["Admin Workflow hanya tersedia untuk akun yang terdaftar dalam allow-list administrator. Role FIA tidak memberikan akses ke halaman ini.", "Admin Workflow is only available to accounts on the administrator allow-list. The FIA role does not grant access to this page."],
+      ["Semua tautan mengarah ke modul Admin yang sudah aktif. Hak akses dan tindakan tetap divalidasi oleh masing-masing modul.", "All links lead to active Admin modules. Permissions and actions are still validated by each module."],
+      ["Role, tim, saldo, kontrak, dan data karakter resmi tidak dapat diubah melalui pengaturan akun. Hubungi Admin untuk koreksi data tersebut.", "Roles, teams, balances, contracts, and official character data cannot be changed through account settings. Contact an Admin to correct this information."],
+      ["Caleris Masters · Regulations", "Caleris Masters · Regulasi"],
+      ["Control room · Administration", "Ruang kendali · Administrasi"],
+      ["Mendukung heading (# / ##), paragraf, baris baru, dan bullet list (-).", "Supports headings (# / ##), paragraphs, line breaks, and bullet lists (-)."],
+      ["Member ID Management", "Manajemen Member ID"],
+      ["Member ID saat ini", "Current Member ID"],
+      ["Member ID baru", "New Member ID"],
+      ["Hanya Admin yang dapat mengubah Member ID. Database menolak ID duplikat dan mencatat riwayat perubahan.", "Only Admins can change Member IDs. The database rejects duplicate IDs and records change history."],
+      ["Kembali ke beranda", "Back to home"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates English interface labels to Indonesian", () => {
     expect(translateUiText("Transfer Market", "id")).toBe("Bursa Transfer");
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");
