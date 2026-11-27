@@ -36,6 +36,24 @@ describe("CALERIS UI language", () => {
     expect(translateUiText("TIER 1", "id")).toBe("TINGKAT 1");
     expect(translateUiText("40 tiers", "id")).toBe("40 tingkat");
   });
+  it("covers admin configuration, economy, license, and registration modules in both languages", () => {
+    const cases = [
+      ["Economy Audit Center", "Pusat Audit Ekonomi"],
+      ["Operations Suite", "Rangkaian Operasional"],
+      ["Transaction ledger", "Buku Besar Transaksi"],
+      ["Prizepool Configuration", "Konfigurasi Prizepool"],
+      ["Penetapan lisensi Driver", "Driver license assignment"],
+      ["Kelola ketentuan CALERIS dari website. Nilai dan nominal tidak ditanam di source code.", "Manage CALERIS rules from the website. Values and amounts are not hardcoded in source code."],
+      ["Belum ada transaksi. Ledger akan bertambah setelah transaksi pertama berhasil diposting.", "No transactions yet. The ledger will grow after the first transaction is posted successfully."],
+      ["Reward per quest selesai", "Reward per completed quest"],
+      ["Belum ada pendaftaran", "No registrations yet"],
+      ["Preferensi Tim", "Team Preferences"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
