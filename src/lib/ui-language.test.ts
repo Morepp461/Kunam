@@ -358,6 +358,19 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers long-form Privacy Policy and Terms content", () => {
+    const cases = [
+      ["Privasi dan keamanan informasi merupakan bagian penting dari pengelolaan platform. Kebijakan ini menjelaskan kategori data yang digunakan, tujuan pemrosesan, layanan pihak ketiga, serta cara mengajukan permintaan terkait data pribadi.", "Information privacy and security are important parts of platform management. This policy explains the categories of data used, the purposes of processing, third-party services, and how to submit requests concerning personal data."],
+      ["Saat kamu masuk menggunakan Discord, Supabase Auth memproses informasi autentikasi yang diperlukan, seperti identitas akun Discord, alamat email yang diberikan oleh penyedia login, serta informasi sesi. Kami tidak menerima kata sandi Discord kamu.", "When you sign in using Discord, Supabase Auth processes the required authentication information, such as your Discord account identity, the email address provided by the login provider, and session information. We do not receive your Discord password."],
+      ["Kami tidak menjual data pribadi pengguna sebagai produk data.", "We do not sell users' personal data as a data product."],
+      ["Aset virtual dalam platform bukan rekening, simpanan, alat pembayaran resmi, investasi, atau janji nilai tukar ke mata uang nyata. Jangan menganggap saldo atau token sebagai uang sungguhan.", "Virtual assets on the platform are not bank accounts, deposits, official payment instruments, investments, or promises of exchange value into real currencies. Do not treat balances or tokens as real money."],
+      ["CALERIS MASTERS disediakan sebagai platform roleplay dan komunitas. Sejauh diizinkan oleh hukum yang berlaku, layanan disediakan sebagaimana tersedia dan pengelola tidak menjamin bahwa setiap fitur akan selalu memenuhi seluruh kebutuhan atau bebas dari kesalahan.", "CALERIS MASTERS is provided as a roleplay and community platform. To the extent permitted by applicable law, the service is provided as available, and administrators do not guarantee that every feature will always meet all needs or be error-free."],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
