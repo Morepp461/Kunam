@@ -79,8 +79,7 @@ declare
 begin
   select coalesce(max(wa.balance),0) into v_balance
   from public.economy_wallet_accounts wa
-  where wa.account_kind='team' and wa.team_id=p_team_id and wa.is_active
-  order by wa.created_at desc limit 1;
+  where wa.account_kind='team' and wa.team_id=p_team_id and wa.is_active;
 
   select coalesce(sum(greatest(l.total_due-l.amount_repaid,0)),0) into v_debt
   from public.economy_cash_loans l
