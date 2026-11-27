@@ -74,7 +74,7 @@ for key in template_keys:
     assert f".cp-id-template--{key}" in digital_css, f"Missing visual template for {key}"
 assert "caleris_save_digital_id_v2" in community
 assert "p_badge_codes: selectedBadges" in community
-assert "selected_badges.length > 3" in community
+assert "selectedBadges.length > 3" in community
 assert "Add%20a%20heading_20260907_003952_0000.png" in community
 assert "profile-avatars" in public_id
 assert "Add%20a%20heading_20260907_003952_0000.png" in public_id
