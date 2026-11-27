@@ -287,6 +287,24 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Brand Ecosystem admin and Community Hub screens", () => {
+    const cases = [
+      ["Memuat status Brand Ecosystem...", "Loading Brand Ecosystem status..."],
+      ["Counter dari Team Owner langsung diproses sponsor engine. Tidak perlu Admin menekan tombol AI Sponsor Respond.", "Counters from Team Owners are processed directly by the sponsor engine. Admin does not need to press the AI Sponsor Respond button."],
+      ["Belum ada penawaran sponsor.", "There are no sponsor offers yet."],
+      ["Menyiapkan CALERIS MASTERS Yearbook...", "Preparing the CALERIS MASTERS Yearbook..."],
+      ["Profil member belum terhubung. Hubungi Admin jika kondisi ini terus terjadi.", "Member profile is not linked. Contact Admin if this continues."],
+      ["Suaramu sudah tercatat. Terima kasih sudah berpartisipasi.", "Your vote has been recorded. Thank you for participating."],
+      ["Batalkan voting ini? Suara yang sudah masuk tetap tersimpan sebagai arsip.", "Cancel this vote? Votes already submitted will remain stored in the archive."],
+      ["Mathematical champion", "Juara Matematis"],
+      ["CALERIS MASTERS Digital ID", "ID Digital CALERIS MASTERS"],
+      ["Quest completed", "Quest Selesai"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
