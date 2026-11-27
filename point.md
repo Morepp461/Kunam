@@ -2871,7 +2871,7 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - Final score: round the weighted sum of the six 0–100 component scores using the approved percentages above.
 
 ### Technical implementation
-- New migrations: 20261127150000_owner_reputation_engine.sql, 20261127151000_owner_reputation_round_based_achievement.sql, 20261127152000_owner_reputation_round_scoring_backfill.sql, and 20261127153000_owner_reputation_race_result_team_source.sql.
+- New migrations: 20261127150000_owner_reputation_engine.sql, 20261127151000_owner_reputation_round_based_achievement.sql, 20261127152000_owner_reputation_round_scoring_backfill.sql, 20261127153000_owner_reputation_race_result_team_source.sql, and 20261127154000_owner_reputation_round_trigger_snapshot_fallback.sql.
 - New tables: caleris_team_owner_tenures, caleris_owner_reputation, and caleris_owner_reputation_history.
 - Ownership tenure is backfilled from completed Team Take Over records and current Owner assignments. Member role changes and completed Take Over settlements maintain tenure boundaries and preserve the seller's final financial/contract snapshots.
 - Automatic recalculation triggers cover Team standings, HQ audit events, Driver contracts, Team Wallets, Team loans, fines/appeals, personal asset ownership, and catalog market-value changes.
@@ -2879,9 +2879,9 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - No new runtime dependency was added. CI now runs scripts/test_owner_reputation.py.
 
 ### Release gates
-- [x] All four Owner Reputation migrations applied to Testing; initial owner backfill, personal-asset market-value trigger, and tenure-scoped official race-result attribution were verified. Trigger tests used rollback transactions; no test fixture changes were retained.
+- [x] All five Owner Reputation migrations applied to Testing; initial owner backfill, personal-asset market-value trigger, and tenure-scoped official race-result attribution were verified. Trigger tests used rollback transactions; no test fixture changes were retained.
 - [x] GitHub Actions CI passed on PR head 8e78f18b55ae4f8b32f3302feeb558d8300bfcbb (run 45952041348): Owner Reputation regression script, TypeScript/build checks, and browser smoke all passed.
-- [x] All four migrations applied to Production. Testing and Production migration ledgers were reconciled to the four canonical filename versions. The repository schema fingerprint matched on both databases: 2750be903df11084445f0f91eafc84d1.
+- [x] All five migrations applied to Production. Testing and Production migration ledgers were reconciled to the four canonical filename versions. The repository schema fingerprint matched on both databases: 2750be903df11084445f0f91eafc84d1.
 - [x] Vercel Preview deployment READY: dpl_ADDUyjeVMECwV3HkMKGcR8URKCZr (calerismastersnewgen-5z3b2azk4-morepp.vercel.app). Existing large-chunk build warning remains non-blocking; no Vercel project settings or environment variables were changed.
 - [ ] PR merged to main after CI passes.
 - [ ] Vercel Production deployment reaches READY on the final main commit.
