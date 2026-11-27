@@ -255,6 +255,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers team livery editor labels and feedback", () => {
+    const cases = [
+      ["Body pattern", "Pola Bodi"],
+      ["Team Sponsor Placement", "Penempatan Sponsor Tim"],
+      ["Data livery tidak valid. Periksa warna, decal, nomor, sponsor, dan logo.", "Livery data is invalid. Check colors, decals, numbers, sponsors, and logos."],
+      ["Decal ditambahkan. Klik atau drag ke panel UV untuk menentukan posisinya.", "Decal added. Click or drag it onto the UV panel to set its position."],
+      ["Livery tim berhasil disimpan.", "Team livery saved successfully."],
+      ["Ganti logo tim", "Replace team logo"],
+      ["Simpan livery", "Save livery"],
+      ["TITLE SPONSOR", "SPONSOR UTAMA"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
