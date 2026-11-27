@@ -74,6 +74,7 @@ const DevelopmentTokens = lazy(() => import("./DevelopmentTokens"));
 const CalerisIntelligence = lazy(() => import("./CalerisIntelligence"));
 const DriverTraining = lazy(() => import("./DriverTraining"));
 const ShopPage = lazy(() => import("./ShopPage"));
+const AssetsMarketplace = lazy(() => import("./AssetsMarketplace"));
 const AdminTestPersonas = lazy(() => import("./AdminTestPersonas"));
 const AdminUsers = lazy(() => import("./AdminUsers"));
 const AdminTeamInactivity = lazy(() => import("./AdminTeamInactivity"));
@@ -177,6 +178,7 @@ function Application(){
   <Route path="/paddock-access" element={session&&!isAdmin&&(needsPaddockAccess||panelAccess.member_role===null)?<PaddockAccess session={session} onComplete={refreshProfile}/>:<Navigate to={session?"/dashboard":"/"} replace/>}/>
   <Route path="/dashboard" element={session?(needsPaddockAccess?<Navigate to="/paddock-access" replace/>:<DashboardModule session={session} profile={profile} profileReady={profileReady} toast={toast}/>):<Navigate to="/" replace/>}/>
   <Route path="/community" element={session&&!needsPaddockAccess?<CommunityProgression session={session} profile={profile} toast={toast}/>:<Navigate to={session?"/paddock-access":"/"} replace/>}/>
+  <Route path="/assets" element={session&&!needsPaddockAccess?<AssetsMarketplace/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/shop" element={session&&!needsPaddockAccess?<ShopPage session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/financial-centre" element={<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
   <Route path="/race-checkin" element={session&&!needsPaddockAccess?<MemberRaceCheckIn session={session}/>:<Navigate to={session?(needsPaddockAccess?"/paddock-access":"/dashboard"):"/"} replace/>}/>
