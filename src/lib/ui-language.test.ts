@@ -87,6 +87,24 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Cale onboarding and team ecosystem modules in both languages", () => {
+    const cases = [
+      ["Panduan Akun bersama Cale", "Account Guide with Cale"],
+      ["Lewati panduan", "Skip guide"],
+      ["Selamat datang di Paddock Access", "Welcome to Paddock Access"],
+      ["Pilih foto JPG, PNG, atau WebP. Kamu bisa mengatur posisi foto sebelum mengonfirmasi hasilnya.", "Choose a JPG, PNG, or WebP photo. You can adjust its position before confirming."],
+      ["Akun ini belum terhubung ke tim. Command Center hanya tersedia untuk anggota tim.", "This account is not linked to a team. The Command Center is only available to team members."],
+      ["Belum ada kontrak driver aktif pada season terbaru.", "There are no active driver contracts in the latest season."],
+      ["Saldo dibaca langsung dari wallet tim. Halaman ini tidak menyimpan atau menghitung saldo terpisah.", "The balance is read directly from the team wallet. This page does not store or calculate a separate balance."],
+      ["Belum ada sponsorship aktif.", "There are no active sponsorships yet."],
+      ["Belum ada juara pembalap yang difinalisasi.", "There are no finalized driver champions yet."],
+      ["HQ FACILITIES", "FASILITAS MARKAS"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
