@@ -94,7 +94,7 @@ declare
 begin
   if p_user_id is null or p_team_id is null then raise exception 'invalid_checkout_identity'; end if;
   if p_request_key is null or length(trim(p_request_key)) not between 8 and 80 then raise exception 'invalid_checkout_request_key'; end if;
-  select m into v_member
+  select m.* into v_member
   from public.profiles p
   join public.members m on m.id=p.member_id
   where p.user_id=p_user_id and m.team_id=p_team_id and m.role='Owner'
