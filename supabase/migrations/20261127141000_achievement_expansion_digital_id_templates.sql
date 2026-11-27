@@ -18,6 +18,8 @@ insert into public.caleris_achievement_badges(code,title,description,icon,rarity
 ('role_principal','Team Principal','Serves as a team principal.','shield-check','common',true,'principals'),
 ('role_agent','Driver Agent','Represents a driver in the CALERIS paddock.','handshake','common',true,'agents'),
 ('driver_first_start','First Start','Completed the first official race entry.','flag','common',true,'drivers'),
+('driver_ten_starts','Ten Race Starts','Completed ten official race entries.','flag','rare',true,'drivers'),
+('driver_25_starts','25 Race Starts','Completed 25 official race entries.','flag','epic',true,'drivers'),
 ('driver_first_podium','First Podium','Reached the official podium for the first time.','medal','rare',true,'drivers'),
 ('driver_ten_podiums','Ten Podiums','Collected ten official podium finishes.','award','epic',true,'drivers'),
 ('driver_100_points','Century Club','Scored 100 official championship points.','target','rare',true,'motorsport'),
@@ -40,6 +42,7 @@ insert into public.caleris_achievement_badges(code,title,description,icon,rarity
 on conflict(code) do update set
   title=excluded.title,description=excluded.description,icon=excluded.icon,rarity=excluded.rarity,
   active=true,category=excluded.category;
+update public.caleris_achievement_badges set category='community' where code='community_voice';
 
 update public.caleris_milestone_definitions set badge_code=case code
   when 'career_100_points' then 'driver_100_points'
@@ -49,8 +52,8 @@ update public.caleris_milestone_definitions set badge_code=case code
   when 'career_first_win' then 'driver_first_win'
   when 'career_five_wins' then 'driver_five_wins'
   when 'career_race_starts_1' then 'driver_first_start'
-  when 'career_race_starts_10' then 'driver_first_start'
-  when 'career_race_starts_25' then 'driver_first_start'
+  when 'career_race_starts_10' then 'driver_ten_starts'
+  when 'career_race_starts_25' then 'driver_25_starts'
   when 'career_ten_podiums' then 'driver_ten_podiums'
   when 'team_drivers_2' then 'team_full_lineup'
   when 'team_first_podium' then 'team_first_podium'
@@ -71,7 +74,8 @@ returns integer language sql immutable set search_path=''
 as $function$
   select case p_badge_code
     when 'role_driver' then 5 when 'role_team_owner' then 5 when 'role_principal' then 5 when 'role_agent' then 5
-    when 'driver_first_start' then 5 when 'driver_first_podium' then 5 when 'driver_ten_podiums' then 12
+    when 'driver_first_start' then 5 when 'driver_ten_starts' then 10 when 'driver_25_starts' then 15
+    when 'driver_first_podium' then 5 when 'driver_ten_podiums' then 12
     when 'driver_100_points' then 8 when 'driver_500_points' then 15 when 'driver_first_win' then 10
     when 'driver_five_wins' then 18 when 'driver_season_champion' then 20
     when 'team_full_lineup' then 5 when 'team_first_podium' then 5 when 'team_ten_podiums' then 12
@@ -169,6 +173,28 @@ create trigger caleris_achievement_vote_award
 after insert on public.caleris_community_votes
 for each row execute function private.caleris_award_vote_achievement();
 
+do $role_backfill$
+declare v_member record; v_badge text;
+begin
+  for v_member in select id,role from public.members where role in ('Driver','Owner','Principal','Agent') loop
+    v_badge:=case v_member.role when 'Driver' then 'role_driver' when 'Owner' then 'role_team_owner'
+      when 'Principal' then 'role_principal' when 'Agent' then 'role_agent' else null end;
+    if v_badge is not null then perform private.award_caleris_achievement(v_member.id,v_badge); end if;
+  end loop;
+end;
+$role_backfill$;
+
+do $patch_driver_milestones$
+declare d text; old_guard text; new_guard text;
+begin
+  d:=pg_get_functiondef('public.caleris_refresh_driver_milestones(uuid)'::regprocedure);
+  old_guard:='if p_member is null or not exists(select 1 from public.members where id=p_member) then return; end if;';
+  new_guard:='if p_member is null or not exists(select 1 from public.members where id=p_member and role=''Driver'') then return; end if;';
+  if position(old_guard in d)=0 then raise exception 'Driver milestone scope changed; refusing unsafe patch.'; end if;
+  execute replace(d,old_guard,new_guard);
+end;
+$patch_driver_milestones$;
+
 create or replace function private.caleris_award_race_achievements()
 returns trigger language plpgsql security definer set search_path=''
 as $function$
@@ -192,6 +218,26 @@ drop trigger if exists caleris_achievement_race_result_award on public.caleris_r
 create trigger caleris_achievement_race_result_award
 after insert or update of member_id,round_id on public.caleris_race_result_entries
 for each row execute function private.caleris_award_race_achievements();
+
+create or replace function private.caleris_award_round_achievements()
+returns trigger language plpgsql security definer set search_path=''
+as $function$
+declare v_member record;
+begin
+  if lower(coalesce(new.race_lifecycle_status,'')) not in ('completed','closed') then return new; end if;
+  if tg_op='UPDATE' and lower(coalesce(old.race_lifecycle_status,'')) in ('completed','closed') then return new; end if;
+  for v_member in select distinct member_id from public.caleris_race_result_entries where round_id=new.id and member_id is not null loop
+    perform private.award_caleris_achievement(v_member.member_id,'season_participant');
+    perform private.award_caleris_achievement(v_member.member_id,'division_competitor');
+  end loop;
+  return new;
+end;
+$function$;
+
+drop trigger if exists caleris_achievement_round_close_award on public.license_rounds;
+create trigger caleris_achievement_round_close_award
+after update of race_lifecycle_status on public.license_rounds
+for each row execute function private.caleris_award_round_achievements();
 
 create table if not exists public.caleris_digital_id_templates (
   template_key text primary key,
@@ -295,7 +341,7 @@ end;
 $function$;
 
 create or replace function public.caleris_get_digital_id_options()
-returns jsonb language plpgsql stable security definer set search_path=''
+returns jsonb language plpgsql security definer set search_path=''
 as $function$
 declare
   v_member_id uuid:=(select public.caleris_current_member_id());
@@ -377,6 +423,16 @@ end;
 $function$;
 
 revoke all on function public.caleris_save_digital_id(text,text,text,boolean) from public,anon,authenticated;
+update public.caleris_digital_id_cards c
+set template_key=choice.template_key,accent_color=t.accent_color
+from lateral (
+  select template_key from public.caleris_digital_id_templates
+  where template_key=any(private.caleris_digital_id_unlocked_templates(c.member_id)) and active
+  order by sort_order limit 1
+) choice
+join public.caleris_digital_id_templates t on t.template_key=choice.template_key
+where c.template_key is null;
+
 revoke all on function public.caleris_get_digital_id_options() from public,anon;
 revoke all on function public.caleris_save_digital_id_v2(text,text,boolean,text[]) from public,anon;
 grant execute on function public.caleris_get_digital_id_options() to authenticated;
