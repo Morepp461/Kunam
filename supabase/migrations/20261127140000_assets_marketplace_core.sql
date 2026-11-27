@@ -262,8 +262,8 @@ begin
   new_guard:='if p_event_type not in (''checkin_reward'',''prize'',''bank_reward'',''sponsor_payout'',''bank_funding'',''tax'',''fine'',''transfer'',''admin_adjustment'',''reversal'',''payroll'',''loan_disbursement'',''loan_repayment'',''development_upgrade'',''team_hq_upgrade'',''contract_compensation'',''asset_purchase'') then raise exception ''Jenis transaksi tidak dikenal.''; end if;';
   if position(old_guard in d)=0 then raise exception 'Economy transaction event allow-list changed; refusing unsafe patch.'; end if;
   d:=replace(d,old_guard,new_guard);
-  old_route:='elsif p_event_type=''transfer'' and (v_source.account_kind in (''vreeo_bank'',''sponsor_source'') or v_destination.account_kind in (''vreeo_bank'',''sponsor_source'')) then raise exception ''Rute transfer tidak valid.'';';
-  new_route:=old_route||' elsif p_event_type=''asset_purchase'' and (v_source.account_kind not in (''driver'',''team_owner'',''public_member'') or v_destination.account_kind<>''vreeo_bank'') then raise exception ''Rute pembelian aset tidak valid.'';';
+  old_route:='elsif p_event_type=''transfer'' and (v_source.account_kind in (''vreeo_bank'',''sponsor_source'') or v_destination.account_kind in (''vreeo_bank'',''sponsor_source'')) then'||chr(10)||'  raise exception ''Rute transfer tidak valid.'';';
+  new_route:=old_route||' elsif p_event_type=''asset_purchase'' and (v_source.account_kind not in (''driver'',''team_owner'',''public_member'') or v_destination.account_kind<>''vreeo_bank'') then'||chr(10)||'  raise exception ''Rute pembelian aset tidak valid.'';';
   if position(old_route in d)=0 then raise exception 'Economy transaction route guard changed; refusing unsafe patch.'; end if;
   d:=replace(d,old_route,new_route);
   execute d;
