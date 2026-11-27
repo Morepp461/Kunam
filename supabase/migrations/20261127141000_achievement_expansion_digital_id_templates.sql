@@ -424,14 +424,19 @@ $function$;
 
 revoke all on function public.caleris_save_digital_id(text,text,text,boolean) from public,anon,authenticated;
 update public.caleris_digital_id_cards c
-set template_key=choice.template_key,accent_color=t.accent_color
-from lateral (
-  select template_key from public.caleris_digital_id_templates
-  where template_key=any(private.caleris_digital_id_unlocked_templates(c.member_id)) and active
-  order by sort_order limit 1
-) choice
-join public.caleris_digital_id_templates t on t.template_key=choice.template_key
-where c.template_key is null;
+set template_key=(
+  select t.template_key from public.caleris_digital_id_templates t
+  where t.template_key=any(private.caleris_digital_id_unlocked_templates(c.member_id)) and t.active
+  order by t.sort_order limit 1
+),
+accent_color=(
+  select t.accent_color from public.caleris_digital_id_templates t
+  where t.template_key=any(private.caleris_digital_id_unlocked_templates(c.member_id)) and t.active
+  order by t.sort_order limit 1
+)
+where c.template_key is null
+  and exists(select 1 from public.caleris_digital_id_templates t
+    where t.template_key=any(private.caleris_digital_id_unlocked_templates(c.member_id)) and t.active);
 
 revoke all on function public.caleris_get_digital_id_options() from public,anon;
 revoke all on function public.caleris_save_digital_id_v2(text,text,boolean,text[]) from public,anon;
