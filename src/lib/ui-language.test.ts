@@ -105,6 +105,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers cash loan and circuit design workflows in both languages", () => {
+    const cases = [
+      ["Pinjaman Pribadi", "Personal Loan"],
+      ["Ajukan pinjaman pribadi atau pinjaman tim berdasarkan income season aktif.", "Apply for a personal or team loan based on active season income."],
+      ["Bunga tetap berdasarkan total tenor, bukan bunga berbunga.", "Interest is fixed based on the total term, not compounded."],
+      ["Circuit Maker", "Pembuat Sirkuit"],
+      ["Visual editor dan specification editor tersinkron dalam satu draft.", "The visual editor and specification editor are synchronized in a single draft."],
+      ["Track limits", "Batas Lintasan"],
+      ["Circuit Pool", "Kumpulan Sirkuit"],
+      ["Belum ada circuit. Tambahkan melalui form di bawah.", "No circuits yet. Add one using the form below."],
+      ["Penyimpanan draft browser tidak tersedia.", "Browser draft storage is unavailable."],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
