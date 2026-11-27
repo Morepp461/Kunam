@@ -3023,3 +3023,17 @@ Do not make these core infrastructure dependencies. Consider them only if the fr
 - Caleris CI passed on implementation commit `3299ce2d1cd0adee977023cf596beb7e04c72380` (run `46049843363`), including TypeScript, production build, unit/schema tests, Playwright smoke, project validation, existing regression suites, and Supabase migration parity.
 - Vercel Preview reached `READY` for implementation commit `3299ce2d1cd0adee977023cf596beb7e04c72380`.
 - Production merge and deployment remain pending.
+
+
+---
+
+## Free Technology Adoption — DiceBear + Recharts (28 November 2026)
+
+- Work branch: `feat/dicebear-recharts-integration-20261128`, based on `main` commit `a7bd7b96c4c61d6e623dcd01db83b70552bd8587`.
+- DiceBear uses local packages `@dicebear/core@10.7.0` and `@dicebear/styles@10.6.0`; no hosted avatar API is called. Account settings provides six CC0 1.0 styles: Lorelei, Notionists, Open Peeps, Pixel Art, Thumbs, and Blobs. Users can customize the deterministic seed and preview a style before applying it.
+- Selected DiceBear SVGs are rasterized to WebP in the browser and uploaded to the existing private `profile-avatars` bucket. The existing `member_update_profile_settings` RPC remains the profile persistence path; manual photo upload remains available. No database schema, storage policy, or migration change is required.
+- Recharts `3.11.1` is the sole chart library; Chart.js is intentionally not installed. `react-is@19.1.1` matches the repository's React version.
+- Former chart placeholders are replaced with official season visualizations sourced from `caleris_get_season_community_data`: Driver Ranking, Team Ranking, race starts/wins by round, and Driver Comparison (points versus wins). The latest active season is preferred; the latest completed season is used only when no active season exists. Premio/Zwei views filter by their official division names.
+- Engine Ranking remains an explicit no-data state because the current source does not provide an authoritative engine ranking. No simulated or fabricated values are displayed.
+- No Supabase schema, data, migration, Edge Function, environment variable, or Vercel project setting was changed.
+- Validation and release status: implementation commit and CI/Preview/Production checks pending.
