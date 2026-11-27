@@ -2962,4 +2962,9 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - Dependency review: no package or lockfile changes and no new dependency.
 - Supabase: no schema, data, migration, Edge Function, or database write. Production and Testing remain unchanged.
 - Vercel: no environment variable or project setting changes.
-- QA, PR merge, post-merge main CI, and Vercel Production deployment are pending.
+- [x] Feature-branch Caleris CI passed on `ec90c8ea9c50b43127652951d881f5b47ed9fd78` (run `45968766051`), including dependency security gate, Deno checks, TypeScript, production build, unit/schema tests, Playwright browser smoke, all existing regression suites, and Supabase schema parity guard.
+- [x] PR #414 merged into `main` using squash merge. Production merge commit: `ef37dee31c25d448797b3cf174bec595c3967d5b`.
+- [x] Post-merge Caleris CI passed on the merge commit (run `45969013151`): TypeScript, production build, unit/schema tests, Playwright browser smoke, all existing regression suites, and Supabase schema parity guard.
+- [x] Vercel Production deployment reached `READY`: `dpl_4bHMN1RYj9ggmhzr5ZZs2VYztLWG`, commit `ef37dee31c25d448797b3cf174bec595c3967d5b`. Production aliases verified: `calerismasters.com` and `www.calerismasters.com`.
+- [x] No Supabase schema/data changes or migrations were needed. Production and Testing databases remain unchanged and aligned.
+- [x] No Vercel environment variables or project settings were changed.
