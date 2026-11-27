@@ -2880,9 +2880,9 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 
 ### Release gates
 - [x] All five Owner Reputation migrations applied to Testing; initial owner backfill, personal-asset market-value trigger, and tenure-scoped official race-result attribution were verified. Trigger tests used rollback transactions; no test fixture changes were retained.
-- [x] GitHub Actions CI passed on PR head 8e78f18b55ae4f8b32f3302feeb558d8300bfcbb (run 45952041348): Owner Reputation regression script, TypeScript/build checks, and browser smoke all passed.
+- [x] GitHub Actions CI passed on PR head 78057e9960b82662bd27f1e3cecf5407cc9285ea (run 45952731763): Owner Reputation regression script, TypeScript/build checks, unit/schema checks, and browser smoke all passed. The optional remote DB-URL parity sub-check had no GitHub DB URL secrets; manual Testing/Production fingerprint and ledger parity were verified.
 - [x] All five migrations applied to Production. Testing and Production migration ledgers were reconciled to the four canonical filename versions. The repository schema fingerprint matched on both databases: 2750be903df11084445f0f91eafc84d1.
 - [x] Vercel Preview deployment READY: dpl_ADDUyjeVMECwV3HkMKGcR8URKCZr (calerismastersnewgen-5z3b2azk4-morepp.vercel.app). Existing large-chunk build warning remains non-blocking; no Vercel project settings or environment variables were changed.
-- [ ] PR merged to main after CI passes.
-- [ ] Vercel Production deployment reaches READY on the final main commit.
+- [x] PR #406 merged to main. Merge commit: 103dd1bac3b7b137c2bac160b4d167a9356a823e.
+- [x] Vercel Production deployment READY on the merge commit: dpl_ARYT9ctVpHMpATkgeHfoNGxAtCxb; aliases include calerismasters.com and www.calerismasters.com. No Vercel project settings or environment variables were changed.
 - [ ] Physical Android acceptance on the user's device; CI/browser smoke does not substitute for a real-device check.
