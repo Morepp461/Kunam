@@ -439,7 +439,6 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
   "Market value of assets still owned":"Nilai pasar aset yang masih dimiliki",
   "Contribution to Driver Reputation":"Kontribusi pada Reputasi Pembalap",
   "Private collection":"Koleksi pribadi",
-  "Buy":"Beli",
   "at":"seharga",
   "from":"dari",
   "Successfully added to your asset garage.":"Berhasil ditambahkan ke garasi asetmu.",
