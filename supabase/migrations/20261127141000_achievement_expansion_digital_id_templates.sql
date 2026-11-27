@@ -243,6 +243,17 @@ do $achievement_history_backfill$
 declare v_row record;
 begin
   for v_row in
+    select id,role from public.members where role in ('Driver','Owner','Principal','Agent')
+  loop
+    case v_row.role
+      when 'Driver' then perform private.award_caleris_achievement(v_row.id,'role_driver');
+      when 'Owner' then perform private.award_caleris_achievement(v_row.id,'role_team_owner');
+      when 'Principal' then perform private.award_caleris_achievement(v_row.id,'role_principal');
+      when 'Agent' then perform private.award_caleris_achievement(v_row.id,'role_agent');
+    end case;
+  end loop;
+
+  for v_row in
     select distinct e.member_id
     from public.caleris_race_result_entries e
     join public.license_rounds r on r.id=e.round_id
