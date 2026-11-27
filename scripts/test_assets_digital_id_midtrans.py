@@ -73,9 +73,11 @@ template_keys = re.findall(r"\('((?:license|reputation|division)_[a-z0-9_]+)','(
 assert len(set(template_keys)) == 14
 for key in template_keys:
     assert f".cp-id-template--{key}" in digital_css, f"Missing visual template for {key}"
-    css_rule = re.search(re.escape(f".cp-id-template--{key}") + r"\\{([^}]*)\\}", digital_css)
-    assert css_rule, f"Missing CSS rule for {key}"
-    area_match = re.search(r'grid-template-areas:"([^"]+)"', css_rule.group(1))
+    css_start = digital_css.index(f".cp-id-template--{key}")
+    rule_start = digital_css.index("{", css_start) + 1
+    rule_end = digital_css.index("}", rule_start)
+    css_rule = digital_css[rule_start:rule_end]
+    area_match = re.search(r'grid-template-areas:"([^"]+)"', css_rule)
     assert area_match, f"Missing layout areas for {key}"
     first_row = area_match.group(1).split('" "')[0].split()
     assert first_row[-1] == "brand", f"CALERIS logo must stay top-right for {key}"
