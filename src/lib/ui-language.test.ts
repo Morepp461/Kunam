@@ -64,6 +64,28 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers remaining Team panel and livery labels", () => {
+    const cases = [
+      ["TEAM PANEL · PARTNERSHIP", "PANEL TIM · KEMITRAAN"],
+      ["TEAM PANEL · DRIVER RECRUITMENT", "PANEL TIM · REKRUTMEN PEMBALAP"],
+      ["TEAM PANEL · FINANCIAL MANAGEMENT", "PANEL TIM · MANAJEMEN KEUANGAN"],
+      ["TEAM PANEL · ENGINE MARKET", "PANEL TIM · BURSA ENGINE"],
+      ["TEAM MANAGEMENT · HEADQUARTERS", "MANAJEMEN TIM · MARKAS BESAR"],
+      ["ACTIVE EFFECTS · CONDITION SCALED", "EFEK AKTIF · DISESUAIKAN DENGAN KONDISI"],
+      ["CURRENT SEASON · LATEST 30", "MUSIM SAAT INI · 30 TERBARU"],
+      ["TEAM PANEL · RECRUITMENT", "PANEL TIM · REKRUTMEN"],
+      ["Salary minimum (€)", "Gaji minimum (€)"],
+      ["TEAM MANAGEMENT · VISUAL IDENTITY", "MANAJEMEN TIM · IDENTITAS VISUAL"],
+      ["02 / ACTIVE SPONSORS", "02 / SPONSOR AKTIF"],
+      ["03 / DECAL STUDIO", "03 / STUDIO DECAL"],
+      ["04 / UV TEXTURE ATLAS", "04 / ATLAS TEKSTUR UV"],
+      ["Net profit / loss", "Laba / rugi bersih"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates English interface labels to Indonesian", () => {
     expect(translateUiText("Transfer Market", "id")).toBe("Bursa Transfer");
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");
