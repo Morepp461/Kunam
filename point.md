@@ -2831,14 +2831,15 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - Midtrans QA confirmed the fixed Rp29.900 price, inactive state, rejected checkout while inactive, service-role-only finalization, and revoked legacy EUR Shop purchase RPC access.
 - **Asset economy calibration (Testing-only evidence):** 42 active personal wallets (26 Driver, 13 Team Owner, 3 public_member) hold €956.8m total; median €20m, 25th percentile €20m, 75th percentile €38m, maximum €38m, minimum €0. The configured quest rewards are Easy €100k, Normal €200k, Hard €400k, Elite €750k; the current dataset has 3 paid quest assignments totaling €800k (median €200k, max €400k). There are 27 active economy_driver_contracts with annual_salary €205m–€1.25bn (median €270m), while payroll claim history has 0 paid claims. The cheapest approved catalog item (€25k) is 0.125% of the median personal wallet and 25% of one Easy quest reward; €100k entry items are 0.5% of the median wallet and equal one Easy quest reward. The lowest tiers are therefore inexpensive relative to this Testing economy. Prices remain unchanged because the owner explicitly approved them; any rebalancing requires separate approval. Production has 0 member rows, so there is no production wallet distribution to compare. Testing-only balances and records were not copied to Production.
 - **Reputation-model boundary:** the existing schema has Driver Reputation and Team Reputation, but no generic personal-reputation table/column for Owner, Principal, or Agent. The approved asset bonus is integrated into the existing Driver Reputation record where one exists; no second reputation score was invented. Extending the bonus to non-Driver personal profiles requires a separately approved design for a canonical personal reputation field.
-- GitHub Caleris CI passed all application/type checks, Vite production build, unit/schema validation, Playwright browser smoke test, Assets/Achievements/Digital ID/Midtrans regression checks, Development Shop regression checks, economy regression suites, and Supabase schema parity guard on the pre-calibration documentation commit. CI must be rerun after the final point.md update.
-- Vercel Preview build for that commit was started and must reach READY. Production release remains gated on final CI, PR merge, and Vercel Production READY.
+- GitHub Caleris CI passed all application/type checks, Vite production build, unit/schema validation, Playwright browser smoke test, Assets/Achievements/Digital ID/Midtrans regression checks, Development Shop regression checks, economy regression suites, and Supabase schema parity guard on feature commit 9416f05739b1f601ebabe26f1813fbe87bca04bb (runs 45948388048 and 45948390887) and post-merge main commit 1c9adc35aacbb595f552eb85a4fd074b6f16116c (run 45948674467).
+- Vercel Preview deployment dpl_6G7KrtQFc8o5WfSzujEvr1z4RD8y reached READY on feature commit 9416f05739b1f601ebabe26f1813fbe87bca04bb. The production deployment dpl_J1YJa5rAxEtXngMmsERywWFFZnxo reached READY on main commit 1c9adc35aacbb595f552eb85a4fd074b6f16116c and serves calerismasters.com plus www.calerismasters.com.
 
-### Remaining release gates
+### Release outcome — 27 November 2026
 
-- [ ] Re-run GitHub Caleris CI after this point.md update and require all checks to pass.
-- [ ] Ensure Vercel Preview for the final branch commit reaches READY and verify the /assets, /community Digital ID editor, and /shop pages.
-- [ ] Merge PR #404 into main only after the above checks pass.
-- [ ] Verify Vercel Production deployment is READY on the merge commit and the production aliases serve it.
-- [ ] Keep Midtrans Shop inactive until merchant configuration and complete Sandbox verification are explicitly completed.
+- [x] Final feature CI passed on the branch commit; post-merge main CI also passed.
+- [x] Vercel Preview reached READY for the feature commit.
+- [x] PR #404 was squash-merged into main. Merge commit: 1c9adc35aacbb595f552eb85a4fd074b6f16116c.
+- [x] Vercel Production reached READY on the merge commit. Deployment: dpl_J1YJa5rAxEtXngMmsERywWFFZnxo. Production aliases: calerismasters.com and www.calerismasters.com.
+- [x] All three new Supabase migration versions are aligned with the repository filenames in both Testing and Production. The new Edge Function is deployed in both.
+- [x] Midtrans remains inactive at Rp29.900 IDR until merchant configuration and complete Sandbox verification are explicitly completed. No credentials or Vercel environment settings were changed.
 - [ ] Owner must perform the physical Android acceptance pass; Playwright/browser CI is not a substitute.
