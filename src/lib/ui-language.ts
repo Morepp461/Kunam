@@ -379,7 +379,7 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "Lap record":"Rekor putaran","License ID *":"ID Lisensi *","Lap record time (opsional)":"Waktu rekor putaran (opsional)",
  "Race Starts":"Start Balapan","Completed official sessions":"Sesi resmi selesai","Official P1 results":"Hasil P1 resmi",
  "Official top-three results":"Hasil tiga besar resmi","Championship Points":"Poin Kejuaraan",
-  "Completed rounds only":"Hanya putaran yang selesai","Season Titles":"Gelar Musim","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI"
+  "Completed rounds only":"Hanya putaran yang selesai","Season Titles":"Gelar Musim","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI",
 
   "TIER 1":"TINGKAT 1",
   "TIER 2":"TINGKAT 2",
