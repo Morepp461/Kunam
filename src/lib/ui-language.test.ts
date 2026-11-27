@@ -71,6 +71,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers member management and onboarding screens in both languages", () => {
+    const cases = [
+      ["Daftar akun: kelola role, tim, peringatan, dan sanksi member.", "Account directory: manage member roles, teams, warnings, and sanctions."],
+      ["Preferensi role akun", "Account role preference"],
+      ["Ban sementara berlaku 1 sampai 365 hari.", "Temporary bans last 1 to 365 days."],
+      ["Akses administrator diperlukan", "Administrator access required"],
+      ["Pendaftaran role dan profilmu sedang diperiksa Admin.", "Your role and profile registration is being reviewed by an Admin."],
+      ["Memverifikasi sesi Discord...", "Verifying Discord session..."],
+      ["USER MODERATION", "MODERASI PENGGUNA"],
+      ["Community Invite", "Undangan Komunitas"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
