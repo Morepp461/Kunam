@@ -223,6 +223,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Team HQ, engine market, roster, and contract screens", () => {
+    const cases = [
+      ["Belum ada kontrak Driver untuk season ini.", "There are no Driver contracts for this season."],
+      ["Data kontrak hanya tersedia untuk Team Owner.", "Contract data is only available to Team Owners."],
+      ["Belum ada Engine yang digunakan untuk season aktif.", "No Engine is being used for the active season."],
+      ["Memuat Team HQ...", "Loading Team HQ..."],
+      ["Proyek upgrade berhasil dimulai. Biaya telah dipindahkan ke VreeoBank.", "Upgrade project started successfully. The cost has been transferred to VreeoBank."],
+      ["Fasilitas berhasil dibongkar. Tidak ada pengembalian biaya.", "Facility dismantled successfully. No refund is issued."],
+      ["UNDER CONSTRUCTION", "SEDANG DIBANGUN"],
+      ["Fan growth", "Pertumbuhan Fans"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
