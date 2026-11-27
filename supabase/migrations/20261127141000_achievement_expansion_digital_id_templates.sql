@@ -205,7 +205,7 @@ begin
   from public.license_rounds r
   join public.license_season_divisions d on d.id=r.season_division_id
   where r.id=new.round_id;
-  if v_lifecycle not in ('completed','closed') then return new; end if;
+  if coalesce(lower(v_lifecycle),'') not in ('completed','closed') then return new; end if;
   perform private.award_caleris_achievement(new.member_id,'season_participant');
   if v_division_key is not null then
     perform private.award_caleris_achievement(new.member_id,'division_competitor');
@@ -437,6 +437,16 @@ revoke all on function public.caleris_get_digital_id_options() from public,anon;
 revoke all on function public.caleris_save_digital_id_v2(text,text,boolean,text[]) from public,anon;
 grant execute on function public.caleris_get_digital_id_options() to authenticated;
 grant execute on function public.caleris_save_digital_id_v2(text,text,boolean,text[]) to authenticated;
+
+revoke all on function private.caleris_achievement_reward_xp(text) from public,anon,authenticated;
+revoke all on function private.award_caleris_achievement(uuid,text) from public,anon,authenticated;
+revoke all on function private.caleris_award_role_achievement() from public,anon,authenticated;
+revoke all on function private.caleris_award_checkin_achievement() from public,anon,authenticated;
+revoke all on function private.caleris_award_quest_achievement() from public,anon,authenticated;
+revoke all on function private.caleris_award_vote_achievement() from public,anon,authenticated;
+revoke all on function private.caleris_award_race_achievements() from public,anon,authenticated;
+revoke all on function private.caleris_award_round_achievements() from public,anon,authenticated;
+revoke all on function private.caleris_digital_id_unlocked_templates(uuid) from public,anon,authenticated;
 
 create or replace function public.caleris_get_public_digital_id(p_member_code text)
 returns jsonb language sql stable security definer set search_path='pg_catalog','public'
