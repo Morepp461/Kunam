@@ -306,6 +306,43 @@ begin
 end;
 $function$;
 
+do $patch_admin_driver_reputation$
+declare
+  d text;
+  old_decl text;
+  new_decl text;
+  old_insert text;
+  new_insert text;
+  old_history text;
+  new_history text;
+  old_return text;
+  new_return text;
+begin
+  d:=pg_get_functiondef('public.admin_set_driver_reputation(uuid,integer,jsonb,text)'::regprocedure);
+  old_decl:='declare v_old integer;';
+  new_decl:='declare v_old integer; v_bonus integer; v_final_score integer; v_metrics jsonb; v_market_value numeric;';
+  if position(old_decl in d)=0 then raise exception 'Driver reputation declaration changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_decl,new_decl);
+  old_insert:='select score into v_old from public.caleris_driver_reputation where member_id=p_member_id for update;';
+  new_insert:='v_market_value:=private.caleris_assets_market_value(p_member_id); v_bonus:=private.caleris_assets_reputation_bonus(p_member_id); v_final_score:=least(9999,p_score+v_bonus); v_metrics:=p_metrics||jsonb_build_object(''asset_market_value_eur'',v_market_value,''asset_reputation_bonus'',v_bonus,''base_reputation_score'',p_score); '||old_insert;
+  if position(old_insert in d)=0 then raise exception 'Driver reputation write point changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_insert,new_insert);
+  old_history:='values(p_member_id,p_score,case when p_score>=7000 then ''elite'' when p_score>=4500 then ''top'' when p_score>=2500 then ''competitive'' when p_score>=1000 then ''established'' else ''developing'' end,p_metrics,now())';
+  new_history:='values(p_member_id,v_final_score,case when v_final_score>=7000 then ''elite'' when v_final_score>=4500 then ''top'' when v_final_score>=2500 then ''competitive'' when v_final_score>=1000 then ''established'' else ''developing'' end,v_metrics,now())';
+  if position(old_history in d)=0 then raise exception 'Driver reputation score expression changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_history,new_history);
+  old_history:='values(''driver'',p_member_id,v_old,p_score,p_metrics,p_source_event);';
+  new_history:='values(''driver'',p_member_id,v_old,v_final_score,v_metrics,p_source_event);';
+  if position(old_history in d)=0 then raise exception 'Driver reputation history write changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_history,new_history);
+  old_return:='return jsonb_build_object(''member_id'',p_member_id,''score'',p_score);';
+  new_return:='return jsonb_build_object(''member_id'',p_member_id,''score'',v_final_score,''asset_reputation_bonus'',v_bonus);';
+  if position(old_return in d)=0 then raise exception 'Driver reputation response changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_return,new_return);
+  execute d;
+end;
+$patch_admin_driver_reputation$;
+
 create or replace function public.caleris_assets_get_dashboard()
 returns jsonb language plpgsql stable security definer set search_path=''
 as $function$
