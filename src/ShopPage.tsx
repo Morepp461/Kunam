@@ -95,7 +95,7 @@ export default function ShopPage({session}:{session:Session}){
    </article>
    {capacity&&<section className="workspace-card hq-slot-capacity-card"><div><span className="section-eyebrow">TEAM UPGRADE CAPACITY</span><h3>Kapasitas proyek aktif</h3></div><strong>{capacity.max_projects} slot</strong><p>Base 2{capacity.factory_bonus? " + Factory LV6: 1":""}{capacity.shop_bonus? " + Shop item: 1":""}. Maksimal 4 proyek berjalan bersamaan.</p></section>}
    {!teamId&&<section className="workspace-card shop-upcoming-card"><span className="section-eyebrow">TEAM ITEM</span><p>Item ini hanya dapat dibeli oleh Team Owner yang sudah terhubung ke tim.</p></section>}
-   <footer className="assets-marketplace-footnote"><RefreshCw size={14}/> Entitlement hanya diberikan setelah server memverifikasi notifikasi pembayaran Midtrans. Redirect atau callback browser tidak pernah menjadi bukti pembayaran.</footer>
+   <footer className="hq-slot-payment-note"><RefreshCw size={14}/> Entitlement hanya diberikan setelah server memverifikasi notifikasi pembayaran Midtrans. Redirect atau callback browser tidak pernah menjadi bukti pembayaran.</footer>
   </>}
  </section>;
 }
