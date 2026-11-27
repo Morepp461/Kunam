@@ -16,28 +16,28 @@
     "audit:lighthouse": "npm run build && npx --yes @lhci/cli@0.15.1 autorun"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.57.4",
+    "@supabase/supabase-js": "2.119.2",
     "lucide-react": "0.468.0",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "react-router-dom": "7.18.5",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "react-router-dom": "7.18.7",
     "@countrystatecity/countries-browser": "3.0.1",
     "tesseract.js": "6.0.1",
     "three": "0.187.0",
-    "ara3d": "0.7.4",
+    "ara3d": "0.15.0",
     "fflate": "0.8.3",
     "zod": "4.6.7",
     "qrcode": "1.5.4"
   },
   "devDependencies": {
-    "@types/react": "19.1.12",
-    "@types/react-dom": "19.1.9",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@types/three": "0.187.0",
     "@vitejs/plugin-react": "5.0.2",
     "typescript": "5.9.2",
     "vite": "7.3.8",
     "@playwright/test": "1.65.1",
     "vitest": "5.1.1",
-    "@types/qrcode": "1.5.5"
+    "@types/qrcode": "1.5.6"
   }
 }
