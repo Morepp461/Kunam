@@ -387,6 +387,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Paddock Access and Stage 5 role panels", () => {
+    const cases = [
+      ["Lengkapi preferensi Driver. Pengajuan akan diperiksa Admin dan diteruskan ke tim pilihan jika tersedia.", "Complete your Driver preferences. The application will be reviewed by Admin and forwarded to your selected team if available."],
+      ["Pilih membuat engine baru atau membeli engine milik tim lain.", "Choose to create a new Engine or purchase an Engine owned by another team."],
+      ["Tidak ada sanksi yang tersedia untuk diajukan banding, atau seluruh sanksi sudah memiliki banding aktif.", "There are no sanctions available for appeal, or all sanctions already have active appeals."],
+      ["Detail circuit dan layout diambil langsung dari Circuit Pool. Jadwal race menggunakan waktu lokal GMT+7.", "Circuit details and layout are taken directly from the Circuit Pool. Race schedules use local GMT+7 time."],
+      ["Pengumuman terbit dan otomatis dikirim ke Discord melalui Vreeo Pedia.", "Announcement published and automatically sent to Discord via Vreeo Pedia."],
+      ["Profil resmi tim, susunan driver, sejarah, dan statistik kejuaraan.", "Official team profile, Driver line-up, history, and championship statistics."],
+      ["Saldo wallet, cashflow, dan rincian seluruh transaksi yang dapat diakses akun ini.", "Wallet balance, cashflow, and details of all transactions accessible to this account."],
+      ["TEAM IDENTITY PREVIEW", "PRATINJAU IDENTITAS TIM"],
+      ["Wallet Accounts", "Akun Wallet"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
