@@ -119,3 +119,85 @@
 .cp-theme-trigger{appearance:none;-webkit-appearance:none}
 
 .cp-id-market-value{display:inline-flex;align-items:center;gap:7px;margin:14px 0 2px;padding:7px 10px;border:1px solid rgba(198,163,58,.38);border-radius:4px;color:#e2c77d;font:700 10px 'Barlow Condensed',sans-serif;letter-spacing:.12em}
+
+
+/* The 14 Digital ID templates use distinct compositions, framing, and supporting geometry. */
+.cp-id-template{--id-accent:#b99752;position:relative;display:grid!important;grid-template-columns:126px minmax(0,1fr) 70px;grid-template-rows:auto minmax(150px,1fr);grid-template-areas:"personal personal brand" "photo main seal";gap:13px;padding:20px!important;min-height:280px;overflow:hidden;border:2px solid var(--id-accent)!important;border-radius:12px!important;background:linear-gradient(135deg,#1b1a1d,#09090b 72%)!important;color:#f5eddf!important;isolation:isolate}
+.cp-id-template:before,.cp-id-template:after{content:"";position:absolute;z-index:-1;pointer-events:none}
+.cp-id-template:before{inset:8px;border:1px solid color-mix(in srgb,var(--id-accent) 45%,transparent);border-radius:7px}
+.cp-id-template:after{width:190px;height:190px;right:-78px;bottom:-110px;border:1px solid color-mix(in srgb,var(--id-accent) 55%,transparent);transform:rotate(35deg)}
+.cp-id-template .cp-id-brand{grid-area:brand;display:flex;align-items:flex-start;justify-content:flex-end;min-width:0}
+.cp-id-template .cp-id-brand img{width:88px;height:48px;object-fit:contain;object-position:right top;filter:drop-shadow(0 2px 5px rgba(0,0,0,.5))}
+.cp-id-template .cp-id-personalization{grid-area:personal;display:grid;align-content:start;gap:6px;min-width:0;max-width:calc(100% - 100px)}
+.cp-id-template .cp-id-tagline{color:#e7d8b9;font-size:11px;font-style:italic;letter-spacing:.035em;overflow-wrap:anywhere}
+.cp-id-template .cp-id-selected-badges{display:flex;flex-wrap:nowrap;gap:5px;overflow:hidden;max-width:100%}
+.cp-id-template .cp-id-selected-badges span{flex:0 1 auto;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:3px 6px;border:1px solid color-mix(in srgb,var(--id-accent) 60%,transparent);border-radius:3px;color:#f0dca8;font-size:8px;letter-spacing:.06em;text-transform:uppercase}
+.cp-id-template .cp-id-photo{grid-area:photo;width:100%;height:158px;min-width:0;overflow:hidden;border:1px solid var(--id-accent);border-radius:5px;background:#252326;display:flex;align-items:center;justify-content:center;color:#e8d7ae;font:700 28px 'Barlow Condensed',sans-serif}
+.cp-id-template .cp-id-photo img{width:100%;height:100%;object-fit:cover;object-position:center 28%}
+.cp-id-template .cp-id-main{grid-area:main;align-self:center;min-width:0;display:grid;gap:6px}
+.cp-id-template .cp-id-main>small{color:var(--id-accent);font-size:9px;letter-spacing:.18em;text-transform:uppercase}
+.cp-id-template .cp-id-main h1{margin:0;color:#fff7e9;font:700 clamp(22px,3vw,34px) 'Barlow Condensed',sans-serif;letter-spacing:.025em;overflow-wrap:anywhere}
+.cp-id-template .cp-id-main p{margin:0;color:#c5beb2;font-size:11px}
+.cp-id-template .cp-id-level{display:flex;align-items:center;gap:12px;margin-top:7px;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--id-accent) 40%,transparent)}
+.cp-id-template .cp-id-level strong{color:var(--id-accent);font:700 16px 'Barlow Condensed',sans-serif}
+.cp-id-template .cp-id-level span{color:#aaa39a;font-size:10px}
+.cp-id-template .cp-id-template-seal{grid-area:seal;align-self:center;justify-self:center;padding:8px 5px;border:1px solid var(--id-accent);color:var(--id-accent);font:700 8px/1.4 'Barlow Condensed',sans-serif;letter-spacing:.14em;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg)}
+.cp-id-template-picker{display:grid;gap:9px}
+.cp-id-template-options{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.cp-id-template-options button{display:grid;gap:4px;min-height:54px;padding:9px;border:1px solid rgba(185,151,82,.28);border-radius:6px;background:rgba(18,18,20,.75);color:#eee4d5;text-align:left;cursor:pointer}
+.cp-id-template-options button.is-selected{border-color:#c6a45b;background:rgba(142,35,48,.22)}
+.cp-id-template-options button.is-locked{opacity:.42;cursor:not-allowed}
+.cp-id-template-options button span{font-size:11px;font-weight:700}
+.cp-id-template-options button small{color:#a79c8b;font-size:9px}
+.cp-id-badge-selector{margin:0;padding:11px;border:1px solid rgba(185,151,82,.25);border-radius:7px}
+.cp-id-badge-selector legend{padding:0 5px;color:#c6a45b;font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+.cp-id-badge-selector>div{display:flex;flex-wrap:wrap;gap:8px 14px}
+.cp-id-badge-selector label{display:flex;align-items:center;gap:6px;color:#d9d0c3;font-size:11px}
+.cp-id-badge-selector input{accent-color:#a83b48}
+.cp-id-badge-selector>small{color:#9d9589;font-size:10px}
+
+/* License family: four different card structures. */
+.cp-id-template--license_bronze{--id-accent:#b37c53;grid-template-areas:"personal personal brand" "photo main seal";border-style:double!important;background:linear-gradient(115deg,#2a1c17,#111013 64%)!important}
+.cp-id-template--license_bronze:after{width:240px;height:240px;border-style:dashed;right:-105px;bottom:-145px}
+.cp-id-template--license_silver{--id-accent:#b7c0ca;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"brand personal personal" "seal main photo";border-radius:18px!important;background:linear-gradient(145deg,#242a31,#0c1015 72%)!important}
+.cp-id-template--license_silver:before{inset:5px;border:3px double color-mix(in srgb,var(--id-accent) 55%,transparent)}
+.cp-id-template--license_gold{--id-accent:#d6b45e;grid-template-columns:118px 72px minmax(0,1fr);grid-template-areas:"personal brand brand" "photo seal main";border-radius:3px!important;background:linear-gradient(125deg,#302613,#11100d 70%)!important}
+.cp-id-template--license_gold:after{width:160px;height:160px;border-width:8px;right:-80px;bottom:-90px}
+.cp-id-template--license_super_license{--id-accent:#e2d5b4;grid-template-columns:minmax(0,1fr) 126px 70px;grid-template-areas:"brand personal personal" "main photo seal";border-radius:22px 5px 22px 5px!important;background:linear-gradient(120deg,#302f31,#09090a 65%)!important}
+.cp-id-template--license_super_license:before{inset:12px;border:1px solid var(--id-accent);border-radius:16px 2px}
+
+/* Reputation family: five editorial and performance-led layouts. */
+.cp-id-template--reputation_developing{--id-accent:#9c9b83;grid-template-areas:"personal personal brand" "photo main seal";background:linear-gradient(120deg,#25251f,#0d0e0c 70%)!important}
+.cp-id-template--reputation_developing:after{width:300px;height:80px;right:-100px;bottom:12px;transform:rotate(-24deg);border-top:1px solid var(--id-accent)}
+.cp-id-template--reputation_established{--id-accent:#7eaa9c;grid-template-columns:126px minmax(0,1fr) 70px;grid-template-areas:"brand personal personal" "photo main seal";border-radius:18px 18px 4px 4px!important;background:linear-gradient(145deg,#152722,#0b1010 72%)!important}
+.cp-id-template--reputation_established:before{inset:0 0 auto;height:5px;background:var(--id-accent);border:0;border-radius:0}
+.cp-id-template--reputation_competitive{--id-accent:#d2a45e;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border-radius:5px!important;background:linear-gradient(135deg,#302318,#0d0b09 72%)!important}
+.cp-id-template--reputation_competitive:after{width:210px;height:210px;right:-100px;bottom:-110px;transform:rotate(45deg);border-width:5px}
+.cp-id-template--reputation_top{--id-accent:#bd7d87;grid-template-columns:minmax(0,1fr) 126px 70px;grid-template-areas:"brand personal personal" "main photo seal";border-radius:14px!important;background:linear-gradient(130deg,#2d1c22,#100d10 72%)!important}
+.cp-id-template--reputation_top:before{inset:12px 12px 12px 22px;border-left:4px solid var(--id-accent);border-top:0;border-bottom:0;border-right:0;border-radius:0}
+.cp-id-template--reputation_elite{--id-accent:#e4d7a4;grid-template-columns:126px 70px minmax(0,1fr);grid-template-areas:"personal personal brand" "photo seal main";border:3px double var(--id-accent)!important;border-radius:2px!important;background:radial-gradient(ellipse at 80% 20%,#49402b 0,#14120e 50%,#09090a 100%)!important}
+.cp-id-template--reputation_elite:after{width:200px;height:200px;right:-80px;bottom:-125px;border-width:10px;transform:rotate(45deg)}
+
+/* Division family: five paddock-inspired frames, ready for future division tiers. */
+.cp-id-template--division_tier_1{--id-accent:#bd9a56;grid-template-areas:"personal personal brand" "photo main seal";background:linear-gradient(120deg,#2c2020,#0d0d10 70%)!important}
+.cp-id-template--division_tier_1:before{inset:0 0 auto;height:7px;background:var(--id-accent);border:0;border-radius:0}
+.cp-id-template--division_tier_2{--id-accent:#a5a9b0;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"brand personal personal" "seal main photo";border-radius:16px 3px!important;background:linear-gradient(135deg,#20252c,#0c0e12 70%)!important}
+.cp-id-template--division_tier_2:after{width:240px;height:50px;right:-80px;bottom:25px;transform:rotate(-18deg);border-top:4px solid var(--id-accent)}
+.cp-id-template--division_tier_3{--id-accent:#a9a27e;grid-template-columns:minmax(0,1fr) 126px 70px;grid-template-areas:"personal personal brand" "main photo seal";border-radius:4px 16px 4px 16px!important;background:linear-gradient(145deg,#292719,#0b0c0b 75%)!important}
+.cp-id-template--division_tier_3:before{inset:14px;border:1px dashed var(--id-accent);border-radius:0}
+.cp-id-template--division_tier_4{--id-accent:#9d7f9d;grid-template-columns:126px 70px minmax(0,1fr);grid-template-areas:"brand personal personal" "photo seal main";border-radius:20px 5px!important;background:linear-gradient(130deg,#281f2b,#0b0b10 72%)!important}
+.cp-id-template--division_tier_4:after{width:130px;height:240px;right:18px;bottom:-120px;transform:rotate(28deg);border-width:4px}
+.cp-id-template--division_tier_5{--id-accent:#d6c6a2;grid-template-columns:70px minmax(0,1fr) 126px;grid-template-areas:"personal personal brand" "seal main photo";border:3px double var(--id-accent)!important;border-radius:2px!important;background:linear-gradient(120deg,#282625,#0a0a0a 68%)!important}
+.cp-id-template--division_tier_5:before{inset:9px;border:1px solid var(--id-accent);border-radius:0}
+
+@media(max-width:640px){
+ .cp-id-template{grid-template-columns:82px minmax(0,1fr) 34px;grid-template-rows:auto minmax(130px,1fr);gap:8px;padding:14px!important;min-height:240px}
+ .cp-id-template .cp-id-photo{height:132px}
+ .cp-id-template .cp-id-brand img{width:65px;height:36px}
+ .cp-id-template .cp-id-main h1{font-size:22px}
+ .cp-id-template .cp-id-main p{font-size:9px}
+ .cp-id-template .cp-id-template-seal{font-size:7px}
+ .cp-id-template-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .cp-id-template .cp-id-personalization{max-width:calc(100% - 70px)}
+ .cp-id-template .cp-id-selected-badges span{max-width:78px;font-size:7px}
+}
