@@ -94,13 +94,13 @@ declare
 begin
   if p_user_id is null or p_team_id is null then raise exception 'invalid_checkout_identity'; end if;
   if p_request_key is null or length(trim(p_request_key)) not between 8 and 80 then raise exception 'invalid_checkout_request_key'; end if;
-  select m,t.name into v_member,v_team_name
+  select m into v_member
   from public.profiles p
   join public.members m on m.id=p.member_id
-  join public.teams t on t.id=m.team_id
   where p.user_id=p_user_id and m.team_id=p_team_id and m.role='Owner'
   for update of m;
   if not found then raise exception 'only_linked_team_owner_can_purchase'; end if;
+  select name into v_team_name from public.teams where id=p_team_id;
   perform pg_catalog.pg_advisory_xact_lock(pg_catalog.hashtextextended('team-hq-midtrans:'||p_team_id::text,0));
   if exists(select 1 from public.caleris_team_hq_slot_entitlements where team_id=p_team_id) then
     return jsonb_build_object('status','already_owned');
