@@ -2968,3 +2968,43 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - [x] Vercel Production deployment reached `READY`: `dpl_4bHMN1RYj9ggmhzr5ZZs2VYztLWG`, commit `ef37dee31c25d448797b3cf174bec595c3967d5b`. Production aliases verified: `calerismasters.com` and `www.calerismasters.com`.
 - [x] No Supabase schema/data changes or migrations were needed. Production and Testing databases remain unchanged and aligned.
 - [x] No Vercel environment variables or project settings were changed.
+
+
+---
+
+## Free Technology Candidates — Priority Classification (28 November 2026)
+
+This section records the 12 reviewed technology candidates and their adoption priority. These are recommendations only; listing a candidate does not mean it has been installed or integrated into CALERIS MASTERS.
+
+### Priority — Fully free software / no mandatory paid plan
+
+Adopt these first when a concrete CALERIS feature needs them. Prefer local packages, open-source self-hosting, and existing GitHub capabilities so the application does not depend on a paid hosted tier.
+
+- **DiceBear** — use its open-source avatar packages locally; no hosted avatar API is required.
+- **Iconify** — use the open-source Iconify tooling; verify the individual icon collection's license before shipping its icons.
+- **Chart.js** — MIT-licensed chart library.
+- **Recharts** — MIT-licensed React chart library. Use it alongside Chart.js only where each provides a distinct benefit; avoid duplicating chart implementations without need.
+- **DOMPurify** — open-source HTML sanitization library; use it where untrusted HTML must be rendered safely.
+- **GitHub Dependabot** — use the repository's GitHub dependency update and security alert capabilities available on the current plan.
+- **TanStack Table** — MIT-licensed headless table library for data-heavy directories, standings, leaderboards, and admin tables.
+- **Lighthouse CI** — open-source automated Lighthouse auditing. Run it locally or on an available self-hosted runner if GitHub-hosted Actions usage limits are a concern.
+
+### Non-priority — Free tier / quota / external service dependency
+
+Do not make these core infrastructure dependencies. Consider them only if the free allowance is sufficient and the project can operate or degrade safely when the quota is exhausted or the provider changes its terms.
+
+- **QR Server API** — hosted third-party API; prefer generating QR codes locally in the browser to avoid an external service dependency.
+- **PostHog Cloud** — free allowance is usage-limited; self-hosting is a separate operational responsibility.
+- **Sentry** — free plan has usage limits; do not assume unlimited event ingestion.
+- **Upstash Redis** — free plan has storage and command quotas; use only if a real architecture requirement justifies an external Redis service.
+
+### Rejected
+
+- **Arcjet** — excluded from this free-only shortlist. Do not proceed with evaluation or integration under the current requirement.
+
+### Adoption rules
+
+- “Priority” means no mandatory paid subscription or metered hosted service is required for the intended usage; it does not mean implementation, hosting, CI runners, or operations have zero infrastructure cost in every deployment setup.
+- Review the current license and provider terms before implementation, especially for icon collections and hosted services.
+- Do not add dependencies just because they appear in this list. Check the existing stack and feature scope first, then add only what solves a verified need.
+- No dependency, application code, Supabase schema, migration, environment variable, or deployment configuration was changed as part of this documentation update.
