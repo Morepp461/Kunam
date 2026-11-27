@@ -195,6 +195,10 @@ as $function$
     where f.issued_at>=p_started_at
       and f.issued_at<coalesce(p_ended_at,'infinity'::timestamptz)
       and (f.target_team_id=p_team_id or f.target_member_id=p_member_id)
+      and not exists(
+        select 1 from public.caleris_appeals a
+        where a.fine_id=f.id and a.status='approved'
+      )
   )));
 $function$;
 
@@ -464,6 +468,31 @@ begin
 end;
 $function$;
 
+create or replace function private.caleris_owner_reputation_appeal_event()
+returns trigger
+language plpgsql
+security definer
+set search_path=''
+as $function$
+declare
+  v_fine_id uuid;
+  v_team_id uuid;
+  v_member_id uuid;
+begin
+  if tg_op='DELETE' then v_fine_id:=old.fine_id; else v_fine_id:=new.fine_id; end if;
+  select f.target_team_id,f.target_member_id into v_team_id,v_member_id
+  from public.caleris_fines f where f.id=v_fine_id;
+  if v_team_id is not null then
+    perform private.caleris_refresh_owner_reputation_for_team(v_team_id,'fine_appeal_changed');
+  end if;
+  if v_member_id is not null then
+    perform private.caleris_refresh_owner_reputation(v_member_id,'fine_appeal_changed');
+  end if;
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$function$;
+
 create or replace function private.caleris_owner_reputation_asset_event()
 returns trigger
 language plpgsql
@@ -543,6 +572,11 @@ drop trigger if exists caleris_owner_reputation_fine_event on public.caleris_fin
 create trigger caleris_owner_reputation_fine_event
 after insert or update or delete on public.caleris_fines
 for each row execute function private.caleris_owner_reputation_fine_event();
+
+drop trigger if exists caleris_owner_reputation_appeal_event on public.caleris_appeals;
+create trigger caleris_owner_reputation_appeal_event
+after insert or update or delete on public.caleris_appeals
+for each row execute function private.caleris_owner_reputation_appeal_event();
 
 drop trigger if exists caleris_owner_reputation_asset_event on public.caleris_member_assets;
 create trigger caleris_owner_reputation_asset_event
@@ -644,6 +678,7 @@ revoke all on function private.caleris_owner_member_tenure_sync() from public,an
 revoke all on function private.caleris_owner_takeover_tenure_sync() from public,anon,authenticated;
 revoke all on function private.caleris_owner_reputation_team_event() from public,anon,authenticated;
 revoke all on function private.caleris_owner_reputation_fine_event() from public,anon,authenticated;
+revoke all on function private.caleris_owner_reputation_appeal_event() from public,anon,authenticated;
 revoke all on function private.caleris_owner_reputation_asset_event() from public,anon,authenticated;
 revoke all on function private.caleris_owner_reputation_catalog_asset_event() from public,anon,authenticated;
 
