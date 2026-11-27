@@ -6,6 +6,7 @@ def read(path: str) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
 
 migration = read("supabase/migrations/20261127150000_owner_reputation_engine.sql")
+achievement_migration = read("supabase/migrations/20261127151000_owner_reputation_round_based_achievement.sql")
 profile = read("src/ProfileModule.tsx")
 workflow = read(".github/workflows/ci.yml")
 
@@ -19,6 +20,9 @@ assert "contract_stability_score_snapshot" in migration
 assert "caleris_owner_takeover_tenure_sync" in migration
 assert "caleris_owner_reputation_appeal_event" in migration
 assert "a.status='approved'" in migration
+assert "license_round_standings" in achievement_migration
+assert "team_id_snapshot" in achievement_migration
+assert "caleris_owner_reputation_round_standing_event" in achievement_migration
 assert "caleris_owner_member_tenure_sync" in migration
 
 # Approved six-part weighting, including current owned asset market value.
