@@ -3120,7 +3120,11 @@ export const CALE_GUIDE_ID_TO_EN: Record<string, string> = {
   "Data sensitif dan informasi internal tidak ditampilkan pada profil publik.": "Sensitive data and internal information are not displayed on public profiles.",
   "Halaman ini menampilkan informasi dan fitur sesuai alamat yang sedang dibuka.": "This page displays information and features based on the current address.",
   "Gunakan navigasi utama untuk menemukan modul terkait.": "Use the main navigation to find the relevant module.",
-  "Akses dan tindakan mengikuti role akun serta validasi server.": "Access and actions are subject to the account role and server-side validation."
+  "Akses dan tindakan mengikuti role akun serta validasi server.": "Access and actions are subject to the account role and server-side validation.",
+ "Gunakan pencarian dan filter untuk menemukan Driver.": "Use search and filters to find Drivers.",
+ "Gunakan pencarian dan filter untuk menemukan tim.": "Use search and filters to find teams.",
+ "Gunakan pencarian dan filter untuk menemukan kandidat.": "Use search and filters to find candidates.",
+ "Periksa season dan divisi aktif sebelum mengubah aturan.": "Review the active season and division before changing the rules."
 };
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID,...Object.fromEntries(Object.entries(CALE_GUIDE_ID_TO_EN).map(([indonesian,english])=>[english,indonesian]))};
 const ID_TO_EN_COMPLETE: Record<string,string> = {...ID_TO_EN,...EXTRA_ID_TO_EN,...CALE_GUIDE_ID_TO_EN};
