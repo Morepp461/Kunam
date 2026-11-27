@@ -1106,6 +1106,15 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "04 / UV TEXTURE ATLAS":"04 / ATLAS TEKSTUR UV",
  "Pilih decal yang sudah ditambahkan, lalu klik panel atlas untuk memindahkannya ke permukaan tersebut.":"Select an added decal, then click an atlas panel to move it onto that surface.",
  "Net profit / loss":"Laba / rugi bersih",
+ "Platform Motorsport Roleplay yang menghubungkan pembalap, tim, dan pengelola dalam satu ekosistem kompetisi.":"A Motorsport Roleplay platform connecting drivers, teams, and administrators in one competitive ecosystem.",
+ "Meet VREEO & CALERIS":"Kenali VREEO & CALERIS",
+ "STRUCTURE READY · DATA NOT CONNECTED":"STRUKTUR SIAP · DATA BELUM TERHUBUNG",
+ "TEAM PANEL · OVERVIEW":"PANEL TIM · IKHTISAR",
+ "MAIN EVENT · TEAM MARKET":"MAIN EVENT · BURSA TIM",
+ "Ajukan Take Over":"Submit Take Over",
+ "CALERIS MASTERS · LEGAL":"CALERIS MASTERS · LEGAL",
+ "Ketentuan penggunaan akun, fitur, komunitas, dan kompetisi di platform CALERIS MASTERS.":"Terms for using accounts, features, the community, and competitions on the CALERIS MASTERS platform.",
+ "Gunakan Platform dengan Bertanggung Jawab":"Use the Platform Responsibly",
 };
 const EXTRA_ID_TO_EN: Record<string,string> = {
  ...Object.fromEntries(Object.entries(EXTRA_EN_TO_ID).map(([english,indonesian])=>[indonesian,english])),
@@ -2753,6 +2762,15 @@ const EXTRA_ID_TO_EN: Record<string,string> = {
  "04 / ATLAS TEKSTUR UV":"04 / UV TEXTURE ATLAS",
  "Select an added decal, then click an atlas panel to move it onto that surface.":"Pilih decal yang sudah ditambahkan, lalu klik panel atlas untuk memindahkannya ke permukaan tersebut.",
  "Laba / rugi bersih":"Net profit / loss",
+ "A Motorsport Roleplay platform connecting drivers, teams, and administrators in one competitive ecosystem.":"Platform Motorsport Roleplay yang menghubungkan pembalap, tim, dan pengelola dalam satu ekosistem kompetisi.",
+ "Kenali VREEO & CALERIS":"Meet VREEO & CALERIS",
+ "STRUKTUR SIAP · DATA BELUM TERHUBUNG":"STRUCTURE READY · DATA NOT CONNECTED",
+ "PANEL TIM · IKHTISAR":"TEAM PANEL · OVERVIEW",
+ "MAIN EVENT · BURSA TIM":"MAIN EVENT · TEAM MARKET",
+ "Submit Take Over":"Ajukan Take Over",
+ "CALERIS MASTERS · LEGAL":"CALERIS MASTERS · LEGAL",
+ "Terms for using accounts, features, the community, and competitions on the CALERIS MASTERS platform.":"Ketentuan penggunaan akun, fitur, komunitas, dan kompetisi di platform CALERIS MASTERS.",
+ "Use the Platform Responsibly":"Gunakan Platform dengan Bertanggung Jawab",
 };
 const EN_TO_ID_COMPLETE: Record<string,string> = {...EN_TO_ID,...EXTRA_EN_TO_ID};
 const ID_TO_EN_COMPLETE: Record<string,string> = {...ID_TO_EN,...EXTRA_ID_TO_EN};
