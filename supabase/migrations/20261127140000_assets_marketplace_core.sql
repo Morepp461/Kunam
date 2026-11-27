@@ -449,6 +449,7 @@ declare
   v_buyer uuid:=(select public.caleris_current_member_id());
   v_listing public.caleris_asset_market_listings%rowtype;
   v_asset public.caleris_member_assets%rowtype;
+  v_existing public.economy_transactions%rowtype;
   v_buyer_wallet uuid;
   v_seller_wallet uuid;
   v_tx jsonb;
@@ -457,6 +458,13 @@ declare
 begin
   if v_uid is null or v_buyer is null then raise exception 'member_profile_required'; end if;
   if p_idempotency_key is null or length(trim(p_idempotency_key)) not between 8 and 150 then raise exception 'invalid_idempotency_key'; end if;
+  select * into v_existing from public.economy_transactions where idempotency_key='assets:sale:'||trim(p_idempotency_key);
+  if found then
+    if v_existing.event_type<>'asset_sale' or v_existing.metadata->>'buyer_member_id'<>v_buyer::text then
+      raise exception 'idempotency_key_reused';
+    end if;
+    return jsonb_build_object('status','duplicate','asset_id',v_existing.metadata->>'asset_id','transaction_id',v_existing.id,'price_eur',v_existing.amount);
+  end if;
   select * into v_listing from public.caleris_asset_market_listings where id=p_listing_id and status='active' for update;
   if not found then raise exception 'listing_not_available'; end if;
   if v_listing.seller_member_id=v_buyer then raise exception 'cannot_buy_own_listing'; end if;
@@ -487,6 +495,25 @@ begin
   return jsonb_build_object('status',v_status,'asset_id',v_asset.id,'transaction_id',v_tx_id,'price_eur',v_listing.asking_price_eur);
 end;
 $function$;
+
+create or replace function private.refresh_driver_reputation_for_asset_catalog()
+returns trigger language plpgsql security definer set search_path=''
+as $function$
+declare v_member record;
+begin
+  if new.market_value_eur is distinct from old.market_value_eur then
+    for v_member in select member_id from public.caleris_driver_reputation loop
+      perform private.refresh_driver_reputation_after_assets(v_member.member_id);
+    end loop;
+  end if;
+  return new;
+end;
+$function$;
+
+drop trigger if exists caleris_assets_catalog_reputation_refresh on public.caleris_assets_catalog;
+create trigger caleris_assets_catalog_reputation_refresh
+after update of market_value_eur on public.caleris_assets_catalog
+for each row execute function private.refresh_driver_reputation_for_asset_catalog();
 
 revoke all on function public.caleris_assets_get_dashboard() from public,anon;
 revoke all on function public.caleris_assets_buy(text,text) from public,anon;
