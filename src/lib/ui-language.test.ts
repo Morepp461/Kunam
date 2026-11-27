@@ -207,6 +207,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers rewarded ads, Shop, Support, and affiliate workflows", () => {
+    const cases = [
+      ["Slot bonus terpisah dari tiga Daily Quest reguler. Maksimal lima iklan valid per hari.", "The bonus slot is separate from the three regular Daily Quests. Up to five valid ads are allowed per day."],
+      ["Integrasi iklan siap. Reward hanya dihitung dari callback server Google yang valid.", "Ad integration is ready. Rewards are counted only from valid Google server callbacks."],
+      ["Additional HQ Project Slot", "Slot Proyek HQ Tambahan"],
+      ["Kirim feedback", "Send feedback"],
+      ["Feature Suggestion", "Saran Fitur"],
+      ["Satu tim hanya dapat memiliki satu affiliate dan hubungan hanya dapat dibentuk antar-tier berbeda.", "Each team can have only one affiliate, and relationships can only be formed between different tiers."],
+      ["Permintaan affiliate dikirim ke Team Owner tujuan.", "Affiliate request sent to the target Team Owner."],
+      ["Belum ada permintaan atau perjanjian affiliate.", "There are no affiliate requests or agreements yet."],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
