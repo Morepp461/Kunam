@@ -2836,7 +2836,7 @@ const EXTRA_ID_TO_EN: Record<string,string> = {
  "Back to home":"Kembali ke beranda",
 };
 
-const CALE_GUIDE_ID_TO_EN: Record<string, string> = {
+export const CALE_GUIDE_ID_TO_EN: Record<string, string> = {
   "Beranda": "Home",
   "Halaman pengenalan CALERIS MASTERS dan pintu masuk ke area publik maupun akun.": "The CALERIS MASTERS introduction page and entry point to public areas and member accounts.",
   "Informasi identitas dan gambaran kompetisi.": "Identity information and an overview of the competition.",
