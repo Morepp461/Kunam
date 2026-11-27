@@ -54,6 +54,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers additional admin economy, pricing, season, and team lifecycle screens", () => {
+    const cases = [
+      ["Konfigurasi Quest Iklan", "Ad Quest Configuration"],
+      ["Rewarded Ads configuration saved successfully.", "Rewarded Ads configuration saved successfully."],
+      ["Reschedule seluruh kalender", "Reschedule the entire calendar"],
+      ["Struktur kompetisi", "Competition structure"],
+      ["Tim dibekukan setelah satu season penuh tanpa quest selesai maupun upgrade Development.", "Teams are frozen after one full season without completed quests or Development upgrades."],
+      ["Replacement slots", "Slot Pengganti"],
+      ["Belum ada slot pengganti yang dibuka.", "No replacement slots have been opened yet."],
+      ["Persona akun Admin", "Admin account persona"],
+      ["Belum ada pendaftaran", "No registrations yet"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
