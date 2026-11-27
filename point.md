@@ -2705,3 +2705,71 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Shop item `Additional HQ Project Slot` is deployed but inactive until Admin configures its EUR price and activates it. No purchase price was invented.
 - Testing/Production schema function hashes match for project start, Shop purchase, capacity lookup, Admin config read, and project-limit trigger. Testing data remains intact; Production remains without copied Testing dummy data.
 - Vercel environment variables and project settings were not modified.
+
+
+---
+
+## Approved feature scope — 27 November 2026
+
+### Execution boundary and infrastructure
+
+- The next implementation scope is feature-first: Assets Marketplace, CALERIS-specific Achievement/Badge expansion, and the 14-template Digital ID design system.
+- Admin Workflow CRM remains deferred.
+- Full live 3D Race Broadcast remains deferred. The existing 3D vehicle model is a Gemini-generated design supplied by the owner and is not complete yet. Do not use or revive the old 2025 GLB requirement. The vehicle model is shared across teams; each team may use the same or a different livery.
+- Supabase Security Advisor remediation and historical migration-ledger reconciliation remain deferred.
+- Existing Race Engine test migrations, test-only tables, and `race-engine-test-service` remain Testing-only. Do not copy their dummy/test data or objects into Production.
+- The four historical migration-ledger discrepancies remain deferred; do not rewrite or delete historical migration records.
+- The existing `resend-inbound` Edge Function source difference is not part of the feature scope and must not be changed as part of this work without a separately verified reason.
+- All new application/database changes must be represented in versioned source and applied to both `caleris-masters-testing` and `caleris-masters-newgen`. Only intentionally created dummy/test business data may remain Testing-only.
+- Do not change Vercel environment variables or project settings.
+- Use a new branch from current `main`; merge only after QA, CI, database parity, and Vercel Production READY checks pass.
+
+### Shop — Additional HQ Project Slot / Midtrans
+
+- The approved item is `Additional HQ Project Slot`, priced at **Rp29.900 IDR**.
+- This is a real-money payment, not EUR and not a deduction from Team Wallet. The existing EUR/Team Wallet implementation is not an acceptable payment path for this item and must be replaced without disturbing the HQ entitlement/capacity rules.
+- Integrate Midtrans. Keep the item unavailable/inactive until the merchant configuration is complete and the full payment flow has passed Sandbox verification.
+- Payment confirmation and entitlement issuance must be server-authoritative, idempotent, and based on verified Midtrans notifications/status. Browser callbacks or redirect completion alone must never grant the entitlement.
+- Keep Midtrans credentials server-side in Supabase Edge Function secrets. Never put secret keys in browser code or Vercel environment variables.
+- Current Midtrans Access Keys documentation distinguishes the Server Key used for server API requests from the Signature Secret Key used to verify notifications. Do not assume they are interchangeable.
+- Do not activate real payments or claim Production payment readiness before merchant credentials and notification URL configuration are supplied and verified.
+
+### Assets Marketplace
+
+- Assets are available to all member roles and belong to the individual member who purchases them, never to a Team.
+- Catalog categories currently specified in the project are motorcycles, cars, ships, aircraft/jets, houses, apartments, hotels, and other approved assets. Add **wristwatches** as an additional category.
+- Each catalog has its own tier structure. The catalog is an always-available marketplace: stock does not deplete and no finite inventory is required.
+- Members purchase assets using their virtual in-game balance. Owned assets may be listed and traded through a marketplace flow; ownership and every purchase, listing, sale, transfer, and tax event must have auditable history.
+- Asset value contributes to the owner's reputation: a higher-priced asset must contribute more reputation than a lower-priced asset.
+- Asset tax is assessed per season, not as a one-time purchase tax.
+- Assets must not affect gameplay, Team performance, Race Engine simulation, official results, or other competitive outcomes.
+- Admin must be able to manage catalog categories, tier definitions, products, prices, asset valuations, reputation conversion rules, and seasonal asset-tax rules.
+- The repository currently documents the category list and a motorcycle-tier example, but does not contain the full per-category item/tier ladder or numeric reputation/tax rates. Do not invent catalog products, tier names, thresholds, rates, or conversion formulas. Keep these values configurable and inactive/unconfigured until supported by an approved source/configuration.
+
+### Achievements and Badges
+
+- Research references: `Morepp461/Vreeobot` milestone patterns and `Morepp461/Vml` member badge patterns. These are references only; do not copy unrelated Discord/community or football-specific mechanics verbatim.
+- Build a CALERIS-specific achievement catalog around roles, motorsport activity, seasons, divisions, Teams, Drivers, Principals, Agents, and legitimate community participation.
+- FIA/Admin authority must never be granted by an achievement or badge. Administrative actions must not be converted into gameplay achievements.
+- Use authoritative existing CALERIS race, season, role, contract, quest, check-in, and milestone records. Avoid duplicate achievements for milestones already represented by the existing system.
+- Achievement difficulty must determine XP reward: harder achievements grant more XP. Preserve the existing code-owned achievement/milestone XP range of **5–20 XP** and route awards through the existing append-only `caleris_xp_ledger`, with deterministic idempotency. Do not create a second XP balance or allow client-selected reward amounts.
+
+### Digital ID — 14-template system
+
+- Implement exactly **14 distinct templates**: 4 license-based, 5 reputation-based, and 5 division-tier-based.
+- License templates map to the existing four license tiers: Bronze, Silver, Gold, and Super License.
+- Reputation templates map to the existing five database reputation bands: `developing`, `established`, `competitive`, `top`, and `elite`.
+- Division templates represent five tier positions. Only the current two divisions, Caleris Premio and Caleris Zwei, are selectable now; the remaining three designs are future-ready. Division identity/rank must remain data-driven rather than hardcoded to only two division names.
+- Templates must differ in composition, framing, depth, graphics, and supporting elements, not merely color.
+- Every template displays the CALERIS MASTERS logo at top-right and the member's profile photo.
+- A member may select only a template unlocked by their own license, reputation band, or division tier. Members cannot edit the template design.
+- Customization remains limited to a tagline and up to three earned badges, displayed in one compact horizontal row at upper-left.
+- Preserve private-by-default Digital ID visibility, explicit public opt-in, the canonical verification URL, and QR verification behavior.
+
+### Acceptance testing
+
+- Run full route-by-route visual and functional audit, including Admin, FIA, Owner, Principal, Driver, Agent, and Member access boundaries.
+- Contract acceptance walkthrough must cover Driver request, Owner offer, Driver acceptance/rejection, contract activation/renewal, salary/payment lifecycle, and contract ending.
+- Run automated browser coverage across supported browser engines where CI supports them; do not claim every browser is supported unless verified.
+- Owner will perform the physical Android acceptance pass using the prepared checklist. Browser CI is not a substitute for physical-device GPU, touch, and memory verification.
+- No second clarification batch is planned. Where the repository does not contain an exact numeric/catalog decision, preserve a configurable, inactive state rather than inventing a value.
