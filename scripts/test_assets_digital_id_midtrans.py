@@ -45,6 +45,7 @@ assert "'asset_reputation_bonus'" in assets_sql
 assert "tax_eur',0" in assets_sql and "individual_asset_tax" not in assets_sql.lower()
 assert "caleris_assets_buy_listing" in assets_sql and "sale_transfer" in assets_sql
 assert "private.post_economy_transaction" in assets_sql
+assert "'asset_purchase'" in assets_sql and "Rute pembelian aset tidak valid." in assets_sql
 assert 'path="/assets"' in app
 assert 'to:"/assets"' in layout
 assert 'caleris_assets_buy' in assets_page and 'caleris_assets_buy_listing' in assets_page
