@@ -191,7 +191,7 @@
 .cp-id-template--division_tier_5:before{inset:9px;border:1px solid var(--id-accent);border-radius:0}
 
 @media(max-width:640px){
- .cp-id-template{grid-template-columns:82px minmax(0,1fr) 34px;grid-template-rows:auto minmax(130px,1fr);gap:8px;padding:14px!important;min-height:240px}
+ .cp-id-template{grid-template-columns:82px minmax(0,1fr) 76px;grid-template-rows:auto minmax(130px,1fr);gap:8px;padding:14px!important;min-height:240px}
  .cp-id-template .cp-id-photo{height:132px}
  .cp-id-template .cp-id-brand img{width:65px;height:36px}
  .cp-id-template .cp-id-main h1{font-size:22px}
