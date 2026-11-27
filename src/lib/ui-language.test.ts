@@ -1,6 +1,106 @@
 import { describe, expect, it } from "vitest";
 import { translateUiText } from "./ui-language";
 describe("CALERIS UI language", () => {
+  it("covers the final admin, sponsor, calendar, and intelligence page audit", () => {
+    const cases = [
+      ["ADMIN CONTROL · DATA MIGRATION", "KONTROL ADMIN · MIGRASI DATA"],
+      ["License Adjustments", "Penyesuaian Lisensi"],
+      ["AUDIT TRAIL", "JEJAK AUDIT"],
+      ["REWARDED ADS · GOOGLE AD MANAGER", "IKLAN BERHADIAH · GOOGLE AD MANAGER"],
+      ["CALERIS MASTERS · SEASON OPERATIONS", "CALERIS MASTERS · OPERASI MUSIM"],
+      ["Generate Sponsor Offers", "Buat Penawaran Sponsor"],
+      ["Evaluate Trust", "Evaluasi Kepercayaan"],
+      ["AI Matching", "Pencocokan AI"],
+      ["Official Data · Read Only", "Data Resmi · Hanya Baca"],
+      ["Cale Assistant", "Asisten Cale"],
+      ["Community XP", "XP Komunitas"],
+      ["Struktur kalender legacy tidak sesuai urutan 12 periode CALERIS. Data historis tidak ditimpa otomatis.", "The legacy calendar structure does not match the 12-period CALERIS sequence. Historical data is not overwritten automatically."],
+      ["Fleksibilitas negosiasi (%)", "Negotiation flexibility (%)"],
+      ["Belum ada data populasi fans regional.", "No regional fan population data yet."],
+      ["Izinkan analytics", "Allow analytics"],
+      ["Tolak analytics", "Reject analytics"],
+      ["Judul roadmap", "Roadmap title"],
+      ["Simpan roadmap", "Save roadmap"],
+      ["PLANNED BUDGET", "ANGGARAN TERENCANA"],
+      ["Alert threshold (%)", "Ambang peringatan (%)"],
+      ["Kirim pengajuan kontrak", "Submit contract application"],
+      ["Pengajuan sebelumnya masih menunggu keputusan Team Owner.", "The previous application is still awaiting the Team Owner's decision."],
+      ["Belum ada health run yang tercatat.", "No health runs have been recorded yet."]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers circuit, finance, race control, and public profile copy", () => {
+    const cases = [
+      ["CALERIS PRIVATE COLLECTION", "KOLEKSI PRIBADI CALERIS"],
+      ["Saldo EUR milik member", "Member's EUR balance"],
+      ["FINANCIAL CENTRE · VREEOBANK", "PUSAT KEUANGAN · VREEOBANK"],
+      ["Nominal pinjaman (€)", "Loan amount (€)"],
+      ["Real circuit · provenance required", "Sirkuit nyata · sumber asal wajib dicantumkan"],
+      ["Advanced specifications · surface, pit lane, DRS, track limits", "Spesifikasi lanjutan · permukaan, pit lane, DRS, batas lintasan"],
+      ["Live draft diagnostics", "Diagnostik draf langsung"],
+      ["Track length", "Panjang lintasan"],
+      ["MAIN EVENT · CIRCUIT DATABASE", "MAIN EVENT · DATABASE SIRKUIT"],
+      ["Data provider *", "Penyedia data *"],
+      ["Annual salary (€)", "Gaji tahunan (€)"],
+      ["FIA PANEL · EVENT CONTROL", "PANEL FIA · KONTROL EVENT"],
+      ["Issue fine", "Terbitkan denda"],
+      ["MAIN EVENT · RECRUITMENT", "MAIN EVENT · REKRUTMEN"],
+      ["Opsional · sesuai kebutuhan tim", "Optional · based on team needs"],
+      ["DRIVER PANEL · LICENSE", "PANEL PEMBALAP · LISENSI"],
+      ["CALERIS RACE CONTROL · PHASE 4", "KONTROL BALAP CALERIS · FASE 4"],
+      ["TEST ENVIRONMENT · SYNTHETIC DATA ONLY", "LINGKUNGAN UJI · HANYA DATA SINTETIS"],
+      ["Test scale · 0–100", "Skala pengujian · 0–100"],
+      ["OWNER REPUTATION", "REPUTASI PEMILIK"],
+      ["Reputasi pribadi Owner. Skor Team dan Driver tetap dihitung terpisah.", "The Owner's personal reputation. Team and Driver scores are still calculated separately."],
+      ["CALERIS MASTERS · TEAM PROFILE", "CALERIS MASTERS · PROFIL TIM"],
+      ["RESET HARIAN", "DAILY RESET"],
+      ["DAILY BONUS · REWARDED ADS", "BONUS HARIAN · IKLAN BERHADIAH"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers remaining Team panel and livery labels", () => {
+    const cases = [
+      ["TEAM PANEL · PARTNERSHIP", "PANEL TIM · KEMITRAAN"],
+      ["TEAM PANEL · DRIVER RECRUITMENT", "PANEL TIM · REKRUTMEN PEMBALAP"],
+      ["TEAM PANEL · FINANCIAL MANAGEMENT", "PANEL TIM · MANAJEMEN KEUANGAN"],
+      ["TEAM PANEL · ENGINE MARKET", "PANEL TIM · BURSA ENGINE"],
+      ["TEAM MANAGEMENT · HEADQUARTERS", "MANAJEMEN TIM · MARKAS BESAR"],
+      ["ACTIVE EFFECTS · CONDITION SCALED", "EFEK AKTIF · DISESUAIKAN DENGAN KONDISI"],
+      ["CURRENT SEASON · LATEST 30", "MUSIM SAAT INI · 30 TERBARU"],
+      ["TEAM PANEL · RECRUITMENT", "PANEL TIM · REKRUTMEN"],
+      ["Salary minimum (€)", "Gaji minimum (€)"],
+      ["TEAM MANAGEMENT · VISUAL IDENTITY", "MANAJEMEN TIM · IDENTITAS VISUAL"],
+      ["02 / ACTIVE SPONSORS", "02 / SPONSOR AKTIF"],
+      ["03 / DECAL STUDIO", "03 / STUDIO DECAL"],
+      ["04 / UV TEXTURE ATLAS", "04 / ATLAS TEKSTUR UV"],
+      ["Net profit / loss", "Laba / rugi bersih"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers layout navigation, team overview, and legal headings", () => {
+    const cases = [
+      ["Meet VREEO & CALERIS", "Kenali VREEO & CALERIS"],
+      ["STRUCTURE READY · DATA NOT CONNECTED", "STRUKTUR SIAP · DATA BELUM TERHUBUNG"],
+      ["TEAM PANEL · OVERVIEW", "PANEL TIM · IKHTISAR"],
+      ["MAIN EVENT · TEAM MARKET", "MAIN EVENT · BURSA TIM"],
+      ["Ajukan Take Over", "Submit Take Over"],
+      ["CALERIS MASTERS · LEGAL", "CALERIS MASTERS · LEGAL"],
+      ["Gunakan Platform dengan Bertanggung Jawab", "Use the Platform Responsibly"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates English interface labels to Indonesian", () => {
     expect(translateUiText("Transfer Market", "id")).toBe("Bursa Transfer");
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");

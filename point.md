@@ -2933,3 +2933,17 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - No Vercel environment variables or project settings were changed.
 - GitHub Actions CI passed on code commit `0b2ca2478db9f0faad2418bc6f60191ec9ec49bd` (run `45960643913`): dependency security gate, Deno parity/type checks, TypeScript, Vite production build, unit/schema validation, Playwright browser smoke, application validation, privacy/CORS/mobile/navigation/profile checks, all economy/race/registration regressions, and Supabase schema parity guard.
 - PR #411 merge and Vercel Production deployment are pending.
+
+
+---
+
+## Bilingual UI — final page-level audit follow-up (27 November 2026)
+
+- Work branch: `fix/final-bilingual-page-audit-20261127`; PR #412.
+- Continued the page-level scan beyond PR #411 across Admin controls/configuration/economy, Driver Market, Season Calendar, Brand Ecosystem, Caleris Intelligence, Analytics consent, Assets Marketplace, Finance, Circuit Maker/Pool, Driver Training/Transfer, FIA operations, Job Search, Live Race, Race Control, Profile, public profiles, Team panels, Team HQ, Team Livery, Team Merchandise, navigation, and legal screens.
+- Expanded the existing bidirectional dictionaries for remaining mixed Indonesian/English labels, technical form labels, validation/status copy, and explanatory text. Preserved official names and technical terms where they are intentional product vocabulary.
+- Added bidirectional regression coverage for the newly audited admin, sponsor, intelligence, circuit, finance, race-control, profile, team, navigation, and legal strings.
+- Checked the EXTRA dictionary sections for duplicate keys in both directions; none were found.
+- No new dependency, Supabase schema/data change, migration, Edge Function change, or database write. Production and Testing databases remain unchanged.
+- No Vercel environment variables or project settings changed.
+- GitHub Actions CI and Vercel Production deployment are pending.
