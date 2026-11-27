@@ -1,6 +1,37 @@
 import { describe, expect, it } from "vitest";
 import { translateUiText } from "./ui-language";
 describe("CALERIS UI language", () => {
+  it("covers the final admin, sponsor, calendar, and intelligence page audit", () => {
+    const cases = [
+      ["ADMIN CONTROL · DATA MIGRATION", "KONTROL ADMIN · MIGRASI DATA"],
+      ["License Adjustments", "Penyesuaian Lisensi"],
+      ["AUDIT TRAIL", "JEJAK AUDIT"],
+      ["REWARDED ADS · GOOGLE AD MANAGER", "IKLAN BERHADIAH · GOOGLE AD MANAGER"],
+      ["CALERIS MASTERS · SEASON OPERATIONS", "CALERIS MASTERS · OPERASI MUSIM"],
+      ["Generate Sponsor Offers", "Buat Penawaran Sponsor"],
+      ["Evaluate Trust", "Evaluasi Kepercayaan"],
+      ["AI Matching", "Pencocokan AI"],
+      ["Official Data · Read Only", "Data Resmi · Hanya Baca"],
+      ["Cale Assistant", "Asisten Cale"],
+      ["Community XP", "XP Komunitas"],
+      ["Struktur kalender legacy tidak sesuai urutan 12 periode CALERIS. Data historis tidak ditimpa otomatis.", "The legacy calendar structure does not match the 12-period CALERIS sequence. Historical data is not overwritten automatically."],
+      ["Fleksibilitas negosiasi (%)", "Negotiation flexibility (%)"],
+      ["Belum ada data populasi fans regional.", "No regional fan population data yet."],
+      ["Izinkan analytics", "Allow analytics"],
+      ["Tolak analytics", "Reject analytics"],
+      ["Judul roadmap", "Roadmap title"],
+      ["Simpan roadmap", "Save roadmap"],
+      ["PLANNED BUDGET", "ANGGARAN TERENCANA"],
+      ["Alert threshold (%)", "Ambang peringatan (%)"],
+      ["Kirim pengajuan kontrak", "Submit contract application"],
+      ["Pengajuan sebelumnya masih menunggu keputusan Team Owner.", "The previous application is still awaiting the Team Owner's decision."],
+      ["Belum ada health run yang tercatat.", "No health runs have been recorded yet."]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates English interface labels to Indonesian", () => {
     expect(translateUiText("Transfer Market", "id")).toBe("Bursa Transfer");
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");
