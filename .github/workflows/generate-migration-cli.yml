@@ -19,7 +19,7 @@ jobs:
           fetch-depth: 0
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.4.0
       - name: Generate migrations with Supabase CLI
         run: |
           supabase migration new caleris_assets_marketplace
