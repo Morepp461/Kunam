@@ -2919,3 +2919,17 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - GitHub Actions CI passed on code commit `452ca8941235a0f2cca3471d3d5dc3915b403f05` (run `45959294488`): dependency security gate, Deno checks, TypeScript, Vite production build, unit/schema tests, Playwright smoke, validation scripts, mobile/navigation/profile checks, all economy/race/registration regression suites, and Supabase schema parity guard.
 - PR #410 merge and its Vercel Production deployment are pending.
 - Coverage was expanded across key high-traffic modules; the remaining page-level audit should continue to ensure no isolated untranslated literals remain in less-used modules.
+
+
+---
+
+## Bilingual UI follow-up — remaining high-traffic and legal screens (27 November 2026)
+
+- Work branch: `fix/remaining-ui-bilingual-coverage-20261127`, based on main after PR #410.
+- PR: #411 — extended the same bilingual bridge for Brand Ecosystem admin, Community Hub, Cookie Notice, full Privacy Policy and Terms & Conditions copy, Driver Transfer Market, License Check-in, Live Race testing UI, Paddock Access, Stage 5 role panels, team job adverts, and country/city selectors.
+- Added bidirectional regression cases for long-form legal paragraphs, dynamic status and action messages, role-based panels, transfer negotiations, check-in, race control, and location forms.
+- Existing language preference storage and bridge remain unchanged. About Us remains intentionally English-only.
+- No new dependencies. No Supabase schema/data changes, migrations, or writes. Both Production and Testing databases remain unchanged; CI Supabase schema parity guard passed.
+- No Vercel environment variables or project settings were changed.
+- GitHub Actions CI passed on code commit `0b2ca2478db9f0faad2418bc6f60191ec9ec49bd` (run `45960643913`): dependency security gate, Deno parity/type checks, TypeScript, Vite production build, unit/schema validation, Playwright browser smoke, application validation, privacy/CORS/mobile/navigation/profile checks, all economy/race/registration regressions, and Supabase schema parity guard.
+- PR #411 merge and Vercel Production deployment are pending.
