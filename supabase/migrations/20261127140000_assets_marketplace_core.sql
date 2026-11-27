@@ -239,6 +239,37 @@ begin
 end;
 $function$;
 
+alter table public.economy_transactions
+  drop constraint if exists economy_transactions_event_type_check;
+alter table public.economy_transactions
+  add constraint economy_transactions_event_type_check
+  check(event_type=any(array[
+    'checkin_reward','prize','bank_reward','sponsor_payout','bank_funding','tax','fine','transfer',
+    'admin_adjustment','reversal','payroll','loan_disbursement','loan_repayment','development_upgrade',
+    'team_hq_upgrade','merchandise_sale','merchandise_production','contract_compensation','asset_purchase'
+  ]::text[]));
+
+do $patch_economy_asset_purchase_event$
+declare
+  d text;
+  old_guard text;
+  new_guard text;
+  old_route text;
+  new_route text;
+begin
+  d:=pg_get_functiondef('private.post_economy_transaction(uuid,uuid,numeric,text,text,text,uuid,jsonb,uuid,boolean)'::regprocedure);
+  old_guard:='if p_event_type not in (''checkin_reward'',''prize'',''bank_reward'',''sponsor_payout'',''bank_funding'',''tax'',''fine'',''transfer'',''admin_adjustment'',''reversal'',''payroll'',''loan_disbursement'',''loan_repayment'',''development_upgrade'',''team_hq_upgrade'',''contract_compensation'') then raise exception ''Jenis transaksi tidak dikenal.''; end if;';
+  new_guard:='if p_event_type not in (''checkin_reward'',''prize'',''bank_reward'',''sponsor_payout'',''bank_funding'',''tax'',''fine'',''transfer'',''admin_adjustment'',''reversal'',''payroll'',''loan_disbursement'',''loan_repayment'',''development_upgrade'',''team_hq_upgrade'',''contract_compensation'',''asset_purchase'') then raise exception ''Jenis transaksi tidak dikenal.''; end if;';
+  if position(old_guard in d)=0 then raise exception 'Economy transaction event allow-list changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_guard,new_guard);
+  old_route:='elsif p_event_type=''transfer'' and (v_source.account_kind in (''vreeo_bank'',''sponsor_source'') or v_destination.account_kind in (''vreeo_bank'',''sponsor_source'')) then raise exception ''Rute transfer tidak valid.'';';
+  new_route:=old_route||' elsif p_event_type=''asset_purchase'' and (v_source.account_kind not in (''driver'',''team_owner'',''public_member'') or v_destination.account_kind<>''vreeo_bank'') then raise exception ''Rute pembelian aset tidak valid.'';';
+  if position(old_route in d)=0 then raise exception 'Economy transaction route guard changed; refusing unsafe patch.'; end if;
+  d:=replace(d,old_route,new_route);
+  execute d;
+end;
+$patch_economy_asset_purchase_event$;
+
 create or replace function private.caleris_assets_market_value(p_member_id uuid)
 returns numeric language sql stable security definer set search_path=''
 as $function$
