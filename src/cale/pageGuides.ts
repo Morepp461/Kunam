@@ -187,3 +187,13 @@ export function resolveCalePageGuide(pathname: string): CalePageGuide {
 
   return guide("CALERIS MASTERS", "Halaman ini menampilkan informasi dan fitur sesuai alamat yang sedang dibuka.", "Gunakan navigasi utama untuk menemukan modul terkait.", "Akses dan tindakan mengikuti role akun serta validasi server.");
 }
+
+
+/** Unique guide definitions used by Cale, exposed for bilingual coverage tests. */
+export function getCalePageGuidesForAudit(): CalePageGuide[] {
+  return Array.from(new Set([
+    ...Object.values(guides),
+    ...Object.values(panelGuides),
+    ...Object.values(adminGuides),
+  ]));
+}
