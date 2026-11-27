@@ -287,6 +287,123 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Brand Ecosystem admin and Community Hub screens", () => {
+    const cases = [
+      ["Memuat status Brand Ecosystem...", "Loading Brand Ecosystem status..."],
+      ["Counter dari Team Owner langsung diproses sponsor engine. Tidak perlu Admin menekan tombol AI Sponsor Respond.", "Counters from Team Owners are processed directly by the sponsor engine. Admin does not need to press the AI Sponsor Respond button."],
+      ["Belum ada penawaran sponsor.", "There are no sponsor offers yet."],
+      ["Menyiapkan CALERIS MASTERS Yearbook...", "Preparing the CALERIS MASTERS Yearbook..."],
+      ["Profil member belum terhubung. Hubungi Admin jika kondisi ini terus terjadi.", "Member profile is not linked. Contact Admin if this continues."],
+      ["Suaramu sudah tercatat. Terima kasih sudah berpartisipasi.", "Your vote has been recorded. Thank you for participating."],
+      ["Batalkan voting ini? Suara yang sudah masuk tetap tersimpan sebagai arsip.", "Cancel this vote? Votes already submitted will remain stored in the archive."],
+      ["Mathematical champion", "Juara Matematis"],
+      ["CALERIS MASTERS Digital ID", "ID Digital CALERIS MASTERS"],
+      ["Quest completed", "Quest Selesai"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers cookie notice, custom select, and Driver Transfer Market", () => {
+    const cases = [
+      ["Informasi Cookie", "Cookie Information"],
+      ["Baca Kebijakan Privasi", "Read Privacy Policy"],
+      ["Pilih opsi", "Select an option"],
+      ["Rekrutmen Driver melalui penawaran, negosiasi dua pihak, dan persetujuan akhir FIA.", "Driver recruitment through offers, two-party negotiation, and final FIA approval."],
+      ["Kontrak disepakati. Driver menunggu Team Owner mendaftarkan roster ke FIA melalui Driver Registration.", "Contract agreed. The Driver is waiting for the Team Owner to register the roster with FIA through Driver Registration."],
+      ["Permanent Transfer dan Driver Loan dapat dinegosiasikan.", "Permanent Transfers and Driver Loans can be negotiated."],
+      ["Penawaran terkirim ke Team Owner saat ini. Negosiasi menunggu respons.", "Offer sent to the current Team Owner. Negotiation is awaiting a response."],
+      ["Disetujui FIA. Eksekusi menunggu Transfer Window dan saldo tim yang mencukupi.", "Approved by FIA. Execution is awaiting the Transfer Window and sufficient team balance."],
+      ["FREE AGENT RECRUITMENT", "REKRUTMEN FREE AGENT"],
+      ["DRIVER SIDE", "SISI PEMBALAP"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers license check-in and Live Race testing UI", () => {
+    const cases = [
+      ["Check-in tersedia setelah Admin mendaftarkan driver ke divisi season aktif.", "Check-in becomes available after Admin registers the Driver in the active season division."],
+      ["Tombol absen hanya muncul pada tanggal race yang dijadwalkan. Hari tanpa race tidak dihitung sebagai absen.", "The check-in button only appears on scheduled race dates. Days without races do not count as absences."],
+      ["Jalankan simulasi deterministik, simpan checkpoint, dan uji pemulihan sesi dari web.", "Run a deterministic simulation, save checkpoints, and test session recovery from the web."],
+      ["Sesi simulasi berhasil dibuat di database testing. Belum ada data produksi yang disentuh.", "Simulation session successfully created in the testing database. No production data was touched."],
+      ["Simulasi selesai. Klasifikasi final dan event sudah tersimpan di Supabase testing.", "Simulation completed. Final classification and events have been saved to Supabase Testing."],
+      ["TRACK WETNESS", "KONDISI BASAH LINTASAN"],
+      ["Server-authorized control command", "Perintah Kontrol yang Diotorisasi Server"],
+      ["PENDING ADMIN RATIFICATION", "MENUNGGU PENGESAHAN ADMIN"],
+      ["SCORE LEDGER", "BUKU BESAR POIN"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers PWA install, privacy, OCR, replay, and role panels", () => {
+    const cases = [
+      ["Akses lebih cepat dari layar utama HP.", "Faster access from your phone's home screen."],
+      ["Penjelasan mengenai data yang diproses ketika kamu mengakses dan menggunakan CALERIS MASTERS.", "An explanation of the data processed when you access and use CALERIS MASTERS."],
+      ["Kami tidak menjual data pribadi pengguna sebagai produk data.", "We do not sell users' personal data as a data product."],
+      ["Pilih gambar PNG, JPG, atau WEBP.", "Choose a PNG, JPG, or WEBP image."],
+      ["OCR gagal membaca gambar. Coba screenshot dengan resolusi lebih tinggi.", "OCR could not read the image. Try a higher-resolution screenshot."],
+      ["WebGL tidak tersedia atau dinonaktifkan pada browser ini.", "WebGL is unavailable or disabled in this browser."],
+      ["Akun ini belum terhubung ke data Driver.", "This account is not linked to Driver data."],
+      ["Banding terkirim ke FIA Appeal Room.", "Appeal sent to FIA Appeal Room."],
+      ["OFFICIAL DRIVER PROFILE", "PROFIL RESMI PEMBALAP"],
+      ["TOTAL WALLET BALANCE", "TOTAL SALDO DOMPET"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers long-form Privacy Policy and Terms content", () => {
+    const cases = [
+      ["Privasi dan keamanan informasi merupakan bagian penting dari pengelolaan platform. Kebijakan ini menjelaskan kategori data yang digunakan, tujuan pemrosesan, layanan pihak ketiga, serta cara mengajukan permintaan terkait data pribadi.", "Information privacy and security are important parts of platform management. This policy explains the categories of data used, the purposes of processing, third-party services, and how to submit requests concerning personal data."],
+      ["Saat kamu masuk menggunakan Discord, Supabase Auth memproses informasi autentikasi yang diperlukan, seperti identitas akun Discord, alamat email yang diberikan oleh penyedia login, serta informasi sesi. Kami tidak menerima kata sandi Discord kamu.", "When you sign in using Discord, Supabase Auth processes the required authentication information, such as your Discord account identity, the email address provided by the login provider, and session information. We do not receive your Discord password."],
+      ["Kami tidak menjual data pribadi pengguna sebagai produk data.", "We do not sell users' personal data as a data product."],
+      ["Aset virtual dalam platform bukan rekening, simpanan, alat pembayaran resmi, investasi, atau janji nilai tukar ke mata uang nyata. Jangan menganggap saldo atau token sebagai uang sungguhan.", "Virtual assets on the platform are not bank accounts, deposits, official payment instruments, investments, or promises of exchange value into real currencies. Do not treat balances or tokens as real money."],
+      ["CALERIS MASTERS disediakan sebagai platform roleplay dan komunitas. Sejauh diizinkan oleh hukum yang berlaku, layanan disediakan sebagaimana tersedia dan pengelola tidak menjamin bahwa setiap fitur akan selalu memenuhi seluruh kebutuhan atau bebas dari kesalahan.", "CALERIS MASTERS is provided as a roleplay and community platform. To the extent permitted by applicable law, the service is provided as available, and administrators do not guarantee that every feature will always meet all needs or be error-free."],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers team job adverts and country/city selectors", () => {
+    const cases = [
+      ["Memuat identitas tim...", "Loading team identity..."],
+      ["Halaman ini hanya tersedia untuk Team Owner yang terhubung dengan tim.", "This page is only available to Team Owners linked to a team."],
+      ["Rentang gaji harus sesuai lisensi minimum dan batas maksimum Super License.", "The salary range must match the minimum license and the Super License maximum."],
+      ["Informasi tambahan (opsional)", "Additional information (optional)"],
+      ["Daftar negara gagal dimuat. Periksa koneksi lalu muat ulang halaman.", "Failed to load the country list. Check your connection and reload the page."],
+      ["Pilih nationality terlebih dahulu", "Select nationality first"],
+      ["Place Job Advert", "Pasang Iklan Lowongan"],
+      ["RECRUITMENT FORM", "FORMULIR REKRUTMEN"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
+  it("covers Paddock Access and Stage 5 role panels", () => {
+    const cases = [
+      ["Lengkapi preferensi Driver. Pengajuan akan diperiksa Admin dan diteruskan ke tim pilihan jika tersedia.", "Complete your Driver preferences. The application will be reviewed by Admin and forwarded to your selected team if available."],
+      ["Pilih membuat engine baru atau membeli engine milik tim lain.", "Choose to create a new Engine or purchase an Engine owned by another team."],
+      ["Tidak ada sanksi yang tersedia untuk diajukan banding, atau seluruh sanksi sudah memiliki banding aktif.", "There are no sanctions available for appeal, or all sanctions already have active appeals."],
+      ["Detail circuit dan layout diambil langsung dari Circuit Pool. Jadwal race menggunakan waktu lokal GMT+7.", "Circuit details and layout are taken directly from the Circuit Pool. Race schedules use local GMT+7 time."],
+      ["Pengumuman terbit dan otomatis dikirim ke Discord melalui Vreeo Pedia.", "Announcement published and automatically sent to Discord via Vreeo Pedia."],
+      ["Profil resmi tim, susunan driver, sejarah, dan statistik kejuaraan.", "Official team profile, Driver line-up, history, and championship statistics."],
+      ["Saldo wallet, cashflow, dan rincian seluruh transaksi yang dapat diakses akun ini.", "Wallet balance, cashflow, and details of all transactions accessible to this account."],
+      ["TEAM IDENTITY PREVIEW", "PRATINJAU IDENTITAS TIM"],
+      ["Wallet Accounts", "Akun Wallet"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
