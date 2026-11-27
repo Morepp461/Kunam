@@ -114,7 +114,7 @@ Deno.serve(async (req: Request) => {
       }
       if (prepared?.status === "already_owned") return respond(200, { status: "already_owned" });
       if (prepared?.status === "paid") return respond(200, { status: "paid", order_id: prepared.order_id });
-      if (prepared?.status === "pending_exists" && prepared.snap_token) {
+      if ((prepared?.status === "pending_exists" || prepared?.status === "pending") && prepared.redirect_url) {
         return respond(200, { status: "pending", order_id: prepared.order_id, redirect_url: prepared.redirect_url });
       }
       if (prepared?.status !== "created") {
