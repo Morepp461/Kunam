@@ -73,7 +73,7 @@ template_keys = re.findall(r"\('((?:license|reputation|division)_[a-z0-9_]+)','(
 assert len(set(template_keys)) == 14
 for key in template_keys:
     assert f".cp-id-template--{key}" in digital_css, f"Missing visual template for {key}"
-    css_rule = re.search(rf"\\.cp-id-template--{re.escape(key)}\\{{([^}}]+)\\}}", digital_css)
+    css_rule = re.search(re.escape(f".cp-id-template--{key}") + r"\\{([^}]*)\\}", digital_css)
     assert css_rule, f"Missing CSS rule for {key}"
     area_match = re.search(r'grid-template-areas:"([^"]+)"', css_rule.group(1))
     assert area_match, f"Missing layout areas for {key}"
