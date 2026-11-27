@@ -500,7 +500,7 @@ begin
   if p_idempotency_key is null or length(trim(p_idempotency_key)) not between 8 and 150 then raise exception 'invalid_idempotency_key'; end if;
   select * into v_existing from public.economy_transactions where idempotency_key='assets:sale:'||trim(p_idempotency_key);
   if found then
-    if v_existing.event_type<>'asset_sale' or v_existing.metadata->>'buyer_member_id'<>v_buyer::text then
+    if v_existing.event_type<>'asset_sale' or v_existing.metadata->>'buyer_member_id'<>v_buyer::text or v_existing.metadata->>'listing_id'<>p_listing_id::text then
       raise exception 'idempotency_key_reused';
     end if;
     return jsonb_build_object('status','duplicate','asset_id',v_existing.metadata->>'asset_id','transaction_id',v_existing.id,'price_eur',v_existing.amount);
@@ -565,5 +565,13 @@ grant execute on function public.caleris_assets_buy(text,text) to authenticated;
 grant execute on function public.caleris_assets_list(uuid,numeric) to authenticated;
 grant execute on function public.caleris_assets_cancel_listing(uuid) to authenticated;
 grant execute on function public.caleris_assets_buy_listing(uuid,text) to authenticated;
+
+revoke all on function private.ensure_member_economy_wallets() from public,anon,authenticated;
+revoke all on function private.ensure_profile_member_wallet() from public,anon,authenticated;
+revoke all on function private.caleris_assets_member_wallet(uuid) from public,anon,authenticated;
+revoke all on function private.caleris_assets_market_value(uuid) from public,anon,authenticated;
+revoke all on function private.caleris_assets_reputation_bonus(uuid) from public,anon,authenticated;
+revoke all on function private.refresh_driver_reputation_after_assets(uuid) from public,anon,authenticated;
+revoke all on function private.refresh_driver_reputation_for_asset_catalog() from public,anon,authenticated;
 
 commit;
