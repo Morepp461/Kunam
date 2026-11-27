@@ -564,7 +564,6 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "STATISTIK AKUN":"ACCOUNT STATISTICS",
  "Season entered":"Musim Diikuti",
  "Account balance":"Saldo Akun",
- "Financial Centre":"Pusat Keuangan",
  "ACCESS MANAGEMENT":"MANAJEMEN AKSES",
  "API Keys":"Kunci API",
  "REST API base URL":"URL Dasar REST API",
