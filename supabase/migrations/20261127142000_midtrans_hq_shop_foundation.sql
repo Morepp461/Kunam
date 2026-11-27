@@ -94,7 +94,7 @@ declare
 begin
   if p_user_id is null or p_team_id is null then raise exception 'invalid_checkout_identity'; end if;
   if p_request_key is null or length(trim(p_request_key)) not between 8 and 80 then raise exception 'invalid_checkout_request_key'; end if;
-  select m.*,t.name into v_member,v_team_name
+  select m,t.name into v_member,v_team_name
   from public.profiles p
   join public.members m on m.id=p.member_id
   join public.teams t on t.id=m.team_id
@@ -106,7 +106,7 @@ begin
     return jsonb_build_object('status','already_owned');
   end if;
   select * into v_config from public.caleris_team_hq_slot_shop_config where singleton=true for update;
-  if not found or not v_config.is_active or v_config.price_idr<>29900 or v_config.payment_provider<>'midtrans' then
+  if not found or not v_config.is_active or coalesce(v_config.price_idr,0)<>29900 or v_config.payment_provider<>'midtrans' then
     raise exception 'shop_item_unavailable';
   end if;
   select * into v_payment from public.caleris_midtrans_shop_payments
@@ -171,7 +171,7 @@ begin
   if not found then raise exception 'payment_order_not_found'; end if;
   if p_gross_amount is distinct from v_payment.amount_idr::numeric then raise exception 'payment_amount_mismatch'; end if;
   if p_transaction_status in ('settlement','capture') then
-    if p_status_code<>'200' or (p_fraud_status is not null and lower(p_fraud_status)<>'accept') then
+    if coalesce(p_status_code,'')<>'200' or (p_fraud_status is not null and lower(p_fraud_status)<>'accept') then
       raise exception 'payment_not_accepted';
     end if;
     if v_payment.status='paid' then
@@ -181,7 +181,7 @@ begin
     update public.caleris_midtrans_shop_payments
     set status='paid',provider_transaction_id=coalesce(p_provider_transaction_id,provider_transaction_id),
         payment_type=p_payment_type,status_code=p_status_code,fraud_status=p_fraud_status,
-        provider_payload=coalesce(p_payload,'{}'::jsonb),signature_verified_at=now(),paid_at=now(),updated_at=now()
+        provider_payload=case when jsonb_typeof(p_payload)='object' then p_payload else '{}'::jsonb end,signature_verified_at=now(),paid_at=now(),updated_at=now()
     where id=v_payment.id;
     insert into public.caleris_team_hq_slot_entitlements(team_id,purchased_by,transaction_id,payment_id)
     values(v_payment.team_id,v_payment.buyer_user_id,null,v_payment.id)
@@ -203,7 +203,7 @@ begin
     update public.caleris_midtrans_shop_payments
     set status=v_new_status,provider_transaction_id=coalesce(p_provider_transaction_id,provider_transaction_id),
         payment_type=p_payment_type,status_code=p_status_code,fraud_status=p_fraud_status,
-        provider_payload=coalesce(p_payload,'{}'::jsonb),signature_verified_at=now(),updated_at=now()
+        provider_payload=case when jsonb_typeof(p_payload)='object' then p_payload else '{}'::jsonb end,signature_verified_at=now(),updated_at=now()
     where id=v_payment.id;
   end if;
   return jsonb_build_object('status',v_new_status,'order_id',p_order_id);
