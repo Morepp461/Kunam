@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "./lib/supabase";
+import "./competition-charts.css";
 
 export type CompetitionChartMode = "driver-ranking" | "team-ranking" | "engine-ranking" | "statistic" | "comparison";
 type ChartRow = { name: string; points: number; wins: number; starts?: number; division?: string };
