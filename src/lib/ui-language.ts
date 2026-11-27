@@ -381,6 +381,17 @@ const EXTRA_EN_TO_ID: Record<string,string> = {
  "Official top-three results":"Hasil tiga besar resmi","Championship Points":"Poin Kejuaraan",
   "Completed rounds only":"Hanya putaran yang selesai","Season Titles":"Gelar Musim","CALERIS MASTERS · OFFICIAL DRIVER REGISTER":"CALERIS MASTERS · REGISTRASI PEMBALAP RESMI"
 
+  "TIER 1":"TINGKAT 1",
+  "TIER 2":"TINGKAT 2",
+  "TIER 3":"TINGKAT 3",
+  "TIER 4":"TINGKAT 4",
+  "TIER 5":"TINGKAT 5",
+  "Tier 1":"Tingkat 1",
+  "Tier 2":"Tingkat 2",
+  "Tier 3":"Tingkat 3",
+  "Tier 4":"Tingkat 4",
+  "Tier 5":"Tingkat 5",
+  "40 tiers":"40 tingkat",
   // Assets Marketplace — keep complete labels ahead of their individual words
   // so the bridge never produces mixed labels such as "OWNED NILAI ASET".
   "Assets Marketplace":"Marketplace Aset",
