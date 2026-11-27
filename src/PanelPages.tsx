@@ -3,9 +3,11 @@ import TeamHQ from "./TeamHQ";
 import DiscordBroadcastPanel from "./DiscordBroadcastPanel";
 import CalerisEcosystem from "./CalerisEcosystem";
 import TeamSummary from "./TeamSummary";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabase";
+import type { CompetitionChartMode } from "./CompetitionCharts";
+const CompetitionCharts = lazy(() => import("./CompetitionCharts"));
 import { MemberProfileLink, TeamProfileLink } from "./EntityProfileLink";
 import {
   Activity, ArrowLeft, ArrowUpRight, BarChart3, CalendarDays,
@@ -155,9 +157,6 @@ function LiveEntityDirectory({kind}:{kind:"drivers"|"teams"}){
   <p className="panel-note">Data berasal dari read model direktori CALERIS. Nama Driver hanya menjadi tautan profil jika Public Member ID tersedia; nama tim membuka profil tim.</p>
  </div>;
 }
-function ChartGraphic({ title, variant = "line" }: { title: string; variant?: "line" | "bar" }) {
-  return <div className="workspace-card panel-chart-card"><div className="section-title-row"><div><span className="section-eyebrow">PERFORMANCE VISUALIZATION</span><h2>{title}</h2></div><span className="empty-tag">AWAITING DATA</span></div><div className={"panel-chart-visual "+(variant==="bar"?"bar-chart":"line-chart")}><svg viewBox="0 0 720 210" role="img" aria-label={title+" chart placeholder"}><g className="chart-grid">{[25,65,105,145,185].map(y=><line key={y} x1="36" x2="700" y1={y} y2={y}/>)}</g>{variant==="line"?<><path className="chart-line-muted" d="M36 160 L700 160"/><path className="chart-line-dash" d="M36 150 L145 130 L255 142 L365 90 L475 112 L585 68 L700 82"/></>:<g className="chart-bars-muted">{[72,104,84,132,96,148,115,88].map((height,i)=><rect key={i} x={55+i*80} y={185-height} width="34" height={height} rx="3"/>)}</g>}</svg><span>Visualisasi akan menampilkan data aktual setelah data kompetisi tersedia.</span></div></div>;
-}
 function AttributePage({ title, attributes }: { title: string; attributes: string[] }) {
   return <><Heading eyebrow="Development" title={title} description="Panel pengembangan atribut. Nilai atribut dibatasi pada rentang 50 sampai 100."/><AttributeChart attributes={attributes} title={title}/></>;
 }
@@ -180,8 +179,7 @@ export default function PanelPage() {
     if(detail){
       const selected=cards.find(card=>card[0]===detail);
       const chartPages=["driver-ranking","team-ranking","engine-ranking","statistic","comparison"];
-      const chartVariant=detail==="engine-ranking"||detail==="team-ranking"?"bar":"line";
-      return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><ChartGraphic title={selected?.[1]||"Competition Statistics"} variant={chartVariant}/><EmptyPanel title="Belum ada data statistik" body="Grafik ini akan membaca hasil dan statistik resmi dari database kompetisi. Tidak ada angka simulasi yang ditampilkan."/></>:detail==="driver-list"?<LiveEntityDirectory kind="drivers"/>:detail==="team-list"?<LiveEntityDirectory kind="teams"/>:detail==="rookie-of-the-season"?<EmptyPanel title="Data rookie belum tersedia" body="Rookie of the Season akan menampilkan data resmi setelah sumber klasemen dan status rookie terhubung."/>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
+      return <section className="workspace"><Link className="back-link" to={base}><ArrowLeft size={15}/> Kembali ke {title}</Link><Heading eyebrow={title+" · Event Data"} title={selected?.[1]||detail.replaceAll("-"," ")} description={selected?.[2]||"Detail data kompetisi."}/>{chartPages.includes(detail)?<><Suspense fallback={<div className="workspace-card"><p className="muted">Memuat grafik...</p></div>}><CompetitionCharts mode={detail as CompetitionChartMode} divisionKey={tab.path}/></Suspense></>:detail==="driver-list"?<LiveEntityDirectory kind="drivers"/>:detail==="team-list"?<LiveEntityDirectory kind="teams"/>:detail==="rookie-of-the-season"?<EmptyPanel title="Data rookie belum tersedia" body="Rookie of the Season akan menampilkan data resmi setelah sumber klasemen dan status rookie terhubung."/>:<EmptyPanel title="Data belum tersedia" body="Halaman detail sudah disiapkan. Data aktual akan ditampilkan setelah sumber data kompetisi tersedia."/>}</section>;
     }
     return <section className="workspace"><Heading eyebrow="Main Event" title={title} description={tab.description}/><CardGrid items={cards as any} base={base}/></section>;
   }
