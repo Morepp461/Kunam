@@ -305,6 +305,24 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers cookie notice, custom select, and Driver Transfer Market", () => {
+    const cases = [
+      ["Informasi Cookie", "Cookie Information"],
+      ["Baca Kebijakan Privasi", "Read Privacy Policy"],
+      ["Pilih opsi", "Select an option"],
+      ["Rekrutmen Driver melalui penawaran, negosiasi dua pihak, dan persetujuan akhir FIA.", "Driver recruitment through offers, two-party negotiation, and final FIA approval."],
+      ["Kontrak disepakati. Driver menunggu Team Owner mendaftarkan roster ke FIA melalui Driver Registration.", "Contract agreed. The Driver is waiting for the Team Owner to register the roster with FIA through Driver Registration."],
+      ["Permanent Transfer dan Driver Loan dapat dinegosiasikan.", "Permanent Transfers and Driver Loans can be negotiated."],
+      ["Penawaran terkirim ke Team Owner saat ini. Negosiasi menunggu respons.", "Offer sent to the current Team Owner. Negotiation is awaiting a response."],
+      ["Disetujui FIA. Eksekusi menunggu Transfer Window dan saldo tim yang mencukupi.", "Approved by FIA. Execution is awaiting the Transfer Window and sufficient team balance."],
+      ["FREE AGENT RECRUITMENT", "REKRUTMEN FREE AGENT"],
+      ["DRIVER SIDE", "SISI PEMBALAP"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
