@@ -190,6 +190,23 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers public Digital ID, quests, and race operations", () => {
+    const cases = [
+      ["Memverifikasi Digital ID...", "Verifying Digital ID..."],
+      ["Member ini tidak mengaktifkan halaman verifikasi publik atau kode member tidak ditemukan.", "This member has not enabled the public verification page, or the member code could not be found."],
+      ["Belum ada Daily Quest yang memenuhi kondisi aktivitas hari ini.", "There are no Daily Quests that meet today's activity conditions."],
+      ["Reward berhasil diklaim dan masuk ke wallet pribadi.", "Reward successfully claimed and added to the personal wallet."],
+      ["Race time wajib memakai format h:mm:ss.mmm atau m:ss.mmm.", "Race time must use the h:mm:ss.mmm or m:ss.mmm format."],
+      ["Grid position 1 menentukan Pole Position.", "Grid position 1 determines Pole Position."],
+      ["Race resmi disahkan.", "Official race result confirmed."],
+      ["Durasi selesai. Menunggu konfirmasi hasil resmi FIA.", "Duration ended. Waiting for official FIA result confirmation."],
+      ["IN PROGRESS", "BERLANGSUNG"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
