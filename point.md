@@ -2705,3 +2705,138 @@ Continue with the approved Team HQ audit priorities using a new implementation b
 - Shop item `Additional HQ Project Slot` is deployed but inactive until Admin configures its EUR price and activates it. No purchase price was invented.
 - Testing/Production schema function hashes match for project start, Shop purchase, capacity lookup, Admin config read, and project-limit trigger. Testing data remains intact; Production remains without copied Testing dummy data.
 - Vercel environment variables and project settings were not modified.
+
+## Approved feature scope — 27 November 2026
+
+### Execution boundary and infrastructure
+
+- The next implementation scope is feature-first: Assets Marketplace, CALERIS-specific Achievement/Badge expansion, and the 14-template Digital ID design system.
+- Admin Workflow CRM remains deferred.
+- Full live 3D Race Broadcast remains deferred. The existing 3D vehicle model is a Gemini-generated design supplied by the owner and is not complete yet. Do not use or revive the old 2025 GLB requirement. The vehicle model is shared across teams; each team may use the same or a different livery.
+- Supabase Security Advisor remediation and historical migration-ledger reconciliation remain deferred.
+- Existing Race Engine test migrations, test-only tables, and `race-engine-test-service` remain Testing-only. Do not copy their dummy/test data or objects into Production.
+- The four historical migration-ledger discrepancies remain deferred; do not rewrite or delete historical migration records.
+- The existing `resend-inbound` Edge Function source difference is not part of the feature scope and must not be changed as part of this work without a separately verified reason.
+- All new application/database changes must be represented in versioned source and applied to both `caleris-masters-testing` and `caleris-masters-newgen`. Only intentionally created dummy/test business data may remain Testing-only.
+- Do not change Vercel environment variables or project settings.
+- Use a new branch from current `main`; merge only after QA, CI, database parity, and Vercel Production READY checks pass.
+
+### Shop — Additional HQ Project Slot / Midtrans
+
+- The approved item is `Additional HQ Project Slot`, priced at **Rp29.900 IDR**.
+- This is a real-money payment, not EUR and not a deduction from Team Wallet. The existing EUR/Team Wallet implementation is not an acceptable payment path for this item and must be replaced without disturbing the HQ entitlement/capacity rules.
+- Integrate Midtrans. Keep the item unavailable/inactive until the merchant configuration is complete and the full payment flow has passed Sandbox verification.
+- Payment confirmation and entitlement issuance must be server-authoritative, idempotent, and based on verified Midtrans notifications/status. Browser callbacks or redirect completion alone must never grant the entitlement.
+- Keep Midtrans credentials server-side in Supabase Edge Function secrets. Never put secret keys in browser code or Vercel environment variables.
+- Current Midtrans Access Keys documentation distinguishes the Server Key used for server API requests from the Signature Secret Key used to verify notifications. Do not assume they are interchangeable.
+- Do not activate real payments or claim Production payment readiness before merchant credentials and notification URL configuration are supplied and verified.
+
+### Assets Marketplace
+
+- Assets are available to all member roles and belong to the individual member who purchases them, never to a Team.
+- Assets have a dedicated page and marketplace route at `/assets`. They must not appear in the paid Shop page, paid Shop catalog, or paid Shop purchase flow.
+- The **Shop page is exclusively for real-money paid items** (currently the Additional HQ Project Slot at Rp29.900 through Midtrans). Virtual-balance Assets purchases must never be routed through Shop.
+- Catalog categories: motorcycles, cars, ships, aircraft/jets, houses, apartments, hotels, wristwatches, and other separately approved assets.
+- Each catalog has its own tier structure. The catalog is an always-available marketplace: stock does not deplete and no finite inventory is required.
+- Members purchase Assets using their virtual in-game balance (EUR). Owned assets may be listed and traded through the Assets marketplace; ownership and every purchase, listing, sale, transfer, and applicable team-tax event must have auditable history.
+- Asset value contributes to the owner's existing reputation score using the approved diminishing-returns formula below. Higher total market value contributes more reputation, but the asset contribution is capped at +10 points.
+- **Approved asset reputation formula:** let V be the combined current market value of all assets still owned by the member, in EUR. Asset reputation bonus = `min(10, floor(2 * log2(1 + V / 10,000,000)))`. Use authoritative catalog/valuation data, not user-entered listing prices or historical spend. Recalculate when ownership or market valuation changes. Do not create a separate reputation balance or overwrite the existing reputation engine.
+- **Individual asset tax is removed.** Personal Assets purchases and ownership have no individual tax. Only Team tax remains in the Team economy; do not charge personal asset owners or reinterpret this as an individual wealth tax. If a tax applies to Team-owned assets elsewhere in the Team economy, assess it per season rather than as a one-time purchase tax. Assets in this individual-owned marketplace are not Team-owned.
+- Assets must not affect gameplay, Team performance, Race Engine simulation, official results, or other competitive outcomes.
+- No manual Admin configuration for catalog categories, tiers, products, prices, valuations, reputation formulas, or tax rules. These are fixed, version-controlled system definitions and changes require reviewed source changes and migrations when needed.
+- The five-tier catalog names and initial virtual EUR prices below are **approved**. The tier names are fictional brand-style/parody labels for the CALERIS universe, not real manufacturer affiliations.
+- These names and prices are the version-controlled catalog baseline. Do not add an Admin configuration screen for them; changes require reviewed source changes and migrations when needed.
+
+
+#### Approved Assets catalog tiers and prices (virtual EUR)
+
+Each cell is shown as **fictional brand-style name (asset class) — initial price**. The Cars names are exactly the five labels supplied by the owner.
+
+| Catalog | Tier 1 | Tier 2 | Tier 3 | Tier 4 | Tier 5 |
+|---|---|---|---|---|---|
+| Motorcycles | Yamaho (Scooter) — €100,000 | Hondai (Street) — €300,000 | Kawasuki (Sport) — €750,000 | Ducatti (Superbike) — €2,000,000 | Harleydavon (Premium/Heritage) — €5,000,000 |
+| Cars | Avanzo (Compact) — €250,000 | Hyande (Executive) — €750,000 | GTW (Sports) — €2,000,000 | Lambegini (Supercar) — €6,000,000 | Farrara (Hypercar) — €15,000,000 |
+| Ships | Yamaro (Personal Watercraft) — €500,000 | Baylinor (Speedboat) — €2,000,000 | Benetau (Yacht) — €7,500,000 | Sunseeka (Superyacht) — €25,000,000 | Azimutti (Megayacht) — €60,000,000 |
+| Aircraft/Jets | Robinsun (Helicopter) — €1,500,000 | Sessna (Propeller Aircraft) — €5,000,000 | Pilatuz (Light Jet) — €15,000,000 | Bombardair (Midsize Jet) — €40,000,000 | Gulfstreama (Long-range Jet) — €100,000,000 |
+| Houses | Ikeva (Compact House) — €300,000 | Lennora (Family House) — €900,000 | Damacor (Premium House) — €2,500,000 | Mansorya (Mansion) — €7,500,000 | Emaara (Estate) — €20,000,000 |
+| Apartments | Studiora (Studio) — €100,000 | Apartella (One-bedroom) — €300,000 | Urbanova (Two-bedroom) — €750,000 | Penthara (Penthouse) — €2,000,000 | Skylofto (Luxury Penthouse) — €5,000,000 |
+| Hotels | Hiltona (Boutique) — €5,000,000 | Marriota (Business) — €15,000,000 | Hyatton (Resort) — €40,000,000 | Ritz-Carlona (Grand Hotel) — €100,000,000 | Four Seasona (Iconic/Luxury) — €250,000,000 |
+| Wristwatches | Casiora (Entry) — €25,000 | Seikora (Classic) — €100,000 | Tag Heura (Luxury) — €350,000 | Rolexx (Haute Horlogerie) — €1,500,000 | Pateka (Collector) — €5,000,000 |
+
+- Other approved asset categories must receive their own five-tier ladder and prices through a reviewed source change; do not automatically duplicate another catalog's tiers.
+- Initial prices are virtual EUR, not real-money prices. The real-money Shop must never display or sell these Assets.
+- Use these prices as each item's initial market valuation unless a later approved valuation model is specified. A member's reputation contribution is calculated from current owned market value, not the sum of asking prices on active listings.
+- Before enabling purchases, validate this approved ladder against live wallet distribution, quest income, payroll, and existing balance circulation. If testing shows early-tier assets are trivial relative to normal income, report the measured imbalance and obtain approval before changing these approved prices.
+- Seasonal Team tax remains a separate Team-economy rule. This Assets marketplace does not add a personal tax or a tax configuration screen.
+
+### Achievements and Badges
+
+- Research references: `Morepp461/Vreeobot` milestone patterns and `Morepp461/Vml` member badge patterns. These are references only; do not copy unrelated Discord/community or football-specific mechanics verbatim.
+- Build a CALERIS-specific achievement catalog around roles, motorsport activity, seasons, divisions, Teams, Drivers, Principals, Agents, and legitimate community participation.
+- FIA/Admin authority must never be granted by an achievement or badge. Administrative actions must not be converted into gameplay achievements.
+- Use authoritative existing CALERIS race, season, role, contract, quest, check-in, and milestone records. Avoid duplicate achievements for milestones already represented by the existing system.
+- Achievement difficulty must determine XP reward: harder achievements grant more XP. Preserve the existing code-owned achievement/milestone XP range of **5–20 XP** and route awards through the existing append-only `caleris_xp_ledger`, with deterministic idempotency. Do not create a second XP balance or allow client-selected reward amounts.
+
+### Digital ID — 14-template system
+
+- Implement exactly **14 distinct templates**: 4 license-based, 5 reputation-based, and 5 division-tier-based.
+- License templates map to the existing four license tiers: Bronze, Silver, Gold, and Super License.
+- Reputation templates map to the existing five database reputation bands: `developing`, `established`, `competitive`, `top`, and `elite`.
+- Division templates represent five tier positions. Only the current two divisions, Caleris Premio and Caleris Zwei, are selectable now; the remaining three designs are future-ready. Division identity/rank must remain data-driven rather than hardcoded to only two division names.
+- Templates must differ in composition, framing, depth, graphics, and supporting elements, not merely color.
+- Every template displays the CALERIS MASTERS logo at top-right and the member's profile photo.
+- A member may select only a template unlocked by their own license, reputation band, or division tier. Members cannot edit the template design.
+- Customization remains limited to a tagline and up to three earned badges, displayed in one compact horizontal row at upper-left.
+- Preserve private-by-default Digital ID visibility, explicit public opt-in, the canonical verification URL, and QR verification behavior.
+
+### Acceptance testing
+
+- Run full route-by-route visual and functional audit, including Admin, FIA, Owner, Principal, Driver, Agent, and Member access boundaries.
+- Contract acceptance walkthrough must cover Driver request, Owner offer, Driver acceptance/rejection, contract activation/renewal, salary/payment lifecycle, and contract ending.
+- Run automated browser coverage across supported browser engines where CI supports them; do not claim every browser is supported unless verified.
+- Owner will perform the physical Android acceptance pass using the prepared checklist. Browser CI is not a substitute for physical-device GPU, touch, and memory verification.
+- No second clarification batch is planned. Where an exact numeric/catalog decision remains unapproved, preserve a proposal or inactive state rather than silently activating it.
+- Assets catalog tier names and virtual EUR prices in this document are approved. The diminishing-returns asset reputation formula and removal of individual asset tax are also approved.
+
+---
+
+## Implementation status — Assets, Achievements, Digital ID, and Midtrans Shop — 27 November 2026
+
+### Implemented on branch feat/assets-achievements-digital-id-20261127-v2
+
+- **Assets Marketplace:** /assets is a dedicated member-owned marketplace, separate from Shop. The fixed catalog contains 8 approved categories × 5 tiers = 40 products. Each approved brand-style name and virtual EUR price is implemented exactly as specified in the approved catalog section above.
+- Asset purchases use the existing double-entry Economy Engine through private.post_economy_transaction; the engine now recognizes asset_purchase (member wallet → VreeoBank) and asset_sale (member wallet → member wallet) with explicit account-kind routing. Idempotency is enforced by transaction keys. Members can buy, list, cancel listings, and buy another member's listing. Ownership transfer and purchase/listing/sale audit events are recorded. No individual asset tax is charged.
+- Asset market value is derived from the authoritative catalog and the assets still owned by the member. The approved formula is integrated into the existing Driver Reputation engine and refreshes after ownership/valuation changes. It does not use listing prices or historical spend and does not create another reputation balance.
+- **Achievements and Badges:** 30 active achievement definitions across 9 categories. Existing role, official race/season/division, Driver/Team milestone, quest, check-in, and community-vote records feed the existing badge/XP system. Existing roles are backfilled idempotently. FIA/Admin authority is never granted by achievements. Rewards are code-owned in the existing 5–20 XP range and recorded through the existing append-only XP ledger.
+- **Digital ID:** exactly 14 distinct templates (4 license, 5 reputation, 5 division). Only templates unlocked by the member's current license/reputation/division can be selected. The editor allows only a tagline and up to three already-earned badges. Existing public-by-default protection remains private by default; publication requires explicit opt-in. The canonical public verification route and QR behavior are preserved.
+- **Shop:** the previous EUR/Team Wallet Shop purchase path has been removed from ShopPage. Shop is now for paid items only. Additional HQ Project Slot is fixed at Rp29.900 IDR and uses the midtrans-hq-shop Edge Function. The item remains inactive until the merchant credentials/configuration and full Sandbox verification are supplied and accepted. No Vercel environment variable or project setting is changed.
+
+### Database and Edge Function release state
+
+- New migration sources:
+  1. supabase/migrations/20261127140000_assets_marketplace_core.sql
+  2. supabase/migrations/20261127141000_achievement_expansion_digital_id_templates.sql
+  3. supabase/migrations/20261127142000_midtrans_hq_shop_foundation.sql
+- All three migrations have been applied successfully to both calerismasters-testing (vxwvhyyvoipjwucbrvlu) and calerismasters-newgen (asltczqrmoxnayusvjta).
+- midtrans-hq-shop is deployed and ACTIVE in both Supabase projects with identical source hash. verify_jwt=false is intentional because the same function serves Midtrans notifications; create_order validates the user's JWT itself, while notifications require a valid Midtrans signature and a server-side status lookup.
+- Midtrans secrets/merchant configuration have not been added or changed. The Shop item remains inactive, so the function cannot create a live payment order. Never activate it until Sandbox verification and merchant readiness are complete.
+- Testing has 40 existing members and its role achievements were backfilled idempotently. Production currently has 0 member rows and 2 profile rows; its role-achievement backfill correctly created no member badge rows. Production has 40 catalog entries, 30 active achievement definitions, 14 active Digital ID templates, 9 categories, 0 owned asset rows, 0 marketplace listings, and 0 Midtrans payment rows. No Testing business data was copied to Production.
+
+### QA completed
+
+- Migration dry-run against Testing with full rollback succeeded.
+- Transactional QA against Testing passed for asset purchase, purchase idempotency, listing creation, member-to-member purchase, sale idempotency, ownership transfer, and the three expected audit events. All test transactions and temporary member-code edits were rolled back.
+- Digital ID QA passed for the 14-template catalog, license unlock, earned-badge validation, tagline save, public opt-in verification response, and three-badge limit.
+- Reputation formula reference outputs were verified: V=€0 → 0; €10,000,000 → 2; €30,000,000 → 4; €1,000,000,000 → 10.
+- Midtrans QA confirmed the fixed Rp29.900 price, inactive state, rejected checkout while inactive, service-role-only finalization, and revoked legacy EUR Shop purchase RPC access.
+- GitHub Caleris CI passed the application/type checks, Vite production build, unit/schema validation, Playwright browser smoke test, Assets/Achievements/Digital ID/Midtrans regression checks, Development Shop regression checks, economy regression suites, and Supabase schema parity guard on commit 35247fb5145a1c36cfd0bee994b2a917ca65e2c3. CI must be rerun after this documentation update.
+- Vercel Preview build for that commit was started and must reach READY. Production release remains gated on final CI, PR merge, and Vercel Production READY.
+
+### Remaining release gates
+
+- [ ] Re-run GitHub Caleris CI after this point.md update and require all checks to pass.
+- [ ] Ensure Vercel Preview for the final branch commit reaches READY and verify the /assets, /community Digital ID editor, and /shop pages.
+- [ ] Merge PR #404 into main only after the above checks pass.
+- [ ] Verify Vercel Production deployment is READY on the merge commit and the production aliases serve it.
+- [ ] Keep Midtrans Shop inactive until merchant configuration and complete Sandbox verification are explicitly completed.
+- [ ] Owner must perform the physical Android acceptance pass; Playwright/browser CI is not a substitute.
