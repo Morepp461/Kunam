@@ -322,7 +322,8 @@ declare
   v_team_id uuid;
   v_started_at timestamptz;
 begin
-  if tg_op='UPDATE' and old.role='Owner' and old.team_id is not null
+  if tg_op='UPDATE' then
+   if old.role='Owner' and old.team_id is not null
     and (new.role is distinct from 'Owner' or new.team_id is distinct from old.team_id) then
     v_team_id:=old.team_id;
     select coalesce(t.started_at,tm.created_at,now()) into v_started_at
@@ -353,6 +354,7 @@ begin
       );
     end if;
     perform private.caleris_refresh_owner_reputation(old.id,'owner_team_departure');
+   end if;
   end if;
 
   if new.role='Owner' and new.team_id is not null then
@@ -379,7 +381,10 @@ set search_path=''
 as $function$
 declare v_settled_at timestamptz:=coalesce(new.settled_at,new.updated_at,now());
 begin
-  if new.status<>'completed' or (tg_op='UPDATE' and old.status='completed') then return new; end if;
+  if new.status<>'completed' then return new; end if;
+  if tg_op='UPDATE' then
+    if old.status='completed' then return new; end if;
+  end if;
 
   update public.caleris_team_owner_tenures
   set started_at=least(started_at,v_settled_at-interval '1 second'),
@@ -439,8 +444,10 @@ begin
     end if;
   end if;
   perform private.caleris_refresh_owner_reputation_for_team(v_team_id,tg_table_name||'_'||lower(tg_op));
-  if tg_op='UPDATE' and old.team_id is distinct from new.team_id then
-    perform private.caleris_refresh_owner_reputation_for_team(old.team_id,tg_table_name||'_previous_team');
+  if tg_op='UPDATE' then
+    if old.team_id is distinct from new.team_id then
+      perform private.caleris_refresh_owner_reputation_for_team(old.team_id,tg_table_name||'_previous_team');
+    end if;
   end if;
   if tg_op='DELETE' then return old; end if;
   return new;
@@ -461,8 +468,10 @@ begin
   end if;
   perform private.caleris_refresh_owner_reputation_for_team(new.target_team_id,'fine_issued');
   if new.target_member_id is not null then perform private.caleris_refresh_owner_reputation(new.target_member_id,'fine_issued'); end if;
-  if tg_op='UPDATE' and old.target_team_id is distinct from new.target_team_id then
-    perform private.caleris_refresh_owner_reputation_for_team(old.target_team_id,'fine_target_changed');
+  if tg_op='UPDATE' then
+    if old.target_team_id is distinct from new.target_team_id then
+      perform private.caleris_refresh_owner_reputation_for_team(old.target_team_id,'fine_target_changed');
+    end if;
   end if;
   return new;
 end;
@@ -505,8 +514,10 @@ begin
     return old;
   end if;
   perform private.caleris_refresh_owner_reputation(new.member_id,'personal_asset_changed');
-  if tg_op='UPDATE' and old.member_id is distinct from new.member_id then
-    perform private.caleris_refresh_owner_reputation(old.member_id,'personal_asset_transferred');
+  if tg_op='UPDATE' then
+    if old.member_id is distinct from new.member_id then
+      perform private.caleris_refresh_owner_reputation(old.member_id,'personal_asset_transferred');
+    end if;
   end if;
   return new;
 end;
