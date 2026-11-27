@@ -91,9 +91,8 @@ Deno.serve(async (req: Request) => {
 
       const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
       const signatureSecretKey = Deno.env.get("MIDTRANS_SIGNATURE_KEY");
-      const clientKey = Deno.env.get("MIDTRANS_CLIENT_KEY");
       const isProduction = Deno.env.get("MIDTRANS_IS_PRODUCTION") === "true";
-      if (!serverKey || !signatureSecretKey || !clientKey) {
+      if (!serverKey || !signatureSecretKey) {
         return respond(503, { error: "Pembayaran belum diaktifkan. Konfigurasi merchant dan verifikasi Sandbox masih diperlukan." });
       }
 
@@ -116,11 +115,7 @@ Deno.serve(async (req: Request) => {
       if (prepared?.status === "already_owned") return respond(200, { status: "already_owned" });
       if (prepared?.status === "paid") return respond(200, { status: "paid", order_id: prepared.order_id });
       if (prepared?.status === "pending_exists" && prepared.snap_token) {
-        return respond(200, {
-          status: "pending", order_id: prepared.order_id, snap_token: prepared.snap_token,
-          redirect_url: prepared.redirect_url, client_key: clientKey,
-          snap_script_url: isProduction ? "https://app.midtrans.com/snap/snap.js" : "https://app.sandbox.midtrans.com/snap/snap.js",
-        });
+        return respond(200, { status: "pending", order_id: prepared.order_id, redirect_url: prepared.redirect_url });
       }
       if (prepared?.status !== "created") {
         return respond(409, { error: "Masih ada transaksi pembayaran yang belum selesai. Selesaikan atau tunggu masa berlakunya berakhir." });
@@ -170,14 +165,7 @@ Deno.serve(async (req: Request) => {
         return respond(500, { error: "Sesi pembayaran tidak dapat disimpan dengan aman." });
       }
 
-      return respond(201, {
-        status: "created",
-        order_id: prepared.order_id,
-        snap_token: snapData.token,
-        redirect_url: snapData.redirect_url,
-        client_key: clientKey,
-        snap_script_url: isProduction ? "https://app.midtrans.com/snap/snap.js" : "https://app.sandbox.midtrans.com/snap/snap.js",
-      });
+      return respond(201, { status: "created", order_id: prepared.order_id, redirect_url: snapData.redirect_url });
     }
 
     const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
