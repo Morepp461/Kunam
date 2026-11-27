@@ -2886,3 +2886,16 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - [x] PR #406 merged to main. Merge commit: 103dd1bac3b7b137c2bac160b4d167a9356a823e.
 - [x] Vercel Production deployment READY on the merge commit: dpl_ARYT9ctVpHMpATkgeHfoNGxAtCxb; aliases include calerismasters.com and www.calerismasters.com. No Vercel project settings or environment variables were changed.
 - [ ] Physical Android acceptance on the user's device; CI/browser smoke does not substitute for a real-device check.
+
+---
+
+## Bilingual UI follow-up — Assets Marketplace (27 November 2026)
+
+- Work branch: `fix/bilingual-marketplace-coverage-20261127`, created from `main` commit `6348e1a876583d38cb7680de669621c13f04c3c3`.
+- PR: #408 — complete bilingual coverage for the Assets Marketplace labels visible in the owner-provided screenshot.
+- Updated `src/lib/ui-language.ts` with complete phrase mappings for the marketplace heading, wallet/value cards, catalog sections, all catalog categories, asset class descriptions, tier labels, purchase/listing actions, listing statuses, helper copy, and marketplace feedback text. English → Indonesian and Indonesian → English use the existing inverse dictionary mechanism.
+- Added regression coverage in `src/lib/ui-language.test.ts` for both translation directions, including the formerly mixed label `Owned Asset Value`, dynamic category text `Aircraft jets`, initial market value, tier labels, and marketplace actions.
+- Existing `profiles.preferred_language` (`id` / `en`) and `UiLanguageBridge` remain in use. About Us exclusion is unchanged.
+- No new dependency, database schema/data change, migration, Edge Function change, Vercel environment variable, or Vercel project setting was needed.
+- GitHub Actions Caleris CI passed on code commit `9d2ba75c9ce38bc1b771df0cd7dd8a86dd739234` (run `45956604868`): dependency security gate, Deno checks, TypeScript check, Vite production build, unit/schema tests, Playwright browser smoke, validation scripts, and all existing regression suites including Supabase migration parity.
+- PR #408 merge and Vercel Production deployment verification are pending.
