@@ -239,6 +239,52 @@ create trigger caleris_achievement_round_close_award
 after update of race_lifecycle_status on public.license_rounds
 for each row execute function private.caleris_award_round_achievements();
 
+do $achievement_history_backfill$
+declare v_row record;
+begin
+  for v_row in
+    select distinct e.member_id
+    from public.caleris_race_result_entries e
+    join public.license_rounds r on r.id=e.round_id
+    where e.member_id is not null and lower(coalesce(r.race_lifecycle_status,'')) in ('completed','closed')
+  loop
+    perform private.award_caleris_achievement(v_row.member_id,'season_participant');
+    perform private.award_caleris_achievement(v_row.member_id,'division_competitor');
+  end loop;
+
+  for v_row in
+    select member_id from public.caleris_member_race_checkins
+    group by member_id having count(*)>=10
+  loop
+    perform private.award_caleris_achievement(v_row.member_id,'community_ten_checkins');
+  end loop;
+
+  for v_row in
+    select distinct member_id from public.caleris_quest_assignments
+    where member_id is not null and reward_status='paid'
+  loop
+    perform private.award_caleris_achievement(v_row.member_id,'community_first_quest');
+  end loop;
+
+  for v_row in
+    select distinct voter_member_id as member_id from public.caleris_community_votes
+    where voter_member_id is not null
+  loop
+    perform private.award_caleris_achievement(v_row.member_id,'community_first_vote');
+  end loop;
+
+  for v_row in select id from public.members where role='Driver'
+  loop
+    perform public.caleris_refresh_driver_milestones(v_row.id);
+  end loop;
+
+  for v_row in select id from public.teams
+  loop
+    perform public.caleris_refresh_team_milestones(v_row.id);
+  end loop;
+end;
+$achievement_history_backfill$;
+
 create table if not exists public.caleris_digital_id_templates (
   template_key text primary key,
   group_key text not null check(group_key in ('license','reputation','division')),
