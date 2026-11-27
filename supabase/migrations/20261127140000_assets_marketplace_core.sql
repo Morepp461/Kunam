@@ -142,7 +142,7 @@ do $patch$
 declare d text; old_allow text; new_allow text; old_payroll text; new_payroll text;
 begin
   d:=pg_get_functiondef('private.post_economy_transaction(uuid,uuid,numeric,text,text,text,uuid,jsonb,uuid,boolean)'::regprocedure);
-  old_allow:='''contract_compensation'') then raise exception';
+  old_allow:='''contract_compensation'',''asset_purchase'',''asset_sale'') then raise exception';
   new_allow:='''contract_compensation'',''asset_purchase'',''asset_sale'') then raise exception';
   if position(old_allow in d)=0 then raise exception 'Economy transaction event allowlist changed; refusing unsafe patch.'; end if;
   d:=replace(d,old_allow,new_allow);
@@ -246,7 +246,7 @@ alter table public.economy_transactions
   check(event_type=any(array[
     'checkin_reward','prize','bank_reward','sponsor_payout','bank_funding','tax','fine','transfer',
     'admin_adjustment','reversal','payroll','loan_disbursement','loan_repayment','development_upgrade',
-    'team_hq_upgrade','merchandise_sale','merchandise_production','contract_compensation','asset_purchase'
+    'team_hq_upgrade','merchandise_sale','merchandise_production','contract_compensation','asset_purchase','asset_sale'
   ]::text[]));
 
 do $patch_economy_asset_purchase_event$
@@ -263,7 +263,7 @@ begin
   if position(old_guard in d)=0 then raise exception 'Economy transaction event allow-list changed; refusing unsafe patch.'; end if;
   d:=replace(d,old_guard,new_guard);
   old_route:='elsif p_event_type=''transfer'' and (v_source.account_kind in (''vreeo_bank'',''sponsor_source'') or v_destination.account_kind in (''vreeo_bank'',''sponsor_source'')) then'||chr(10)||'  raise exception ''Rute transfer tidak valid.'';';
-  new_route:=old_route||' elsif p_event_type=''asset_purchase'' and (v_source.account_kind not in (''driver'',''team_owner'',''public_member'') or v_destination.account_kind<>''vreeo_bank'') then'||chr(10)||'  raise exception ''Rute pembelian aset tidak valid.'';';
+  new_route:=old_route||' elsif p_event_type=''asset_purchase'' and (v_source.account_kind not in (''driver'',''team_owner'',''public_member'') or v_destination.account_kind<>''vreeo_bank'') then'||chr(10)||'  raise exception ''Rute pembelian aset tidak valid.'';'||chr(10)||' elsif p_event_type=''asset_sale'' and (v_source.account_kind not in (''driver'',''team_owner'',''public_member'') or v_destination.account_kind not in (''driver'',''team_owner'',''public_member'')) then'||chr(10)||'  raise exception ''Rute penjualan aset tidak valid.'';';
   if position(old_route in d)=0 then raise exception 'Economy transaction route guard changed; refusing unsafe patch.'; end if;
   d:=replace(d,old_route,new_route);
   execute d;
