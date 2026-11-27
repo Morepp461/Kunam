@@ -18,7 +18,7 @@ import AdminProfileAdjustments from "./AdminProfileAdjustments";
 import { AnalyticsConsentSettings, AnalyticsTracker } from "./AnalyticsTracker";
 
 import { optimizeImageToWebp, formatImageBytes } from "./lib/imageOptimization";
-import DiceBearAvatarLibrary from "./DiceBearAvatarLibrary";
+
 
 import "./license-engine.css";
 import "./driver-market-value.css";
@@ -52,6 +52,7 @@ const DashboardModule = lazy(() => import("./DashboardModule"));
 const ProfileModule = lazy(() => import("./ProfileModule"));
 const CommunityProgression = lazy(() => import("./CommunityProgression"));
 const PublicMemberId = lazy(() => import("./PublicMemberId"));
+const DiceBearAvatarLibrary = lazy(() => import("./DiceBearAvatarLibrary"));
 const Stage5Panel = lazy(() => import("./Stage5Panel"));
 const AdminConfiguration = lazy(() => import("./AdminConfiguration"));
 const AdminLicenseEngine = lazy(() => import("./AdminLicenseEngine"));
