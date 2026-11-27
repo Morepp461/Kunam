@@ -22,7 +22,7 @@
     "react-dom": "19.1.1",
     "react-router-dom": "7.18.5",
     "@countrystatecity/countries-browser": "3.0.1",
-    "tesseract.js": "6.0.1",
+    "tesseract.js": "7.0.0",
     "three": "0.187.0",
     "ara3d": "0.7.4",
     "fflate": "0.8.3",
