@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity, Award, BookOpen, CheckCircle, Copy, Crown, Flag, Medal, Plus, Printer,
   RefreshCw, Save, Share2, ShieldCheck, Target, TrendingUp, Users, Vote
@@ -62,25 +62,8 @@ export default function CommunityProgression({ session, profile, toast }: Props)
   const [badges, setBadges] = useState<any[]>([]);
   const [polls, setPolls] = useState<any[]>([]);
   const [tab, setTab] = useState("overview");
-  const [id, setId] = useState<any>({ theme: "classic", accent_color: "#b99752", tagline: "", public_visible: false });
-  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const themePickerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!themeMenuOpen) return;
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      if (event.target instanceof Node && !themePickerRef.current?.contains(event.target)) setThemeMenuOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setThemeMenuOpen(false);
-    };
-    document.addEventListener("pointerdown", closeOnOutsidePointer);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsidePointer);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [themeMenuOpen]);
+  const [id, setId] = useState<any>({ template_key: "", selected_badges: [], tagline: "", public_visible: false });
+  const [idTemplates, setIdTemplates] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -116,7 +99,7 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       db.from("caleris_community_polls").select("*").in("status", ["scheduled", "open", "closed", "finalized", "published", "cancelled"]).order("ends_at", { ascending: false }).limit(30),
       db.from("caleris_community_poll_options").select("*"),
       db.from("caleris_community_votes").select("poll_id,option_id").eq("voter_member_id", memberId),
-      db.from("caleris_digital_id_cards").select("*").eq("member_id", memberId).maybeSingle(),
+      db.rpc("caleris_get_digital_id_options"),
       db.from("license_seasons").select("id,title,season_key,status,starts_on").order("starts_on", { ascending: false }),
       db.from("site_admins").select("user_id").eq("user_id", session?.user?.id).maybeSingle(),
       db.from("caleris_member_directory").select("id,public_member_id,character_name").eq("role", "Driver"),
@@ -178,7 +161,13 @@ export default function CommunityProgression({ session, profile, toast }: Props)
       options: (optionsResult.data ?? []).filter((option: any) => option.poll_id === poll.id),
       voted: (votesResult.data ?? []).some((vote: any) => vote.poll_id === poll.id),
     })));
-    if (idResult.data) setId(idResult.data);
+    const idOptions = idResult.data ?? {};
+    const availableTemplates = Array.isArray(idOptions.templates) ? idOptions.templates : [];
+    setIdTemplates(availableTemplates);
+    setId(idOptions.card ?? {
+      template_key: availableTemplates.find((item: any) => item.unlocked)?.template_key ?? "",
+      selected_badges: [], tagline: "", public_visible: false,
+    });
     setSeasons(seasonsResult.data ?? []);
 
     const pollsNeedingResults = (pollsResult.data ?? []).filter((poll: any) =>
@@ -263,19 +252,20 @@ export default function CommunityProgression({ session, profile, toast }: Props)
 
   const saveId = async () => {
     if (!db) return;
-    if (!/^#[0-9a-f]{6}$/i.test(id.accent_color || "")) {
-      toast("warning", "Warna accent tidak valid", "Gunakan format HEX enam karakter.");
+    const selectedBadges = Array.isArray(id.selected_badges) ? [...new Set(id.selected_badges)] : [];
+    if (!id.template_key || !idTemplates.some((item: any) => item.template_key === id.template_key && item.unlocked)) {
+      toast("warning", "Template belum terbuka", "Pilih template yang sesuai dengan lisensi, reputasi, atau divisi akunmu.");
       return;
     }
-    if ((id.tagline ?? "").length > 80) {
-      toast("warning", "Tagline terlalu panjang", "Maksimal 80 karakter.");
+    if ((id.tagline ?? "").length > 80 || selectedBadges.length > 3) {
+      toast("warning", "Digital ID belum valid", "Tagline maksimal 80 karakter dan badge maksimal tiga.");
       return;
     }
-    const { error } = await db.rpc("caleris_save_digital_id", {
-      p_theme: id.theme,
-      p_accent: id.accent_color,
-      p_tagline: id.tagline,
+    const { error } = await db.rpc("caleris_save_digital_id_v2", {
+      p_template_key: id.template_key,
+      p_tagline: id.tagline ?? "",
       p_public: Boolean(id.public_visible),
+      p_badge_codes: selectedBadges,
     });
     if (error) toast("error", "ID gagal disimpan", error.message);
     else {
@@ -639,30 +629,48 @@ export default function CommunityProgression({ session, profile, toast }: Props)
 
       {tab === "identity" && <section className="cp-section cp-digital-id-editor">
         <h2><ShieldCheck size={20} /> CALERIS MASTERS Digital ID</h2>
-        <div className="cp-id" style={{ borderColor: id.accent_color }}>
-          <div className="cp-id-top"><span>CALERIS MASTERS</span><span>{id.theme.toUpperCase()}</span></div>
-          <h1>{member.character_name}</h1>
-          <p>{member.role} · {member.license || "UNLICENSED"}</p>
-          <p>{member.team_id ? <TeamProfileLink teamId={member.team_id}>{teamName || "Team"}</TeamProfileLink> : "Independent"} · {member.member_code}</p>
-          <div className="cp-id-level"><strong>LV {lv}</strong><span>{formatNumber(xp)} XP</span></div>
-          <div className="cp-id-bottom">{id.tagline || "Built through every season."}</div>
-        </div>
-        <div className="cp-theme-picker" ref={themePickerRef}>
-          <span className="cp-theme-label">Theme</span>
-          <button type="button" className="cp-theme-trigger" aria-label="Pilih tema Digital ID" aria-haspopup="listbox" aria-expanded={themeMenuOpen} aria-controls="cp-digital-id-theme-options" onClick={() => setThemeMenuOpen(open => !open)}>
-            <span>{({classic:"Classic",premio:"Premio",zwei:"Zwei",gold:"Gold"} as Record<string,string>)[id.theme] || "Classic"}</span>
-            <span className="cp-theme-chevron" aria-hidden="true">⌄</span>
-          </button>
-          {themeMenuOpen && <div id="cp-digital-id-theme-options" className="cp-theme-options" role="listbox" aria-label="Pilih tema Digital ID">
-            {(["classic","premio","zwei","gold"] as const).map(theme => <button type="button" role="option" aria-selected={id.theme===theme} className={id.theme===theme?"is-selected":""} key={theme} onClick={() => { setId({ ...id, theme }); setThemeMenuOpen(false); }}>
-              <span>{theme[0].toUpperCase()+theme.slice(1)}</span>{id.theme===theme&&<CheckCircle size={15}/>}
+        {(() => {
+          const selectedTemplate = idTemplates.find((item: any) => item.template_key === id.template_key);
+          const selectedBadges = (badges ?? []).filter((badge: any) => badge.earned && (id.selected_badges ?? []).includes(badge.code));
+          const avatarUrl = profile?.avatar_url || "";
+          return <div className={"cp-id cp-id-template cp-id-template--" + (id.template_key || "locked")} data-layout={selectedTemplate?.layout_variant || "locked"} style={{ ["--id-accent" as any]: selectedTemplate?.accent_color || "#b99752" }}>
+            <div className="cp-id-brand"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="CALERIS MASTERS logo" /></div>
+            <div className="cp-id-personalization">
+              <div className="cp-id-tagline">{id.tagline || "Built through every season."}</div>
+              <div className="cp-id-selected-badges">{selectedBadges.map((badge: any) => <span key={badge.code}>{badge.title}</span>)}</div>
+            </div>
+            <div className="cp-id-photo">{avatarUrl ? <img src={avatarUrl} alt="Member portrait" /> : <span>{(member.character_name || "CM").slice(0, 2).toUpperCase()}</span>}</div>
+            <div className="cp-id-main">
+              <small>{selectedTemplate?.title || "No template unlocked"}</small>
+              <h1>{member.character_name}</h1>
+              <p>{member.role} · {member.license || "UNLICENSED"}</p>
+              <p>{member.team_id ? <TeamProfileLink teamId={member.team_id}>{teamName || "Team"}</TeamProfileLink> : "Independent"} · {member.member_code}</p>
+              <div className="cp-id-level"><strong>LV {lv}</strong><span>{formatNumber(xp)} XP</span></div>
+            </div>
+            <div className="cp-id-template-seal">CALERIS<br/>VERIFIED</div>
+          </div>;
+        })()}
+        <div className="cp-id-template-picker">
+          <span className="cp-theme-label">Unlocked templates</span>
+          <div className="cp-id-template-options">
+            {idTemplates.map((template: any) => <button type="button" key={template.template_key} disabled={!template.unlocked}
+              className={(id.template_key === template.template_key ? "is-selected " : "") + (!template.unlocked ? "is-locked" : "")}
+              onClick={() => setId({ ...id, template_key: template.template_key })}>
+              <span>{template.title}</span><small>{template.group_label}{template.unlocked ? "" : " · Locked"}</small>
             </button>)}
-          </div>}
+          </div>
         </div>
-        <label>Accent color<input type="color" value={id.accent_color} onChange={(event) => setId({ ...id, accent_color: event.target.value })} /></label>
         <label>Tagline<input maxLength={80} value={id.tagline ?? ""} onChange={(event) => setId({ ...id, tagline: event.target.value })} placeholder="Your personal tagline" /></label>
+        <fieldset className="cp-id-badge-selector"><legend>Earned badges on card · maximum 3</legend>
+          <div>{badges.filter((badge: any) => badge.earned).map((badge: any) => <label key={badge.code}>
+            <input type="checkbox" checked={(id.selected_badges ?? []).includes(badge.code)} disabled={!(id.selected_badges ?? []).includes(badge.code) && (id.selected_badges ?? []).length >= 3}
+              onChange={(event) => setId({ ...id, selected_badges: event.target.checked ? [...(id.selected_badges ?? []), badge.code] : (id.selected_badges ?? []).filter((code: string) => code !== badge.code) })} />
+            {badge.title}
+          </label>)}</div>
+          {!badges.some((badge: any) => badge.earned) && <small>Badge akan muncul setelah achievement berhasil diraih.</small>}
+        </fieldset>
         <label className="cp-checkbox"><input type="checkbox" checked={Boolean(id.public_visible)} onChange={(event) => setId({ ...id, public_visible: event.target.checked })} /> Public verification page</label>
-        <button onClick={() => void saveId()}><Save size={15} /> Save Digital ID</button>
+        <button onClick={() => void saveId()} disabled={!id.template_key || !idTemplates.some((item: any) => item.template_key === id.template_key && item.unlocked)}><Save size={15} /> Save Digital ID</button>
         {id.public_visible && shareUrl && <div className="cp-share">
           <div><strong>Public verification link</strong><p>{shareUrl}</p><button onClick={() => void copyShareUrl()}><Copy size={15} /> Copy link</button><button onClick={() => void shareDigitalId()}><Share2 size={15} /> Share ID</button></div>
           <img src={qrUrl} alt="QR code for public CALERIS member ID" loading="lazy" />
