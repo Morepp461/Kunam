@@ -71,7 +71,10 @@ for fragment in [
 
 shop = (ROOT / "src/ShopPage.tsx").read_text(encoding="utf-8")
 assert "member_purchase_development_tokens" not in shop
-assert "tidak dapat dibeli" in shop.lower()
+assert "caleris_midtrans_shop_item_status" in shop
+assert "midtrans" in shop.lower()
+assert "member_purchase_team_hq_project_slot" not in shop
+assert "pembayaran rupiah" in shop.lower()
 
 pricing = (ROOT / "src/AdminPricingCenter.tsx").read_text(encoding="utf-8")
 for fragment in [
