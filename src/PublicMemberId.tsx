@@ -48,14 +48,33 @@ export default function PublicMemberId() {
   </main>;
 
   const { member, card, badges = [], milestones = [], progression = { xp: 0, level: 0 } } = record;
+  const templateKey = card.template_key || "license_bronze";
+  const selectedBadgeCodes: string[] = Array.isArray(card.selected_badges) ? card.selected_badges : [];
+  const selectedBadges = badges.filter((badge: any) => selectedBadgeCodes.includes(badge.code)).slice(0, 3);
+  const avatarUrl = member.avatar_path && supabase
+    ? supabase.storage.from("profile-avatars").getPublicUrl(member.avatar_path).data.publicUrl
+    : "";
+
   return <main className="cp-page cp-public-id">
     <header className="cp-header"><div><small>CALERIS MASTERS · VERIFIED MEMBER</small><h1>Digital ID</h1><p>Public identity card and earned achievements.</p></div><ShieldCheck size={30} /></header>
-    <section className="cp-id cp-id-public" style={{ borderColor: card.accent_color || "#b99752" }}>
-      <div className="cp-id-top"><span>CALERIS MASTERS</span><span>{String(card.theme || "classic").toUpperCase()}</span></div>
-      <h1>{member.character_name}</h1>
-      <p>{member.role} · {member.license || "UNLICENSED"}</p>
-      <p>{member.team_name || "Independent"} · {member.member_code}</p>\n      {member.role==="Driver"&&<p><strong>Market Value:</strong> {member.market_value_eur==null?"Belum tersedia":"€ "+Number(member.market_value_eur).toLocaleString("id-ID")}</p>}
-      <div className="cp-id-bottom">{card.tagline || "CALERIS MASTERS Member"}</div>
+    <section className={"cp-id cp-id-public cp-id-template cp-id-template--" + templateKey}
+      data-layout={card.layout_variant || "license-badge"}
+      style={{ ["--id-accent" as any]: card.accent_color || "#b99752" }}>
+      <div className="cp-id-brand"><img src="/assets/Add%20a%20heading_20260907_003952_0000.png" alt="CALERIS MASTERS logo" /></div>
+      <div className="cp-id-personalization">
+        <div className="cp-id-tagline">{card.tagline || "CALERIS MASTERS Member"}</div>
+        <div className="cp-id-selected-badges">{selectedBadges.map((badge: any) => <span key={badge.code}>{badge.title}</span>)}</div>
+      </div>
+      <div className="cp-id-photo">{avatarUrl ? <img src={avatarUrl} alt="Member portrait" /> : <span>{(member.character_name || "CM").slice(0, 2).toUpperCase()}</span>}</div>
+      <div className="cp-id-main">
+        <small>{card.template_title || templateKey.replace(/_/g, " ")}</small>
+        <h1>{member.character_name}</h1>
+        <p>{member.role} · {member.license || "UNLICENSED"}</p>
+        <p>{member.team_name || "Independent"} · {member.member_code}</p>
+        {member.role === "Driver" && <p><strong>Market Value:</strong> {member.market_value_eur == null ? "Belum tersedia" : "€ " + Number(member.market_value_eur).toLocaleString("id-ID")}</p>}
+        <div className="cp-id-level"><strong>LV {Number(progression.level ?? 0)}</strong><span>{Number(progression.xp ?? 0).toLocaleString("id-ID")} XP</span></div>
+      </div>
+      <div className="cp-id-template-seal">CALERIS<br/>VERIFIED</div>
     </section>
     <section className="cp-section cp-public-progress">
       <h2>Account Progression</h2>
