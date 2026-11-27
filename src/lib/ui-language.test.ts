@@ -122,6 +122,24 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers dashboard, Developer API, and Development workflows in both languages", () => {
+    const cases = [
+      ["Ringkasan aktivitas, event, dan perjalananmu di Caleris Masters.", "A summary of your activity, events, and journey in Caleris Masters."],
+      ["Buka Admin Workflow", "Open Admin Workflow"],
+      ["Developer API hanya tersedia untuk pemilik CALERIS MASTERS.", "Developer API is only available to the CALERIS MASTERS owner."],
+      ["Hak akses data", "Data access permissions"],
+      ["Harga Berdasarkan Lisensi & Divisi", "Pricing by License & Division"],
+      ["Pemetaan Lisensi Driver", "Driver License Mapping"],
+      ["Snapshot dan baseline season berhasil dibuat.", "Season snapshot and baseline created successfully."],
+      ["Divisi tim belum ditetapkan ke Caleris Premio atau Caleris Zwei. Upgrade cash belum tersedia.", "The team division has not been assigned to Caleris Premio or Caleris Zwei. Cash upgrades are not available."],
+      ["Kecepatan Kualifikasi", "Qualifying Pace"],
+      ["Efisiensi Pit Stop", "Pit Stop Efficiency"],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
