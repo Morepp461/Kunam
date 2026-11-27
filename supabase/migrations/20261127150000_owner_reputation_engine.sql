@@ -77,7 +77,7 @@ declare
   v_balance numeric:=0;
   v_debt numeric:=0;
 begin
-  select coalesce(wa.balance,0) into v_balance
+  select coalesce(max(wa.balance),0) into v_balance
   from public.economy_wallet_accounts wa
   where wa.account_kind='team' and wa.team_id=p_team_id and wa.is_active
   order by wa.created_at desc limit 1;
@@ -329,7 +329,8 @@ begin
     where tm.id=v_team_id;
 
     update public.caleris_team_owner_tenures
-    set ended_at=greatest(started_at+interval '1 second',now()),
+    set started_at=least(started_at,now()-interval '1 second'),
+      ended_at=now(),
       financial_health_score_snapshot=coalesce(financial_health_score_snapshot,private.caleris_owner_financial_health_score(v_team_id)),
       contract_stability_score_snapshot=coalesce(contract_stability_score_snapshot,
         private.caleris_owner_contract_stability_score(v_team_id,coalesce(v_started_at,now()),now()))
@@ -378,7 +379,8 @@ begin
   if new.status<>'completed' or (tg_op='UPDATE' and old.status='completed') then return new; end if;
 
   update public.caleris_team_owner_tenures
-  set ended_at=greatest(started_at+interval '1 second',v_settled_at),
+  set started_at=least(started_at,v_settled_at-interval '1 second'),
+    ended_at=v_settled_at,
     financial_health_score_snapshot=coalesce(financial_health_score_snapshot,
       private.caleris_owner_financial_health_score(new.target_team_id)),
     contract_stability_score_snapshot=coalesce(contract_stability_score_snapshot,
@@ -553,26 +555,6 @@ create trigger caleris_owner_reputation_catalog_event
 after update of market_value_eur on public.caleris_assets_catalog
 for each row execute function private.caleris_owner_reputation_catalog_asset_event();
 
-do $backfill_owner_tenures$
-declare v_team record;
-begin
-  for v_team in
-    select t.id team_id,t.created_at,
-      m.id owner_member_id
-    from public.teams t
-    join public.members m on m.team_id=t.id and m.role='Owner'
-    where not exists(
-      select 1 from public.caleris_team_owner_tenures h
-      where h.team_id=t.id and h.ended_at is null
-    )
-  loop
-    insert into public.caleris_team_owner_tenures(team_id,owner_member_id,started_at)
-    values(v_team.team_id,v_team.owner_member_id,coalesce(v_team.created_at,now()))
-    on conflict do nothing;
-  end loop;
-end;
-$backfill_owner_tenures$;
-
 do $backfill_completed_takeovers$
 declare v_take record;
 begin
@@ -613,6 +595,31 @@ begin
   end loop;
 end;
 $backfill_completed_takeovers$;
+
+do $backfill_owner_tenures$
+declare v_team record;
+begin
+  for v_team in
+    select t.id team_id,t.created_at,
+      m.id owner_member_id
+    from public.teams t
+    join public.members m on m.team_id=t.id and m.role='Owner'
+    where not exists(
+      select 1 from public.caleris_team_owner_tenures h
+      where h.team_id=t.id and h.ended_at is null
+    )
+  loop
+    insert into public.caleris_team_owner_tenures(team_id,owner_member_id,started_at)
+    values(v_team.team_id,v_team.owner_member_id,coalesce(
+      (select max(coalesce(x.settled_at,x.updated_at,x.created_at))
+       from public.caleris_team_takeovers x
+       where x.target_team_id=v_team.team_id and x.status='completed'),
+      v_team.created_at,now()
+    ))
+    on conflict do nothing;
+  end loop;
+end;
+$backfill_owner_tenures$;
 
 do $backfill_owner_reputation$
 declare v_owner record;
