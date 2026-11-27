@@ -2903,3 +2903,19 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - [x] Vercel Production deployment reached `READY`: `dpl_5k3BzCe4s6uxWSfaG9QFz5RMHySm` (`calerismastersnewgen-mjmppfqg3-morepp.vercel.app`). Production aliases verified: `calerismasters.com` and `www.calerismasters.com`.
 - [x] No Supabase migration or data change was needed. Existing `profiles.preferred_language` and both databases remain unchanged and aligned; no Testing data was copied to Production.
 - [x] No Vercel environment variables or project settings were changed.
+
+
+---
+
+## Bilingual coverage expansion — key CALERIS modules (27 November 2026)
+
+- Work branch: `fix/full-app-bilingual-coverage-20261127`, based on main after the Assets Marketplace bilingual fix.
+- PR: #410 — expands the existing `UiLanguageBridge` dictionaries and preserves the current language preference flow and About Us English-only exclusion.
+- Updated `src/lib/ui-language.ts` with bidirectional English/Indonesian mappings for dashboard and navigation, Admin configuration/economy/license/season/persona, Developer API, Development, cash loans, circuit workflows, Discord broadcast, Driver Exhibition/Training, FIA/race operations, public Digital ID, quests, Shop, Support, affiliate, Team HQ, engine and contract workflows, merchandise, Take Over, team livery, and Brand Ecosystem.
+- Expanded `src/lib/ui-language.test.ts` with bidirectional regression cases for complete phrases, dynamic labels, validation messages, statuses, and actions across those modules.
+- About Us remains intentionally English-only. Official entity names, roles, product names, and technical acronyms remain unchanged where they are proper labels.
+- No new dependencies. No Supabase schema/data changes, migrations, Edge Function changes, or database writes were required. Production and Testing databases remain unchanged.
+- No Vercel environment variables or project settings were changed.
+- GitHub Actions CI passed on code commit `452ca8941235a0f2cca3471d3d5dc3915b403f05` (run `45959294488`): dependency security gate, Deno checks, TypeScript, Vite production build, unit/schema tests, Playwright smoke, validation scripts, mobile/navigation/profile checks, all economy/race/registration regression suites, and Supabase schema parity guard.
+- PR #410 merge and its Vercel Production deployment are pending.
+- Coverage was expanded across key high-traffic modules; the remaining page-level audit should continue to ensure no isolated untranslated literals remain in less-used modules.
