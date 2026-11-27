@@ -1,0 +1,17 @@
+.owner-reputation-card {
+  border-color: rgba(185, 151, 82, 0.42);
+  background:
+    linear-gradient(135deg, rgba(185, 151, 82, 0.075), transparent 58%),
+    var(--surface-card, rgba(20, 20, 20, 0.72));
+}
+.owner-reputation-card .section-eyebrow {
+  color: #b99752;
+}
+.owner-reputation-card .profile-info-item strong {
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 640px) {
+  .owner-reputation-card .profile-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
