@@ -86,6 +86,21 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers layout navigation, team overview, and legal headings", () => {
+    const cases = [
+      ["Meet VREEO & CALERIS", "Kenali VREEO & CALERIS"],
+      ["STRUCTURE READY · DATA NOT CONNECTED", "STRUKTUR SIAP · DATA BELUM TERHUBUNG"],
+      ["TEAM PANEL · OVERVIEW", "PANEL TIM · IKHTISAR"],
+      ["MAIN EVENT · TEAM MARKET", "MAIN EVENT · BURSA TIM"],
+      ["Ajukan Take Over", "Submit Take Over"],
+      ["CALERIS MASTERS · LEGAL", "CALERIS MASTERS · LEGAL"],
+      ["Gunakan Platform dengan Bertanggung Jawab", "Use the Platform Responsibly"]
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates English interface labels to Indonesian", () => {
     expect(translateUiText("Transfer Market", "id")).toBe("Bursa Transfer");
     expect(translateUiText("Market Value · € 18.000.000", "id")).toBe("Nilai Pasar · € 18.000.000");
