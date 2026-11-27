@@ -2862,7 +2862,7 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - Personal assets include all approved asset categories, using current official catalog market value for assets still owned. Listing price, historical spend, and sold assets do not count. No direct wealth/balance score is added.
 
 ### Implemented calculation rules
-- Team achievement: average percentile ranking of the Team's summed points in each official race round during the owner's tenure. It uses race start timestamps and the team identity snapshot on each round, so a mid-season Team sale splits results by the actual ownership period. No round results in a tenure scores 0 for this component.
+- Team achievement: average percentile ranking of the Team's summed points in each official race round during the owner's tenure. It uses race start timestamps and resolves the Team from the official race-result entry when the round-standing snapshot is empty, so a mid-season Team sale splits results by the actual ownership period. No round results in a tenure scores 0 for this component.
 - Team financial health: current Team Wallet balance relative to outstanding Team loans. A tenure's financial score is snapshotted when ownership ends. No balance and no outstanding debt uses a neutral score of 50.
 - Driver/contract stability: active Driver contracts relative to relevant contracts during the tenure. A tenure's score is snapshotted when ownership ends. No contract history uses a neutral score of 50.
 - HQ investment/development: logged positive facility-level upgrades during the tenure divided by the enabled facility-level capacity for the Team's division, capped at 100.
@@ -2871,7 +2871,7 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - Final score: round the weighted sum of the six 0–100 component scores using the approved percentages above.
 
 ### Technical implementation
-- New migrations: supabase/migrations/20261127150000_owner_reputation_engine.sql and supabase/migrations/20261127151000_owner_reputation_round_based_achievement.sql.
+- New migrations: 20261127150000_owner_reputation_engine.sql, 20261127151000_owner_reputation_round_based_achievement.sql, 20261127152000_owner_reputation_round_scoring_backfill.sql, and 20261127153000_owner_reputation_race_result_team_source.sql.
 - New tables: caleris_team_owner_tenures, caleris_owner_reputation, and caleris_owner_reputation_history.
 - Ownership tenure is backfilled from completed Team Take Over records and current Owner assignments. Member role changes and completed Take Over settlements maintain tenure boundaries and preserve the seller's final financial/contract snapshots.
 - Automatic recalculation triggers cover Team standings, HQ audit events, Driver contracts, Team Wallets, Team loans, fines/appeals, personal asset ownership, and catalog market-value changes.
@@ -2879,7 +2879,7 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - No new runtime dependency was added. CI now runs scripts/test_owner_reputation.py.
 
 ### Release gates
-- [x] Base Owner Reputation migration applied to Testing and initial backfill verified. The round-based achievement follow-up migration is still pending Testing application.
+- [x] All four Owner Reputation migrations applied to Testing; initial owner backfill and market-value trigger test passed. Round-result team attribution was corrected to use official race-result entries when legacy team snapshots are empty.
 - [ ] Owner Reputation regression tests, TypeScript check, production build, and browser smoke pass.
 - [ ] Production migration applied and schema/ledger parity checked against Testing.
 - [ ] PR merged to main after CI passes.
