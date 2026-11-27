@@ -2898,4 +2898,8 @@ Each cell is shown as **fictional brand-style name (asset class) — initial pri
 - Existing `profiles.preferred_language` (`id` / `en`) and `UiLanguageBridge` remain in use. About Us exclusion is unchanged.
 - No new dependency, database schema/data change, migration, Edge Function change, Vercel environment variable, or Vercel project setting was needed.
 - GitHub Actions Caleris CI passed on code commit `9d2ba75c9ce38bc1b771df0cd7dd8a86dd739234` (run `45956604868`): dependency security gate, Deno checks, TypeScript check, Vite production build, unit/schema tests, Playwright browser smoke, validation scripts, and all existing regression suites including Supabase migration parity.
-- PR #408 merge and Vercel Production deployment verification are pending.
+- [x] PR #408 squash-merged to `main`. Merge commit: `7faa637e4e4785e7df57a127852dc95e7e4abf83`.
+- [x] GitHub Actions CI passed on the merge commit (run `45957112419`): TypeScript, Vite production build, unit/schema tests, Playwright smoke, validation, all existing regression suites, and Supabase migration parity guard.
+- [x] Vercel Production deployment reached `READY`: `dpl_5k3BzCe4s6uxWSfaG9QFz5RMHySm` (`calerismastersnewgen-mjmppfqg3-morepp.vercel.app`). Production aliases verified: `calerismasters.com` and `www.calerismasters.com`.
+- [x] No Supabase migration or data change was needed. Existing `profiles.preferred_language` and both databases remain unchanged and aligned; no Testing data was copied to Production.
+- [x] No Vercel environment variables or project settings were changed.
