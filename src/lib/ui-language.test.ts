@@ -239,6 +239,22 @@ describe("CALERIS UI language", () => {
       expect(translateUiText(english, "id")).toBe(indonesian);
     }
   });
+  it("covers Team Summary, Merchandise, and Take Over screens", () => {
+    const cases = [
+      ["Ringkasan identitas, line-up, sponsor resmi, dan konfigurasi Engine tim.", "Summary of team identity, line-up, official sponsors, and Engine configuration."],
+      ["Belum ada kontrak sponsor aktif untuk tim ini.", "There are no active sponsor contracts for this team."],
+      ["Production quantity", "Jumlah Produksi"],
+      ["Gross revenue", "Pendapatan Kotor"],
+      ["Penawaran mengikuti rentang valuasi dan batas negosiasi yang dikonfigurasi Admin.", "Offers follow the valuation range and negotiation limits configured by Admin."],
+      ["Belum ada tim yang membuka listing dengan valuation snapshot.", "No teams have opened listings with a valuation snapshot."],
+      ["Take Over selesai. Pembayaran tercatat di ledger dan status pembeli sudah menjadi Owner.", "Take Over completed. Payment was recorded in the ledger and the buyer is now an Owner."],
+      ["Valuasi tim belum dibuat oleh Admin. Penawaran belum dapat diajukan.", "Team valuation has not been created by Admin. Offers cannot be submitted yet."],
+    ];
+    for (const [indonesian, english] of cases) {
+      expect(translateUiText(indonesian, "en")).toBe(english);
+      expect(translateUiText(english, "id")).toBe(indonesian);
+    }
+  });
   it("translates Indonesian interface labels to English", () => {
     expect(translateUiText("Pengaturan Akun", "en")).toBe("Account Settings");
     expect(translateUiText("Bahasa aplikasi", "en")).toBe("App language");
